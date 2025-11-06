@@ -51,7 +51,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const spotify = await getUncachableSpotifyClient();
-      const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId);
+      // Use market: "from_token" to get playlist in user's region (important for editorial playlists)
+      const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId, "from_token");
       res.json({ name: playlistData.name, id: playlistData.id });
     } catch (error: any) {
       console.error("Error fetching playlist:", error);
@@ -332,7 +333,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const playlist of trackedPlaylists) {
         try {
           console.log(`Fetching playlist: ${playlist.name}`);
-          const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId);
+          // Use market: "from_token" to get playlist in user's region (important for editorial playlists)
+          const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId, "from_token");
           
           if (!playlistData.tracks?.items) {
             console.warn(`No tracks found for playlist: ${playlist.name}`);
