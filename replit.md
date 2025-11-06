@@ -1,7 +1,7 @@
 # AI Pub Feed MVP
 
 ## Project Overview
-An automated Spotify playlist tracking and music publishing discovery platform that identifies unsigned artists and unpublished songwriters from Fresh Finds playlists.
+An automated Spotify playlist tracking and music publishing discovery platform that identifies unsigned artists and unpublished songwriters from user-selected Spotify playlists.
 
 ## Purpose
 - Automate weekly collection of trending Spotify playlist data
@@ -31,6 +31,13 @@ An automated Spotify playlist tracking and music publishing discovery platform t
 - `addedAt`: When track was added to playlist
 - `createdAt`: Snapshot creation timestamp
 
+### TrackedPlaylists Table
+- `id`: Serial (primary key)
+- `name`: Playlist name from Spotify
+- `playlistId`: Spotify playlist ID (unique)
+- `spotifyUrl`: Full Spotify playlist URL
+- `createdAt`: When playlist was added for tracking
+
 ## Scoring Rubric
 - **Fresh Finds appearance**: +3 points
 - **Independent/DK label**: +2 points
@@ -58,17 +65,19 @@ An automated Spotify playlist tracking and music publishing discovery platform t
 - AI-assisted outreach suggestions
 - Batch comparison across weeks
 
-## Fresh Finds Playlists Tracked
-1. Fresh Finds (main)
-2. Fresh Finds Pop
-3. Fresh Finds Dance
-4. Fresh Finds Experimental
-5. Fresh Finds Hip-Hop
-6. Fresh Finds Rock
-7. Fresh Finds Latin
-8. Fresh Finds R&B
-9. Fresh Finds Indie
-10. Fresh Finds Jazz
+## Custom Playlist Tracking
+Users can add and manage any Spotify playlists to track (no longer limited to Fresh Finds). The system supports:
+- Adding playlists via URL or playlist ID
+- Viewing all tracked playlists
+- Removing playlists from tracking
+- Automatic playlist metadata fetching from Spotify
+
+**How to Add Playlists:**
+1. Click "Manage Playlists" button in dashboard header
+2. Authorize Spotify if not already authenticated
+3. Enter Spotify playlist URL (e.g., `https://open.spotify.com/playlist/37i9dQZF1DWWjGdmeTyeJ6`) or just the playlist ID
+4. System automatically fetches playlist name and adds it to tracked list
+5. Click "Fetch Data" to import tracks from all tracked playlists
 
 ## Architecture
 ### Frontend
@@ -88,7 +97,12 @@ An automated Spotify playlist tracking and music publishing discovery platform t
 - `GET /api/tracks?week={week}` - Get tracks for a week
 - `GET /api/playlists` - Get list of playlists
 - `GET /api/export?week={week}&format=csv` - Export data
-- `POST /api/fetch-playlists` - Trigger manual playlist fetch
+- `POST /api/fetch-playlists` - Trigger manual playlist fetch from tracked playlists
+- `GET /api/tracked-playlists` - Get all tracked playlists
+- `POST /api/tracked-playlists` - Add a new playlist to track
+- `DELETE /api/tracked-playlists/:id` - Remove a playlist from tracking
+- `GET /api/spotify/playlist/:playlistId` - Fetch playlist info from Spotify
+- `GET /api/spotify/status` - Check Spotify authentication status
 
 ## User Preferences
 - Professional, data-focused UI
@@ -97,12 +111,19 @@ An automated Spotify playlist tracking and music publishing discovery platform t
 - Actionable export features
 
 ## Recent Changes
+- 2025-11-06: **Custom Playlist Tracking Implemented**
+  - Pivoted from hardcoded Fresh Finds playlists to user-managed custom playlists
+  - Created tracked_playlists database table with migration
+  - Implemented complete CRUD operations for playlist management
+  - Built PlaylistManager UI component with add/delete functionality
+  - Modified fetch-playlists endpoint to use tracked playlists from database
+  - Enhanced error handling with authentication checks and clear user messaging
 - 2025-11-06: **Phase 2 Features Implemented** - MusicBrainz, Tagging, Comparison
-- MusicBrainz API integration for publisher/songwriter enrichment
-- Lead tagging system with color-coded tags and filtering
-- Batch week comparison view with trend analysis
-- Enhanced track table with tag badges and metadata display
-- Improved cache management with React Query v5
+  - MusicBrainz API integration for publisher/songwriter enrichment
+  - Lead tagging system with color-coded tags and filtering
+  - Batch week comparison view with trend analysis
+  - Enhanced track table with tag badges and metadata display
+  - Improved cache management with React Query v5
 
 ## Implementation Status
 ✅ **MVP Phase 1 Complete**
@@ -119,14 +140,24 @@ An automated Spotify playlist tracking and music publishing discovery platform t
 ## How to Use
 
 ### Basic Workflow
-1. **Fetch Data**: Click "Fetch Data" to import Fresh Finds tracks (requires Spotify connection)
-2. **Enrich Metadata**: Click "Enrich" to fetch publisher/songwriter data from MusicBrainz
-3. **Tag Leads**: Use "Manage Tags" to create tags, then tag individual tracks using the "Tag" button
-4. **Filter & Search**: Filter by week, playlist, tag, score range, or search tracks/artists/labels
-5. **Compare Weeks**: Click "Compare" to analyze track progression across multiple weeks
-6. **Export**: Download filtered results as CSV for outreach
+1. **Authorize Spotify**: Click "Authorize Spotify" to connect your account (required for first-time use)
+2. **Add Playlists**: Click "Manage Playlists" to add Spotify playlists to track
+3. **Fetch Data**: Click "Fetch Data" to import tracks from tracked playlists
+4. **Enrich Metadata**: Click "Enrich" to fetch publisher/songwriter data from MusicBrainz
+5. **Tag Leads**: Use "Manage Tags" to create tags, then tag individual tracks using the "Tag" button
+6. **Filter & Search**: Filter by week, playlist, tag, score range, or search tracks/artists/labels
+7. **Compare Weeks**: Click "Compare" to analyze track progression across multiple weeks
+8. **Export**: Download filtered results as CSV for outreach
 
 ### Feature Details
+
+**Custom Playlist Management**
+- Add any Spotify playlist via URL or ID through "Manage Playlists" dialog
+- System automatically fetches playlist metadata (name, ID) from Spotify API
+- View all tracked playlists in the management interface
+- Delete playlists from tracking with one click
+- Authentication required: Clear error messages guide users to authorize if not authenticated
+- Duplicate prevention: Cannot add the same playlist twice (unique constraint on playlist ID)
 
 **MusicBrainz Enrichment**
 - Automatically looks up publisher and songwriter metadata by ISRC
