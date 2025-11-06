@@ -116,3 +116,40 @@ export async function getUncachableSpotifyClient(): Promise<SpotifyApi> {
 
   return spotify;
 }
+
+export async function searchTrackByNameAndArtist(trackName: string, artistName: string): Promise<{
+  isrc: string | null;
+  label: string | null;
+  spotifyId: string;
+  spotifyUrl: string;
+} | null> {
+  try {
+    const spotify = await getUncachableSpotifyClient();
+    
+    const query = `track:${trackName} artist:${artistName}`;
+    console.log(`Searching Spotify for: ${query}`);
+    
+    const results = await spotify.search(query, ["track"], undefined, 1);
+    
+    if (!results.tracks?.items?.length) {
+      console.log(`No Spotify results found for: ${trackName} by ${artistName}`);
+      return null;
+    }
+    
+    const track = results.tracks.items[0];
+    const isrc = track.external_ids?.isrc || null;
+    const label = track.album?.label || null;
+    
+    console.log(`Found track: ${track.name} - ISRC: ${isrc || "N/A"}, Label: ${label || "N/A"}`);
+    
+    return {
+      isrc,
+      label,
+      spotifyId: track.id,
+      spotifyUrl: track.external_urls.spotify,
+    };
+  } catch (error) {
+    console.error(`Error searching Spotify for track ${trackName} by ${artistName}:`, error);
+    return null;
+  }
+}

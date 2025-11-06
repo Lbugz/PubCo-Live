@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { getUncachableSpotifyClient, getAuthUrl, exchangeCodeForToken, isAuthenticated } from "./spotify";
+import { getUncachableSpotifyClient, getAuthUrl, exchangeCodeForToken, isAuthenticated, searchTrackByNameAndArtist } from "./spotify";
 import { calculateUnsignedScore } from "./scoring";
 import { searchByISRC } from "./musicbrainz";
 import { generateAIInsights } from "./ai-insights";
@@ -358,34 +358,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       let enrichedCount = 0;
+      let spotifyEnrichedCount = 0;
       
       for (const track of unenrichedTracks) {
-        if (!track.isrc) continue;
-        
-        try {
-          const metadata = await searchByISRC(track.isrc);
-          
-          if (metadata.publisher || metadata.songwriter) {
-            await storage.updateTrackMetadata(track.id, {
-              publisher: metadata.publisher,
-              songwriter: metadata.songwriter,
-              enrichedAt: new Date(),
-            });
-            enrichedCount++;
-          } else {
-            await storage.updateTrackMetadata(track.id, {
-              enrichedAt: new Date(),
-            });
+        // Step 1: If track has no ISRC (scraped), try Spotify search first
+        if (!track.isrc && isAuthenticated()) {
+          try {
+            console.log(`Track ${track.id} has no ISRC, searching Spotify...`);
+            const spotifyData = await searchTrackByNameAndArtist(track.trackName, track.artistName);
+            
+            if (spotifyData && spotifyData.isrc) {
+              await storage.updateTrackMetadata(track.id, {
+                isrc: spotifyData.isrc,
+                label: spotifyData.label || track.label || undefined,
+                spotifyUrl: spotifyData.spotifyUrl || track.spotifyUrl,
+              });
+              console.log(`✅ Found ISRC via Spotify: ${spotifyData.isrc}`);
+              spotifyEnrichedCount++;
+              
+              // Now use that ISRC to get publisher/songwriter from MusicBrainz
+              track.isrc = spotifyData.isrc;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+          } catch (error) {
+            console.error(`Error searching Spotify for track ${track.id}:`, error);
           }
-        } catch (error) {
-          console.error(`Error enriching track ${track.id}:`, error);
+        }
+        
+        // Step 2: If we now have an ISRC, get publisher/songwriter from MusicBrainz
+        if (track.isrc) {
+          try {
+            const metadata = await searchByISRC(track.isrc);
+            
+            if (metadata.publisher || metadata.songwriter) {
+              await storage.updateTrackMetadata(track.id, {
+                publisher: metadata.publisher,
+                songwriter: metadata.songwriter,
+                enrichedAt: new Date(),
+              });
+              enrichedCount++;
+            } else {
+              await storage.updateTrackMetadata(track.id, {
+                enrichedAt: new Date(),
+              });
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          } catch (error) {
+            console.error(`Error enriching track ${track.id}:`, error);
+          }
         }
       }
       
       res.json({ 
         success: true, 
         enrichedCount,
-        totalProcessed: unenrichedTracks.length
+        spotifyEnrichedCount,
+        totalProcessed: unenrichedTracks.length,
+        message: spotifyEnrichedCount > 0 
+          ? `Found ${spotifyEnrichedCount} ISRC codes via Spotify, enriched ${enrichedCount} tracks with MusicBrainz`
+          : `Enriched ${enrichedCount} tracks with MusicBrainz`
       });
     } catch (error) {
       console.error("Error enriching metadata:", error);

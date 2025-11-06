@@ -10,7 +10,7 @@ export interface IStorage {
   getAllPlaylists(): Promise<string[]>;
   insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<void>;
   deleteTracksByWeek(week: string): Promise<void>;
-  updateTrackMetadata(id: string, metadata: { publisher?: string; songwriter?: string; enrichedAt: Date }): Promise<void>;
+  updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; songwriter?: string; enrichedAt?: Date }): Promise<void>;
   getUnenrichedTracks(limit?: number): Promise<PlaylistSnapshot[]>;
   getAllTags(): Promise<Tag[]>;
   createTag(tag: InsertTag): Promise<Tag>;
@@ -98,7 +98,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(playlistSnapshots).where(eq(playlistSnapshots.week, week));
   }
 
-  async updateTrackMetadata(id: string, metadata: { publisher?: string; songwriter?: string; enrichedAt: Date }): Promise<void> {
+  async updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; songwriter?: string; enrichedAt?: Date }): Promise<void> {
     await db.update(playlistSnapshots)
       .set(metadata)
       .where(eq(playlistSnapshots.id, id));
@@ -107,7 +107,7 @@ export class DatabaseStorage implements IStorage {
   async getUnenrichedTracks(limit: number = 50): Promise<PlaylistSnapshot[]> {
     return db.select()
       .from(playlistSnapshots)
-      .where(sql`${playlistSnapshots.enrichedAt} IS NULL AND ${playlistSnapshots.isrc} IS NOT NULL`)
+      .where(sql`${playlistSnapshots.enrichedAt} IS NULL`)
       .limit(limit);
   }
 

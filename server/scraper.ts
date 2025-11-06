@@ -144,9 +144,10 @@ async function autoScroll(page: Page): Promise<void> {
   
   let previousTrackCount = 0;
   let stableCount = 0;
-  const maxStableIterations = 3;
+  const maxStableIterations = 5;
+  const maxScrollIterations = 50;
   
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < maxScrollIterations; i++) {
     const currentTrackCount = await page.evaluate(() => {
       return document.querySelectorAll('[data-testid="tracklist-row"]').length;
     });
@@ -166,10 +167,15 @@ async function autoScroll(page: Page): Promise<void> {
     previousTrackCount = currentTrackCount;
     
     await page.evaluate(() => {
-      window.scrollTo(0, document.documentElement.scrollHeight);
+      const scrollableElement = document.querySelector('[data-testid="playlist-tracklist"]') as HTMLElement;
+      if (scrollableElement) {
+        scrollableElement.scrollTop = scrollableElement.scrollHeight;
+      } else {
+        window.scrollTo(0, document.documentElement.scrollHeight);
+      }
     });
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
   }
   
   console.log("Auto-scroll complete");
