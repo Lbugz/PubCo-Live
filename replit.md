@@ -131,6 +131,7 @@ Users can add and manage any Spotify playlists to track (no longer limited to Fr
 - `PATCH /api/tracks/:trackId/contact` - Update contact information
 - `GET /api/tracked-playlists` - Get all tracked playlists
 - `POST /api/tracked-playlists` - Add a new playlist to track
+- `POST /api/playlists/bulk-import` - Bulk import playlists from CSV file
 - `DELETE /api/tracked-playlists/:id` - Remove a playlist from tracking
 - `GET /api/tags` - Get all tags
 - `POST /api/tags` - Create a new tag
@@ -148,6 +149,16 @@ Users can add and manage any Spotify playlists to track (no longer limited to Fr
 - Actionable export features
 
 ## Recent Changes
+- 2025-11-06: **Bulk CSV Import Feature**
+  - **CSV Upload**: Upload CSV files with multiple playlists (URL or ID format)
+  - **Auto-Detection**: Automatically detects editorial vs non-editorial playlists
+  - **Duplicate Prevention**: 
+    - Playlist-level: Unique constraint on tracked_playlists.playlistId
+    - Track-level: Unique index on (week, playlist_id, spotify_url)
+  - **Progress Tracking**: Real-time success/failure/duplicate counts
+  - **Database Integrity**: Drizzle uniqueIndex ensures no duplicate tracks per week
+  - **Baseline Established**: 27 playlists imported, ready for first production fetch
+
 - 2025-11-06: **Phase 3 Complete - Scraping & Enrichment Enhancements**
   - **Improved Auto-Scroll Algorithm**: Now captures 150+ tracks from large playlists (increased from 28)
     - Max iterations: 20 → 50
@@ -209,6 +220,11 @@ Users can add and manage any Spotify playlists to track (no longer limited to Fr
 
 **Custom Playlist Management**
 - Add any Spotify playlist via URL or ID through "Manage Playlists" dialog
+- **Bulk CSV Import**: Upload a CSV file with multiple playlists (one URL or ID per row)
+  - Automatically detects editorial vs non-editorial playlists
+  - Shows real-time progress with success/failure/duplicate counts
+  - Editorial playlists use web scraping method
+  - Non-editorial playlists added to tracked list for API fetching
 - System automatically fetches playlist metadata (name, ID) from Spotify API
 - View all tracked playlists in the management interface
 - Delete playlists from tracking with one click
