@@ -124,14 +124,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tracks = await storage.getTracksByWeek(week);
       
       if (format === "csv") {
-        const headers = ["Track Name", "Artist", "Playlist", "Label", "ISRC", "Unsigned Score", "Spotify URL"];
+        const headers = ["Track Name", "Artist", "Playlist", "Label", "Publisher", "Songwriter", "ISRC", "Unsigned Score", "Instagram", "Twitter", "TikTok", "Email", "Contact Notes", "Spotify URL"];
         const rows = tracks.map(t => [
           t.trackName,
           t.artistName,
           t.playlistName,
           t.label || "",
+          t.publisher || "",
+          t.songwriter || "",
           t.isrc || "",
           t.unsignedScore.toString(),
+          t.instagram || "",
+          t.twitter || "",
+          t.tiktok || "",
+          t.email || "",
+          t.contactNotes || "",
           t.spotifyUrl,
         ]);
         
@@ -210,6 +217,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error removing tag from track:", error);
       res.status(500).json({ error: "Failed to remove tag from track" });
+    }
+  });
+
+  app.patch("/api/tracks/:trackId/contact", async (req, res) => {
+    try {
+      const { instagram, twitter, tiktok, email, contactNotes } = req.body;
+      await storage.updateTrackContact(req.params.trackId, {
+        instagram,
+        twitter,
+        tiktok,
+        email,
+        contactNotes,
+      });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating track contact:", error);
+      res.status(500).json({ error: "Failed to update contact information" });
     }
   });
 

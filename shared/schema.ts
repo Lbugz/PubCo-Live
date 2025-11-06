@@ -19,6 +19,11 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   publisher: text("publisher"),
   songwriter: text("songwriter"),
   enrichedAt: timestamp("enriched_at"),
+  instagram: text("instagram"),
+  twitter: text("twitter"),
+  tiktok: text("tiktok"),
+  email: text("email"),
+  contactNotes: text("contact_notes"),
 });
 
 export const insertPlaylistSnapshotSchema = createInsertSchema(playlistSnapshots).omit({

@@ -21,6 +21,7 @@ export interface IStorage {
   getTrackedPlaylists(): Promise<TrackedPlaylist[]>;
   addTrackedPlaylist(playlist: InsertTrackedPlaylist): Promise<TrackedPlaylist>;
   deleteTrackedPlaylist(id: string): Promise<void>;
+  updateTrackContact(id: string, contact: { instagram?: string; twitter?: string; tiktok?: string; email?: string; contactNotes?: string }): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -152,6 +153,12 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTrackedPlaylist(id: string): Promise<void> {
     await db.delete(trackedPlaylists).where(eq(trackedPlaylists.id, id));
+  }
+
+  async updateTrackContact(id: string, contact: { instagram?: string; twitter?: string; tiktok?: string; email?: string; contactNotes?: string }): Promise<void> {
+    await db.update(playlistSnapshots)
+      .set(contact)
+      .where(eq(playlistSnapshots.id, id));
   }
 }
 

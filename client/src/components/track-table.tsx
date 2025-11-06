@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { type PlaylistSnapshot, type Tag } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { TrackTagPopover } from "./track-tag-popover";
+import { TrackContactDialog } from "./track-contact-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { getTagColorClass } from "./tag-manager";
 
@@ -150,8 +151,9 @@ export function TrackTable({ tracks, isLoading }: TrackTableProps) {
                 </div>
               </div>
               
-              <div className="col-span-1 lg:col-span-1 flex justify-start lg:justify-end gap-2">
+              <div className="col-span-1 lg:col-span-1 flex justify-start lg:justify-end gap-2 flex-wrap">
                 <TrackTagPopover trackId={track.id} />
+                <TrackContactDialog track={track} />
                 <Button
                   variant="ghost"
                   size="sm"
