@@ -22,7 +22,7 @@ export interface IStorage {
   getTrackedPlaylists(): Promise<TrackedPlaylist[]>;
   getTrackedPlaylistBySpotifyId(playlistId: string): Promise<TrackedPlaylist | null>;
   addTrackedPlaylist(playlist: InsertTrackedPlaylist): Promise<TrackedPlaylist>;
-  updatePlaylistStatus(playlistId: string, status: string, lastChecked: Date): Promise<void>;
+  updatePlaylistCompleteness(playlistId: string, fetchCount: number, totalTracks: number | null, lastChecked: Date): Promise<void>;
   deleteTrackedPlaylist(id: string): Promise<void>;
   updateTrackContact(id: string, contact: { instagram?: string; twitter?: string; tiktok?: string; email?: string; contactNotes?: string }): Promise<void>;
 }
@@ -172,9 +172,15 @@ export class DatabaseStorage implements IStorage {
     return inserted;
   }
 
-  async updatePlaylistStatus(playlistId: string, status: string, lastChecked: Date): Promise<void> {
+  async updatePlaylistCompleteness(playlistId: string, fetchCount: number, totalTracks: number | null, lastChecked: Date): Promise<void> {
+    const isComplete = totalTracks !== null && fetchCount >= totalTracks ? 1 : 0;
     await db.update(trackedPlaylists)
-      .set({ status, lastChecked })
+      .set({ 
+        lastFetchCount: fetchCount,
+        totalTracks: totalTracks || undefined,
+        isComplete,
+        lastChecked 
+      })
       .where(eq(trackedPlaylists.playlistId, playlistId));
   }
 

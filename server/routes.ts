@@ -621,57 +621,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const allTracks: InsertPlaylistSnapshot[] = [];
+      const completenessResults: Array<{ name: string; fetchCount: number; totalTracks: number | null; isComplete: boolean }> = [];
       
       for (const playlist of trackedPlaylists) {
         try {
-          console.log(`Fetching playlist: ${playlist.name}`);
-          // Use market: "from_token" to get playlist in user's region (important for editorial playlists)
-          const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId, "from_token" as any);
+          console.log(`Fetching playlist: ${playlist.name} (isEditorial=${playlist.isEditorial}, method=${playlist.fetchMethod})`);
           
-          // Mark playlist as accessible since we successfully fetched it
-          await storage.updatePlaylistStatus(playlist.playlistId, "accessible", new Date());
+          let playlistTracks: any[] = [];
+          let playlistTotalTracks = playlist.totalTracks;
           
-          if (!playlistData.tracks?.items) {
-            console.warn(`No tracks found for playlist: ${playlist.name}`);
-            continue;
+          // Route by fetch method
+          if (playlist.isEditorial === 1 || playlist.fetchMethod === 'scraping') {
+            // Use web scraping for editorial playlists
+            console.log(`Using web scraping method for ${playlist.name}`);
+            const scrapeResult = await scrapeSpotifyPlaylist(playlist.spotifyUrl);
+            
+            if (!scrapeResult.success || !scrapeResult.tracks) {
+              console.error(`Failed to scrape ${playlist.name}: ${scrapeResult.error}`);
+              continue;
+            }
+            
+            // Convert scraped tracks to playlist snapshot format
+            for (const scrapedTrack of scrapeResult.tracks) {
+              const score = calculateUnsignedScore({
+                playlistName: playlist.name,
+                label: null,
+                publisher: null,
+                writer: null,
+              });
+              
+              allTracks.push({
+                week: today,
+                playlistName: playlist.name,
+                playlistId: playlist.playlistId,
+                trackName: scrapedTrack.trackName,
+                artistName: scrapedTrack.artistName,
+                spotifyUrl: scrapedTrack.spotifyUrl,
+                isrc: null, // Scraped tracks don't have ISRC initially
+                label: null,
+                unsignedScore: score,
+                addedAt: new Date(),
+                dataSource: "scraping",
+              });
+            }
+            
+            playlistTracks = scrapeResult.tracks;
+          } else {
+            // Use Spotify API for non-editorial playlists
+            console.log(`Using Spotify API method for ${playlist.name}`);
+            const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId, "from_token" as any);
+            
+            if (!playlistTotalTracks && playlistData.tracks?.total) {
+              playlistTotalTracks = playlistData.tracks.total;
+            }
+            
+            if (!playlistData.tracks?.items) {
+              console.warn(`No tracks found for playlist: ${playlist.name}`);
+              continue;
+            }
+            
+            for (const item of playlistData.tracks.items) {
+              if (!item.track || item.track.type !== "track") continue;
+              
+              const track = item.track;
+              const label = track.album?.label || null;
+              
+              const score = calculateUnsignedScore({
+                playlistName: playlist.name,
+                label: label,
+                publisher: null,
+                writer: null,
+              });
+              
+              allTracks.push({
+                week: today,
+                playlistName: playlist.name,
+                playlistId: playlist.playlistId,
+                trackName: track.name,
+                artistName: track.artists.map(a => a.name).join(", "),
+                spotifyUrl: track.external_urls.spotify,
+                isrc: track.external_ids?.isrc || null,
+                label: label,
+                unsignedScore: score,
+                addedAt: new Date(item.added_at),
+                dataSource: "api",
+              });
+            }
+            
+            playlistTracks = playlistData.tracks.items;
           }
           
-          for (const item of playlistData.tracks.items) {
-            if (!item.track || item.track.type !== "track") continue;
-            
-            const track = item.track;
-            const label = track.album?.label || null;
-            
-            const score = calculateUnsignedScore({
-              playlistName: playlist.name,
-              label: label,
-              publisher: null,
-              writer: null,
-            });
-            
-            allTracks.push({
-              week: today,
-              playlistName: playlist.name,
-              playlistId: playlist.playlistId,
-              trackName: track.name,
-              artistName: track.artists.map(a => a.name).join(", "),
-              spotifyUrl: track.external_urls.spotify,
-              isrc: track.external_ids?.isrc || null,
-              label: label,
-              unsignedScore: score,
-              addedAt: new Date(item.added_at),
-            });
-          }
+          // Update completeness status
+          const fetchCount = playlistTracks.length;
+          await storage.updatePlaylistCompleteness(
+            playlist.playlistId, 
+            fetchCount, 
+            playlistTotalTracks, 
+            new Date()
+          );
+          
+          const isComplete = playlistTotalTracks !== null && fetchCount >= playlistTotalTracks;
+          completenessResults.push({
+            name: playlist.name,
+            fetchCount,
+            totalTracks: playlistTotalTracks,
+            isComplete,
+          });
+          
+          console.log(`${playlist.name}: ${fetchCount}${playlistTotalTracks ? `/${playlistTotalTracks}` : ''} tracks (${isComplete ? 'complete' : 'partial'})`);
           
           await new Promise(resolve => setTimeout(resolve, 100));
         } catch (error: any) {
           console.error(`Error fetching playlist ${playlist.name}:`, error);
-          
-          // Mark playlist as restricted if we get a 404
-          if (error?.message?.includes("404")) {
-            console.log(`Playlist ${playlist.name} appears to be restricted`);
-            await storage.updatePlaylistStatus(playlist.playlistId, "restricted", new Date());
-          }
         }
       }
       
@@ -684,7 +745,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         tracksAdded: allTracks.length,
-        week: today 
+        week: today,
+        completenessResults 
       });
     } catch (error) {
       console.error("Error fetching playlists:", error);
