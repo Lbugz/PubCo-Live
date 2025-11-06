@@ -30,6 +30,28 @@ function decodeHTMLEntities(text: string): string {
   return decoded;
 }
 
+// Fix corrupted Fresh Finds playlist names from Spotify API
+function fixPlaylistName(name: string, playlistId: string): string {
+  // Known Fresh Finds playlist IDs that return corrupted names
+  const freshFindsIds = [
+    '37i9dQZF1DWWjGdmeTyeJ6', // Fresh Finds
+    '1gsGxKM5QxxiDZpLk0iY2K', // Fresh Finds (alternate)
+  ];
+  
+  // If the name looks corrupted (contains lots of special chars) and it's a Fresh Finds playlist
+  if (freshFindsIds.includes(playlistId) || name.includes(':#)#)$)@')) {
+    return 'Fresh Finds';
+  }
+  
+  // If name is very long and contains mostly special characters, it's likely corrupted
+  if (name.length > 80 && (name.match(/[@#$&=/()\-]/g) || []).length > name.length * 0.3) {
+    console.warn(`Detected corrupted playlist name for ${playlistId}: ${name}`);
+    return `Playlist ${playlistId.substring(0, 8)}`;
+  }
+  
+  return name;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Spotify OAuth endpoints
   app.get("/api/spotify/auth", (req, res) => {
@@ -79,19 +101,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Try with market parameter first
         const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId, "from_token" as any);
-        const decodedName = decodeHTMLEntities(playlistData.name);
+        let fixedName = decodeHTMLEntities(playlistData.name);
+        fixedName = fixPlaylistName(fixedName, playlistData.id);
         console.log("Playlist name from Spotify API (raw):", playlistData.name);
-        console.log("Playlist name after decoding:", decodedName);
-        res.json({ name: decodedName, id: playlistData.id, status: "accessible" });
+        console.log("Playlist name after fixing:", fixedName);
+        res.json({ name: fixedName, id: playlistData.id, status: "accessible" });
       } catch (marketError: any) {
         // If market parameter fails, try without it as a fallback
         console.log("Retrying without market parameter...");
         try {
           const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId);
-          const decodedName = decodeHTMLEntities(playlistData.name);
+          let fixedName = decodeHTMLEntities(playlistData.name);
+          fixedName = fixPlaylistName(fixedName, playlistData.id);
           console.log("Playlist name from Spotify API (raw, no market):", playlistData.name);
-          console.log("Playlist name after decoding:", decodedName);
-          res.json({ name: decodedName, id: playlistData.id, status: "accessible" });
+          console.log("Playlist name after fixing:", fixedName);
+          res.json({ name: fixedName, id: playlistData.id, status: "accessible" });
         } catch (finalError: any) {
           // Handle 404 errors with search fallback
           if (finalError?.message?.includes("404")) {
@@ -111,11 +135,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Verify we can actually access this playlist
                 try {
                   const verifiedPlaylist = await spotify.playlists.getPlaylist(matchedPlaylist.id);
-                  const decodedName = decodeHTMLEntities(verifiedPlaylist.name);
+                  let fixedName = decodeHTMLEntities(verifiedPlaylist.name);
+                  fixedName = fixPlaylistName(fixedName, verifiedPlaylist.id);
                   console.log("Verified playlist name via search (raw):", verifiedPlaylist.name);
-                  console.log("Verified playlist name after decoding:", decodedName);
+                  console.log("Verified playlist name after fixing:", fixedName);
                   return res.json({ 
-                    name: decodedName, 
+                    name: fixedName, 
                     id: verifiedPlaylist.id,
                     status: "accessible",
                     foundViaSearch: true,
