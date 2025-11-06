@@ -27,11 +27,17 @@ async function getAccessToken() {
       }
     }
   ).then(res => res.json()).then(data => data.items?.[0]);
-   const refreshToken =
+  
+  console.log('Connection settings:', JSON.stringify(connectionSettings, null, 2));
+  
+  const refreshToken =
     connectionSettings?.settings?.oauth?.credentials?.refresh_token;
   const accessToken = connectionSettings?.settings?.access_token || connectionSettings?.settings?.oauth?.credentials?.access_token;
   const clientId = connectionSettings?.settings?.oauth?.credentials?.client_id;
   const expiresIn = connectionSettings?.settings?.oauth?.credentials?.expires_in;
+  
+  console.log('Extracted values:', { hasAccessToken: !!accessToken, hasClientId: !!clientId, hasRefreshToken: !!refreshToken });
+  
   if (!connectionSettings || (!accessToken || !clientId || !refreshToken)) {
     throw new Error('Spotify not connected');
   }
