@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { getUncachableSpotifyClient, getAuthUrl, exchangeCodeForToken, isAuthenticated } from "./spotify";
 import { calculateUnsignedScore } from "./scoring";
 import { searchByISRC } from "./musicbrainz";
-import { playlists, type InsertPlaylistSnapshot, insertTagSchema } from "@shared/schema";
+import { playlists, type InsertPlaylistSnapshot, insertTagSchema, insertTrackedPlaylistSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Spotify OAuth endpoints
@@ -180,6 +180,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/tracked-playlists", async (req, res) => {
+    try {
+      const playlists = await storage.getTrackedPlaylists();
+      res.json(playlists);
+    } catch (error) {
+      console.error("Error fetching tracked playlists:", error);
+      res.status(500).json({ error: "Failed to fetch tracked playlists" });
+    }
+  });
+
+  app.post("/api/tracked-playlists", async (req, res) => {
+    try {
+      const validatedPlaylist = insertTrackedPlaylistSchema.parse(req.body);
+      const playlist = await storage.addTrackedPlaylist(validatedPlaylist);
+      res.json(playlist);
+    } catch (error) {
+      console.error("Error adding tracked playlist:", error);
+      res.status(500).json({ error: "Failed to add tracked playlist" });
+    }
+  });
+
+  app.delete("/api/tracked-playlists/:id", async (req, res) => {
+    try {
+      await storage.deleteTrackedPlaylist(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting tracked playlist:", error);
+      res.status(500).json({ error: "Failed to delete tracked playlist" });
+    }
+  });
+
   app.post("/api/enrich-metadata", async (req, res) => {
     try {
       const unenrichedTracks = await storage.getUnenrichedTracks(50);
@@ -272,12 +303,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const spotify = await getUncachableSpotifyClient();
       const today = new Date().toISOString().split('T')[0];
       
+      const trackedPlaylists = await storage.getTrackedPlaylists();
+      
+      if (trackedPlaylists.length === 0) {
+        return res.status(400).json({ 
+          error: "No playlists are being tracked. Please add playlists to track first." 
+        });
+      }
+      
       const allTracks: InsertPlaylistSnapshot[] = [];
       
-      for (const playlist of playlists) {
+      for (const playlist of trackedPlaylists) {
         try {
           console.log(`Fetching playlist: ${playlist.name}`);
-          const playlistData = await spotify.playlists.getPlaylist(playlist.id);
+          const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId);
           
           if (!playlistData.tracks?.items) {
             console.warn(`No tracks found for playlist: ${playlist.name}`);
@@ -300,7 +339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             allTracks.push({
               week: today,
               playlistName: playlist.name,
-              playlistId: playlist.id,
+              playlistId: playlist.playlistId,
               trackName: track.name,
               artistName: track.artists.map(a => a.name).join(", "),
               spotifyUrl: track.external_urls.spotify,

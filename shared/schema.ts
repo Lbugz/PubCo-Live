@@ -54,6 +54,22 @@ export type InsertTag = z.infer<typeof insertTagSchema>;
 export type Tag = typeof tags.$inferSelect;
 export type TrackTag = typeof trackTags.$inferSelect;
 
+export const trackedPlaylists = pgTable("tracked_playlists", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  playlistId: text("playlist_id").notNull().unique(),
+  spotifyUrl: text("spotify_url").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertTrackedPlaylistSchema = createInsertSchema(trackedPlaylists).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTrackedPlaylist = z.infer<typeof insertTrackedPlaylistSchema>;
+export type TrackedPlaylist = typeof trackedPlaylists.$inferSelect;
+
 export const playlists = [
   {
     name: "Fresh Finds",

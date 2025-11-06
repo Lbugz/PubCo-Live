@@ -1,4 +1,4 @@
-import { playlistSnapshots, tags, trackTags, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag } from "@shared/schema";
+import { playlistSnapshots, tags, trackTags, trackedPlaylists, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, inArray } from "drizzle-orm";
 
@@ -18,6 +18,9 @@ export interface IStorage {
   removeTagFromTrack(trackId: string, tagId: string): Promise<void>;
   getTrackTags(trackId: string): Promise<Tag[]>;
   getTracksByTag(tagId: string): Promise<PlaylistSnapshot[]>;
+  getTrackedPlaylists(): Promise<TrackedPlaylist[]>;
+  addTrackedPlaylist(playlist: InsertTrackedPlaylist): Promise<TrackedPlaylist>;
+  deleteTrackedPlaylist(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -136,6 +139,19 @@ export class DatabaseStorage implements IStorage {
       .where(eq(trackTags.tagId, tagId));
     
     return result.map(r => r.track);
+  }
+
+  async getTrackedPlaylists(): Promise<TrackedPlaylist[]> {
+    return db.select().from(trackedPlaylists).orderBy(trackedPlaylists.name);
+  }
+
+  async addTrackedPlaylist(playlist: InsertTrackedPlaylist): Promise<TrackedPlaylist> {
+    const [inserted] = await db.insert(trackedPlaylists).values(playlist).returning();
+    return inserted;
+  }
+
+  async deleteTrackedPlaylist(id: string): Promise<void> {
+    await db.delete(trackedPlaylists).where(eq(trackedPlaylists.id, id));
   }
 }
 
