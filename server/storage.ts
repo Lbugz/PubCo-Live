@@ -20,6 +20,7 @@ export interface IStorage {
   getTrackTags(trackId: string): Promise<Tag[]>;
   getTracksByTag(tagId: string): Promise<PlaylistSnapshot[]>;
   getTrackedPlaylists(): Promise<TrackedPlaylist[]>;
+  getTrackedPlaylistBySpotifyId(playlistId: string): Promise<TrackedPlaylist | null>;
   addTrackedPlaylist(playlist: InsertTrackedPlaylist): Promise<TrackedPlaylist>;
   updatePlaylistStatus(playlistId: string, status: string, lastChecked: Date): Promise<void>;
   deleteTrackedPlaylist(id: string): Promise<void>;
@@ -155,6 +156,15 @@ export class DatabaseStorage implements IStorage {
 
   async getTrackedPlaylists(): Promise<TrackedPlaylist[]> {
     return db.select().from(trackedPlaylists).orderBy(trackedPlaylists.name);
+  }
+
+  async getTrackedPlaylistBySpotifyId(playlistId: string): Promise<TrackedPlaylist | null> {
+    const [playlist] = await db.select()
+      .from(trackedPlaylists)
+      .where(eq(trackedPlaylists.playlistId, playlistId))
+      .limit(1);
+    
+    return playlist || null;
   }
 
   async addTrackedPlaylist(playlist: InsertTrackedPlaylist): Promise<TrackedPlaylist> {

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Trash2, ListMusic, CheckCircle2, XCircle, HelpCircle, Download } from "lucide-react";
+import { Plus, Trash2, ListMusic, CheckCircle2, XCircle, HelpCircle, Download, Upload } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ export function PlaylistManager() {
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [scrapeUrl, setScrapeUrl] = useState("");
   const [scrapeName, setScrapeName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const { data: playlists = [], isLoading } = useQuery<TrackedPlaylist[]>({
@@ -119,6 +120,27 @@ export function PlaylistManager() {
     },
   });
 
+  const bulkImportMutation = useMutation({
+    mutationFn: async (csvData: string) => {
+      const res = await apiRequest("POST", "/api/playlists/bulk-import", { csvData });
+      return await res.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Bulk Import Complete!",
+        description: `Successfully added ${data.successful} of ${data.total} playlists`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Import Failed",
+        description: error.message || "Failed to import playlists",
+        variant: "destructive",
+      });
+    },
+  });
+
   const extractPlaylistId = (urlOrId: string): string | null => {
     const trimmed = urlOrId.trim();
     
@@ -167,6 +189,22 @@ export function PlaylistManager() {
     scrapePlaylistMutation.mutate({ url: scrapeUrl, name: scrapeName || undefined });
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const csvData = e.target?.result as string;
+      bulkImportMutation.mutate(csvData);
+    };
+    reader.readAsText(file);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "accessible":
@@ -210,6 +248,38 @@ export function PlaylistManager() {
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label>Bulk Import from CSV</Label>
+              <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20 text-xs">
+                Recommended
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Upload a CSV file with playlists (Title, Official Spotify, Saves, Link, Chartmetric columns). All playlists will be added to tracked list.
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleFileUpload}
+              style={{ display: 'none' }}
+              data-testid="input-csv-file"
+            />
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={bulkImportMutation.isPending}
+              className="w-full"
+              variant="default"
+              data-testid="button-upload-csv"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              {bulkImportMutation.isPending ? "Importing..." : "Upload CSV File"}
+            </Button>
+          </div>
+
+          <Separator />
+
           <div className="space-y-2">
             <Label htmlFor="playlist-url">Spotify Playlist URL or ID</Label>
             <div className="flex gap-2">

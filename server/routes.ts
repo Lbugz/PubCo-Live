@@ -481,6 +481,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/playlists/bulk-import", async (req, res) => {
+    try {
+      const { csvData } = req.body;
+      
+      if (!csvData || typeof csvData !== 'string') {
+        return res.status(400).json({ error: "CSV data is required" });
+      }
+
+      const lines = csvData.trim().split('\n');
+      const results = {
+        total: 0,
+        successful: 0,
+        failed: 0,
+        playlists: [] as any[],
+      };
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const match = line.match(/^([^,]+),([^,]*),([^,]*),([^,]+)/);
+        if (!match) continue;
+
+        const title = match[1].trim();
+        const isEditorial = match[2].toLowerCase() === 'yes';
+        const link = match[4].trim();
+        
+        const playlistIdMatch = link.match(/playlist\/([a-zA-Z0-9]+)/);
+        if (!playlistIdMatch) {
+          results.failed++;
+          results.playlists.push({ title, status: 'failed', reason: 'Invalid URL' });
+          continue;
+        }
+
+        const playlistId = playlistIdMatch[1];
+        results.total++;
+
+        try {
+          if (isEditorial) {
+            const existingPlaylist = await storage.getTrackedPlaylistBySpotifyId(playlistId);
+            if (!existingPlaylist) {
+              await storage.addTrackedPlaylist({
+                name: title,
+                playlistId: playlistId,
+                spotifyUrl: link,
+              });
+            }
+            results.successful++;
+            results.playlists.push({ 
+              title, 
+              playlistId, 
+              status: 'added_to_tracked', 
+              type: 'editorial' 
+            });
+          } else {
+            const existingPlaylist = await storage.getTrackedPlaylistBySpotifyId(playlistId);
+            if (!existingPlaylist) {
+              await storage.addTrackedPlaylist({
+                name: title,
+                playlistId: playlistId,
+                spotifyUrl: link,
+              });
+            }
+            results.successful++;
+            results.playlists.push({ 
+              title, 
+              playlistId, 
+              status: 'added_to_tracked', 
+              type: 'non-editorial' 
+            });
+          }
+        } catch (error: any) {
+          results.failed++;
+          results.playlists.push({ 
+            title, 
+            status: 'failed', 
+            reason: error.message 
+          });
+        }
+      }
+
+      res.json(results);
+    } catch (error) {
+      console.error("Error in bulk import:", error);
+      res.status(500).json({ error: "Failed to process bulk import" });
+    }
+  });
+
   app.post("/api/fetch-playlists", async (req, res) => {
     try {
       const spotify = await getUncachableSpotifyClient();
