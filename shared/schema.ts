@@ -62,8 +62,8 @@ export const playlists = [
   },
   {
     name: "Fresh Finds Pop",
-    id: "37i9dQZF1DX3b9kAldT2fR",
-    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DX3b9kAldT2fR",
+    id: "37i9dQZF1DX3u9TSHqpdJC",
+    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DX3u9TSHqpdJC",
   },
   {
     name: "Fresh Finds Dance",
@@ -72,37 +72,37 @@ export const playlists = [
   },
   {
     name: "Fresh Finds Experimental",
-    id: "37i9dQZF1DX8FwnYE6PRvL",
-    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DX8FwnYE6PRvL",
+    id: "37i9dQZF1DX8C585qnMYHP",
+    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DX8C585qnMYHP",
   },
   {
     name: "Fresh Finds Hip-Hop",
-    id: "37i9dQZF1DWWC7UGk7jUwo",
-    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DWWC7UGk7jUwo",
+    id: "37i9dQZF1DWW4igXXl2Qkp",
+    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DWW4igXXl2Qkp",
   },
   {
     name: "Fresh Finds Rock",
-    id: "37i9dQZF1DX7qK8ma5wgG1",
-    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DX7qK8ma5wgG1",
+    id: "37i9dQZF1DX78toxP7mOaJ",
+    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DX78toxP7mOaJ",
   },
   {
     name: "Fresh Finds Latin",
-    id: "37i9dQZF1DXaRycgyh6kXP",
-    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DXaRycgyh6kXP",
+    id: "37i9dQZF1DXagUeYbNSnOA",
+    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DXagUeYbNSnOA",
   },
   {
     name: "Fresh Finds R&B",
-    id: "37i9dQZF1DWUZ5bk6qqDSy",
-    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DWUZ5bk6qqDSy",
+    id: "37i9dQZF1DWUFAJPVM3HTX",
+    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DWUFAJPVM3HTX",
   },
   {
     name: "Fresh Finds Indie",
-    id: "37i9dQZF1DWTEbYB1hM5Vg",
-    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DWTEbYB1hM5Vg",
+    id: "37i9dQZF1DWT0upuUFtT7o",
+    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DWT0upuUFtT7o",
   },
   {
     name: "Fresh Finds Jazz",
-    id: "37i9dQZF1DXcBPJrmTCPlv",
-    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DXcBPJrmTCPlv",
+    id: "37i9dQZF1DXcWL5K0oNHcG",
+    spotify_url: "https://open.spotify.com/playlist/37i9dQZF1DXcWL5K0oNHcG",
   },
 ] as const;
