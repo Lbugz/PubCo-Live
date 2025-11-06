@@ -20,13 +20,16 @@ const SCOPES = [
 ].join(" ");
 
 export function getAuthUrl(): string {
+  console.log('Redirect URI being used:', REDIRECT_URI);
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
     response_type: "code",
     redirect_uri: REDIRECT_URI,
     scope: SCOPES,
   });
-  return `https://accounts.spotify.com/authorize?${params.toString()}`;
+  const authUrl = `https://accounts.spotify.com/authorize?${params.toString()}`;
+  console.log('Full auth URL:', authUrl);
+  return authUrl;
 }
 
 export async function exchangeCodeForToken(code: string): Promise<void> {
