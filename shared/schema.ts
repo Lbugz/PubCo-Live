@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, date } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, date, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -25,7 +25,9 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   email: text("email"),
   contactNotes: text("contact_notes"),
   dataSource: text("data_source").notNull().default("api"),
-});
+}, (table) => ({
+  uniqueTrackIdx: uniqueIndex("unique_track_per_week_idx").on(table.week, table.playlistId, table.spotifyUrl),
+}));
 
 export const insertPlaylistSnapshotSchema = createInsertSchema(playlistSnapshots).omit({
   id: true,
