@@ -169,6 +169,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTrackedPlaylist(id: string): Promise<void> {
+    // First get the playlist to find its playlistId
+    const [playlist] = await db.select()
+      .from(trackedPlaylists)
+      .where(eq(trackedPlaylists.id, id))
+      .limit(1);
+    
+    if (playlist) {
+      // Delete all tracks associated with this playlist
+      await db.delete(playlistSnapshots)
+        .where(eq(playlistSnapshots.playlistId, playlist.playlistId));
+      
+      console.log(`Deleted all tracks for playlist: ${playlist.name}`);
+    }
+    
+    // Delete the playlist itself
     await db.delete(trackedPlaylists).where(eq(trackedPlaylists.id, id));
   }
 
