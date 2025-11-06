@@ -1,0 +1,204 @@
+Perfect — here’s a **clear instruction set** you can give to your Replit Agent or post in your project’s README so it automatically knows how to set up this *“Spotify Playlist Background Scraper”* workflow using your existing Spotify Developer credentials.
+
+---
+
+# 🎧 **Replit Setup Instructions — Background Spotify Playlist Scraper (User-Authenticated)**
+
+These instructions assume:
+
+* You already have a **Spotify Developer account** and app with **Client ID**, **Client Secret**, and **Redirect URI** configured.
+* The Replit project has **Spotify integration enabled** (for OAuth token management).
+* You want to automatically open playlist URLs, extract visible tracks, and store results for your app dashboard — *without manually opening pages each time.*
+
+---
+
+## 🧱 1. Project Structure
+
+Create this folder layout in Replit:
+
+```
+aipub-feed/
+├── /config/
+│   └── playlists.json            # list of Spotify playlist URLs to scrape
+├── /scripts/
+│   ├── scrapePlaylists.ts        # Puppeteer scraping script
+│   └── saveToDatabase.ts         # optional: posts scraped data to backend
+├── /data/
+│   └── snapshots/                # where JSON exports will be saved
+├── .replit                       # scheduler config
+├── replit.nix                    # dependencies
+└── package.json
+```
+
+---
+
+## ⚙️ 2. Dependencies (in `replit.nix`)
+
+Make sure Puppeteer, TypeScript, and Axios are installed:
+
+```nix
+{ pkgs }: {
+  deps = [
+    pkgs.nodejs_20
+    pkgs.google-chrome
+  ];
+}
+```
+
+Then run:
+
+```bash
+npm install puppeteer axios typescript ts-node
+```
+
+---
+
+## 📄 3. `config/playlists.json`
+
+This file lists every Spotify playlist you want scraped:
+
+```json
+[
+  {
+    "name": "Fresh Finds",
+    "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DWWjGdmeTyeJ6"
+  },
+  {
+    "name": "Fresh Finds Pop",
+    "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DX3b9kAldT2fR"
+  }
+]
+```
+
+---
+
+## 🧠 4. `scripts/scrapePlaylists.ts`
+
+Add this file — it uses Puppeteer to open each playlist and extract visible track metadata.
+
+```ts
+import puppeteer from "puppeteer";
+import fs from "fs";
+import PLAYLISTS from "../config/playlists.json";
+
+async function scrapePlaylist(url: string, name: string) {
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
+  const page = await browser.newPage();
+
+  // Optional: Load session cookies if you’re logged in to Spotify in a previous session
+  if (fs.existsSync("./spotify_cookies.json")) {
+    const cookies = JSON.parse(fs.readFileSync("./spotify_cookies.json", "utf8"));
+    await page.setCookie(...cookies);
+  }
+
+  await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
+  await page.waitForSelector('[data-testid="tracklist-row"]', { timeout: 30000 });
+
+  const tracks = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('[data-testid="tracklist-row"]')).map(row => ({
+      title: row.querySelector('[data-testid="track-name"]')?.textContent ?? "",
+      artist: row.querySelector('[data-testid="track-artist"]')?.textContent ?? "",
+      duration: row.querySelector('[data-testid="track-duration"]')?.textContent ?? "",
+    }))
+  );
+
+  // Save cookies for future runs
+  const cookies = await page.cookies();
+  fs.writeFileSync("./spotify_cookies.json", JSON.stringify(cookies, null, 2));
+
+  await browser.close();
+  return { playlist: name, url, count: tracks.length, tracks };
+}
+
+(async () => {
+  const timestamp = new Date().toISOString().split("T")[0];
+  const results = [];
+
+  for (const p of PLAYLISTS) {
+    console.log(`🎧 Scraping ${p.name}...`);
+    try {
+      const data = await scrapePlaylist(p.spotify_url, p.name);
+      results.push(data);
+    } catch (e) {
+      console.error(`❌ Failed for ${p.name}:`, e.message);
+    }
+  }
+
+  const output = `./data/snapshots/${timestamp}_playlists.json`;
+  fs.writeFileSync(output, JSON.stringify(results, null, 2));
+  console.log(`✅ All done! Saved ${results.length} playlists to ${output}`);
+})();
+```
+
+---
+
+## 🔐 5. Authentication (One-Time Cookie Setup)
+
+Because Spotify’s playlist pages sometimes require login to load full data:
+
+1. Run the script **once with headless: false** (change that line to `headless: false`).
+2. Log into Spotify manually in the browser window.
+3. Wait for one playlist to scrape successfully — it’ll save your cookies in `spotify_cookies.json`.
+4. Revert `headless: true` for all future automated runs.
+
+✅ After that, your script will use your saved cookies silently each week.
+
+---
+
+## 🕒 6. Scheduled Task Setup (`.replit`)
+
+```toml
+run = "npm run start"
+
+[[schedule]]
+command = "ts-node scripts/scrapePlaylists.ts"
+cron = "0 7 * * 5"  # every Friday 7AM
+```
+
+This ensures the scraper runs weekly, collects all playlists, and stores data under `/data/snapshots/`.
+
+---
+
+## 📤 7. (Optional) Save to Database
+
+If you have a backend (e.g., your manager or analyzer system), create `scripts/saveToDatabase.ts`:
+
+```ts
+import axios from "axios";
+import fs from "fs";
+
+const latest = fs.readdirSync("./data/snapshots").sort().reverse()[0];
+const data = JSON.parse(fs.readFileSync(`./data/snapshots/${latest}`, "utf8"));
+
+await axios.post("https://your-api-url.com/api/playlists/sync", { data });
+console.log("✅ Synced latest playlist data to backend");
+```
+
+Then call this script after each successful scrape.
+
+---
+
+## 🧩 8. Optional Enhancements
+
+* Add progress logging per playlist
+* Add retry logic for slow page loads
+* Integrate secondary metadata enrichment (e.g., ISRC lookup via MusicBrainz API)
+
+---
+
+## 💡 Notes for Replit Agent
+
+When giving these to your Replit AI Agent, instruct it to:
+
+1. **Install Puppeteer** and verify Chrome is accessible in the environment.
+2. **Set environment variables** for your Spotify Client ID/Secret (even if unused by Puppeteer now, they’ll matter for Phase 2 API enrichment).
+3. **Run the script manually once** with headless off to authenticate and save cookies.
+4. **Enable the scheduled task** once verified working.
+
+---
+
+Would you like me to write the **exact Replit agent command block / YAML snippet** (so you can paste directly into Replit’s “Agent Mode” or “Setup Instructions” window)?
+That would make it one-click deployable.

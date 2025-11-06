@@ -6,6 +6,7 @@ import { calculateUnsignedScore } from "./scoring";
 import { searchByISRC } from "./musicbrainz";
 import { generateAIInsights } from "./ai-insights";
 import { playlists, type InsertPlaylistSnapshot, insertTagSchema, insertTrackedPlaylistSchema } from "@shared/schema";
+import { scrapeSpotifyPlaylist } from "./scraper";
 
 // HTML entity decoder
 function decodeHTMLEntities(text: string): string {
@@ -529,6 +530,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching playlists:", error);
       res.status(500).json({ error: "Failed to fetch playlists from Spotify" });
+    }
+  });
+
+  app.post("/api/scrape-playlist", async (req, res) => {
+    try {
+      const { playlistUrl, playlistName } = req.body;
+      
+      if (!playlistUrl) {
+        return res.status(400).json({ error: "Playlist URL is required" });
+      }
+      
+      console.log(`Starting scrape for playlist: ${playlistUrl}`);
+      
+      const extractPlaylistId = (url: string): string | null => {
+        const match = url.match(/playlist\/([a-zA-Z0-9]+)/);
+        return match ? match[1] : null;
+      };
+      
+      const playlistId = extractPlaylistId(playlistUrl);
+      if (!playlistId) {
+        return res.status(400).json({ error: "Invalid Spotify playlist URL" });
+      }
+      
+      const result = await scrapeSpotifyPlaylist(playlistUrl);
+      
+      if (!result.success || !result.tracks) {
+        return res.status(500).json({ 
+          error: result.error || "Failed to scrape playlist" 
+        });
+      }
+      
+      const today = new Date().toISOString().split('T')[0];
+      const finalPlaylistName = playlistName || result.playlistName || "Unknown Playlist";
+      
+      const scrapedTracks: InsertPlaylistSnapshot[] = result.tracks.map(track => {
+        const score = calculateUnsignedScore({
+          playlistName: finalPlaylistName,
+          label: null,
+          publisher: null,
+          writer: null,
+        });
+        
+        return {
+          week: today,
+          playlistName: finalPlaylistName,
+          playlistId: playlistId,
+          trackName: track.trackName,
+          artistName: track.artistName,
+          spotifyUrl: track.spotifyUrl,
+          isrc: null,
+          label: null,
+          unsignedScore: score,
+          addedAt: new Date(),
+          dataSource: "scraped",
+        };
+      });
+      
+      if (scrapedTracks.length > 0) {
+        await storage.insertTracks(scrapedTracks);
+        console.log(`Successfully saved ${scrapedTracks.length} scraped tracks`);
+      }
+      
+      res.json({
+        success: true,
+        playlistName: finalPlaylistName,
+        tracksAdded: scrapedTracks.length,
+        week: today,
+      });
+      
+    } catch (error: any) {
+      console.error("Error in scrape endpoint:", error);
+      res.status(500).json({ 
+        error: error.message || "Failed to scrape playlist" 
+      });
     }
   });
 

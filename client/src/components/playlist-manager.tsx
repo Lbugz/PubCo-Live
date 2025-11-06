@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Trash2, ListMusic, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
+import { Plus, Trash2, ListMusic, CheckCircle2, XCircle, HelpCircle, Download } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -16,11 +16,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { type TrackedPlaylist } from "@shared/schema";
 
 export function PlaylistManager() {
   const [open, setOpen] = useState(false);
   const [playlistUrl, setPlaylistUrl] = useState("");
+  const [scrapeUrl, setScrapeUrl] = useState("");
+  const [scrapeName, setScrapeName] = useState("");
   const { toast } = useToast();
 
   const { data: playlists = [], isLoading } = useQuery<TrackedPlaylist[]>({
@@ -89,6 +92,33 @@ export function PlaylistManager() {
     },
   });
 
+  const scrapePlaylistMutation = useMutation({
+    mutationFn: async ({ url, name }: { url: string; name?: string }) => {
+      const res = await apiRequest("POST", "/api/scrape-playlist", {
+        playlistUrl: url,
+        playlistName: name,
+      });
+      return await res.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Playlist Scraped Successfully!",
+        description: `Added ${data.tracksAdded} tracks from "${data.playlistName}"`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/weeks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
+      setScrapeUrl("");
+      setScrapeName("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Scraping Failed",
+        description: error.message || "Failed to scrape playlist",
+        variant: "destructive",
+      });
+    },
+  });
+
   const extractPlaylistId = (urlOrId: string): string | null => {
     const trimmed = urlOrId.trim();
     
@@ -123,6 +153,18 @@ export function PlaylistManager() {
       return;
     }
     addPlaylistMutation.mutate(playlistUrl);
+  };
+
+  const handleScrapePlaylist = () => {
+    if (!scrapeUrl.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a Spotify playlist URL",
+        variant: "destructive",
+      });
+      return;
+    }
+    scrapePlaylistMutation.mutate({ url: scrapeUrl, name: scrapeName || undefined });
   };
 
   const getStatusBadge = (status: string) => {
@@ -196,6 +238,60 @@ export function PlaylistManager() {
               Example: https://open.spotify.com/playlist/37i9dQZF1DWWjGdmeTyeJ6
             </p>
           </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label>Fetch via Scraping</Label>
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-xs">
+                Fallback Option
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              For playlists that return 404 via API (e.g., editorial playlists like Fresh Finds). Uses web scraping - slower but works for restricted playlists.
+            </p>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  id="scrape-url"
+                  data-testid="input-scrape-url"
+                  placeholder="https://open.spotify.com/playlist/..."
+                  value={scrapeUrl}
+                  onChange={(e) => setScrapeUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      handleScrapePlaylist();
+                    }
+                  }}
+                />
+              </div>
+              <Input
+                id="scrape-name"
+                data-testid="input-scrape-name"
+                placeholder="Playlist name (optional, auto-detected if left empty)"
+                value={scrapeName}
+                onChange={(e) => setScrapeName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleScrapePlaylist();
+                  }
+                }}
+              />
+              <Button
+                onClick={handleScrapePlaylist}
+                disabled={scrapePlaylistMutation.isPending}
+                className="w-full"
+                variant="secondary"
+                data-testid="button-scrape-playlist"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {scrapePlaylistMutation.isPending ? "Scraping..." : "Fetch via Scraping"}
+              </Button>
+            </div>
+          </div>
+
+          <Separator />
 
           <div className="space-y-2">
             <Label>Tracked Playlists ({playlists.length})</Label>

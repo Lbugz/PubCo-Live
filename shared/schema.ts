@@ -24,6 +24,7 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   tiktok: text("tiktok"),
   email: text("email"),
   contactNotes: text("contact_notes"),
+  dataSource: text("data_source").notNull().default("api"),
 });
 
 export const insertPlaylistSnapshotSchema = createInsertSchema(playlistSnapshots).omit({
