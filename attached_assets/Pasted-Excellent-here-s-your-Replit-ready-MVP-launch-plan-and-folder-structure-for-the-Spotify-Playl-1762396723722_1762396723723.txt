@@ -1,0 +1,238 @@
+Excellent — here’s your **Replit-ready MVP launch plan and folder structure** for the *Spotify Playlist + Publishing Discovery* project, incorporating everything from your Gemini meeting notes and transcript synthesis.
+
+---
+
+## 🧭 **Project Overview: “AI Pub Feed MVP”**
+
+**Purpose:**
+Automate the weekly collection of trending Spotify playlist data → enrich it with metadata (ISRC, label, writers) → rank each song’s contributors by likelihood of being *unsigned* or *unpublished*.
+
+---
+
+## 🧱 **Replit Project Structure**
+
+```
+aipub-feed/
+├── /scripts
+│   ├── fetchPlaylists.ts         # Spotify playlist scraper
+│   ├── enrichWithMLC.ts          # (later phase) cross-reference writers via MLC
+│   └── scoreUnsigned.ts          # generate “unsigned likelihood” rubric
+│
+├── /config
+│   ├── playlists.json            # list of tracked Spotify playlists
+│   └── settings.json             # schedule/timezone configs
+│
+├── /data
+│   ├── snapshots/                # stored JSON/CSV outputs per week
+│   └── schema.sql                # PostgreSQL schema (if using Replit DB/Neon)
+│
+├── /ui
+│   ├── Dashboard.tsx             # basic Replit web UI (React + Tailwind)
+│   └── components/
+│       ├── PlaylistTable.tsx
+│       ├── LeadScoreBadge.tsx
+│       └── ExportButton.tsx
+│
+├── /integrations
+│   ├── spotify.ts                # wrapper for Replit Spotify integration
+│   ├── mlc.ts                    # (future) MLC API access
+│   ├── musicbrainz.ts            # optional free enrichment
+│   └── cororb.ts                 # optional future scraping (YouTube/iTunes)
+│
+├── .replit                        # define cron task: every Friday 07:00
+├── replit.nix                     # dependencies: node, typescript, axios, pg, cron
+├── package.json
+└── README.md
+```
+
+---
+
+## ⚙️ **Core Files and Roles**
+
+### `/scripts/fetchPlaylists.ts`
+
+Fetches tracks from your configured Spotify playlists.
+
+```ts
+import { spotify } from "@replit/spotify";
+import fs from "fs";
+import { DateTime } from "luxon";
+
+import PLAYLISTS from "../config/playlists.json";
+
+const week = DateTime.now().toISODate();
+
+async function fetchPlaylists() {
+  const data = [];
+
+  for (const { id, name } of PLAYLISTS) {
+    const playlist = await spotify.getPlaylist(id);
+    for (const item of playlist.tracks.items) {
+      const t = item.track;
+      data.push({
+        week,
+        playlist: name,
+        track_name: t.name,
+        artist_name: t.artists.map(a => a.name).join(", "),
+        spotify_url: t.external_urls.spotify,
+        isrc: t.external_ids?.isrc || null,
+        label: t.album.label || null,
+        added_at: item.added_at,
+      });
+    }
+  }
+
+  fs.writeFileSync(
+    `./data/snapshots/${week}.json`,
+    JSON.stringify(data, null, 2)
+  );
+
+  console.log(`✅ Saved ${data.length} tracks for ${week}`);
+}
+
+fetchPlaylists();
+```
+
+---
+
+### `/scripts/scoreUnsigned.ts`
+
+Implements the **Unsigned Likelihood Rubric**:
+
+```ts
+import fs from "fs";
+
+const RUBRIC = {
+  freshFinds: 3,
+  drokit: 2,
+  missingPublisher: 3,
+  missingWriter: 2,
+  partialPublisherShare: 1,
+  majorLabel: -3,
+};
+
+function scoreTrack(t) {
+  let score = 0;
+  if (t.playlist.includes("Fresh Finds")) score += RUBRIC.freshFinds;
+  if (t.label?.includes("DK")) score += RUBRIC.drokit;
+  if (!t.publisher) score += RUBRIC.missingPublisher;
+  if (!t.writer) score += RUBRIC.missingWriter;
+  if (t.label && /(Sony|Warner|Universal)/i.test(t.label)) score += RUBRIC.majorLabel;
+  return Math.max(0, Math.min(10, score));
+}
+
+function run() {
+  const latest = fs
+    .readdirSync("./data/snapshots")
+    .sort()
+    .reverse()[0];
+
+  const data = JSON.parse(fs.readFileSync(`./data/snapshots/${latest}`));
+  const scored = data.map(t => ({ ...t, unsigned_score: scoreTrack(t) }));
+  fs.writeFileSync(`./data/snapshots/${latest.replace(".json", "_scored.json")}`,
+    JSON.stringify(scored, null, 2));
+  console.log(`🧠 Scored ${scored.length} tracks`);
+}
+
+run();
+```
+
+---
+
+### `/config/playlists.json`
+
+```json
+[
+  { "id": "37i9dQZEVXbMDoHDwVN2tF", "name": "Top 50 Global" },
+  { "id": "37i9dQZEVXbLiRSasKsNU9", "name": "Viral 50 Global" },
+  { "id": "37i9dQZEVXbLRQDuF5jeBp", "name": "Top 50 USA" },
+  { "id": "37i9dQZEVXbM77Ew23XosJ", "name": "Fresh Finds" }
+]
+```
+
+---
+
+### `.replit` — Schedule weekly job
+
+```toml
+run = "npm run start"
+[[schedule]]
+command = "ts-node scripts/fetchPlaylists.ts"
+cron = "0 7 * * 5"  # every Friday 7am
+```
+
+---
+
+## 🧠 **Data Model (Postgres/Neon)**
+
+```sql
+CREATE TABLE playlist_snapshots (
+  id SERIAL PRIMARY KEY,
+  week DATE,
+  playlist_name TEXT,
+  track_name TEXT,
+  artist_name TEXT,
+  spotify_url TEXT,
+  isrc TEXT,
+  label TEXT,
+  unsigned_score INT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_week_playlist ON playlist_snapshots (week, playlist_name);
+```
+
+---
+
+## 🧩 **MVP Dashboard Features**
+
+| Component       | Description                                         |
+| --------------- | --------------------------------------------------- |
+| PlaylistTable   | Displays songs grouped by playlist + unsigned_score |
+| LeadScoreBadge  | Color-coded badge (🟢 high, 🟡 medium, 🔴 low)      |
+| ExportButton    | CSV/Google Sheet export                             |
+| Weekly Selector | Dropdown to view previous weeks                     |
+
+---
+
+## 🧰 **Phase 2 Integrations**
+
+| Integration             | Use                                          |
+| ----------------------- | -------------------------------------------- |
+| **MLC API**             | Retrieve publisher & songwriter info by ISRC |
+| **MusicBrainz API**     | Fill missing metadata                        |
+| **AI Agent (Optional)** | Contact info enrichment (email/social)       |
+| **Replit DB / Neon DB** | Persist snapshots and lead scores            |
+
+---
+
+## 🚀 **Milestone Checklist**
+
+### **Milestone 1 (MVP) – 2 Weeks**
+
+* [ ] Spotify integration configured
+* [ ] Playlist fetch + JSON snapshot
+* [ ] Unsigned scoring logic
+* [ ] Weekly scheduler working
+* [ ] Basic web dashboard
+
+### **Milestone 2 – Enrichment**
+
+* [ ] MLC cross-reference
+* [ ] Songwriter → publisher mapping
+* [ ] Filter by “Unsigned”
+* [ ] CSV/Sheet export
+
+### **Milestone 3 – Outreach Engine**
+
+* [ ] Lead tagging + contact discovery
+* [ ] AI-assisted outreach suggestions
+* [ ] Publishing “lead index” scoring dashboard
+
+---
+
+Would you like me to now:
+
+1. **Generate the actual codebase files** (so you can paste directly into Replit and run),
+   or
+2. **Turn this into a “Milestone 1 Spec Document”** (PRD format with deliverables, acceptance criteria, and next-phase extensions)?

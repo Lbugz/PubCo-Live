@@ -1,0 +1,86 @@
+Perfect — your spreadsheet provides a strong list of the *Fresh Finds* playlist network with official Spotify and Chartmetric URLs. Here’s a clean, ready-to-import JSON version you can drop into your Replit project’s `/config/playlists.json`.
+
+---
+
+## 🎧 **Spotify Playlists (JSON for `/config/playlists.json`)**
+
+```json
+[
+  {
+    "name": "Fresh Finds",
+    "id": "37i9dQZF1DWWjGdmeTyeJ6",
+    "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DWWjGdmeTyeJ6",
+    "chartmetric_url": "https://app.chartmetric.com/playlist/spotify/1/37i9dQZF1DWWjGdmeTyeJ6"
+  },
+  {
+    "name": "Fresh Finds Pop",
+    "id": "37i9dQZF1DX3b9kAldT2fR",
+    "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DX3b9kAldT2fR",
+    "chartmetric_url": "https://app.chartmetric.com/playlist/spotify/1/37i9dQZF1DX3b9kAldT2fR"
+  },
+  {
+    "name": "Fresh Finds Dance",
+    "id": "37i9dQZF1DX6bBjHfdRnza",
+    "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DX6bBjHfdRnza",
+    "chartmetric_url": "https://app.chartmetric.com/playlist/spotify/1/37i9dQZF1DX6bBjHfdRnza"
+  },
+  {
+    "name": "Fresh Finds Experimental",
+    "id": "37i9dQZF1DX8FwnYE6PRvL",
+    "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DX8FwnYE6PRvL",
+    "chartmetric_url": "https://app.chartmetric.com/playlist/spotify/1/37i9dQZF1DX8FwnYE6PRvL"
+  },
+  {
+    "name": "Fresh Finds Hip-Hop",
+    "id": "37i9dQZF1DWWC7UGk7jUwo",
+    "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DWWC7UGk7jUwo",
+    "chartmetric_url": "https://app.chartmetric.com/playlist/spotify/1/37i9dQZF1DWWC7UGk7jUwo"
+  },
+  {
+    "name": "Fresh Finds Rock",
+    "id": "37i9dQZF1DX7qK8ma5wgG1",
+    "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DX7qK8ma5wgG1",
+    "chartmetric_url": "https://app.chartmetric.com/playlist/spotify/1/37i9dQZF1DX7qK8ma5wgG1"
+  },
+  {
+    "name": "Fresh Finds Latin",
+    "id": "37i9dQZF1DXaRycgyh6kXP",
+    "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DXaRycgyh6kXP",
+    "chartmetric_url": "https://app.chartmetric.com/playlist/spotify/1/37i9dQZF1DXaRycgyh6kXP"
+  },
+  {
+    "name": "Fresh Finds R&B",
+    "id": "37i9dQZF1DWUZ5bk6qqDSy",
+    "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DWUZ5bk6qqDSy",
+    "chartmetric_url": "https://app.chartmetric.com/playlist/spotify/1/37i9dQZF1DWUZ5bk6qqDSy"
+  },
+  {
+    "name": "Fresh Finds Indie",
+    "id": "37i9dQZF1DWTEbYB1hM5Vg",
+    "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DWTEbYB1hM5Vg",
+    "chartmetric_url": "https://app.chartmetric.com/playlist/spotify/1/37i9dQZF1DWTEbYB1hM5Vg"
+  },
+  {
+    "name": "Fresh Finds Jazz",
+    "id": "37i9dQZF1DXcBPJrmTCPlv",
+    "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DXcBPJrmTCPlv",
+    "chartmetric_url": "https://app.chartmetric.com/playlist/spotify/1/37i9dQZF1DXcBPJrmTCPlv"
+  }
+]
+```
+
+---
+
+## 🧠 **How to Use This**
+
+1. Save this file in your Replit project under `/config/playlists.json`.
+2. The `fetchPlaylists.ts` script will iterate over each playlist and retrieve its tracks weekly.
+3. Later, you can expand this file to include “Top 50” or regional playlists for discovery scaling.
+
+---
+
+Would you like me to:
+
+* Add **Top 50 / Viral / New Music Friday** playlists too,
+  or
+* Keep this focused purely on the *Fresh Finds network* for now (ideal for independent discovery + publishing focus)?
