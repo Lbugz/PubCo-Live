@@ -557,39 +557,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         results.total++;
 
         try {
-          if (isEditorial) {
-            const existingPlaylist = await storage.getTrackedPlaylistBySpotifyId(playlistId);
-            if (!existingPlaylist) {
-              await storage.addTrackedPlaylist({
-                name: title,
-                playlistId: playlistId,
-                spotifyUrl: link,
-              });
+          const existingPlaylist = await storage.getTrackedPlaylistBySpotifyId(playlistId);
+          if (!existingPlaylist) {
+            // Try to fetch totalTracks for non-editorial playlists
+            let totalTracks = null;
+            if (!isEditorial && isAuthenticated()) {
+              try {
+                const spotify = await getUncachableSpotifyClient();
+                const playlistData = await spotify.playlists.getPlaylist(playlistId, "from_token" as any);
+                totalTracks = playlistData.tracks?.total || null;
+                console.log(`Bulk import: Fetched totalTracks=${totalTracks} for playlist ${title}`);
+              } catch (error) {
+                console.log(`Could not fetch totalTracks for ${title}, will set later`);
+              }
             }
-            results.successful++;
-            results.playlists.push({ 
-              title, 
-              playlistId, 
-              status: 'added_to_tracked', 
-              type: 'editorial' 
-            });
-          } else {
-            const existingPlaylist = await storage.getTrackedPlaylistBySpotifyId(playlistId);
-            if (!existingPlaylist) {
-              await storage.addTrackedPlaylist({
-                name: title,
-                playlistId: playlistId,
-                spotifyUrl: link,
-              });
-            }
-            results.successful++;
-            results.playlists.push({ 
-              title, 
-              playlistId, 
-              status: 'added_to_tracked', 
-              type: 'non-editorial' 
+            
+            await storage.addTrackedPlaylist({
+              name: title,
+              playlistId: playlistId,
+              spotifyUrl: link,
+              isEditorial: isEditorial ? 1 : 0,
+              totalTracks,
+              fetchMethod: isEditorial ? 'scraping' : 'api',
+              isComplete: 0,
+              lastFetchCount: 0,
             });
           }
+          results.successful++;
+          results.playlists.push({ 
+            title, 
+            playlistId, 
+            status: existingPlaylist ? 'already_exists' : 'added_to_tracked', 
+            type: isEditorial ? 'editorial' : 'non-editorial'
+          });
         } catch (error: any) {
           results.failed++;
           results.playlists.push({ 
