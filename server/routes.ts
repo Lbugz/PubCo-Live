@@ -230,49 +230,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/test-spotify", async (req, res) => {
     try {
-      // Try with direct HTTP request instead of SDK
-      const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-      const xReplitToken = process.env.REPL_IDENTITY 
-        ? 'repl ' + process.env.REPL_IDENTITY 
-        : process.env.WEB_REPL_RENEWAL 
-        ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-        : null;
-
-      if (!xReplitToken || !hostname) {
-        throw new Error('Missing Replit credentials');
-      }
-
-      const connectionSettings = await fetch(
-        'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=spotify',
-        {
-          headers: {
-            'Accept': 'application/json',
-            'X_REPLIT_TOKEN': xReplitToken
-          }
-        }
-      ).then(res => res.json()).then(data => data.items?.[0]);
-
-      const accessToken = connectionSettings?.settings?.access_token || connectionSettings?.settings?.oauth?.credentials?.access_token;
+      const spotify = await getUncachableSpotifyClient();
       
-      if (!accessToken) {
-        throw new Error('No access token found');
+      // Test 1: Get user profile
+      const profile = await spotify.currentUser.profile();
+      
+      // Test 2: Get user's playlists
+      const userPlaylists = await spotify.currentUser.playlists.playlists(5);
+      
+      // Test 3: Try to fetch Fresh Finds main playlist
+      let freshFindsTest = null;
+      try {
+        freshFindsTest = await spotify.playlists.getPlaylist("37i9dQZF1DWWjGdmeTyeJ6");
+      } catch (e: any) {
+        freshFindsTest = { error: e.message };
       }
-
-      // Try direct API call to Spotify
-      const spotifyResponse = await fetch('https://api.spotify.com/v1/me', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
+      
+      res.json({ 
+        success: true, 
+        profile: { id: profile.id, display_name: profile.display_name },
+        userPlaylistsCount: userPlaylists.items.length,
+        freshFindsTest 
       });
-
-      if (!spotifyResponse.ok) {
-        const errorText = await spotifyResponse.text();
-        res.json({ success: false, error: `Spotify API error: ${spotifyResponse.status} - ${errorText}` });
-        return;
-      }
-
-      const profile = await spotifyResponse.json();
-      res.json({ success: true, profile });
     } catch (error) {
       console.error("Error testing Spotify:", error);
       res.status(500).json({ error: String(error) });
