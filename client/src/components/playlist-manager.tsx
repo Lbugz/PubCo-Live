@@ -44,20 +44,16 @@ export function PlaylistManager() {
         name: playlistData.name,
         playlistId: playlistData.foundViaSearch ? playlistData.id : playlistId,
         spotifyUrl: `https://open.spotify.com/playlist/${playlistData.foundViaSearch ? playlistData.id : playlistId}`,
-        status: playlistData.status || "accessible",
       });
       
       const playlist: TrackedPlaylist = await res.json();
       return playlist;
     },
     onSuccess: (data: TrackedPlaylist) => {
-      const statusMessage = data.status === "accessible" 
-        ? `Now tracking "${data.name}"`
-        : `Added "${data.name}" but it may have limited access`;
-      
+      const totalTracksInfo = data.totalTracks ? ` (${data.totalTracks} tracks)` : '';
       toast({
         title: "Playlist Added!",
-        description: statusMessage,
+        description: `Now tracking "${data.name}"${totalTracksInfo}`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
       setPlaylistUrl("");
@@ -205,29 +201,49 @@ export function PlaylistManager() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "accessible":
-        return (
-          <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+  const getCompletenessBadge = (playlist: TrackedPlaylist) => {
+    // Show method badge (API or Scraping)
+    const methodBadge = playlist.isEditorial === 1 ? (
+      <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-xs">
+        Scraping
+      </Badge>
+    ) : (
+      <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20 text-xs">
+        API
+      </Badge>
+    );
+
+    // Show completeness status
+    if (playlist.isComplete === 1 && playlist.totalTracks) {
+      return (
+        <div className="flex gap-1">
+          {methodBadge}
+          <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 text-xs">
             <CheckCircle2 className="w-3 h-3 mr-1" />
-            Accessible
+            Complete ({playlist.lastFetchCount}/{playlist.totalTracks})
           </Badge>
-        );
-      case "restricted":
-        return (
-          <Badge variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20">
-            <XCircle className="w-3 h-3 mr-1" />
-            Restricted
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline" className="bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20">
+        </div>
+      );
+    } else if (playlist.lastFetchCount && playlist.lastFetchCount > 0) {
+      const totalInfo = playlist.totalTracks ? `/${playlist.totalTracks}` : '';
+      return (
+        <div className="flex gap-1">
+          {methodBadge}
+          <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20 text-xs">
             <HelpCircle className="w-3 h-3 mr-1" />
-            Unknown
+            Partial ({playlist.lastFetchCount}{totalInfo})
           </Badge>
-        );
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex gap-1">
+          {methodBadge}
+          <Badge variant="outline" className="bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20 text-xs">
+            Not Fetched
+          </Badge>
+        </div>
+      );
     }
   };
 
@@ -382,9 +398,9 @@ export function PlaylistManager() {
                     data-testid={`playlist-${playlist.id}`}
                   >
                     <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-medium truncate">{playlist.name}</p>
-                        {getStatusBadge(playlist.status || "unknown")}
+                        {getCompletenessBadge(playlist)}
                       </div>
                       <a
                         href={playlist.spotifyUrl}
@@ -395,6 +411,12 @@ export function PlaylistManager() {
                       >
                         {playlist.spotifyUrl}
                       </a>
+                      {playlist.totalTracks && (
+                        <p className="text-xs text-muted-foreground">
+                          Total tracks: {playlist.totalTracks}
+                          {playlist.lastChecked && ` • Last checked: ${new Date(playlist.lastChecked).toLocaleDateString()}`}
+                        </p>
+                      )}
                     </div>
                     <Button
                       variant="ghost"
