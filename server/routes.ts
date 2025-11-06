@@ -44,6 +44,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ authenticated: isAuthenticated() });
   });
 
+  app.get("/api/spotify/playlist/:playlistId", async (req, res) => {
+    try {
+      const spotify = await getUncachableSpotifyClient();
+      const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId);
+      res.json({ name: playlistData.name, id: playlistData.id });
+    } catch (error) {
+      console.error("Error fetching playlist:", error);
+      res.status(500).json({ error: "Failed to fetch playlist from Spotify" });
+    }
+  });
+
   app.get("/api/weeks", async (req, res) => {
     try {
       const weeks = await storage.getAllWeeks();

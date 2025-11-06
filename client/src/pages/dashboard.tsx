@@ -11,6 +11,7 @@ import { StatsCard } from "@/components/stats-card";
 import { TrackTable } from "@/components/track-table";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TagManager } from "@/components/tag-manager";
+import { PlaylistManager } from "@/components/playlist-manager";
 import { type PlaylistSnapshot, type Tag } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
@@ -203,6 +204,7 @@ export default function Dashboard() {
                 <Download className="h-4 w-4" />
                 <span className="hidden sm:inline">Export</span>
               </Button>
+              <PlaylistManager />
               <TagManager />
               <Button variant="outline" size="sm" className="gap-2" asChild data-testid="button-comparison">
                 <Link href="/comparison">
