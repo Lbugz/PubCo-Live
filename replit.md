@@ -148,6 +148,22 @@ Users can add and manage any Spotify playlists to track (no longer limited to Fr
 - Actionable export features
 
 ## Recent Changes
+- 2025-11-06: **Phase 3 Complete - Scraping & Enrichment Enhancements**
+  - **Improved Auto-Scroll Algorithm**: Now captures 150+ tracks from large playlists (increased from 28)
+    - Max iterations: 20 → 50
+    - Stability check: 3 → 5 iterations
+    - Better scroll timing and targeting
+  - **Spotify API Track Search**: Scraped tracks can now be enriched with ISRC codes!
+    - Two-step enrichment: Spotify search → ISRC → MusicBrainz → Publisher/Songwriter
+    - Converts "No ISRC" scraped tracks into fully enrichable tracks
+    - Rate-limited with proper error handling
+  - **Visual Badge System**: Track table now shows ISRC status and data source
+    - Green "ISRC" badge = can be enriched
+    - Gray "No ISRC" badge = cannot be enriched (yet)
+    - Blue "API" badge = fetched via Spotify API
+    - Amber "Scraped" badge = fetched via web scraping
+  - **Delete Playlist Feature**: Already implemented - trash icon in PlaylistManager
+
 - 2025-11-06: **Phase 2 Complete - All Features Implemented**
   - Contact Discovery: Added contact fields (Instagram, Twitter, TikTok, email, notes) with management UI
   - AI Lead Prioritization: GPT-4o-mini integration for outreach insights (via Replit AI Integrations)
