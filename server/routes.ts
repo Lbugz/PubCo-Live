@@ -46,12 +46,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/spotify/playlist/:playlistId", async (req, res) => {
     try {
+      if (!isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated. Please authorize Spotify first." });
+      }
+      
       const spotify = await getUncachableSpotifyClient();
       const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId);
       res.json({ name: playlistData.name, id: playlistData.id });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching playlist:", error);
-      res.status(500).json({ error: "Failed to fetch playlist from Spotify" });
+      const errorMessage = error?.message || "Failed to fetch playlist from Spotify";
+      res.status(500).json({ error: errorMessage });
     }
   });
 

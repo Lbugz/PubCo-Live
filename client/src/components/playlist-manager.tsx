@@ -99,7 +99,8 @@ export function PlaylistManager() {
   const fetchPlaylistInfo = async (playlistId: string) => {
     const response = await fetch(`/api/spotify/playlist/${playlistId}`);
     if (!response.ok) {
-      throw new Error("Failed to fetch playlist info from Spotify");
+      const data = await response.json();
+      throw new Error(data.error || "Failed to fetch playlist info from Spotify");
     }
     return response.json();
   };
