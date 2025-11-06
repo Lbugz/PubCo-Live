@@ -137,6 +137,30 @@ export function PlaylistManager() {
     },
   });
 
+  const backfillMetadataMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/backfill-playlist-metadata", {});
+      return await res.json();
+    },
+    onSuccess: (data: any) => {
+      const message = data.backfilled === 0 
+        ? "All playlists already have metadata"
+        : `Updated ${data.backfilled} of ${data.total} playlists with total track counts`;
+      toast({
+        title: "Metadata Backfill Complete!",
+        description: message,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Backfill Failed",
+        description: error.message || "Failed to backfill metadata. Make sure you're authorized with Spotify.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const extractPlaylistId = (urlOrId: string): string | null => {
     const trimmed = urlOrId.trim();
     
@@ -380,7 +404,21 @@ export function PlaylistManager() {
           <Separator />
 
           <div className="space-y-2">
-            <Label>Tracked Playlists ({playlists.length})</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label>Tracked Playlists ({playlists.length})</Label>
+              {playlists.length > 0 && (
+                <Button
+                  onClick={() => backfillMetadataMutation.mutate()}
+                  disabled={backfillMetadataMutation.isPending}
+                  size="sm"
+                  variant="outline"
+                  data-testid="button-backfill-metadata"
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  {backfillMetadataMutation.isPending ? "Updating..." : "Update Metadata"}
+                </Button>
+              )}
+            </div>
             {isLoading ? (
               <div className="text-sm text-muted-foreground">Loading...</div>
             ) : playlists.length === 0 ? (
