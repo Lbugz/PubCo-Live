@@ -1,4 +1,4 @@
-import { ExternalLink, Music } from "lucide-react";
+import { ExternalLink, Music, CheckCircle2, XCircle, Cloud, Database } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -103,7 +103,46 @@ export function TrackTable({ tracks, isLoading }: TrackTableProps) {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 items-center">
               <div className="col-span-1 lg:col-span-2">
                 <div className="font-medium" data-testid={`text-track-name-${track.id}`}>{track.trackName}</div>
-                <div className="text-xs text-muted-foreground font-mono lg:hidden mt-1">{track.isrc || "N/A"}</div>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {track.isrc ? (
+                    <Badge 
+                      variant="outline" 
+                      className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 text-xs"
+                      data-testid={`badge-has-isrc-${track.id}`}
+                    >
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      ISRC
+                    </Badge>
+                  ) : (
+                    <Badge 
+                      variant="outline" 
+                      className="bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20 text-xs"
+                      data-testid={`badge-no-isrc-${track.id}`}
+                    >
+                      <XCircle className="w-3 h-3 mr-1" />
+                      No ISRC
+                    </Badge>
+                  )}
+                  {track.dataSource === "scraped" ? (
+                    <Badge 
+                      variant="outline" 
+                      className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-xs"
+                      data-testid={`badge-source-scraped-${track.id}`}
+                    >
+                      <Cloud className="w-3 h-3 mr-1" />
+                      Scraped
+                    </Badge>
+                  ) : (
+                    <Badge 
+                      variant="outline" 
+                      className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20 text-xs"
+                      data-testid={`badge-source-api-${track.id}`}
+                    >
+                      <Database className="w-3 h-3 mr-1" />
+                      API
+                    </Badge>
+                  )}
+                </div>
                 <TrackTags trackId={track.id} />
               </div>
               
