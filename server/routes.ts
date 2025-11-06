@@ -754,6 +754,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/backfill-playlist-metadata", async (req, res) => {
+    try {
+      const spotify = await getUncachableSpotifyClient();
+      const trackedPlaylists = await storage.getTrackedPlaylists();
+      
+      // Find playlists missing totalTracks
+      const playlistsToBackfill = trackedPlaylists.filter(p => !p.totalTracks);
+      
+      if (playlistsToBackfill.length === 0) {
+        return res.json({ 
+          success: true, 
+          message: "All playlists already have metadata",
+          backfilled: 0 
+        });
+      }
+      
+      console.log(`Backfilling metadata for ${playlistsToBackfill.length} playlists...`);
+      
+      let backfilledCount = 0;
+      const results: Array<{ name: string; totalTracks: number | null; isEditorial: boolean }> = [];
+      
+      for (const playlist of playlistsToBackfill) {
+        try {
+          // Try to fetch playlist metadata from Spotify API
+          const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId, "from_token" as any);
+          
+          const totalTracks = playlistData.tracks?.total || null;
+          const isEditorial = playlistData.owner?.id === 'spotify' ? 1 : 0;
+          const fetchMethod = isEditorial === 1 ? 'scraping' : 'api';
+          
+          // Update the playlist with metadata
+          await db.update(trackedPlaylists)
+            .set({ 
+              totalTracks,
+              isEditorial,
+              fetchMethod,
+            })
+            .where(eq(trackedPlaylists.playlistId, playlist.playlistId));
+          
+          backfilledCount++;
+          results.push({
+            name: playlist.name,
+            totalTracks,
+            isEditorial: isEditorial === 1,
+          });
+          
+          console.log(`✓ ${playlist.name}: ${totalTracks} tracks (${isEditorial === 1 ? 'editorial' : 'non-editorial'})`);
+          
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (error: any) {
+          console.error(`Failed to backfill ${playlist.name}:`, error.message);
+          results.push({
+            name: playlist.name,
+            totalTracks: null,
+            isEditorial: false,
+          });
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        backfilled: backfilledCount,
+        total: playlistsToBackfill.length,
+        results 
+      });
+    } catch (error) {
+      console.error("Error backfilling metadata:", error);
+      res.status(500).json({ error: "Failed to backfill playlist metadata" });
+    }
+  });
+
   app.post("/api/scrape-playlist", async (req, res) => {
     try {
       const { playlistUrl, playlistName } = req.body;
