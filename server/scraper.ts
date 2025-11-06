@@ -140,20 +140,37 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
 }
 
 async function autoScroll(page: Page): Promise<void> {
-  await page.evaluate(async () => {
-    await new Promise<void>((resolve) => {
-      let totalHeight = 0;
-      const distance = 100;
-      const timer = setInterval(() => {
-        const scrollHeight = document.documentElement.scrollHeight;
-        window.scrollBy(0, distance);
-        totalHeight += distance;
-
-        if (totalHeight >= scrollHeight) {
-          clearInterval(timer);
-          resolve();
-        }
-      }, 100);
+  console.log("Starting auto-scroll to load all tracks...");
+  
+  let previousTrackCount = 0;
+  let stableCount = 0;
+  const maxStableIterations = 3;
+  
+  for (let i = 0; i < 20; i++) {
+    const currentTrackCount = await page.evaluate(() => {
+      return document.querySelectorAll('[data-testid="tracklist-row"]').length;
     });
-  });
+    
+    console.log(`Scroll iteration ${i + 1}: Found ${currentTrackCount} tracks`);
+    
+    if (currentTrackCount === previousTrackCount) {
+      stableCount++;
+      if (stableCount >= maxStableIterations) {
+        console.log(`Track count stable at ${currentTrackCount} for ${maxStableIterations} iterations. Stopping.`);
+        break;
+      }
+    } else {
+      stableCount = 0;
+    }
+    
+    previousTrackCount = currentTrackCount;
+    
+    await page.evaluate(() => {
+      window.scrollTo(0, document.documentElement.scrollHeight);
+    });
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  
+  console.log("Auto-scroll complete");
 }
