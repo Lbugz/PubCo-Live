@@ -9,7 +9,8 @@ let tokenData: {
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID!;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET!;
-const REDIRECT_URI = "http://127.0.0.1:5000/api/spotify/callback";
+const REPLIT_DOMAIN = process.env.REPLIT_DOMAINS?.split(',')[0] || "127.0.0.1:5000";
+const REDIRECT_URI = `https://${REPLIT_DOMAIN}/api/spotify/callback`;
 
 const SCOPES = [
   "playlist-read-private",
