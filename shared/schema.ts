@@ -67,7 +67,11 @@ export const trackedPlaylists = pgTable("tracked_playlists", {
   name: text("name").notNull(),
   playlistId: text("playlist_id").notNull().unique(),
   spotifyUrl: text("spotify_url").notNull(),
-  status: text("status").notNull().default("unknown"),
+  isEditorial: integer("is_editorial").notNull().default(0),
+  totalTracks: integer("total_tracks"),
+  lastFetchCount: integer("last_fetch_count").default(0),
+  isComplete: integer("is_complete").notNull().default(0),
+  fetchMethod: text("fetch_method").default("api"),
   lastChecked: timestamp("last_checked"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
