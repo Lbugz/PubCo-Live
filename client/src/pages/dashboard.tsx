@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, Download, Calendar, TrendingUp, ListMusic, Target, RefreshCw, Sparkles } from "lucide-react";
+import { Music2, Download, Calendar, TrendingUp, ListMusic, Target, RefreshCw, Sparkles, BarChart3 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { TagManager } from "@/components/tag-manager";
 import { type PlaylistSnapshot, type Tag } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "wouter";
 
 export default function Dashboard() {
   const [selectedWeek, setSelectedWeek] = useState<string>("latest");
@@ -185,6 +186,12 @@ export default function Dashboard() {
                 <span className="hidden sm:inline">Export</span>
               </Button>
               <TagManager />
+              <Button variant="outline" size="sm" className="gap-2" asChild data-testid="button-comparison">
+                <Link href="/comparison">
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="hidden lg:inline">Compare</span>
+                </Link>
+              </Button>
               <ThemeToggle />
             </div>
           </div>
