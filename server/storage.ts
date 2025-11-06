@@ -40,7 +40,7 @@ export class DatabaseStorage implements IStorage {
     if (typeof weekDate === 'string') {
       return weekDate.split('T')[0];
     }
-    return weekDate.toISOString().split('T')[0];
+    return (weekDate as Date).toISOString().split('T')[0];
   }
 
   async getAllWeeks(): Promise<string[]> {
@@ -52,7 +52,7 @@ export class DatabaseStorage implements IStorage {
       if (typeof r.week === 'string') {
         return r.week.split('T')[0];
       }
-      return r.week.toISOString().split('T')[0];
+      return (r.week as Date).toISOString().split('T')[0];
     });
   }
 
