@@ -191,6 +191,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/test-spotify", async (req, res) => {
+    try {
+      // Try with direct HTTP request instead of SDK
+      const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+      const xReplitToken = process.env.REPL_IDENTITY 
+        ? 'repl ' + process.env.REPL_IDENTITY 
+        : process.env.WEB_REPL_RENEWAL 
+        ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+        : null;
+
+      if (!xReplitToken || !hostname) {
+        throw new Error('Missing Replit credentials');
+      }
+
+      const connectionSettings = await fetch(
+        'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=spotify',
+        {
+          headers: {
+            'Accept': 'application/json',
+            'X_REPLIT_TOKEN': xReplitToken
+          }
+        }
+      ).then(res => res.json()).then(data => data.items?.[0]);
+
+      const accessToken = connectionSettings?.settings?.access_token || connectionSettings?.settings?.oauth?.credentials?.access_token;
+      
+      if (!accessToken) {
+        throw new Error('No access token found');
+      }
+
+      // Try direct API call to Spotify
+      const spotifyResponse = await fetch('https://api.spotify.com/v1/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      if (!spotifyResponse.ok) {
+        const errorText = await spotifyResponse.text();
+        res.json({ success: false, error: `Spotify API error: ${spotifyResponse.status} - ${errorText}` });
+        return;
+      }
+
+      const profile = await spotifyResponse.json();
+      res.json({ success: true, profile });
+    } catch (error) {
+      console.error("Error testing Spotify:", error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
   app.post("/api/fetch-playlists", async (req, res) => {
     try {
       const spotify = await getUncachableSpotifyClient();
