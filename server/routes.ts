@@ -232,25 +232,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const spotify = await getUncachableSpotifyClient();
       
-      // Test 1: Get user profile
-      const profile = await spotify.currentUser.profile();
+      // Get user's playlists
+      const userPlaylists = await spotify.currentUser.playlists.playlists(10);
       
-      // Test 2: Get user's playlists
-      const userPlaylists = await spotify.currentUser.playlists.playlists(5);
-      
-      // Test 3: Try to fetch Fresh Finds main playlist
-      let freshFindsTest = null;
-      try {
-        freshFindsTest = await spotify.playlists.getPlaylist("37i9dQZF1DWWjGdmeTyeJ6");
-      } catch (e: any) {
-        freshFindsTest = { error: e.message };
+      // Try to fetch tracks from the first user playlist
+      let firstPlaylistTracks = null;
+      if (userPlaylists.items.length > 0) {
+        try {
+          const playlistId = userPlaylists.items[0].id;
+          const playlistData = await spotify.playlists.getPlaylist(playlistId);
+          firstPlaylistTracks = {
+            name: playlistData.name,
+            id: playlistId,
+            trackCount: playlistData.tracks.total,
+            firstTrack: playlistData.tracks.items[0]?.track?.name || "No tracks"
+          };
+        } catch (e: any) {
+          firstPlaylistTracks = { error: e.message };
+        }
       }
       
       res.json({ 
-        success: true, 
-        profile: { id: profile.id, display_name: profile.display_name },
-        userPlaylistsCount: userPlaylists.items.length,
-        freshFindsTest 
+        success: true,
+        userPlaylists: userPlaylists.items.map(p => ({ 
+          id: p.id, 
+          name: p.name,
+          tracks: p.tracks.total 
+        })),
+        firstPlaylistTest: firstPlaylistTracks
       });
     } catch (error) {
       console.error("Error testing Spotify:", error);
