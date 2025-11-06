@@ -51,13 +51,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const spotify = await getUncachableSpotifyClient();
-      // Use market: "from_token" to get playlist in user's region (important for editorial playlists)
-      const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId, "from_token");
-      res.json({ name: playlistData.name, id: playlistData.id });
+      
+      try {
+        // Try with market parameter first
+        const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId, "from_token");
+        res.json({ name: playlistData.name, id: playlistData.id });
+      } catch (marketError: any) {
+        // If market parameter fails, try without it as a fallback
+        console.log("Retrying without market parameter...");
+        const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId);
+        res.json({ name: playlistData.name, id: playlistData.id });
+      }
     } catch (error: any) {
       console.error("Error fetching playlist:", error);
-      const errorMessage = error?.message || "Failed to fetch playlist from Spotify";
-      res.status(500).json({ error: errorMessage });
+      
+      // Provide more helpful error message for 404s
+      if (error?.message?.includes("404")) {
+        res.status(404).json({ 
+          error: "This playlist is not accessible through the Spotify API. It may be region-restricted or require special access. Please try a different playlist or use one from your personal library." 
+        });
+      } else {
+        const errorMessage = error?.message || "Failed to fetch playlist from Spotify";
+        res.status(500).json({ error: errorMessage });
+      }
     }
   });
 
