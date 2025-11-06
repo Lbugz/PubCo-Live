@@ -9,6 +9,8 @@ export interface IStorage {
   getAllPlaylists(): Promise<string[]>;
   insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<void>;
   deleteTracksByWeek(week: string): Promise<void>;
+  updateTrackMetadata(id: string, metadata: { publisher?: string; songwriter?: string; enrichedAt: Date }): Promise<void>;
+  getUnenrichedTracks(limit?: number): Promise<PlaylistSnapshot[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -72,6 +74,19 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTracksByWeek(week: string): Promise<void> {
     await db.delete(playlistSnapshots).where(eq(playlistSnapshots.week, week));
+  }
+
+  async updateTrackMetadata(id: string, metadata: { publisher?: string; songwriter?: string; enrichedAt: Date }): Promise<void> {
+    await db.update(playlistSnapshots)
+      .set(metadata)
+      .where(eq(playlistSnapshots.id, id));
+  }
+
+  async getUnenrichedTracks(limit: number = 50): Promise<PlaylistSnapshot[]> {
+    return db.select()
+      .from(playlistSnapshots)
+      .where(sql`${playlistSnapshots.enrichedAt} IS NULL AND ${playlistSnapshots.isrc} IS NOT NULL`)
+      .limit(limit);
   }
 }
 

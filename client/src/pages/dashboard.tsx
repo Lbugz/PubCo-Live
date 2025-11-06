@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, Download, Calendar, TrendingUp, ListMusic, Target, RefreshCw } from "lucide-react";
+import { Music2, Download, Calendar, TrendingUp, ListMusic, Target, RefreshCw, Sparkles } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,26 @@ export default function Dashboard() {
       toast({
         title: "Error",
         description: error.message || "Failed to fetch playlists",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const enrichMetadataMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/enrich-metadata", {});
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Enrichment Complete!",
+        description: `Enriched ${data.enrichedCount} of ${data.totalProcessed} tracks with publisher/songwriter data`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to enrich metadata",
         variant: "destructive",
       });
     },
@@ -119,6 +139,19 @@ export default function Dashboard() {
                 <RefreshCw className={`h-4 w-4 ${fetchPlaylistsMutation.isPending ? "animate-spin" : ""}`} />
                 <span className="hidden sm:inline">
                   {fetchPlaylistsMutation.isPending ? "Fetching..." : "Fetch Data"}
+                </span>
+              </Button>
+              <Button
+                onClick={() => enrichMetadataMutation.mutate()}
+                variant="secondary"
+                size="default"
+                className="gap-2"
+                disabled={enrichMetadataMutation.isPending || !tracks || tracks.length === 0}
+                data-testid="button-enrich"
+              >
+                <Sparkles className={`h-4 w-4 ${enrichMetadataMutation.isPending ? "animate-pulse" : ""}`} />
+                <span className="hidden md:inline">
+                  {enrichMetadataMutation.isPending ? "Enriching..." : "Enrich"}
                 </span>
               </Button>
               <Button

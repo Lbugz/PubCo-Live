@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getUncachableSpotifyClient } from "./spotify";
 import { calculateUnsignedScore } from "./scoring";
+import { searchByISRC } from "./musicbrainz";
 import { playlists, type InsertPlaylistSnapshot } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -70,6 +71,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error exporting data:", error);
       res.status(500).json({ error: "Failed to export data" });
+    }
+  });
+
+  app.post("/api/enrich-metadata", async (req, res) => {
+    try {
+      const unenrichedTracks = await storage.getUnenrichedTracks(50);
+      
+      if (unenrichedTracks.length === 0) {
+        return res.json({ 
+          success: true, 
+          enrichedCount: 0,
+          message: "No tracks need enrichment"
+        });
+      }
+
+      let enrichedCount = 0;
+      
+      for (const track of unenrichedTracks) {
+        if (!track.isrc) continue;
+        
+        try {
+          const metadata = await searchByISRC(track.isrc);
+          
+          if (metadata.publisher || metadata.songwriter) {
+            await storage.updateTrackMetadata(track.id, {
+              publisher: metadata.publisher,
+              songwriter: metadata.songwriter,
+              enrichedAt: new Date(),
+            });
+            enrichedCount++;
+          } else {
+            await storage.updateTrackMetadata(track.id, {
+              enrichedAt: new Date(),
+            });
+          }
+        } catch (error) {
+          console.error(`Error enriching track ${track.id}:`, error);
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        enrichedCount,
+        totalProcessed: unenrichedTracks.length
+      });
+    } catch (error) {
+      console.error("Error enriching metadata:", error);
+      res.status(500).json({ error: "Failed to enrich metadata" });
     }
   });
 

@@ -16,6 +16,9 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   unsignedScore: integer("unsigned_score").notNull().default(0),
   addedAt: timestamp("added_at").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  publisher: text("publisher"),
+  songwriter: text("songwriter"),
+  enrichedAt: timestamp("enriched_at"),
 });
 
 export const insertPlaylistSnapshotSchema = createInsertSchema(playlistSnapshots).omit({
@@ -25,6 +28,29 @@ export const insertPlaylistSnapshotSchema = createInsertSchema(playlistSnapshots
 
 export type InsertPlaylistSnapshot = z.infer<typeof insertPlaylistSnapshotSchema>;
 export type PlaylistSnapshot = typeof playlistSnapshots.$inferSelect;
+
+export const tags = pgTable("tags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  color: text("color").notNull().default("blue"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const trackTags = pgTable("track_tags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  trackId: varchar("track_id").notNull().references(() => playlistSnapshots.id, { onDelete: "cascade" }),
+  tagId: varchar("tag_id").notNull().references(() => tags.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertTagSchema = createInsertSchema(tags).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTag = z.infer<typeof insertTagSchema>;
+export type Tag = typeof tags.$inferSelect;
+export type TrackTag = typeof trackTags.$inferSelect;
 
 export const playlists = [
   {

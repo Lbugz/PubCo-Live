@@ -51,11 +51,11 @@ export function TrackTable({ tracks, isLoading }: TrackTableProps) {
   return (
     <div className="space-y-2">
       <div className="hidden lg:grid lg:grid-cols-12 gap-4 px-4 py-3 text-sm font-medium text-muted-foreground uppercase tracking-wide border-b">
-        <div className="col-span-3">Track</div>
+        <div className="col-span-2">Track</div>
         <div className="col-span-2">Artist</div>
         <div className="col-span-2">Playlist</div>
-        <div className="col-span-2">Label</div>
-        <div className="col-span-1">ISRC</div>
+        <div className="col-span-2">Label / Publisher</div>
+        <div className="col-span-2">Songwriter</div>
         <div className="col-span-1">Score</div>
         <div className="col-span-1 text-right">Actions</div>
       </div>
@@ -68,8 +68,9 @@ export function TrackTable({ tracks, isLoading }: TrackTableProps) {
             data-testid={`card-track-${track.id}`}
           >
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 items-center">
-              <div className="col-span-1 lg:col-span-3">
+              <div className="col-span-1 lg:col-span-2">
                 <div className="font-medium" data-testid={`text-track-name-${track.id}`}>{track.trackName}</div>
+                <div className="text-xs text-muted-foreground font-mono lg:hidden mt-1">{track.isrc || "N/A"}</div>
               </div>
               
               <div className="col-span-1 lg:col-span-2">
@@ -85,14 +86,19 @@ export function TrackTable({ tracks, isLoading }: TrackTableProps) {
               </div>
               
               <div className="col-span-1 lg:col-span-2">
-                <div className="text-sm" data-testid={`text-label-${track.id}`}>
-                  {track.label || <span className="text-muted-foreground italic">Unknown</span>}
+                <div className="text-sm space-y-1" data-testid={`text-label-${track.id}`}>
+                  <div>{track.label || <span className="text-muted-foreground italic">Unknown label</span>}</div>
+                  {track.publisher && (
+                    <div className="text-xs text-muted-foreground">
+                      Pub: {track.publisher}
+                    </div>
+                  )}
                 </div>
               </div>
               
-              <div className="col-span-1 lg:col-span-1">
-                <div className="text-xs font-mono text-muted-foreground" data-testid={`text-isrc-${track.id}`}>
-                  {track.isrc || <span className="italic">N/A</span>}
+              <div className="col-span-1 lg:col-span-2">
+                <div className="text-sm" data-testid={`text-songwriter-${track.id}`}>
+                  {track.songwriter || <span className="text-muted-foreground italic">Unknown</span>}
                 </div>
               </div>
               
