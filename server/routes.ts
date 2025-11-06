@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { getUncachableSpotifyClient, getAuthUrl, exchangeCodeForToken, isAuthenticated } from "./spotify";
 import { calculateUnsignedScore } from "./scoring";
 import { searchByISRC } from "./musicbrainz";
+import { generateAIInsights } from "./ai-insights";
 import { playlists, type InsertPlaylistSnapshot, insertTagSchema, insertTrackedPlaylistSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -54,7 +55,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         // Try with market parameter first
-        const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId, "from_token");
+        const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId, "from_token" as any);
         res.json({ name: playlistData.name, id: playlistData.id });
       } catch (marketError: any) {
         // If market parameter fails, try without it as a fallback
@@ -316,6 +317,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/tracks/:trackId/ai-insights", async (req, res) => {
+    try {
+      const track = await storage.getTrackById(req.params.trackId);
+      
+      if (!track) {
+        return res.status(404).json({ error: "Track not found" });
+      }
+
+      const insights = await generateAIInsights(track);
+      res.json(insights);
+    } catch (error) {
+      console.error("Error generating AI insights:", error);
+      res.status(500).json({ error: "Failed to generate AI insights" });
+    }
+  });
+
   app.get("/api/test-spotify", async (req, res) => {
     try {
       const spotify = await getUncachableSpotifyClient();
@@ -345,7 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userPlaylists: userPlaylists.items.map(p => ({ 
           id: p.id, 
           name: p.name,
-          tracks: p.tracks.total 
+          tracks: p.tracks?.total || 0
         })),
         firstPlaylistTest: firstPlaylistTracks
       });
@@ -374,7 +391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`Fetching playlist: ${playlist.name}`);
           // Use market: "from_token" to get playlist in user's region (important for editorial playlists)
-          const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId, "from_token");
+          const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId, "from_token" as any);
           
           if (!playlistData.tracks?.items) {
             console.warn(`No tracks found for playlist: ${playlist.name}`);

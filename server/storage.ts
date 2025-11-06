@@ -4,6 +4,7 @@ import { eq, sql, desc, inArray } from "drizzle-orm";
 
 export interface IStorage {
   getTracksByWeek(week: string): Promise<PlaylistSnapshot[]>;
+  getTrackById(id: string): Promise<PlaylistSnapshot | null>;
   getLatestWeek(): Promise<string | null>;
   getAllWeeks(): Promise<string[]>;
   getAllPlaylists(): Promise<string[]>;
@@ -39,6 +40,15 @@ export class DatabaseStorage implements IStorage {
       .from(playlistSnapshots)
       .where(eq(playlistSnapshots.week, week))
       .orderBy(desc(playlistSnapshots.unsignedScore));
+  }
+
+  async getTrackById(id: string): Promise<PlaylistSnapshot | null> {
+    const [track] = await db.select()
+      .from(playlistSnapshots)
+      .where(eq(playlistSnapshots.id, id))
+      .limit(1);
+    
+    return track || null;
   }
 
   async getLatestWeek(): Promise<string | null> {

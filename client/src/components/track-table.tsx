@@ -7,6 +7,7 @@ import { type PlaylistSnapshot, type Tag } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { TrackTagPopover } from "./track-tag-popover";
 import { TrackContactDialog } from "./track-contact-dialog";
+import { TrackAIInsights } from "./track-ai-insights";
 import { useQuery } from "@tanstack/react-query";
 import { getTagColorClass } from "./tag-manager";
 
@@ -152,6 +153,7 @@ export function TrackTable({ tracks, isLoading }: TrackTableProps) {
               </div>
               
               <div className="col-span-1 lg:col-span-1 flex justify-start lg:justify-end gap-2 flex-wrap">
+                <TrackAIInsights track={track} />
                 <TrackTagPopover trackId={track.id} />
                 <TrackContactDialog track={track} />
                 <Button

@@ -27,16 +27,37 @@ An automated Spotify playlist tracking and music publishing discovery platform t
 - `spotifyUrl`: Link to track on Spotify
 - `isrc`: International Standard Recording Code
 - `label`: Record label
+- `publisher`: Music publisher (enriched from MusicBrainz)
+- `songwriter`: Songwriter(s) (enriched from MusicBrainz)
 - `unsignedScore`: 0-10 scoring (likelihood of unsigned/unpublished)
 - `addedAt`: When track was added to playlist
+- `enrichedAt`: When metadata was enriched
+- `instagram`: Artist Instagram handle
+- `twitter`: Artist Twitter/X handle
+- `tiktok`: Artist TikTok handle
+- `email`: Contact email
+- `contactNotes`: Outreach notes
 - `createdAt`: Snapshot creation timestamp
 
 ### TrackedPlaylists Table
-- `id`: Serial (primary key)
+- `id`: UUID (primary key)
 - `name`: Playlist name from Spotify
 - `playlistId`: Spotify playlist ID (unique)
 - `spotifyUrl`: Full Spotify playlist URL
 - `createdAt`: When playlist was added for tracking
+
+### Tags Table
+- `id`: UUID (primary key)
+- `name`: Tag name (unique)
+- `color`: Tag color (blue, green, yellow, red, purple, orange, pink, gray)
+- `createdAt`: Tag creation timestamp
+
+### TrackTags Table
+- `id`: UUID (primary key)
+- `trackId`: Foreign key to playlist_snapshots
+- `tagId`: Foreign key to tags
+- `createdAt`: Tag assignment timestamp
+- Unique constraint on (trackId, tagId)
 
 ## Scoring Rubric
 - **Fresh Finds appearance**: +3 points
@@ -47,7 +68,7 @@ An automated Spotify playlist tracking and music publishing discovery platform t
 - **Final range**: 0-10 (clamped)
 
 ## Features Implemented
-### MVP Phase 1 (Current)
+### MVP Phase 1
 - ✅ Data schema and TypeScript interfaces
 - ✅ Beautiful dashboard with stats cards
 - ✅ Track table with filtering and search
@@ -57,13 +78,20 @@ An automated Spotify playlist tracking and music publishing discovery platform t
 - ✅ Dark/light theme toggle
 - ✅ CSV export functionality
 - ✅ Responsive design for all devices
+- ✅ Custom playlist tracking and management
 
-### Planned Phase 2 (Future)
-- MLC API integration for publisher/songwriter enrichment
-- MusicBrainz API for missing metadata
-- Contact discovery and lead tagging
-- AI-assisted outreach suggestions
-- Batch comparison across weeks
+### Phase 2 (Complete)
+- ✅ **MusicBrainz Integration** - Enriches tracks with songwriter data via ISRC → Recording → Work chain
+- ✅ **Lead Tagging System** - Create custom tags, tag tracks, filter by tags with 8 color options
+- ✅ **Batch Week Comparison** - Compare track progression across multiple weeks with trend indicators
+- ✅ **Contact Discovery** - Store and manage artist contact info (Instagram, Twitter, TikTok, email, notes)
+- ✅ **AI Lead Prioritization** - GPT-4o-mini powered insights: summaries, outreach strategies, talking points, scoring rationale
+- ✅ **Enhanced CSV Export** - Includes all metadata and contact fields for outreach
+
+### Future Enhancements
+- **MLC API Integration** - Direct publisher/songwriter lookup via MLC Public Search API (requires OAuth2 setup)
+- **Automated Weekly Scheduling** - Cron-based playlist fetching
+- **Enhanced AI Features** - Batch AI analysis, competitor tracking, trend predictions
 
 ## Custom Playlist Tracking
 Users can add and manage any Spotify playlists to track (no longer limited to Fresh Finds). The system supports:
@@ -94,13 +122,22 @@ Users can add and manage any Spotify playlists to track (no longer limited to Fr
 
 ## API Routes
 - `GET /api/weeks` - Get all available weeks
-- `GET /api/tracks?week={week}` - Get tracks for a week
+- `GET /api/tracks?week={week}&tagId={tagId}` - Get tracks for a week or by tag
 - `GET /api/playlists` - Get list of playlists
-- `GET /api/export?week={week}&format=csv` - Export data
+- `GET /api/export?week={week}&format=csv` - Export data with contacts
 - `POST /api/fetch-playlists` - Trigger manual playlist fetch from tracked playlists
+- `POST /api/enrich-metadata` - Enrich tracks with MusicBrainz data (batch of 50)
+- `POST /api/tracks/:trackId/ai-insights` - Generate AI insights for a track
+- `PATCH /api/tracks/:trackId/contact` - Update contact information
 - `GET /api/tracked-playlists` - Get all tracked playlists
 - `POST /api/tracked-playlists` - Add a new playlist to track
 - `DELETE /api/tracked-playlists/:id` - Remove a playlist from tracking
+- `GET /api/tags` - Get all tags
+- `POST /api/tags` - Create a new tag
+- `DELETE /api/tags/:id` - Delete a tag
+- `GET /api/tracks/:trackId/tags` - Get tags for a track
+- `POST /api/tracks/:trackId/tags/:tagId` - Add tag to track
+- `DELETE /api/tracks/:trackId/tags/:tagId` - Remove tag from track
 - `GET /api/spotify/playlist/:playlistId` - Fetch playlist info from Spotify
 - `GET /api/spotify/status` - Check Spotify authentication status
 
@@ -111,31 +148,34 @@ Users can add and manage any Spotify playlists to track (no longer limited to Fr
 - Actionable export features
 
 ## Recent Changes
+- 2025-11-06: **Phase 2 Complete - All Features Implemented**
+  - Contact Discovery: Added contact fields (Instagram, Twitter, TikTok, email, notes) with management UI
+  - AI Lead Prioritization: GPT-4o-mini integration for outreach insights (via Replit AI Integrations)
+  - MusicBrainz: Fixed songwriter enrichment to follow ISRC → Recording → Work → Songwriters chain
+  - Enhanced CSV Export: Now includes all metadata and contact information
+  - MLC API: Researched and documented for future integration (requires OAuth2)
+  
 - 2025-11-06: **Custom Playlist Tracking Implemented**
   - Pivoted from hardcoded Fresh Finds playlists to user-managed custom playlists
-  - Created tracked_playlists database table with migration
-  - Implemented complete CRUD operations for playlist management
-  - Built PlaylistManager UI component with add/delete functionality
-  - Modified fetch-playlists endpoint to use tracked playlists from database
-  - Enhanced error handling with authentication checks and clear user messaging
-- 2025-11-06: **Phase 2 Features Implemented** - MusicBrainz, Tagging, Comparison
-  - MusicBrainz API integration for publisher/songwriter enrichment
+  - Complete CRUD operations for playlist management
+  - PlaylistManager UI component with add/delete functionality
+
+- 2025-11-06: **Phase 2 Initial Features** - MusicBrainz, Tagging, Comparison
+  - MusicBrainz API integration for songwriter enrichment
   - Lead tagging system with color-coded tags and filtering
   - Batch week comparison view with trend analysis
-  - Enhanced track table with tag badges and metadata display
-  - Improved cache management with React Query v5
 
 ## Implementation Status
 ✅ **MVP Phase 1 Complete**
-- Dashboard UI, Spotify integration, scoring algorithm, filtering, export
+- Dashboard UI, Spotify integration, scoring algorithm, filtering, export, custom playlists
 
-✅ **Phase 2 Progress (3/6 Complete)**
-1. ✅ **MusicBrainz Integration** - Enriches tracks with publisher/songwriter data via ISRC lookup
-2. ✅ **Lead Tagging System** - Create custom tags, tag tracks, filter by tags
-3. ✅ **Batch Week Comparison** - Compare track progression across multiple weeks
-4. ⏳ Contact Discovery - (Not started)
-5. ⏳ MLC API Integration - (Not started)
-6. ⏳ AI Lead Prioritization - (Not started)
+✅ **Phase 2 Complete (6/6)**
+1. ✅ **MusicBrainz Integration** - Enriches tracks with songwriter data via ISRC → Recording → Work chain
+2. ✅ **Lead Tagging System** - Create custom tags, tag tracks, filter by tags with 8 colors
+3. ✅ **Batch Week Comparison** - Compare track progression across multiple weeks with trend indicators
+4. ✅ **Contact Discovery** - Store and manage social media, email, notes for outreach
+5. ✅ **MLC API Research** - Documented Public Search API (OAuth2 setup deferred)
+6. ✅ **AI Lead Prioritization** - GPT-4o-mini insights for summary, strategy, talking points, rationale
 
 ## How to Use
 
