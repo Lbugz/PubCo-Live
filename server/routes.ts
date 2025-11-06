@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { getUncachableSpotifyClient } from "./spotify";
 import { calculateUnsignedScore } from "./scoring";
 import { searchByISRC } from "./musicbrainz";
-import { playlists, type InsertPlaylistSnapshot } from "@shared/schema";
+import { playlists, type InsertPlaylistSnapshot, insertTagSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/weeks", async (req, res) => {
@@ -20,7 +20,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tracks", async (req, res) => {
     try {
       const week = req.query.week as string || "latest";
-      const tracks = await storage.getTracksByWeek(week);
+      const tagId = req.query.tagId as string | undefined;
+      
+      let tracks;
+      if (tagId) {
+        tracks = await storage.getTracksByTag(tagId);
+      } else {
+        tracks = await storage.getTracksByWeek(week);
+      }
+      
       res.json(tracks);
     } catch (error) {
       console.error("Error fetching tracks:", error);
@@ -71,6 +79,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error exporting data:", error);
       res.status(500).json({ error: "Failed to export data" });
+    }
+  });
+
+  app.get("/api/tags", async (req, res) => {
+    try {
+      const allTags = await storage.getAllTags();
+      res.json(allTags);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+      res.status(500).json({ error: "Failed to fetch tags" });
+    }
+  });
+
+  app.post("/api/tags", async (req, res) => {
+    try {
+      const validatedTag = insertTagSchema.parse(req.body);
+      const tag = await storage.createTag(validatedTag);
+      res.json(tag);
+    } catch (error) {
+      console.error("Error creating tag:", error);
+      res.status(500).json({ error: "Failed to create tag" });
+    }
+  });
+
+  app.delete("/api/tags/:id", async (req, res) => {
+    try {
+      await storage.deleteTag(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting tag:", error);
+      res.status(500).json({ error: "Failed to delete tag" });
+    }
+  });
+
+  app.get("/api/tracks/:trackId/tags", async (req, res) => {
+    try {
+      const trackTags = await storage.getTrackTags(req.params.trackId);
+      res.json(trackTags);
+    } catch (error) {
+      console.error("Error fetching track tags:", error);
+      res.status(500).json({ error: "Failed to fetch track tags" });
+    }
+  });
+
+  app.post("/api/tracks/:trackId/tags/:tagId", async (req, res) => {
+    try {
+      await storage.addTagToTrack(req.params.trackId, req.params.tagId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error adding tag to track:", error);
+      res.status(500).json({ error: "Failed to add tag to track" });
+    }
+  });
+
+  app.delete("/api/tracks/:trackId/tags/:tagId", async (req, res) => {
+    try {
+      await storage.removeTagFromTrack(req.params.trackId, req.params.tagId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing tag from track:", error);
+      res.status(500).json({ error: "Failed to remove tag from track" });
     }
   });
 

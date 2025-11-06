@@ -10,12 +10,14 @@ import { Slider } from "@/components/ui/slider";
 import { StatsCard } from "@/components/stats-card";
 import { TrackTable } from "@/components/track-table";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { type PlaylistSnapshot } from "@shared/schema";
+import { TagManager } from "@/components/tag-manager";
+import { type PlaylistSnapshot, type Tag } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
   const [selectedWeek, setSelectedWeek] = useState<string>("latest");
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("all");
+  const [selectedTag, setSelectedTag] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [scoreRange, setScoreRange] = useState<number[]>([0, 10]);
   const { toast } = useToast();
@@ -25,12 +27,29 @@ export default function Dashboard() {
   });
 
   const { data: tracks, isLoading: tracksLoading } = useQuery<PlaylistSnapshot[]>({
-    queryKey: ["/api/tracks", selectedWeek],
-    enabled: !!selectedWeek,
+    queryKey: selectedTag !== "all" 
+      ? ["/api/tracks", "tag", selectedTag]
+      : ["/api/tracks", selectedWeek],
+    queryFn: async ({ queryKey }) => {
+      if (queryKey[1] === "tag") {
+        const response = await fetch(`/api/tracks?tagId=${queryKey[2]}`);
+        if (!response.ok) throw new Error("Failed to fetch tracks by tag");
+        return response.json();
+      } else {
+        const response = await fetch(`/api/tracks?week=${queryKey[1]}`);
+        if (!response.ok) throw new Error("Failed to fetch tracks");
+        return response.json();
+      }
+    },
+    enabled: !!selectedWeek || selectedTag !== "all",
   });
 
   const { data: playlists } = useQuery<string[]>({
     queryKey: ["/api/playlists"],
+  });
+
+  const { data: tags = [] } = useQuery<Tag[]>({
+    queryKey: ["/api/tags"],
   });
 
   const fetchPlaylistsMutation = useMutation({
@@ -165,6 +184,7 @@ export default function Dashboard() {
                 <Download className="h-4 w-4" />
                 <span className="hidden sm:inline">Export</span>
               </Button>
+              <TagManager />
               <ThemeToggle />
             </div>
           </div>
@@ -245,6 +265,22 @@ export default function Dashboard() {
                       {playlists?.map((playlist) => (
                         <SelectItem key={playlist} value={playlist} data-testid={`option-playlist-${playlist}`}>
                           {playlist}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="w-full sm:w-48">
+                  <Select value={selectedTag} onValueChange={setSelectedTag}>
+                    <SelectTrigger data-testid="select-tag">
+                      <SelectValue placeholder="All tags" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all" data-testid="option-tag-all">All Tags</SelectItem>
+                      {tags?.map((tag) => (
+                        <SelectItem key={tag.id} value={tag.id} data-testid={`option-tag-${tag.id}`}>
+                          {tag.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

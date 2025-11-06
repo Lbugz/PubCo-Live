@@ -41,7 +41,9 @@ export const trackTags = pgTable("track_tags", {
   trackId: varchar("track_id").notNull().references(() => playlistSnapshots.id, { onDelete: "cascade" }),
   tagId: varchar("tag_id").notNull().references(() => tags.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  uniqueTrackTag: sql`UNIQUE (${table.trackId}, ${table.tagId})`,
+}));
 
 export const insertTagSchema = createInsertSchema(tags).omit({
   id: true,

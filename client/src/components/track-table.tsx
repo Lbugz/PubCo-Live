@@ -3,8 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { type PlaylistSnapshot } from "@shared/schema";
+import { type PlaylistSnapshot, type Tag } from "@shared/schema";
 import { cn } from "@/lib/utils";
+import { TrackTagPopover } from "./track-tag-popover";
+import { useQuery } from "@tanstack/react-query";
+import { getTagColorClass } from "./tag-manager";
 
 interface TrackTableProps {
   tracks: PlaylistSnapshot[];
@@ -21,6 +24,34 @@ function getScoreLabel(score: number): string {
   if (score >= 7) return "High";
   if (score >= 4) return "Medium";
   return "Low";
+}
+
+function TrackTags({ trackId }: { trackId: string }) {
+  const { data: tags = [] } = useQuery<Tag[]>({
+    queryKey: ["/api/tracks", trackId, "tags"],
+    queryFn: async () => {
+      const response = await fetch(`/api/tracks/${trackId}/tags`);
+      if (!response.ok) throw new Error("Failed to fetch track tags");
+      return response.json();
+    },
+  });
+
+  if (tags.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {tags.map((tag) => (
+        <Badge
+          key={tag.id}
+          variant="outline"
+          className={`${getTagColorClass(tag.color)} text-xs`}
+          data-testid={`badge-track-tag-${trackId}-${tag.id}`}
+        >
+          {tag.name}
+        </Badge>
+      ))}
+    </div>
+  );
 }
 
 export function TrackTable({ tracks, isLoading }: TrackTableProps) {
@@ -71,6 +102,7 @@ export function TrackTable({ tracks, isLoading }: TrackTableProps) {
               <div className="col-span-1 lg:col-span-2">
                 <div className="font-medium" data-testid={`text-track-name-${track.id}`}>{track.trackName}</div>
                 <div className="text-xs text-muted-foreground font-mono lg:hidden mt-1">{track.isrc || "N/A"}</div>
+                <TrackTags trackId={track.id} />
               </div>
               
               <div className="col-span-1 lg:col-span-2">
@@ -118,7 +150,8 @@ export function TrackTable({ tracks, isLoading }: TrackTableProps) {
                 </div>
               </div>
               
-              <div className="col-span-1 lg:col-span-1 flex justify-start lg:justify-end">
+              <div className="col-span-1 lg:col-span-1 flex justify-start lg:justify-end gap-2">
+                <TrackTagPopover trackId={track.id} />
                 <Button
                   variant="ghost"
                   size="sm"

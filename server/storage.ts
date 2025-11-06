@@ -1,6 +1,6 @@
-import { playlistSnapshots, type PlaylistSnapshot, type InsertPlaylistSnapshot } from "@shared/schema";
+import { playlistSnapshots, tags, trackTags, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, desc } from "drizzle-orm";
+import { eq, sql, desc, inArray } from "drizzle-orm";
 
 export interface IStorage {
   getTracksByWeek(week: string): Promise<PlaylistSnapshot[]>;
@@ -11,6 +11,13 @@ export interface IStorage {
   deleteTracksByWeek(week: string): Promise<void>;
   updateTrackMetadata(id: string, metadata: { publisher?: string; songwriter?: string; enrichedAt: Date }): Promise<void>;
   getUnenrichedTracks(limit?: number): Promise<PlaylistSnapshot[]>;
+  getAllTags(): Promise<Tag[]>;
+  createTag(tag: InsertTag): Promise<Tag>;
+  deleteTag(id: string): Promise<void>;
+  addTagToTrack(trackId: string, tagId: string): Promise<void>;
+  removeTagFromTrack(trackId: string, tagId: string): Promise<void>;
+  getTrackTags(trackId: string): Promise<Tag[]>;
+  getTracksByTag(tagId: string): Promise<PlaylistSnapshot[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -87,6 +94,48 @@ export class DatabaseStorage implements IStorage {
       .from(playlistSnapshots)
       .where(sql`${playlistSnapshots.enrichedAt} IS NULL AND ${playlistSnapshots.isrc} IS NOT NULL`)
       .limit(limit);
+  }
+
+  async getAllTags(): Promise<Tag[]> {
+    return db.select().from(tags).orderBy(tags.name);
+  }
+
+  async createTag(insertTag: InsertTag): Promise<Tag> {
+    const [tag] = await db.insert(tags).values(insertTag).returning();
+    return tag;
+  }
+
+  async deleteTag(id: string): Promise<void> {
+    await db.delete(tags).where(eq(tags.id, id));
+  }
+
+  async addTagToTrack(trackId: string, tagId: string): Promise<void> {
+    await db.insert(trackTags).values({ trackId, tagId });
+  }
+
+  async removeTagFromTrack(trackId: string, tagId: string): Promise<void> {
+    await db.delete(trackTags)
+      .where(sql`${trackTags.trackId} = ${trackId} AND ${trackTags.tagId} = ${tagId}`);
+  }
+
+  async getTrackTags(trackId: string): Promise<Tag[]> {
+    const result = await db
+      .select({ tag: tags })
+      .from(trackTags)
+      .innerJoin(tags, eq(trackTags.tagId, tags.id))
+      .where(eq(trackTags.trackId, trackId));
+    
+    return result.map(r => r.tag);
+  }
+
+  async getTracksByTag(tagId: string): Promise<PlaylistSnapshot[]> {
+    const result = await db
+      .select({ track: playlistSnapshots })
+      .from(trackTags)
+      .innerJoin(playlistSnapshots, eq(trackTags.trackId, playlistSnapshots.id))
+      .where(eq(trackTags.tagId, tagId));
+    
+    return result.map(r => r.track);
   }
 }
 
