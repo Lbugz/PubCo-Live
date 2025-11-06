@@ -7,6 +7,29 @@ import { searchByISRC } from "./musicbrainz";
 import { generateAIInsights } from "./ai-insights";
 import { playlists, type InsertPlaylistSnapshot, insertTagSchema, insertTrackedPlaylistSchema } from "@shared/schema";
 
+// HTML entity decoder
+function decodeHTMLEntities(text: string): string {
+  const entities: Record<string, string> = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&apos;': "'",
+  };
+  
+  let decoded = text;
+  for (const [entity, char] of Object.entries(entities)) {
+    decoded = decoded.split(entity).join(char);
+  }
+  
+  // Handle numeric entities like &#123;
+  decoded = decoded.replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec));
+  decoded = decoded.replace(/&#x([0-9a-f]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
+  
+  return decoded;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Spotify OAuth endpoints
   app.get("/api/spotify/auth", (req, res) => {
@@ -56,19 +79,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Try with market parameter first
         const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId, "from_token" as any);
-        console.log("Playlist name from Spotify API:", playlistData.name);
-        console.log("Playlist name type:", typeof playlistData.name);
-        console.log("Playlist name length:", playlistData.name?.length);
-        res.json({ name: playlistData.name, id: playlistData.id, status: "accessible" });
+        const decodedName = decodeHTMLEntities(playlistData.name);
+        console.log("Playlist name from Spotify API (raw):", playlistData.name);
+        console.log("Playlist name after decoding:", decodedName);
+        res.json({ name: decodedName, id: playlistData.id, status: "accessible" });
       } catch (marketError: any) {
         // If market parameter fails, try without it as a fallback
         console.log("Retrying without market parameter...");
         try {
           const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId);
-          console.log("Playlist name from Spotify API (no market):", playlistData.name);
-          console.log("Playlist name type:", typeof playlistData.name);
-          console.log("Playlist name length:", playlistData.name?.length);
-          res.json({ name: playlistData.name, id: playlistData.id, status: "accessible" });
+          const decodedName = decodeHTMLEntities(playlistData.name);
+          console.log("Playlist name from Spotify API (raw, no market):", playlistData.name);
+          console.log("Playlist name after decoding:", decodedName);
+          res.json({ name: decodedName, id: playlistData.id, status: "accessible" });
         } catch (finalError: any) {
           // Handle 404 errors with search fallback
           if (finalError?.message?.includes("404")) {
@@ -88,11 +111,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Verify we can actually access this playlist
                 try {
                   const verifiedPlaylist = await spotify.playlists.getPlaylist(matchedPlaylist.id);
-                  console.log("Verified playlist name via search:", verifiedPlaylist.name);
-                  console.log("Verified playlist name type:", typeof verifiedPlaylist.name);
-                  console.log("Verified playlist name length:", verifiedPlaylist.name?.length);
+                  const decodedName = decodeHTMLEntities(verifiedPlaylist.name);
+                  console.log("Verified playlist name via search (raw):", verifiedPlaylist.name);
+                  console.log("Verified playlist name after decoding:", decodedName);
                   return res.json({ 
-                    name: verifiedPlaylist.name, 
+                    name: decodedName, 
                     id: verifiedPlaylist.id,
                     status: "accessible",
                     foundViaSearch: true,
