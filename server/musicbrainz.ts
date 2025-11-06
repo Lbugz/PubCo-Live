@@ -36,32 +36,60 @@ export async function searchByISRC(isrc: string): Promise<EnrichedMetadata> {
   }
 
   try {
+    // Rate limiting: Wait 1 second before making API calls
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const url = `${MUSICBRAINZ_API}/recording?query=isrc:${isrc}&fmt=json&inc=artist-credits+labels+artist-rels+work-rels`;
+    // Step 1: Search by ISRC to get the recording ID
+    const searchUrl = `${MUSICBRAINZ_API}/recording?query=isrc:${isrc}&fmt=json`;
     
-    const response = await fetch(url, {
+    const searchResponse = await fetch(searchUrl, {
       headers: {
         "User-Agent": USER_AGENT,
         "Accept": "application/json",
       },
     });
 
-    if (!response.ok) {
-      console.warn(`MusicBrainz API error for ISRC ${isrc}: ${response.status}`);
+    if (!searchResponse.ok) {
+      console.warn(`MusicBrainz search error for ISRC ${isrc}: ${searchResponse.status}`);
       return {};
     }
 
-    const data: MusicBrainzResponse = await response.json();
+    const searchData: MusicBrainzResponse = await searchResponse.json();
     
-    if (!data.recordings || data.recordings.length === 0) {
+    if (!searchData.recordings || searchData.recordings.length === 0) {
+      console.log(`No MusicBrainz recording found for ISRC ${isrc}`);
       return {};
     }
 
-    const recording = data.recordings[0];
+    const recordingId = searchData.recordings[0].id;
+    
+    if (!recordingId) {
+      console.warn(`No recording ID found for ISRC ${isrc}`);
+      return {};
+    }
+
+    // Step 2: Fetch full recording details with relations
+    // Note: No additional delay needed - we're already rate limiting above
+    const detailUrl = `${MUSICBRAINZ_API}/recording/${recordingId}?fmt=json&inc=artist-credits+artist-rels+work-rels`;
+    
+    const detailResponse = await fetch(detailUrl, {
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Accept": "application/json",
+      },
+    });
+
+    if (!detailResponse.ok) {
+      console.warn(`MusicBrainz detail error for recording ${recordingId}: ${detailResponse.status}`);
+      return {};
+    }
+
+    const recording: MusicBrainzRecording = await detailResponse.json();
     const metadata: EnrichedMetadata = {};
 
+    // Parse relations to extract publisher and songwriter
     if (recording.relations) {
+      // Look for publisher in label relations
       const publisherRelation = recording.relations.find(
         r => r.type === "publisher" || r.type === "publishing"
       );
@@ -69,6 +97,7 @@ export async function searchByISRC(isrc: string): Promise<EnrichedMetadata> {
         metadata.publisher = publisherRelation.label.name;
       }
 
+      // Look for songwriters in artist relations
       const writerRelations = recording.relations.filter(
         r => r.type === "composer" || r.type === "writer" || r.type === "lyricist"
       );
@@ -80,6 +109,10 @@ export async function searchByISRC(isrc: string): Promise<EnrichedMetadata> {
           metadata.songwriter = writers.join(", ");
         }
       }
+    }
+
+    if (metadata.publisher || metadata.songwriter) {
+      console.log(`Found metadata for ISRC ${isrc}: Publisher=${metadata.publisher || 'none'}, Songwriter=${metadata.songwriter || 'none'}`);
     }
 
     return metadata;
