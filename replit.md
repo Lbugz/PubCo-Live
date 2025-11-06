@@ -97,39 +97,57 @@ An automated Spotify playlist tracking and music publishing discovery platform t
 - Actionable export features
 
 ## Recent Changes
-- 2025-11-06: **MVP Complete** - Full implementation deployed and functional
-- Beautiful dashboard UI with Inter font, consistent spacing, and professional color palette
-- PostgreSQL database schema created and connected
-- All API endpoints implemented and tested (/api/weeks, /api/tracks, /api/playlists, /api/export, /api/fetch-playlists)
-- Spotify integration working via Replit connection
-- Scoring algorithm implemented and functional
-- Theme support (light/dark mode) with smooth transitions
-- CSV export functionality working
-- Comprehensive filtering, search, and data visualization
+- 2025-11-06: **Phase 2 Features Implemented** - MusicBrainz, Tagging, Comparison
+- MusicBrainz API integration for publisher/songwriter enrichment
+- Lead tagging system with color-coded tags and filtering
+- Batch week comparison view with trend analysis
+- Enhanced track table with tag badges and metadata display
+- Improved cache management with React Query v5
 
 ## Implementation Status
-✅ MVP Phase 1 Complete
-- All frontend components built and polished
-- Backend API fully implemented
-- Database persistence working
-- Spotify integration configured
-- Scoring system operational
-- Export functionality ready
-- Responsive design for all devices
-- Dark/light theme toggle
+✅ **MVP Phase 1 Complete**
+- Dashboard UI, Spotify integration, scoring algorithm, filtering, export
+
+✅ **Phase 2 Progress (3/6 Complete)**
+1. ✅ **MusicBrainz Integration** - Enriches tracks with publisher/songwriter data via ISRC lookup
+2. ✅ **Lead Tagging System** - Create custom tags, tag tracks, filter by tags
+3. ✅ **Batch Week Comparison** - Compare track progression across multiple weeks
+4. ⏳ Contact Discovery - (Not started)
+5. ⏳ MLC API Integration - (Not started)
+6. ⏳ AI Lead Prioritization - (Not started)
 
 ## How to Use
-1. Click "Fetch Data" button to populate database from Spotify Fresh Finds playlists (takes 30-60 seconds)
-2. View tracks with unsigned likelihood scores (0-10)
-3. Filter by playlist, search by track/artist/label, or adjust score range
-4. Export results to CSV for outreach
-5. Navigate between weeks to track historical data
-6. Toggle between light/dark themes
 
-## Next Steps (Phase 2)
-1. Schedule automated weekly data fetching (cron job)
-2. Add MLC API integration for publisher/songwriter data enrichment
-3. Implement contact discovery features
-4. Add batch comparison across weeks
-5. Create AI-assisted outreach suggestions
-6. Deploy for production use
+### Basic Workflow
+1. **Fetch Data**: Click "Fetch Data" to import Fresh Finds tracks (requires Spotify connection)
+2. **Enrich Metadata**: Click "Enrich" to fetch publisher/songwriter data from MusicBrainz
+3. **Tag Leads**: Use "Manage Tags" to create tags, then tag individual tracks using the "Tag" button
+4. **Filter & Search**: Filter by week, playlist, tag, score range, or search tracks/artists/labels
+5. **Compare Weeks**: Click "Compare" to analyze track progression across multiple weeks
+6. **Export**: Download filtered results as CSV for outreach
+
+### Feature Details
+
+**MusicBrainz Enrichment**
+- Automatically looks up publisher and songwriter metadata by ISRC
+- Processes 50 tracks at a time with 1-second rate limiting
+- Displays enriched data in track table (publisher shown below label)
+
+**Lead Tagging**
+- Create custom tags with 8 color options (blue, green, yellow, red, purple, orange, pink, gray)
+- Tag individual tracks via "Tag" button popover
+- Filter entire track list by tag using tag dropdown
+- Tag badges appear below track names for quick visual identification
+- Unique constraint prevents duplicate tags on same track
+
+**Week Comparison**
+- Select 2+ weeks to compare track progression
+- View score changes with trend indicators (↗️ trending up, ↘️ trending down, — stable)
+- Tracks sorted by magnitude of change
+- Statistics show total compared, trending up, and trending down counts
+- Matches tracks across weeks by ISRC
+
+## Next Steps (Phase 2 Remaining)
+4. Contact Discovery - Social media links, email patterns, outreach list
+5. MLC API Integration - Official publisher/songwriter lookup
+6. AI Lead Prioritization - Enhanced scoring, outreach suggestions
