@@ -68,9 +68,8 @@ export async function searchByISRC(isrc: string): Promise<EnrichedMetadata> {
       return {};
     }
 
-    // Step 2: Fetch full recording details with relations
-    // Note: No additional delay needed - we're already rate limiting above
-    const detailUrl = `${MUSICBRAINZ_API}/recording/${recordingId}?fmt=json&inc=artist-credits+artist-rels+work-rels`;
+    // Step 2: Fetch recording with work relations to find the Work ID
+    const detailUrl = `${MUSICBRAINZ_API}/recording/${recordingId}?fmt=json&inc=work-rels`;
     
     const detailResponse = await fetch(detailUrl, {
       headers: {
@@ -87,27 +86,43 @@ export async function searchByISRC(isrc: string): Promise<EnrichedMetadata> {
     const recording: MusicBrainzRecording = await detailResponse.json();
     const metadata: EnrichedMetadata = {};
 
-    // Parse relations to extract publisher and songwriter
-    if (recording.relations) {
-      // Look for publisher in label relations
-      const publisherRelation = recording.relations.find(
-        r => r.type === "publisher" || r.type === "publishing"
-      );
-      if (publisherRelation?.label?.name) {
-        metadata.publisher = publisherRelation.label.name;
-      }
+    // Find the Work (composition) from the recording
+    const workRelation = recording.relations?.find(r => r.type === "performance");
+    const workId = workRelation?.work?.id;
+    
+    if (workId) {
+      // Step 3: Fetch Work details to get composers/writers
+      // Rate limit: Wait 1 second before fetching work
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const workUrl = `${MUSICBRAINZ_API}/work/${workId}?fmt=json&inc=artist-rels`;
+      
+      const workResponse = await fetch(workUrl, {
+        headers: {
+          "User-Agent": USER_AGENT,
+          "Accept": "application/json",
+        },
+      });
 
-      // Look for songwriters in artist relations
-      const writerRelations = recording.relations.filter(
-        r => r.type === "composer" || r.type === "writer" || r.type === "lyricist"
-      );
-      if (writerRelations.length > 0) {
-        const writers = writerRelations
-          .map(r => r.artist?.name)
-          .filter(Boolean);
-        if (writers.length > 0) {
-          metadata.songwriter = writers.join(", ");
+      if (workResponse.ok) {
+        const work: any = await workResponse.json();
+        
+        // Extract songwriters from Work artist relations
+        if (work.relations) {
+          const writerRelations = work.relations.filter(
+            (r: any) => r.type === "composer" || r.type === "writer" || r.type === "lyricist"
+          );
+          if (writerRelations.length > 0) {
+            const writers = writerRelations
+              .map((r: any) => r.artist?.name)
+              .filter(Boolean);
+            if (writers.length > 0) {
+              metadata.songwriter = writers.join(", ");
+            }
+          }
         }
+      } else {
+        console.warn(`MusicBrainz work error for work ${workId}: ${workResponse.status}`);
       }
     }
 
