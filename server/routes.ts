@@ -327,7 +327,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tracked-playlists", async (req, res) => {
     try {
       const validatedPlaylist = insertTrackedPlaylistSchema.parse(req.body);
-      const playlist = await storage.addTrackedPlaylist(validatedPlaylist);
+      
+      // Fetch playlist metadata from Spotify if authenticated
+      let totalTracks = null;
+      let isEditorial = 0;
+      let fetchMethod = 'api';
+      
+      if (isAuthenticated()) {
+        try {
+          const spotify = await getUncachableSpotifyClient();
+          const playlistData = await spotify.playlists.getPlaylist(validatedPlaylist.playlistId, "from_token" as any);
+          
+          totalTracks = playlistData.tracks?.total || null;
+          
+          // Determine if it's editorial based on owner
+          // Editorial playlists are typically owned by Spotify (owner.id === "spotify")
+          if (playlistData.owner?.id === 'spotify' || playlistData.owner?.display_name === 'Spotify') {
+            isEditorial = 1;
+            fetchMethod = 'scraping'; // Editorial playlists are better scraped
+          }
+          
+          console.log(`Playlist "${playlistData.name}": totalTracks=${totalTracks}, isEditorial=${isEditorial}, owner=${playlistData.owner?.display_name}`);
+        } catch (error: any) {
+          // If API call fails (404), likely editorial playlist
+          if (error?.message?.includes('404')) {
+            console.log(`Playlist ${validatedPlaylist.playlistId} returned 404, marking as editorial`);
+            isEditorial = 1;
+            fetchMethod = 'scraping';
+          }
+        }
+      }
+      
+      const playlist = await storage.addTrackedPlaylist({
+        ...validatedPlaylist,
+        totalTracks,
+        isEditorial,
+        fetchMethod,
+        isComplete: 0,
+        lastFetchCount: 0,
+      });
       res.json(playlist);
     } catch (error) {
       console.error("Error adding tracked playlist:", error);
