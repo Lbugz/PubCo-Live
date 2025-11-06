@@ -1,57 +1,113 @@
 import { SpotifyApi } from "@spotify/web-api-ts-sdk";
 
-let connectionSettings: any;
+// In-memory token storage (in production, use a database)
+let tokenData: {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+} | null = null;
 
-async function getAccessToken() {
-  if (connectionSettings && connectionSettings.settings.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
-    return connectionSettings.settings.access_token;
-  }
-  
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
+const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID!;
+const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET!;
+const REDIRECT_URI = "http://127.0.0.1:5000/api/spotify/callback";
 
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
-  }
+const SCOPES = [
+  "playlist-read-private",
+  "playlist-read-collaborative",
+  "user-read-email",
+  "user-read-private",
+].join(" ");
 
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=spotify',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  ).then(res => res.json()).then(data => data.items?.[0]);
-  
-  console.log('Connection settings:', JSON.stringify(connectionSettings, null, 2));
-  
-  const refreshToken =
-    connectionSettings?.settings?.oauth?.credentials?.refresh_token;
-  const accessToken = connectionSettings?.settings?.access_token || connectionSettings?.settings?.oauth?.credentials?.access_token;
-  const clientId = connectionSettings?.settings?.oauth?.credentials?.client_id;
-  const expiresIn = connectionSettings?.settings?.oauth?.credentials?.expires_in;
-  
-  console.log('Extracted values:', { hasAccessToken: !!accessToken, hasClientId: !!clientId, hasRefreshToken: !!refreshToken });
-  
-  if (!connectionSettings || (!accessToken || !clientId || !refreshToken)) {
-    throw new Error('Spotify not connected');
-  }
-  return {accessToken, clientId, refreshToken, expiresIn};
+export function getAuthUrl(): string {
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    response_type: "code",
+    redirect_uri: REDIRECT_URI,
+    scope: SCOPES,
+  });
+  return `https://accounts.spotify.com/authorize?${params.toString()}`;
 }
 
-export async function getUncachableSpotifyClient() {
-  const {accessToken, clientId, refreshToken, expiresIn} = await getAccessToken();
+export async function exchangeCodeForToken(code: string): Promise<void> {
+  const params = new URLSearchParams({
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: REDIRECT_URI,
+  });
 
-  const spotify = SpotifyApi.withAccessToken(clientId, {
-    access_token: accessToken,
+  const response = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`,
+    },
+    body: params.toString(),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to exchange code for token: ${error}`);
+  }
+
+  const data = await response.json();
+  tokenData = {
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    expires_at: Date.now() + data.expires_in * 1000,
+  };
+}
+
+async function refreshAccessToken(): Promise<void> {
+  if (!tokenData?.refresh_token) {
+    throw new Error("No refresh token available");
+  }
+
+  const params = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: tokenData.refresh_token,
+  });
+
+  const response = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`,
+    },
+    body: params.toString(),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to refresh token: ${error}`);
+  }
+
+  const data = await response.json();
+  tokenData = {
+    access_token: data.access_token,
+    refresh_token: data.refresh_token || tokenData.refresh_token,
+    expires_at: Date.now() + data.expires_in * 1000,
+  };
+}
+
+export function isAuthenticated(): boolean {
+  return tokenData !== null;
+}
+
+export async function getUncachableSpotifyClient(): Promise<SpotifyApi> {
+  if (!tokenData) {
+    throw new Error("Not authenticated. Please authorize the app first.");
+  }
+
+  // Refresh token if expired or about to expire (within 5 minutes)
+  if (Date.now() >= tokenData.expires_at - 5 * 60 * 1000) {
+    await refreshAccessToken();
+  }
+
+  const spotify = SpotifyApi.withAccessToken(CLIENT_ID, {
+    access_token: tokenData.access_token,
     token_type: "Bearer",
-    expires_in: expiresIn || 3600,
-    refresh_token: refreshToken,
+    expires_in: Math.floor((tokenData.expires_at - Date.now()) / 1000),
+    refresh_token: tokenData.refresh_token,
   });
 
   return spotify;

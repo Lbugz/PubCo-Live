@@ -53,6 +53,11 @@ export default function Dashboard() {
     queryKey: ["/api/tags"],
   });
 
+  const { data: spotifyStatus, refetch: refetchSpotifyStatus } = useQuery<{ authenticated: boolean }>({
+    queryKey: ["/api/spotify/status"],
+    refetchInterval: 3000, // Poll every 3s to check auth status
+  });
+
   const fetchPlaylistsMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("POST", "/api/fetch-playlists", {});
@@ -148,19 +153,32 @@ export default function Dashboard() {
                   {weeksLoading ? "Loading..." : weeks?.[0] ? `Week of ${weeks[0]}` : "No data"}
                 </span>
               </div>
-              <Button
-                onClick={() => fetchPlaylistsMutation.mutate()}
-                variant="default"
-                size="default"
-                className="gap-2"
-                disabled={fetchPlaylistsMutation.isPending}
-                data-testid="button-fetch-data"
-              >
-                <RefreshCw className={`h-4 w-4 ${fetchPlaylistsMutation.isPending ? "animate-spin" : ""}`} />
-                <span className="hidden sm:inline">
-                  {fetchPlaylistsMutation.isPending ? "Fetching..." : "Fetch Data"}
-                </span>
-              </Button>
+              {!spotifyStatus?.authenticated ? (
+                <Button
+                  onClick={() => window.open("/api/spotify/auth", "_blank")}
+                  variant="default"
+                  size="default"
+                  className="gap-2"
+                  data-testid="button-authorize-spotify"
+                >
+                  <Music2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Authorize Spotify</span>
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => fetchPlaylistsMutation.mutate()}
+                  variant="default"
+                  size="default"
+                  className="gap-2"
+                  disabled={fetchPlaylistsMutation.isPending}
+                  data-testid="button-fetch-data"
+                >
+                  <RefreshCw className={`h-4 w-4 ${fetchPlaylistsMutation.isPending ? "animate-spin" : ""}`} />
+                  <span className="hidden sm:inline">
+                    {fetchPlaylistsMutation.isPending ? "Fetching..." : "Fetch Data"}
+                  </span>
+                </Button>
+              )}
               <Button
                 onClick={() => enrichMetadataMutation.mutate()}
                 variant="secondary"

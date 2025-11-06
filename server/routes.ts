@@ -1,12 +1,49 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { getUncachableSpotifyClient } from "./spotify";
+import { getUncachableSpotifyClient, getAuthUrl, exchangeCodeForToken, isAuthenticated } from "./spotify";
 import { calculateUnsignedScore } from "./scoring";
 import { searchByISRC } from "./musicbrainz";
 import { playlists, type InsertPlaylistSnapshot, insertTagSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Spotify OAuth endpoints
+  app.get("/api/spotify/auth", (req, res) => {
+    const authUrl = getAuthUrl();
+    res.redirect(authUrl);
+  });
+
+  app.get("/api/spotify/callback", async (req, res) => {
+    const code = req.query.code as string;
+    
+    if (!code) {
+      res.status(400).send("No authorization code provided");
+      return;
+    }
+
+    try {
+      await exchangeCodeForToken(code);
+      res.send(`
+        <html>
+          <body>
+            <h1>✅ Spotify Authorization Successful!</h1>
+            <p>You can now close this window and return to the application.</p>
+            <script>
+              setTimeout(() => window.close(), 2000);
+            </script>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error("Error exchanging code for token:", error);
+      res.status(500).send("Failed to authorize with Spotify");
+    }
+  });
+
+  app.get("/api/spotify/status", (req, res) => {
+    res.json({ authenticated: isAuthenticated() });
+  });
+
   app.get("/api/weeks", async (req, res) => {
     try {
       const weeks = await storage.getAllWeeks();
