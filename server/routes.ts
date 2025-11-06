@@ -56,25 +56,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Try with market parameter first
         const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId, "from_token" as any);
-        res.json({ name: playlistData.name, id: playlistData.id });
+        res.json({ name: playlistData.name, id: playlistData.id, status: "accessible" });
       } catch (marketError: any) {
         // If market parameter fails, try without it as a fallback
         console.log("Retrying without market parameter...");
-        const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId);
-        res.json({ name: playlistData.name, id: playlistData.id });
+        try {
+          const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId);
+          res.json({ name: playlistData.name, id: playlistData.id, status: "accessible" });
+        } catch (finalError: any) {
+          // Handle 404 errors with search fallback
+          if (finalError?.message?.includes("404")) {
+            console.log(`Playlist ${req.params.playlistId} returned 404. Attempting search fallback...`);
+            
+            try {
+              // Try to search for the playlist by ID
+              const searchResults = await spotify.search(req.params.playlistId, ["playlist"], undefined, 5);
+              
+              if (searchResults.playlists.items.length > 0) {
+                // Find exact match by ID or use first result
+                const matchedPlaylist = searchResults.playlists.items.find((p: any) => p.id === req.params.playlistId) 
+                  || searchResults.playlists.items[0];
+                
+                console.log(`Found playlist via search: "${matchedPlaylist.name}" (${matchedPlaylist.id})`);
+                
+                // Verify we can actually access this playlist
+                try {
+                  const verifiedPlaylist = await spotify.playlists.getPlaylist(matchedPlaylist.id);
+                  return res.json({ 
+                    name: verifiedPlaylist.name, 
+                    id: verifiedPlaylist.id,
+                    status: "accessible",
+                    foundViaSearch: true,
+                    originalId: req.params.playlistId
+                  });
+                } catch (verifyError) {
+                  console.log("Search result playlist also inaccessible");
+                }
+              }
+              
+              // If search didn't work, return detailed error
+              return res.status(404).json({ 
+                error: "This playlist is not accessible through the Spotify API. It may be region-restricted, editorial-only, or require special access.",
+                status: "restricted",
+                playlistId: req.params.playlistId,
+                suggestion: "Try using a public playlist from your personal library or a well-known user playlist instead of Spotify editorial playlists."
+              });
+            } catch (searchError) {
+              console.error("Search fallback also failed:", searchError);
+              return res.status(404).json({ 
+                error: "This playlist is not accessible through the Spotify API. It may be region-restricted, editorial-only, or require special access.",
+                status: "restricted",
+                playlistId: req.params.playlistId
+              });
+            }
+          } else {
+            throw finalError;
+          }
+        }
       }
     } catch (error: any) {
       console.error("Error fetching playlist:", error);
-      
-      // Provide more helpful error message for 404s
-      if (error?.message?.includes("404")) {
-        res.status(404).json({ 
-          error: "This playlist is not accessible through the Spotify API. It may be region-restricted or require special access. Please try a different playlist or use one from your personal library." 
-        });
-      } else {
-        const errorMessage = error?.message || "Failed to fetch playlist from Spotify";
-        res.status(500).json({ error: errorMessage });
-      }
+      const errorMessage = error?.message || "Failed to fetch playlist from Spotify";
+      res.status(500).json({ error: errorMessage, status: "error" });
     }
   });
 
@@ -393,6 +436,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Use market: "from_token" to get playlist in user's region (important for editorial playlists)
           const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId, "from_token" as any);
           
+          // Mark playlist as accessible since we successfully fetched it
+          await storage.updatePlaylistStatus(playlist.playlistId, "accessible", new Date());
+          
           if (!playlistData.tracks?.items) {
             console.warn(`No tracks found for playlist: ${playlist.name}`);
             continue;
@@ -426,8 +472,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (error) {
+        } catch (error: any) {
           console.error(`Error fetching playlist ${playlist.name}:`, error);
+          
+          // Mark playlist as restricted if we get a 404
+          if (error?.message?.includes("404")) {
+            console.log(`Playlist ${playlist.name} appears to be restricted`);
+            await storage.updatePlaylistStatus(playlist.playlistId, "restricted", new Date());
+          }
         }
       }
       

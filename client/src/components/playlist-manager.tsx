@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Trash2, ListMusic } from "lucide-react";
+import { Plus, Trash2, ListMusic, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { type TrackedPlaylist } from "@shared/schema";
 
 export function PlaylistManager() {
@@ -37,24 +38,31 @@ export function PlaylistManager() {
       
       const res = await apiRequest("POST", "/api/tracked-playlists", {
         name: playlistData.name,
-        playlistId: playlistId,
-        spotifyUrl: `https://open.spotify.com/playlist/${playlistId}`,
+        playlistId: playlistData.foundViaSearch ? playlistData.id : playlistId,
+        spotifyUrl: `https://open.spotify.com/playlist/${playlistData.foundViaSearch ? playlistData.id : playlistId}`,
+        status: playlistData.status || "accessible",
       });
       
       const playlist: TrackedPlaylist = await res.json();
       return playlist;
     },
     onSuccess: (data: TrackedPlaylist) => {
+      const statusMessage = data.status === "accessible" 
+        ? `Now tracking "${data.name}"`
+        : `Added "${data.name}" but it may have limited access`;
+      
       toast({
         title: "Playlist Added!",
-        description: `Now tracking "${data.name}"`,
+        description: statusMessage,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
       setPlaylistUrl("");
     },
     onError: (error: any) => {
+      const isRestricted = error.message?.includes("region-restricted") || error.message?.includes("editorial-only");
+      
       toast({
-        title: "Error",
+        title: isRestricted ? "Playlist Restricted" : "Error",
         description: error.message || "Failed to add playlist",
         variant: "destructive",
       });
@@ -115,6 +123,32 @@ export function PlaylistManager() {
       return;
     }
     addPlaylistMutation.mutate(playlistUrl);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "accessible":
+        return (
+          <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+            <CheckCircle2 className="w-3 h-3 mr-1" />
+            Accessible
+          </Badge>
+        );
+      case "restricted":
+        return (
+          <Badge variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20">
+            <XCircle className="w-3 h-3 mr-1" />
+            Restricted
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20">
+            <HelpCircle className="w-3 h-3 mr-1" />
+            Unknown
+          </Badge>
+        );
+    }
   };
 
   return (
@@ -181,8 +215,11 @@ export function PlaylistManager() {
                     className="p-3 flex items-center justify-between gap-3"
                     data-testid={`playlist-${playlist.id}`}
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{playlist.name}</p>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium truncate">{playlist.name}</p>
+                        {getStatusBadge(playlist.status || "unknown")}
+                      </div>
                       <a
                         href={playlist.spotifyUrl}
                         target="_blank"

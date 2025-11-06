@@ -21,6 +21,7 @@ export interface IStorage {
   getTracksByTag(tagId: string): Promise<PlaylistSnapshot[]>;
   getTrackedPlaylists(): Promise<TrackedPlaylist[]>;
   addTrackedPlaylist(playlist: InsertTrackedPlaylist): Promise<TrackedPlaylist>;
+  updatePlaylistStatus(playlistId: string, status: string, lastChecked: Date): Promise<void>;
   deleteTrackedPlaylist(id: string): Promise<void>;
   updateTrackContact(id: string, contact: { instagram?: string; twitter?: string; tiktok?: string; email?: string; contactNotes?: string }): Promise<void>;
 }
@@ -159,6 +160,12 @@ export class DatabaseStorage implements IStorage {
   async addTrackedPlaylist(playlist: InsertTrackedPlaylist): Promise<TrackedPlaylist> {
     const [inserted] = await db.insert(trackedPlaylists).values(playlist).returning();
     return inserted;
+  }
+
+  async updatePlaylistStatus(playlistId: string, status: string, lastChecked: Date): Promise<void> {
+    await db.update(trackedPlaylists)
+      .set({ status, lastChecked })
+      .where(eq(trackedPlaylists.playlistId, playlistId));
   }
 
   async deleteTrackedPlaylist(id: string): Promise<void> {

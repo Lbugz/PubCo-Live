@@ -64,6 +64,8 @@ export const trackedPlaylists = pgTable("tracked_playlists", {
   name: text("name").notNull(),
   playlistId: text("playlist_id").notNull().unique(),
   spotifyUrl: text("spotify_url").notNull(),
+  status: text("status").notNull().default("unknown"),
+  lastChecked: timestamp("last_checked"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
