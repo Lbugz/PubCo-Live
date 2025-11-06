@@ -12,8 +12,9 @@ import { TrackTable } from "@/components/track-table";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TagManager } from "@/components/tag-manager";
 import { PlaylistManager } from "@/components/playlist-manager";
-import { type PlaylistSnapshot, type Tag } from "@shared/schema";
+import { type PlaylistSnapshot, type Tag, type TrackedPlaylist } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 
 export default function Dashboard() {
@@ -50,6 +51,10 @@ export default function Dashboard() {
     queryKey: ["/api/playlists"],
   });
 
+  const { data: trackedPlaylists = [] } = useQuery<TrackedPlaylist[]>({
+    queryKey: ["/api/tracked-playlists"],
+  });
+
   const { data: tags = [] } = useQuery<Tag[]>({
     queryKey: ["/api/tags"],
   });
@@ -71,6 +76,7 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/weeks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/playlists"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
     },
     onError: (error: any) => {
       toast({
@@ -289,11 +295,22 @@ export default function Dashboard() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all" data-testid="option-playlist-all">All Playlists</SelectItem>
-                      {playlists?.map((playlist) => (
-                        <SelectItem key={playlist} value={playlist} data-testid={`option-playlist-${playlist}`}>
-                          {playlist}
-                        </SelectItem>
-                      ))}
+                      {playlists?.map((playlist) => {
+                        const trackedPlaylist = trackedPlaylists.find(p => p.name === playlist);
+                        const totalTracks = trackedPlaylist?.totalTracks;
+                        return (
+                          <SelectItem key={playlist} value={playlist} data-testid={`option-playlist-${playlist}`}>
+                            <div className="flex items-center justify-between gap-2 w-full">
+                              <span className="truncate">{playlist}</span>
+                              {(totalTracks !== null && totalTracks !== undefined) && (
+                                <Badge variant="secondary" className="ml-auto text-xs shrink-0">
+                                  {totalTracks}
+                                </Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
