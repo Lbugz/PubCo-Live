@@ -66,10 +66,14 @@ export default function Dashboard() {
 
   const fetchPlaylistsMutation = useMutation({
     mutationFn: async () => {
+      console.log("Starting fetch playlists mutation...");
       const response = await apiRequest("POST", "/api/fetch-playlists", {});
-      return await response.json();
+      const data = await response.json();
+      console.log("Fetch playlists response:", data);
+      return data;
     },
     onSuccess: (data: any) => {
+      console.log("Fetch playlists success:", data);
       toast({
         title: "Success!",
         description: `Fetched ${data.tracksAdded} tracks from Spotify for week ${data.week}`,
@@ -80,6 +84,7 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
     },
     onError: (error: any) => {
+      console.error("Fetch playlists error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to fetch playlists",
