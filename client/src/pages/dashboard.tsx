@@ -66,7 +66,8 @@ export default function Dashboard() {
 
   const fetchPlaylistsMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", "/api/fetch-playlists", {});
+      const response = await apiRequest("POST", "/api/fetch-playlists", {});
+      return await response.json();
     },
     onSuccess: (data: any) => {
       toast({
@@ -89,7 +90,8 @@ export default function Dashboard() {
 
   const enrichMetadataMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", "/api/enrich-metadata", {});
+      const response = await apiRequest("POST", "/api/enrich-metadata", {});
+      return await response.json();
     },
     onSuccess: (data: any) => {
       toast({
