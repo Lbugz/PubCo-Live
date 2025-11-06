@@ -29,9 +29,9 @@ async function getAccessToken() {
   ).then(res => res.json()).then(data => data.items?.[0]);
    const refreshToken =
     connectionSettings?.settings?.oauth?.credentials?.refresh_token;
-  const accessToken = connectionSettings?.settings?.access_token || connectionSettings.settings?.oauth?.credentials?.access_token;
-const clientId = connectionSettings?.settings?.oauth?.credentials?.client_id;
-  const expiresIn = connectionSettings.settings?.oauth?.credentials?.expires_in;
+  const accessToken = connectionSettings?.settings?.access_token || connectionSettings?.settings?.oauth?.credentials?.access_token;
+  const clientId = connectionSettings?.settings?.oauth?.credentials?.client_id;
+  const expiresIn = connectionSettings?.settings?.oauth?.credentials?.expires_in;
   if (!connectionSettings || (!accessToken || !clientId || !refreshToken)) {
     throw new Error('Spotify not connected');
   }
