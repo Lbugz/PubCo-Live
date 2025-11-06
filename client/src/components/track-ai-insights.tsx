@@ -97,63 +97,71 @@ export function TrackAIInsights({ track }: TrackAIInsightsProps) {
         {!loading && insights && (
           <div className="space-y-6 py-4">
             <div className="flex items-center gap-2">
-              <Badge className={getPriorityColor(insights.priorityLevel)} data-testid={`badge-priority-${track.id}`}>
-                {insights.priorityLevel.toUpperCase()} PRIORITY
+              <Badge className={getPriorityColor(insights.priorityLevel || "medium")} data-testid={`badge-priority-${track.id}`}>
+                {(insights.priorityLevel || "medium").toUpperCase()} PRIORITY
               </Badge>
               <span className="text-sm text-muted-foreground">
                 Score: {track.unsignedScore}/10
               </span>
             </div>
 
-            <Card className="p-4 bg-muted/50">
-              <div className="flex items-start gap-3">
-                <TrendingUp className="h-5 w-5 text-chart-2 mt-0.5 flex-shrink-0" />
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-sm">Summary</h3>
-                  <p className="text-sm leading-relaxed" data-testid={`text-summary-${track.id}`}>
-                    {insights.summary}
-                  </p>
+            {insights.summary && (
+              <Card className="p-4 bg-muted/50">
+                <div className="flex items-start gap-3">
+                  <TrendingUp className="h-5 w-5 text-chart-2 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-sm">Summary</h3>
+                    <p className="text-sm leading-relaxed" data-testid={`text-summary-${track.id}`}>
+                      {insights.summary}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </Card>
-
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-chart-4" />
-                <h3 className="font-semibold text-sm">Outreach Strategy</h3>
-              </div>
-              <Card className="p-4">
-                <p className="text-sm leading-relaxed" data-testid={`text-outreach-${track.id}`}>
-                  {insights.outreachSuggestion}
-                </p>
               </Card>
-            </div>
+            )}
 
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Lightbulb className="h-4 w-4 text-chart-3" />
-                <h3 className="font-semibold text-sm">Key Talking Points</h3>
+            {insights.outreachSuggestion && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-chart-4" />
+                  <h3 className="font-semibold text-sm">Outreach Strategy</h3>
+                </div>
+                <Card className="p-4">
+                  <p className="text-sm leading-relaxed" data-testid={`text-outreach-${track.id}`}>
+                    {insights.outreachSuggestion}
+                  </p>
+                </Card>
               </div>
-              <ul className="space-y-2">
-                {insights.talkingPoints.map((point, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span className="text-chart-3 mt-1.5 flex-shrink-0">•</span>
-                    <span className="text-sm" data-testid={`text-talking-point-${track.id}-${idx}`}>
-                      {point}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            )}
 
-            <div className="space-y-2 pt-2 border-t">
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Scoring Rationale
-              </h4>
-              <p className="text-sm text-muted-foreground" data-testid={`text-rationale-${track.id}`}>
-                {insights.scoringRationale}
-              </p>
-            </div>
+            {insights.talkingPoints && insights.talkingPoints.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4 text-chart-3" />
+                  <h3 className="font-semibold text-sm">Key Talking Points</h3>
+                </div>
+                <ul className="space-y-2">
+                  {insights.talkingPoints.map((point, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-chart-3 mt-1.5 flex-shrink-0">•</span>
+                      <span className="text-sm" data-testid={`text-talking-point-${track.id}-${idx}`}>
+                        {point}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {insights.scoringRationale && (
+              <div className="space-y-2 pt-2 border-t">
+                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Scoring Rationale
+                </h4>
+                <p className="text-sm text-muted-foreground" data-testid={`text-rationale-${track.id}`}>
+                  {insights.scoringRationale}
+                  </p>
+              </div>
+            )}
           </div>
         )}
 
