@@ -56,12 +56,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Try with market parameter first
         const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId, "from_token" as any);
+        console.log("Playlist name from Spotify API:", playlistData.name);
+        console.log("Playlist name type:", typeof playlistData.name);
+        console.log("Playlist name length:", playlistData.name?.length);
         res.json({ name: playlistData.name, id: playlistData.id, status: "accessible" });
       } catch (marketError: any) {
         // If market parameter fails, try without it as a fallback
         console.log("Retrying without market parameter...");
         try {
           const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId);
+          console.log("Playlist name from Spotify API (no market):", playlistData.name);
+          console.log("Playlist name type:", typeof playlistData.name);
+          console.log("Playlist name length:", playlistData.name?.length);
           res.json({ name: playlistData.name, id: playlistData.id, status: "accessible" });
         } catch (finalError: any) {
           // Handle 404 errors with search fallback
@@ -82,6 +88,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Verify we can actually access this playlist
                 try {
                   const verifiedPlaylist = await spotify.playlists.getPlaylist(matchedPlaylist.id);
+                  console.log("Verified playlist name via search:", verifiedPlaylist.name);
+                  console.log("Verified playlist name type:", typeof verifiedPlaylist.name);
+                  console.log("Verified playlist name length:", verifiedPlaylist.name?.length);
                   return res.json({ 
                     name: verifiedPlaylist.name, 
                     id: verifiedPlaylist.id,
