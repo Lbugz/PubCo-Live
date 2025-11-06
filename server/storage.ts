@@ -1,38 +1,78 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { playlistSnapshots, type PlaylistSnapshot, type InsertPlaylistSnapshot } from "@shared/schema";
+import { db } from "./db";
+import { eq, sql, desc } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getTracksByWeek(week: string): Promise<PlaylistSnapshot[]>;
+  getLatestWeek(): Promise<string | null>;
+  getAllWeeks(): Promise<string[]>;
+  getAllPlaylists(): Promise<string[]>;
+  insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<void>;
+  deleteTracksByWeek(week: string): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class DatabaseStorage implements IStorage {
+  async getTracksByWeek(week: string): Promise<PlaylistSnapshot[]> {
+    if (week === "latest") {
+      const latestWeek = await this.getLatestWeek();
+      if (!latestWeek) return [];
+      return db.select()
+        .from(playlistSnapshots)
+        .where(eq(playlistSnapshots.week, latestWeek))
+        .orderBy(desc(playlistSnapshots.unsignedScore));
+    }
+    
+    return db.select()
+      .from(playlistSnapshots)
+      .where(eq(playlistSnapshots.week, week))
+      .orderBy(desc(playlistSnapshots.unsignedScore));
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getLatestWeek(): Promise<string | null> {
+    const result = await db.select({ week: playlistSnapshots.week })
+      .from(playlistSnapshots)
+      .orderBy(desc(playlistSnapshots.week))
+      .limit(1);
+    
+    if (!result[0]?.week) return null;
+    
+    const weekDate = result[0].week;
+    if (typeof weekDate === 'string') {
+      return weekDate.split('T')[0];
+    }
+    return weekDate.toISOString().split('T')[0];
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getAllWeeks(): Promise<string[]> {
+    const result = await db.selectDistinct({ week: playlistSnapshots.week })
+      .from(playlistSnapshots)
+      .orderBy(desc(playlistSnapshots.week));
+    
+    return result.map(r => {
+      if (typeof r.week === 'string') {
+        return r.week.split('T')[0];
+      }
+      return r.week.toISOString().split('T')[0];
+    });
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async getAllPlaylists(): Promise<string[]> {
+    const result = await db.selectDistinct({ playlist: playlistSnapshots.playlistName })
+      .from(playlistSnapshots)
+      .orderBy(playlistSnapshots.playlistName);
+    
+    return result.map(r => r.playlist);
+  }
+
+  async insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<void> {
+    if (tracks.length === 0) return;
+    
+    await db.insert(playlistSnapshots).values(tracks);
+  }
+
+  async deleteTracksByWeek(week: string): Promise<void> {
+    await db.delete(playlistSnapshots).where(eq(playlistSnapshots.week, week));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
