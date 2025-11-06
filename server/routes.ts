@@ -785,13 +785,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const fetchMethod = isEditorial === 1 ? 'scraping' : 'api';
           
           // Update the playlist with metadata
-          await db.update(trackedPlaylists)
-            .set({ 
-              totalTracks,
-              isEditorial,
-              fetchMethod,
-            })
-            .where(eq(trackedPlaylists.playlistId, playlist.playlistId));
+          await storage.updatePlaylistMetadata(playlist.id, {
+            totalTracks,
+            isEditorial,
+            fetchMethod,
+          });
           
           backfilledCount++;
           results.push({
