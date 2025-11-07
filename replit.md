@@ -149,6 +149,15 @@ Users can add and manage any Spotify playlists to track (no longer limited to Fr
 - Actionable export features
 
 ## Recent Changes
+- 2025-11-07: **Advanced Filtering System**
+  - **8 Toggle Filter Badges**: Has/No ISRC, Has/No Credits, Has/No Publisher, Has/No Songwriter
+  - **Multi-Filter Combinations**: Supports AND logic - all active filters must match
+  - **Dynamic Filter State**: Set-based state management for efficient toggle operations
+  - **Clear All Button**: Appears when filters are active to reset all filters at once
+  - **hasCredits Heuristic**: Defined as publisher OR songwriter present
+  - **Intuitive UX**: Badges toggle between "default" (active) and "outline" (inactive) variants
+  - **Performance**: Filters apply without re-fetching data, purely client-side computation
+
 - 2025-11-07: **Spotify Credits Scraping Enrichment**
   - **New scrapeTrackCredits() Function**: Uses Puppeteer to visit track pages and extract credits data
     - Navigates to track URLs, finds Credits section via XPath
