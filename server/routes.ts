@@ -385,13 +385,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/enrich-metadata", async (req, res) => {
     try {
-      const unenrichedTracks = await storage.getUnenrichedTracks(50);
+      const { mode = 'all', trackId, playlistName, limit = 50 } = req.body;
+      
+      let unenrichedTracks = await storage.getUnenrichedTracks(limit);
+      
+      // Filter based on mode
+      if (mode === 'track' && trackId) {
+        unenrichedTracks = unenrichedTracks.filter(t => t.id === trackId);
+      } else if (mode === 'playlist' && playlistName) {
+        unenrichedTracks = unenrichedTracks.filter(t => t.playlistName === playlistName);
+      }
       
       if (unenrichedTracks.length === 0) {
         return res.json({ 
           success: true, 
           enrichedCount: 0,
-          message: "No tracks need enrichment"
+          message: "No tracks need MusicBrainz enrichment"
         });
       }
 
@@ -466,16 +475,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/enrich-credits", async (req, res) => {
     try {
-      const { limit = 10 } = req.body;
+      const { mode = 'all', trackId, playlistName, limit = 10 } = req.body;
       
       // Get tracks that don't have songwriter/publisher data yet
-      const tracks = await storage.getUnenrichedTracks(limit);
+      let tracks = await storage.getUnenrichedTracks(limit);
+      
+      // Filter based on mode
+      if (mode === 'track' && trackId) {
+        tracks = tracks.filter(t => t.id === trackId);
+      } else if (mode === 'playlist' && playlistName) {
+        tracks = tracks.filter(t => t.playlistName === playlistName);
+      }
       
       if (tracks.length === 0) {
         return res.json({ 
           success: true, 
           enrichedCount: 0,
-          message: "No tracks need credits enrichment"
+          failedCount: 0,
+          totalProcessed: 0,
+          message: "No tracks need Spotify Credits enrichment"
         });
       }
 
@@ -677,19 +695,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/fetch-playlists", async (req, res) => {
     try {
+      const { mode = 'all', playlistId } = req.body;
       const spotify = await getUncachableSpotifyClient();
       const today = new Date().toISOString().split('T')[0];
       
-      const trackedPlaylists = await storage.getTrackedPlaylists();
+      const allTrackedPlaylists = await storage.getTrackedPlaylists();
       
-      if (trackedPlaylists.length === 0) {
+      if (allTrackedPlaylists.length === 0) {
         return res.status(400).json({ 
           error: "No playlists are being tracked. Please add playlists to track first." 
         });
       }
       
+      // Filter playlists based on mode
+      let trackedPlaylists = allTrackedPlaylists;
+      if (mode === 'editorial') {
+        trackedPlaylists = allTrackedPlaylists.filter(p => p.isEditorial === 1);
+      } else if (mode === 'non-editorial') {
+        trackedPlaylists = allTrackedPlaylists.filter(p => p.isEditorial !== 1);
+      } else if (mode === 'specific' && playlistId) {
+        trackedPlaylists = allTrackedPlaylists.filter(p => p.id === playlistId);
+      }
+      
+      if (trackedPlaylists.length === 0) {
+        return res.status(400).json({ 
+          error: `No playlists found for mode: ${mode}` 
+        });
+      }
+      
+      // Get existing tracks for this week to avoid duplicates
+      const existingTracks = await storage.getTracksByWeek(today);
+      const existingTrackKeys = new Set(
+        existingTracks.map(t => `${t.playlistId}_${t.spotifyUrl}`)
+      );
+      
       const allTracks: InsertPlaylistSnapshot[] = [];
-      const completenessResults: Array<{ name: string; fetchCount: number; totalTracks: number | null; isComplete: boolean }> = [];
+      const completenessResults: Array<{ name: string; fetchCount: number; totalTracks: number | null; isComplete: boolean; skipped: number }> = [];
       
       for (const playlist of trackedPlaylists) {
         try {
@@ -697,6 +738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           let playlistTracks: any[] = [];
           let playlistTotalTracks = playlist.totalTracks;
+          let skippedCount = 0;
           
           // Route by fetch method
           if (playlist.isEditorial === 1 || playlist.fetchMethod === 'scraping') {
@@ -711,6 +753,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Convert scraped tracks to playlist snapshot format
             for (const scrapedTrack of scrapeResult.tracks) {
+              const trackKey = `${playlist.playlistId}_${scrapedTrack.spotifyUrl}`;
+              if (existingTrackKeys.has(trackKey)) {
+                skippedCount++;
+                continue;
+              }
+              
               const score = calculateUnsignedScore({
                 playlistName: playlist.name,
                 label: null,
@@ -718,19 +766,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 writer: null,
               });
               
-              allTracks.push({
+              const newTrack = {
                 week: today,
                 playlistName: playlist.name,
                 playlistId: playlist.playlistId,
                 trackName: scrapedTrack.trackName,
                 artistName: scrapedTrack.artistName,
                 spotifyUrl: scrapedTrack.spotifyUrl,
-                isrc: null, // Scraped tracks don't have ISRC initially
+                isrc: null,
                 label: null,
                 unsignedScore: score,
                 addedAt: new Date(),
                 dataSource: "scraping",
-              });
+              };
+              
+              allTracks.push(newTrack);
+              existingTrackKeys.add(trackKey);
             }
             
             playlistTracks = scrapeResult.tracks;
@@ -752,6 +803,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (!item.track || item.track.type !== "track") continue;
               
               const track = item.track;
+              const trackKey = `${playlist.playlistId}_${track.external_urls.spotify}`;
+              
+              if (existingTrackKeys.has(trackKey)) {
+                skippedCount++;
+                continue;
+              }
+              
               const label = track.album?.label || null;
               
               const score = calculateUnsignedScore({
@@ -761,7 +819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 writer: null,
               });
               
-              allTracks.push({
+              const newTrack = {
                 week: today,
                 playlistName: playlist.name,
                 playlistId: playlist.playlistId,
@@ -773,7 +831,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 unsignedScore: score,
                 addedAt: new Date(item.added_at),
                 dataSource: "api",
-              });
+              };
+              
+              allTracks.push(newTrack);
+              existingTrackKeys.add(trackKey);
             }
             
             playlistTracks = playlistData.tracks.items;
@@ -794,9 +855,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             fetchCount,
             totalTracks: playlistTotalTracks,
             isComplete,
+            skipped: skippedCount,
           });
           
-          console.log(`${playlist.name}: ${fetchCount}${playlistTotalTracks ? `/${playlistTotalTracks}` : ''} tracks (${isComplete ? 'complete' : 'partial'})`);
+          console.log(`${playlist.name}: ${fetchCount}${playlistTotalTracks ? `/${playlistTotalTracks}` : ''} tracks (${isComplete ? 'complete' : 'partial'}, ${skippedCount} skipped)`);
           
           await new Promise(resolve => setTimeout(resolve, 100));
         } catch (error: any) {
@@ -805,9 +867,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (allTracks.length > 0) {
-        await storage.deleteTracksByWeek(today);
         await storage.insertTracks(allTracks);
-        console.log(`Successfully saved ${allTracks.length} tracks for ${today}`);
+        console.log(`Successfully saved ${allTracks.length} new tracks for ${today}`);
       }
       
       res.json({ 

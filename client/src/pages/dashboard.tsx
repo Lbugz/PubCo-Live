@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, Download, Calendar, TrendingUp, ListMusic, Target, RefreshCw, Sparkles, BarChart3, FileText } from "lucide-react";
+import { Music2, Download, Calendar, TrendingUp, ListMusic, Target, RefreshCw, Sparkles, BarChart3, FileText, ChevronDown } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,14 @@ import { type PlaylistSnapshot, type Tag, type TrackedPlaylist } from "@shared/s
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Dashboard() {
   const [selectedWeek, setSelectedWeek] = useState<string>("latest");
@@ -65,18 +73,19 @@ export default function Dashboard() {
   });
 
   const fetchPlaylistsMutation = useMutation({
-    mutationFn: async () => {
-      console.log("Starting fetch playlists mutation...");
-      const response = await apiRequest("POST", "/api/fetch-playlists", {});
+    mutationFn: async ({ mode = 'all', playlistId }: { mode?: string; playlistId?: string }) => {
+      console.log("Starting fetch playlists mutation...", { mode, playlistId });
+      const response = await apiRequest("POST", "/api/fetch-playlists", { mode, playlistId });
       const data = await response.json();
       console.log("Fetch playlists response:", data);
       return data;
     },
     onSuccess: (data: any) => {
       console.log("Fetch playlists success:", data);
+      const totalSkipped = data.completenessResults?.reduce((sum: number, r: any) => sum + (r.skipped || 0), 0) || 0;
       toast({
         title: "Success!",
-        description: `Fetched ${data.tracksAdded} tracks from Spotify for week ${data.week}`,
+        description: `Fetched ${data.tracksAdded} new tracks from Spotify for week ${data.week}${totalSkipped > 0 ? ` (${totalSkipped} duplicates skipped)` : ''}`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/weeks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
@@ -94,8 +103,8 @@ export default function Dashboard() {
   });
 
   const enrichMetadataMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/enrich-metadata", {});
+    mutationFn: async ({ mode = 'all', trackId, playlistName, limit = 50 }: { mode?: string; trackId?: string; playlistName?: string; limit?: number }) => {
+      const response = await apiRequest("POST", "/api/enrich-metadata", { mode, trackId, playlistName, limit });
       return await response.json();
     },
     onSuccess: (data: any) => {
@@ -115,9 +124,9 @@ export default function Dashboard() {
   });
 
   const enrichCreditsMutation = useMutation({
-    mutationFn: async () => {
-      console.log("Starting credits enrichment mutation...");
-      const response = await apiRequest("POST", "/api/enrich-credits", { limit: 10 });
+    mutationFn: async ({ mode = 'all', trackId, playlistName, limit = 10 }: { mode?: string; trackId?: string; playlistName?: string; limit?: number }) => {
+      console.log("Starting credits enrichment mutation...", { mode, trackId, playlistName });
+      const response = await apiRequest("POST", "/api/enrich-credits", { mode, trackId, playlistName, limit });
       const data = await response.json();
       console.log("Credits enrichment response:", data);
       return data;
@@ -205,46 +214,130 @@ export default function Dashboard() {
                   <span className="hidden sm:inline">Authorize Spotify</span>
                 </Button>
               ) : (
-                <Button
-                  onClick={() => fetchPlaylistsMutation.mutate()}
-                  variant="default"
-                  size="default"
-                  className="gap-2"
-                  disabled={fetchPlaylistsMutation.isPending}
-                  data-testid="button-fetch-data"
-                >
-                  <RefreshCw className={`h-4 w-4 ${fetchPlaylistsMutation.isPending ? "animate-spin" : ""}`} />
-                  <span className="hidden sm:inline">
-                    {fetchPlaylistsMutation.isPending ? "Fetching..." : "Fetch Data"}
-                  </span>
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="default"
+                      size="default"
+                      className="gap-2"
+                      disabled={fetchPlaylistsMutation.isPending}
+                      data-testid="button-fetch-data"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${fetchPlaylistsMutation.isPending ? "animate-spin" : ""}`} />
+                      <span className="hidden sm:inline">
+                        {fetchPlaylistsMutation.isPending ? "Fetching..." : "Fetch Data"}
+                      </span>
+                      {!fetchPlaylistsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Fetch Options</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'all' })} data-testid="menu-fetch-all">
+                      Fetch All Playlists
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'editorial' })} data-testid="menu-fetch-editorial">
+                      Fetch Editorial Playlists Only
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'non-editorial' })} data-testid="menu-fetch-non-editorial">
+                      Fetch Non-Editorial Playlists Only
+                    </DropdownMenuItem>
+                    {trackedPlaylists.length > 0 && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Fetch Specific Playlist</DropdownMenuLabel>
+                        {trackedPlaylists.map((playlist) => (
+                          <DropdownMenuItem 
+                            key={playlist.id} 
+                            onClick={() => fetchPlaylistsMutation.mutate({ mode: 'specific', playlistId: playlist.id })}
+                            data-testid={`menu-fetch-playlist-${playlist.id}`}
+                          >
+                            {playlist.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
-              <Button
-                onClick={() => enrichMetadataMutation.mutate()}
-                variant="secondary"
-                size="default"
-                className="gap-2"
-                disabled={enrichMetadataMutation.isPending || !tracks || tracks.length === 0}
-                data-testid="button-enrich-musicbrainz"
-              >
-                <Sparkles className={`h-4 w-4 ${enrichMetadataMutation.isPending ? "animate-pulse" : ""}`} />
-                <span className="hidden md:inline">
-                  {enrichMetadataMutation.isPending ? "Enriching..." : "Enrich (MB)"}
-                </span>
-              </Button>
-              <Button
-                onClick={() => enrichCreditsMutation.mutate()}
-                variant="secondary"
-                size="default"
-                className="gap-2"
-                disabled={enrichCreditsMutation.isPending || !tracks || tracks.length === 0}
-                data-testid="button-enrich-credits"
-              >
-                <FileText className={`h-4 w-4 ${enrichCreditsMutation.isPending ? "animate-pulse" : ""}`} />
-                <span className="hidden md:inline">
-                  {enrichCreditsMutation.isPending ? "Scraping..." : "Enrich (Credits)"}
-                </span>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="default"
+                    className="gap-2"
+                    disabled={enrichMetadataMutation.isPending || !tracks || tracks.length === 0}
+                    data-testid="button-enrich-musicbrainz"
+                  >
+                    <Sparkles className={`h-4 w-4 ${enrichMetadataMutation.isPending ? "animate-pulse" : ""}`} />
+                    <span className="hidden md:inline">
+                      {enrichMetadataMutation.isPending ? "Enriching..." : "Enrich (MB)"}
+                    </span>
+                    {!enrichMetadataMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>MusicBrainz Enrich Options</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => enrichMetadataMutation.mutate({ mode: 'all' })} data-testid="menu-enrich-mb-all">
+                    Enrich All Unenriched Tracks
+                  </DropdownMenuItem>
+                  {playlists && playlists.length > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Enrich by Playlist</DropdownMenuLabel>
+                      {playlists.map((playlist) => (
+                        <DropdownMenuItem 
+                          key={playlist} 
+                          onClick={() => enrichMetadataMutation.mutate({ mode: 'playlist', playlistName: playlist })}
+                          data-testid={`menu-enrich-mb-playlist-${playlist}`}
+                        >
+                          {playlist}
+                        </DropdownMenuItem>
+                      ))}
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="default"
+                    className="gap-2"
+                    disabled={enrichCreditsMutation.isPending || !tracks || tracks.length === 0}
+                    data-testid="button-enrich-credits"
+                  >
+                    <FileText className={`h-4 w-4 ${enrichCreditsMutation.isPending ? "animate-pulse" : ""}`} />
+                    <span className="hidden md:inline">
+                      {enrichCreditsMutation.isPending ? "Scraping..." : "Enrich (Credits)"}
+                    </span>
+                    {!enrichCreditsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Spotify Credits Enrich Options</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => enrichCreditsMutation.mutate({ mode: 'all' })} data-testid="menu-enrich-credits-all">
+                    Enrich All Unenriched Tracks
+                  </DropdownMenuItem>
+                  {playlists && playlists.length > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Enrich by Playlist</DropdownMenuLabel>
+                      {playlists.map((playlist) => (
+                        <DropdownMenuItem 
+                          key={playlist} 
+                          onClick={() => enrichCreditsMutation.mutate({ mode: 'playlist', playlistName: playlist })}
+                          data-testid={`menu-enrich-credits-playlist-${playlist}`}
+                        >
+                          {playlist}
+                        </DropdownMenuItem>
+                      ))}
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 onClick={handleExport}
                 variant="outline"
@@ -401,7 +494,12 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <TrackTable tracks={filteredTracks} isLoading={tracksLoading} />
+          <TrackTable 
+            tracks={filteredTracks} 
+            isLoading={tracksLoading}
+            onEnrichMB={(trackId) => enrichMetadataMutation.mutate({ mode: 'track', trackId })}
+            onEnrichCredits={(trackId) => enrichCreditsMutation.mutate({ mode: 'track', trackId })}
+          />
         </div>
       </main>
     </div>

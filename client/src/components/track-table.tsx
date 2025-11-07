@@ -1,4 +1,4 @@
-import { ExternalLink, Music, CheckCircle2, XCircle, Cloud, Database } from "lucide-react";
+import { ExternalLink, Music, CheckCircle2, XCircle, Cloud, Database, Sparkles, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,10 +10,18 @@ import { TrackContactDialog } from "./track-contact-dialog";
 import { TrackAIInsights } from "./track-ai-insights";
 import { useQuery } from "@tanstack/react-query";
 import { getTagColorClass } from "./tag-manager";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface TrackTableProps {
   tracks: PlaylistSnapshot[];
   isLoading?: boolean;
+  onEnrichMB?: (trackId: string) => void;
+  onEnrichCredits?: (trackId: string) => void;
 }
 
 function getScoreBadgeVariant(score: number): "default" | "secondary" | "outline" {
@@ -56,7 +64,7 @@ function TrackTags({ trackId }: { trackId: string }) {
   );
 }
 
-export function TrackTable({ tracks, isLoading }: TrackTableProps) {
+export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits }: TrackTableProps) {
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -192,6 +200,41 @@ export function TrackTable({ tracks, isLoading }: TrackTableProps) {
               </div>
               
               <div className="col-span-1 lg:col-span-1 flex justify-start lg:justify-end gap-2 flex-wrap">
+                {(!track.publisher || !track.songwriter) && (onEnrichMB || onEnrichCredits) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        data-testid={`button-enrich-track-${track.id}`}
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        Enrich
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {onEnrichMB && (
+                        <DropdownMenuItem 
+                          onClick={() => onEnrichMB(track.id)}
+                          data-testid={`menu-enrich-mb-track-${track.id}`}
+                        >
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Enrich with MusicBrainz
+                        </DropdownMenuItem>
+                      )}
+                      {onEnrichCredits && (
+                        <DropdownMenuItem 
+                          onClick={() => onEnrichCredits(track.id)}
+                          data-testid={`menu-enrich-credits-track-${track.id}`}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Enrich with Spotify Credits
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
                 <TrackAIInsights track={track} />
                 <TrackTagPopover trackId={track.id} />
                 <TrackContactDialog track={track} />
