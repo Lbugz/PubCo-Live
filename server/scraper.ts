@@ -102,28 +102,7 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
     console.log("Waiting for track rows to load...");
     await page.waitForSelector('[data-testid="tracklist-row"]', { timeout: 30000 });
     
-    await autoScroll(page);
-    
-    console.log("Extracting track data...");
-    const tracks = await page.evaluate(() => {
-      const trackRows = Array.from(document.querySelectorAll('[data-testid="tracklist-row"]'));
-      
-      return trackRows.map((row) => {
-        const trackNameEl = row.querySelector('[data-testid="internal-track-link"] div[dir="auto"]');
-        const artistNameEl = row.querySelector('[data-testid="internal-track-link"]')?.parentElement?.parentElement?.querySelector('a[href*="/artist/"]');
-        const albumEl = row.querySelector('a[href*="/album/"]');
-        const durationEl = row.querySelector('[data-testid="duration-cell-container"]');
-        const trackLinkEl = row.querySelector('[data-testid="internal-track-link"]') as HTMLAnchorElement;
-        
-        return {
-          trackName: trackNameEl?.textContent?.trim() || "",
-          artistName: artistNameEl?.textContent?.trim() || "",
-          album: albumEl?.textContent?.trim() || "",
-          duration: durationEl?.textContent?.trim() || "",
-          spotifyUrl: trackLinkEl?.href || "",
-        };
-      }).filter(track => track.trackName && track.artistName);
-    });
+    const tracks = await autoScrollAndCollectTracks(page);
     
     console.log(`Successfully scraped ${tracks.length} tracks`);
     
@@ -153,74 +132,111 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
   }
 }
 
-async function autoScroll(page: Page): Promise<void> {
-  console.log("Starting auto-scroll to load all tracks...");
+async function autoScrollAndCollectTracks(page: Page): Promise<Array<{
+  trackName: string;
+  artistName: string;
+  album: string;
+  duration: string;
+  spotifyUrl: string;
+}>> {
+  console.log("Starting auto-scroll to collect all tracks...");
   
-  let previousTrackCount = 0;
-  let stableCount = 0;
-  const maxStableIterations = 10;
+  const collectedTracks = new Map<string, any>();
+  let noNewTracksCount = 0;
+  const maxNoNewIterations = 10;
   const maxScrollIterations = 100;
   
+  const totalTracks = await page.evaluate(() => {
+    const tracklistElement = document.querySelector('[data-testid="playlist-tracklist"]');
+    return tracklistElement ? parseInt(tracklistElement.getAttribute('aria-rowcount') || '0') : 0;
+  });
+  
+  console.log(`Playlist total tracks (from aria-rowcount): ${totalTracks}`);
+  
   for (let i = 0; i < maxScrollIterations; i++) {
-    const currentTrackCount = await page.evaluate(() => {
-      return document.querySelectorAll('[data-testid="tracklist-row"]').length;
-    });
-    
-    console.log(`Scroll iteration ${i + 1}: Found ${currentTrackCount} tracks`);
-    
-    if (currentTrackCount === previousTrackCount) {
-      stableCount++;
-      if (stableCount >= maxStableIterations) {
-        console.log(`Track count stable at ${currentTrackCount} for ${maxStableIterations} iterations. Stopping.`);
-        break;
-      }
-    } else {
-      stableCount = 0;
-    }
-    
-    previousTrackCount = currentTrackCount;
-    
-    const scrollInfo = await page.evaluate(() => {
+    const scrollResult = await page.evaluate(() => {
+      const rows = document.querySelectorAll('[data-testid="tracklist-row"]');
+      const tracks: any[] = [];
+      let lastRowIndex = 0;
+      
+      rows.forEach(row => {
+        const rowIndex = parseInt(row.getAttribute('aria-rowindex') || '0');
+        if (rowIndex > lastRowIndex) {
+          lastRowIndex = rowIndex;
+        }
+        
+        const trackNameEl = row.querySelector('[data-testid="internal-track-link"] > div');
+        const artistNameEl = row.querySelector('[data-testid="internal-track-link"]')?.nextElementSibling;
+        const albumEl = row.querySelector('[data-testid="cell-album"] a');
+        const durationEl = row.querySelector('[data-testid="duration-cell-container"]');
+        const trackLinkEl = row.querySelector('[data-testid="internal-track-link"]') as HTMLAnchorElement;
+        
+        if (trackNameEl && artistNameEl && trackLinkEl?.href) {
+          tracks.push({
+            trackName: trackNameEl.textContent?.trim() || "",
+            artistName: artistNameEl.textContent?.trim() || "",
+            album: albumEl?.textContent?.trim() || "",
+            duration: durationEl?.textContent?.trim() || "",
+            spotifyUrl: trackLinkEl.href,
+          });
+        }
+      });
+      
+      const tracklistElement = document.querySelector('[data-testid="playlist-tracklist"]');
+      const totalRows = tracklistElement ? parseInt(tracklistElement.getAttribute('aria-rowcount') || '0') : 0;
+      
       const selectors = [
         '[data-testid="playlist-tracklist"]',
         '.main-view-container__scroll-node',
         '[data-overlayscrollbars-viewport]',
-        'div[style*="overflow"]',
       ];
-      
-      let foundElement = null;
-      let elementInfo = '';
       
       for (const selector of selectors) {
         const element = document.querySelector(selector) as HTMLElement;
-        if (element) {
-          const hasScroll = element.scrollHeight > element.clientHeight;
-          elementInfo = `${selector}: scrollHeight=${element.scrollHeight}, clientHeight=${element.clientHeight}, hasScroll=${hasScroll}`;
-          
-          if (hasScroll) {
-            const scrollDistance = element.scrollHeight - element.scrollTop;
-            element.scrollBy(0, 1000);
-            foundElement = selector;
-            break;
-          }
+        if (element && element.scrollHeight > element.clientHeight) {
+          element.scrollBy(0, 1000);
+          break;
         }
       }
       
-      return { foundElement, elementInfo };
+      return { tracks, lastRowIndex, totalRows };
     });
     
-    console.log(`Scroll info: ${scrollInfo.elementInfo}`);
-    if (scrollInfo.foundElement) {
-      console.log(`Successfully scrolled element: ${scrollInfo.foundElement}`);
-    } else {
-      console.log('No scrollable element found, trying keyboard navigation');
-      await page.keyboard.press('PageDown');
+    let newTracksFound = 0;
+    for (const track of scrollResult.tracks) {
+      if (!collectedTracks.has(track.spotifyUrl)) {
+        collectedTracks.set(track.spotifyUrl, track);
+        newTracksFound++;
+      }
     }
     
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    console.log(`Iteration ${i + 1}: Collected ${collectedTracks.size}/${scrollResult.totalRows} unique tracks (last visible row: ${scrollResult.lastRowIndex}, +${newTracksFound} new)`);
+    
+    if (newTracksFound === 0) {
+      noNewTracksCount++;
+      if (noNewTracksCount >= maxNoNewIterations) {
+        console.log(`No new tracks for ${maxNoNewIterations} iterations. Collection complete.`);
+        break;
+      }
+    } else {
+      noNewTracksCount = 0;
+    }
+    
+    if (collectedTracks.size >= scrollResult.totalRows && scrollResult.totalRows > 0) {
+      console.log(`Collected all ${scrollResult.totalRows} tracks. Stopping.`);
+      break;
+    }
+    
+    if (scrollResult.lastRowIndex >= scrollResult.totalRows && scrollResult.totalRows > 0) {
+      console.log(`Reached last row (${scrollResult.lastRowIndex}/${scrollResult.totalRows}). Stopping.`);
+      break;
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 1500));
   }
   
-  console.log("Auto-scroll complete");
+  console.log(`Auto-scroll complete. Total unique tracks collected: ${collectedTracks.size}`);
+  return Array.from(collectedTracks.values());
 }
 
 export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResult> {

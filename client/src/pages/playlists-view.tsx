@@ -147,7 +147,7 @@ export default function PlaylistsView() {
   };
 
   const handleAuthorizeSpotify = () => {
-    window.location.href = "/api/spotify/auth";
+    window.open("/api/spotify/auth", "_blank");
   };
 
   return (
