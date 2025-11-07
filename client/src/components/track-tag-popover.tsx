@@ -15,11 +15,15 @@ import { getTagColorClass } from "./tag-manager";
 
 interface TrackTagPopoverProps {
   trackId: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function TrackTagPopover({ trackId }: TrackTagPopoverProps) {
+export function TrackTagPopover({ trackId, open: controlledOpen, onOpenChange }: TrackTagPopoverProps) {
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
 
   const { data: allTags = [] } = useQuery<TagType[]>({
     queryKey: ["/api/tags"],

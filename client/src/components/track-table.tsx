@@ -1,21 +1,13 @@
-import { ExternalLink, Music, CheckCircle2, XCircle, Cloud, Database, Sparkles, FileText } from "lucide-react";
+import { ExternalLink, Music, CheckCircle2, XCircle, Cloud, Database, Sparkles, FileText, MoreVertical, Tag as TagIcon, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type PlaylistSnapshot, type Tag } from "@shared/schema";
 import { cn } from "@/lib/utils";
-import { TrackTagPopover } from "./track-tag-popover";
-import { TrackContactDialog } from "./track-contact-dialog";
-import { TrackAIInsights } from "./track-ai-insights";
+import { TrackActionsDropdown } from "./track-actions-dropdown";
 import { useQuery } from "@tanstack/react-query";
 import { getTagColorClass } from "./tag-manager";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface TrackTableProps {
   tracks: PlaylistSnapshot[];
@@ -203,56 +195,11 @@ export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits, onR
               </div>
               
               <div className="col-span-1 lg:col-span-1 flex justify-start lg:justify-end gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
-                {(!track.publisher || !track.songwriter) && (onEnrichMB || onEnrichCredits) && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                        data-testid={`button-enrich-track-${track.id}`}
-                      >
-                        <Sparkles className="h-4 w-4" />
-                        Enrich
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {onEnrichMB && (
-                        <DropdownMenuItem 
-                          onClick={() => onEnrichMB(track.id)}
-                          data-testid={`menu-enrich-mb-track-${track.id}`}
-                        >
-                          <Sparkles className="h-4 w-4 mr-2" />
-                          Enrich with MusicBrainz
-                        </DropdownMenuItem>
-                      )}
-                      {onEnrichCredits && (
-                        <DropdownMenuItem 
-                          onClick={() => onEnrichCredits(track.id)}
-                          data-testid={`menu-enrich-credits-track-${track.id}`}
-                        >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Enrich with Spotify Credits
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-                <TrackAIInsights track={track} />
-                <TrackTagPopover trackId={track.id} />
-                <TrackContactDialog track={track} />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                  className="gap-2"
-                  data-testid={`button-spotify-link-${track.id}`}
-                >
-                  <a href={track.spotifyUrl} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4" />
-                    <span className="hidden sm:inline">Spotify</span>
-                  </a>
-                </Button>
+                <TrackActionsDropdown
+                  track={track}
+                  onEnrichMB={onEnrichMB}
+                  onEnrichCredits={onEnrichCredits}
+                />
               </div>
             </div>
           </Card>

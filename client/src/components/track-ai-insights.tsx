@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, Loader2, Lightbulb, Target, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,10 +25,14 @@ interface AIInsights {
 
 interface TrackAIInsightsProps {
   track: PlaylistSnapshot;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function TrackAIInsights({ track }: TrackAIInsightsProps) {
-  const [open, setOpen] = useState(false);
+export function TrackAIInsights({ track, open: controlledOpen, onOpenChange }: TrackAIInsightsProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const [loading, setLoading] = useState(false);
   const [insights, setInsights] = useState<AIInsights | null>(null);
   const { toast } = useToast();
@@ -48,6 +52,13 @@ export function TrackAIInsights({ track }: TrackAIInsightsProps) {
       setLoading(false);
     }
   };
+
+  // Auto-generate insights when dialog is opened externally (controlled mode)
+  useEffect(() => {
+    if (open && !insights && !loading) {
+      handleGenerate();
+    }
+  }, [open]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {

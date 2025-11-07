@@ -1,5 +1,6 @@
 import { useState, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { StatCard } from "@/components/stat-card";
@@ -39,6 +40,7 @@ interface UnifiedControlPanelProps {
   avgScore: number;
   
   // Action components (allow passing custom components for dropdowns and managers)
+  authorizeSpotifyButton?: ReactNode;
   fetchDataButton?: ReactNode;
   enrichMBButton?: ReactNode;
   enrichCreditsButton?: ReactNode;
@@ -87,6 +89,7 @@ export function UnifiedControlPanel({
   highPotential,
   mediumPotential,
   avgScore,
+  authorizeSpotifyButton,
   fetchDataButton,
   enrichMBButton,
   enrichCreditsButton,
@@ -124,6 +127,9 @@ export function UnifiedControlPanel({
       {/* Actions Row */}
       <div className="glass-panel p-4 rounded-lg">
         <div className="flex flex-wrap items-center gap-3">
+          {/* Spotify Auth */}
+          {authorizeSpotifyButton}
+          
           {/* Primary Actions */}
           {fetchDataButton}
           
@@ -177,54 +183,52 @@ export function UnifiedControlPanel({
       </div>
 
       {/* Filters Row */}
-      <div className="glass-panel p-4 rounded-lg">
-        <div className="flex flex-col lg:flex-row gap-4">
+      <div className="glass-panel p-3 rounded-lg">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Dropdowns */}
-          <div className="flex flex-wrap gap-3 flex-1">
-            <Select value={selectedWeek} onValueChange={onWeekChange}>
-              <SelectTrigger className="w-[180px]" data-testid="select-week">
-                <SelectValue placeholder="Select week" />
-              </SelectTrigger>
-              <SelectContent>
-                {weeks.map((week) => (
-                  <SelectItem key={week} value={week}>
-                    {week}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Select value={selectedWeek} onValueChange={onWeekChange}>
+            <SelectTrigger className="w-[160px]" data-testid="select-week">
+              <SelectValue placeholder="Select week" />
+            </SelectTrigger>
+            <SelectContent>
+              {weeks.map((week) => (
+                <SelectItem key={week} value={week}>
+                  {week}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <Select value={selectedPlaylist} onValueChange={onPlaylistChange}>
-              <SelectTrigger className="w-[180px]" data-testid="select-playlist">
-                <SelectValue placeholder="All Playlists" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Playlists</SelectItem>
-                {playlists.map((playlist) => (
-                  <SelectItem key={playlist} value={playlist}>
-                    {playlist}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Select value={selectedPlaylist} onValueChange={onPlaylistChange}>
+            <SelectTrigger className="w-[160px]" data-testid="select-playlist">
+              <SelectValue placeholder="All Playlists" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Playlists</SelectItem>
+              {playlists.map((playlist) => (
+                <SelectItem key={playlist} value={playlist}>
+                  {playlist}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <Select value={selectedTag} onValueChange={onTagChange}>
-              <SelectTrigger className="w-[180px]" data-testid="select-tag">
-                <SelectValue placeholder="All Tags" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Tags</SelectItem>
-                {tags.map((tag) => (
-                  <SelectItem key={tag.id} value={tag.id}>
-                    {tag.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={selectedTag} onValueChange={onTagChange}>
+            <SelectTrigger className="w-[160px]" data-testid="select-tag">
+              <SelectValue placeholder="All Tags" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Tags</SelectItem>
+              {tags.map((tag) => (
+                <SelectItem key={tag.id} value={tag.id}>
+                  {tag.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* Search Bar */}
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative flex-1 min-w-[240px]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
@@ -236,26 +240,49 @@ export function UnifiedControlPanel({
             />
           </div>
 
-          {/* Completeness Filters */}
+          {/* Completeness Filters with Score Range */}
           <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
+                size="default"
                 className="gap-2"
                 data-testid="button-completeness-filters"
               >
                 <Filter className="h-4 w-4" />
                 Completeness Filters
                 {activeFilters.length > 0 && (
-                  <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-white">
+                  <Badge variant="default" className="ml-1 px-1.5 py-0">
                     {activeFilters.length}
-                  </span>
+                  </Badge>
                 )}
-                <ChevronDown className={cn("h-4 w-4 rotate-icon", filtersOpen && "rotate-180")} />
+                <ChevronDown className={cn("h-3 w-3", filtersOpen && "rotate-180")} />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 glass-panel" align="end">
               <div className="space-y-4">
+                {/* Score Range Filter */}
+                <div>
+                  <h4 className="text-sm font-medium mb-3">Score Range</h4>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium whitespace-nowrap">
+                      {scoreRange[0]} - {scoreRange[1]}
+                    </span>
+                    <Slider
+                      min={0}
+                      max={10}
+                      step={1}
+                      value={scoreRange}
+                      onValueChange={onScoreRangeChange}
+                      className="flex-1"
+                      data-testid="slider-score-range"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t pt-3" />
+
+                {/* Data Completeness Filters */}
                 {Object.entries(filterSections).map(([section, filters]) => (
                   <div key={section}>
                     <h4 className="text-sm font-medium mb-2">{section}</h4>
@@ -292,22 +319,6 @@ export function UnifiedControlPanel({
               </div>
             </PopoverContent>
           </Popover>
-
-          {/* Score Slider */}
-          <div className="flex items-center gap-3 min-w-[200px]">
-            <span className="text-sm font-medium whitespace-nowrap">
-              Score: {scoreRange[0]}-{scoreRange[1]}
-            </span>
-            <Slider
-              min={0}
-              max={10}
-              step={1}
-              value={scoreRange}
-              onValueChange={onScoreRangeChange}
-              className="w-32"
-              data-testid="slider-score-range"
-            />
-          </div>
         </div>
       </div>
     </div>

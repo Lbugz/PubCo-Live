@@ -13,7 +13,14 @@ The AI Pub Feed MVP is an automated platform designed to identify unsigned artis
 The application features a modern full-stack architecture with a React, TypeScript, Tailwind CSS, and Shadcn UI frontend, an Express.js and Node.js backend, and a PostgreSQL database (Neon).
 
 ### UI/UX Decisions
-The frontend is a single-page React application built with a modular component architecture, a professional design system inspired by Linear/Notion patterns, and dark/light theme toggle. It emphasizes a clean information hierarchy, fast data scanning, filtering, and actionable export features. The dashboard provides a unified control panel for all data operations, including fetching, enrichment, and export, and features a robust filtering system with 8 toggle badges for detailed data exploration.
+The frontend is a single-page React application built with a modular component architecture, a professional design system inspired by Linear/Notion patterns, and dark/light theme toggle. It emphasizes a clean information hierarchy, fast data scanning, filtering, and actionable export features.
+
+**Recent UI/UX Improvements (November 2025):**
+- **Unified Control Panel**: Consolidated ALL header controls into UnifiedControlPanel using component slot pattern. Header now displays only logo, week info, and theme toggle. Authorize Spotify button relocated from header to control panel's Actions row.
+- **Optimized Filters Layout**: Redesigned filters/search component by moving score range slider into Completeness Filters dropdown, tightened spacing, and reduced select widths for more compact layout.
+- **Actions Consolidation**: Created TrackActionsDropdown component with 3-dot menu (MoreVertical icon) that consolidates all per-track actions (Enrich MB, Enrich Credits, AI Insights, Tag, Contact, Spotify link) into a single dropdown. Applied to track table view.
+- **Controlled Dialog Pattern**: Refactored TrackAIInsights, TrackTagPopover, and TrackContactDialog to accept controlled state (open/onOpenChange props), allowing external components to trigger them programmatically while maintaining standalone usage.
+- **Auto-fetch AI Insights**: Implemented useEffect in TrackAIInsights that auto-triggers data fetching when dialog is opened externally via controlled state, ensuring insights load correctly from dropdown menu.
 
 ### Technical Implementations
 - **Data Fetching**: Utilizes TanStack Query for efficient data fetching.

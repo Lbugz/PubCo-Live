@@ -18,10 +18,14 @@ import { useToast } from "@/hooks/use-toast";
 
 interface TrackContactDialogProps {
   track: PlaylistSnapshot;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function TrackContactDialog({ track }: TrackContactDialogProps) {
-  const [open, setOpen] = useState(false);
+export function TrackContactDialog({ track, open: controlledOpen, onOpenChange }: TrackContactDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
   

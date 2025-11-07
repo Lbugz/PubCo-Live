@@ -384,6 +384,22 @@ export default function Dashboard() {
     </Button>
   ), []);
 
+  const authorizeSpotifyButton = useMemo(() => {
+    if (spotifyStatus?.authenticated) return null;
+    return (
+      <Button
+        onClick={() => window.open("/api/spotify/auth", "_blank")}
+        variant="gradient"
+        size="default"
+        className="gap-2"
+        data-testid="button-authorize-spotify"
+      >
+        <Music2 className="h-4 w-4" />
+        <span className="hidden sm:inline">Authorize Spotify</span>
+      </Button>
+    );
+  }, [spotifyStatus?.authenticated]);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -401,18 +417,6 @@ export default function Dashboard() {
                   {weeksLoading ? "Loading..." : weeks?.[0] ? `Week of ${weeks[0]}` : "No data"}
                 </span>
               </div>
-              {!spotifyStatus?.authenticated && (
-                <Button
-                  onClick={() => window.open("/api/spotify/auth", "_blank")}
-                  variant="gradient"
-                  size="default"
-                  className="gap-2"
-                  data-testid="button-authorize-spotify"
-                >
-                  <Music2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Authorize Spotify</span>
-                </Button>
-              )}
               <ThemeToggle />
             </div>
           </div>
@@ -427,6 +431,7 @@ export default function Dashboard() {
             highPotential={highPotentialCount}
             mediumPotential={mediumPotentialCount}
             avgScore={parseFloat(avgScore)}
+            authorizeSpotifyButton={authorizeSpotifyButton}
             fetchDataButton={fetchDataButton}
             enrichMBButton={enrichMBButton}
             enrichCreditsButton={enrichCreditsButton}
