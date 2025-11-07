@@ -1,6 +1,7 @@
 import { type PlaylistSnapshot } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TrackActionsDropdown } from "./track-actions-dropdown";
@@ -9,6 +10,9 @@ import { SongwriterDisplay } from "./songwriter-display";
 interface CardViewProps {
   tracks: PlaylistSnapshot[];
   isLoading?: boolean;
+  selectedTrackIds?: Set<string>;
+  onToggleSelection?: (trackId: string) => void;
+  onToggleSelectAll?: () => void;
   onTrackClick?: (track: PlaylistSnapshot) => void;
   onEnrichMB?: (trackId: string) => void;
   onEnrichCredits?: (trackId: string) => void;
@@ -17,6 +21,9 @@ interface CardViewProps {
 export function CardView({
   tracks,
   isLoading,
+  selectedTrackIds = new Set(),
+  onToggleSelection,
+  onToggleSelectAll,
   onTrackClick,
   onEnrichMB,
   onEnrichCredits,
@@ -59,19 +66,35 @@ export function CardView({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {tracks.map((track) => (
-        <Card
-          key={track.id}
-          className={cn(
-            "glass-panel p-6 interactive-scale cursor-pointer hover-gradient",
-            "transition-all duration-200"
-          )}
-          onClick={() => onTrackClick?.(track)}
-          data-testid={`card-track-${track.id}`}
-        >
-          <div className="space-y-4">
-            {/* Header with Score Badge */}
-            <div className="flex items-start justify-between gap-2">
+      {tracks.map((track) => {
+        const isSelected = selectedTrackIds.has(track.id);
+        return (
+          <Card
+            key={track.id}
+            className={cn(
+              "glass-panel p-6 interactive-scale cursor-pointer hover-gradient",
+              "transition-all duration-200",
+              isSelected && "ring-2 ring-primary bg-primary/5"
+            )}
+            onClick={() => onTrackClick?.(track)}
+            data-testid={`card-track-${track.id}`}
+          >
+            <div className="space-y-4">
+              {/* Checkbox + Header with Score Badge */}
+              <div className="flex items-start justify-between gap-2">
+                {/* Checkbox */}
+                {onToggleSelection && (
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => onToggleSelection(track.id)}
+                      data-testid={`checkbox-track-${track.id}`}
+                      aria-label={`Select ${track.trackName}`}
+                      className="mr-2"
+                    />
+                  </div>
+                )}
+                
               <div className="flex-1 min-w-0">
                 <h3
                   className="font-semibold truncate"
@@ -167,7 +190,8 @@ export function CardView({
             </div>
           </div>
         </Card>
-      ))}
+        );
+      })}
     </div>
   );
 }

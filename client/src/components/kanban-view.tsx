@@ -1,6 +1,7 @@
 import { type PlaylistSnapshot } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,6 +10,9 @@ import { TrackActionsDropdown } from "./track-actions-dropdown";
 interface KanbanViewProps {
   tracks: PlaylistSnapshot[];
   isLoading?: boolean;
+  selectedTrackIds?: Set<string>;
+  onToggleSelection?: (trackId: string) => void;
+  onToggleSelectAll?: () => void;
   onTrackClick?: (track: PlaylistSnapshot) => void;
   onEnrichMB?: (trackId: string) => void;
   onEnrichCredits?: (trackId: string) => void;
@@ -17,6 +21,9 @@ interface KanbanViewProps {
 export function KanbanView({
   tracks,
   isLoading,
+  selectedTrackIds = new Set(),
+  onToggleSelection,
+  onToggleSelectAll,
   onTrackClick,
   onEnrichMB,
   onEnrichCredits,
@@ -26,22 +33,37 @@ export function KanbanView({
   const mediumPotentialTracks = tracks.filter((t) => t.unsignedScore >= 4 && t.unsignedScore < 7);
   const lowPotentialTracks = tracks.filter((t) => t.unsignedScore < 4);
 
-  const renderTrackCard = (track: PlaylistSnapshot) => (
-    <Card
-      key={track.id}
-      className={cn(
-        "glass-panel p-4 mb-3 cursor-pointer interactive-scale hover-gradient",
-        "transition-all duration-200"
-      )}
-      onClick={() => onTrackClick?.(track)}
-      data-testid={`kanban-card-${track.id}`}
-    >
-      <div className="space-y-3">
-        {/* Header */}
-        <div>
-          <h4 className="font-semibold text-sm mb-1">{track.trackName}</h4>
-          <p className="text-xs text-muted-foreground">{track.artistName}</p>
-        </div>
+  const renderTrackCard = (track: PlaylistSnapshot) => {
+    const isSelected = selectedTrackIds.has(track.id);
+    return (
+      <Card
+        key={track.id}
+        className={cn(
+          "glass-panel p-4 mb-3 cursor-pointer interactive-scale hover-gradient",
+          "transition-all duration-200",
+          isSelected && "ring-2 ring-primary bg-primary/5"
+        )}
+        onClick={() => onTrackClick?.(track)}
+        data-testid={`kanban-card-${track.id}`}
+      >
+        <div className="space-y-3">
+          {/* Checkbox + Header */}
+          <div className="flex items-start gap-2">
+            {onToggleSelection && (
+              <div onClick={(e) => e.stopPropagation()}>
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => onToggleSelection(track.id)}
+                  data-testid={`checkbox-track-${track.id}`}
+                  aria-label={`Select ${track.trackName}`}
+                />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-sm mb-1 truncate">{track.trackName}</h4>
+              <p className="text-xs text-muted-foreground truncate">{track.artistName}</p>
+            </div>
+          </div>
 
         {/* Score Badge */}
         <div className="flex items-center gap-2">
@@ -87,7 +109,8 @@ export function KanbanView({
         </div>
       </div>
     </Card>
-  );
+    );
+  };
 
   const renderColumn = (
     title: string,

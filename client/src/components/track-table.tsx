@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { type PlaylistSnapshot, type Tag } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { TrackActionsDropdown } from "./track-actions-dropdown";
@@ -13,6 +14,9 @@ import { getTagColorClass } from "./tag-manager";
 interface TrackTableProps {
   tracks: PlaylistSnapshot[];
   isLoading?: boolean;
+  selectedTrackIds?: Set<string>;
+  onToggleSelection?: (trackId: string) => void;
+  onToggleSelectAll?: () => void;
   onEnrichMB?: (trackId: string) => void;
   onEnrichCredits?: (trackId: string) => void;
   onRowClick?: (track: PlaylistSnapshot) => void;
@@ -58,7 +62,18 @@ function TrackTags({ trackId }: { trackId: string }) {
   );
 }
 
-export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits, onRowClick }: TrackTableProps) {
+export function TrackTable({ 
+  tracks, 
+  isLoading, 
+  selectedTrackIds = new Set(), 
+  onToggleSelection, 
+  onToggleSelectAll,
+  onEnrichMB, 
+  onEnrichCredits, 
+  onRowClick 
+}: TrackTableProps) {
+  const allSelected = tracks.length > 0 && tracks.every(track => selectedTrackIds.has(track.id));
+  const someSelected = !allSelected && tracks.some(track => selectedTrackIds.has(track.id));
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -86,29 +101,55 @@ export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits, onR
   return (
     <div className="relative">
       {/* Sticky Header - Desktop Only */}
-      <div className="hidden lg:grid lg:grid-cols-12 gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
-        <div className="col-span-2">Track</div>
-        <div className="col-span-2">Artist</div>
-        <div className="col-span-2">Playlist</div>
-        <div className="col-span-2">Label / Publisher</div>
-        <div className="col-span-2">Songwriter</div>
-        <div className="col-span-1">Score</div>
-        <div className="col-span-1 text-right">Actions</div>
+      <div className="hidden lg:grid lg:grid-cols-[auto_2fr_2fr_2fr_2fr_2fr_1fr_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
+        <div className="flex items-center">
+          {onToggleSelectAll && (
+            <Checkbox
+              checked={allSelected}
+              indeterminate={someSelected ? true : undefined}
+              onCheckedChange={onToggleSelectAll}
+              onClick={(e) => e.stopPropagation()}
+              data-testid="checkbox-select-all"
+              aria-label="Select all tracks"
+            />
+          )}
+        </div>
+        <div>Track</div>
+        <div>Artist</div>
+        <div>Playlist</div>
+        <div>Label / Publisher</div>
+        <div>Songwriter</div>
+        <div>Score</div>
+        <div className="text-right">Actions</div>
       </div>
 
       {/* Track Rows with Zebra Striping */}
       <div className="space-y-0">
-        {tracks.map((track, index) => (
-          <Card
-            key={track.id}
-            className={cn(
-              "hover-gradient cursor-pointer interactive-scale rounded-none border-x-0 border-t-0",
-              index % 2 === 0 ? "bg-card/50" : "bg-card/30"
-            )}
-            data-testid={`card-track-${track.id}`}
-            onClick={() => onRowClick?.(track)}
-          >
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 items-center">
+        {tracks.map((track, index) => {
+          const isSelected = selectedTrackIds.has(track.id);
+          return (
+            <Card
+              key={track.id}
+              className={cn(
+                "hover-gradient cursor-pointer interactive-scale rounded-none border-x-0 border-t-0",
+                index % 2 === 0 ? "bg-card/50" : "bg-card/30",
+                isSelected && "ring-2 ring-primary bg-primary/5"
+              )}
+              data-testid={`card-track-${track.id}`}
+              onClick={() => onRowClick?.(track)}
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-[auto_2fr_2fr_2fr_2fr_2fr_1fr_auto] gap-4 p-4 items-center">
+                {/* Checkbox Column - Desktop Only */}
+                <div className="hidden lg:flex items-center" onClick={(e) => e.stopPropagation()}>
+                  {onToggleSelection && (
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => onToggleSelection(track.id)}
+                      data-testid={`checkbox-track-${track.id}`}
+                      aria-label={`Select ${track.trackName}`}
+                    />
+                  )}
+                </div>
               <div className="col-span-1 lg:col-span-2">
                 <div className="font-medium" data-testid={`text-track-name-${track.id}`}>{track.trackName}</div>
                 <div className="flex flex-wrap gap-1 mt-1">
@@ -207,7 +248,8 @@ export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits, onR
               </div>
             </div>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       <div className="flex items-center justify-between pt-4 px-4 text-sm text-muted-foreground">

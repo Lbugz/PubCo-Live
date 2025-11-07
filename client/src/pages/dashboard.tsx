@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [selectedTrack, setSelectedTrack] = useState<PlaylistSnapshot | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const toggleFilter = (filter: string) => {
@@ -51,6 +52,38 @@ export default function Dashboard() {
 
   const clearFilters = () => {
     setActiveFilters([]);
+  };
+
+  const toggleTrackSelection = (trackId: string) => {
+    setSelectedTrackIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(trackId)) {
+        newSet.delete(trackId);
+      } else {
+        newSet.add(trackId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const allFilteredSelected = filteredTracks.length > 0 && filteredTracks.every(t => selectedTrackIds.has(t.id));
+    
+    if (allFilteredSelected) {
+      // All filtered tracks selected - deselect them (keep other selections)
+      const newSet = new Set(selectedTrackIds);
+      filteredTracks.forEach(t => newSet.delete(t.id));
+      setSelectedTrackIds(newSet);
+    } else {
+      // Not all filtered tracks selected - select all filtered tracks (keep existing selections)
+      const newSet = new Set(selectedTrackIds);
+      filteredTracks.forEach(t => newSet.add(t.id));
+      setSelectedTrackIds(newSet);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedTrackIds(new Set());
   };
 
   const { data: weeks, isLoading: weeksLoading } = useQuery<string[]>({
@@ -502,6 +535,9 @@ export default function Dashboard() {
             <TrackTable 
               tracks={filteredTracks} 
               isLoading={tracksLoading}
+              selectedTrackIds={selectedTrackIds}
+              onToggleSelection={toggleTrackSelection}
+              onToggleSelectAll={toggleSelectAll}
               onEnrichMB={(trackId) => enrichMetadataMutation.mutate({ mode: 'track', trackId })}
               onEnrichCredits={(trackId) => enrichCreditsMutation.mutate({ mode: 'track', trackId })}
               onRowClick={(track) => {
@@ -515,6 +551,9 @@ export default function Dashboard() {
             <CardView
               tracks={filteredTracks}
               isLoading={tracksLoading}
+              selectedTrackIds={selectedTrackIds}
+              onToggleSelection={toggleTrackSelection}
+              onToggleSelectAll={toggleSelectAll}
               onTrackClick={(track) => {
                 setSelectedTrack(track);
                 setDrawerOpen(true);
@@ -527,6 +566,9 @@ export default function Dashboard() {
           {viewMode === "kanban" && (
             <KanbanView
               tracks={filteredTracks}
+              selectedTrackIds={selectedTrackIds}
+              onToggleSelection={toggleTrackSelection}
+              onToggleSelectAll={toggleSelectAll}
               isLoading={tracksLoading}
               onTrackClick={(track) => {
                 setSelectedTrack(track);
