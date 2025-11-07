@@ -1,0 +1,24 @@
+Please add a left-hand side navigation menu to the app, similar to the AI Pub Feed dashboard. The menu should remain fixed on the left and include the following main sections and submenus:
+
+1. **Discovery** – helps find trending music and unsigned songwriters.
+   - *Playlists View*: A page that lists tracked playlists (e.g. Fresh Finds, Viral 50) with columns for playlist name, source (Spotify, CSV, etc.), total tracks, and last updated. Actions: Refresh, View Tracks, Export CSV.
+   - *Tracks View*: A detailed table of songs from selected playlists. Columns: track name, artist, songwriter, label, unsigned score, status (Lead, Signed, Unknown). Filters: playlist name, unsigned score, label type, recency (week added). Leave placeholders for future enrichment sources toggles.
+
+2. **Relationships (CRM)** – manages networks of songwriters, producers, and contributors. Consider naming options like “Songwriter CRM”, “Roster”, or “Network”.
+   - *Contacts*: Show each songwriter/producer as a card or row with name, role, contact info, affiliated songs, and publishing status.
+   - *Engagements*: A log of communications or notes (e.g., contacted on date, deal sent).
+   - *Opportunities*: Links to potential deals from Discovery (auto-linked via ISRC). Leave space for future integrations like Gmail/Telnyx auto-logging.
+
+3. **Deals** – manage outreach, negotiation, and structuring.
+   - *Pipeline*: Kanban board with stages such as Lead → Outreach → In Review → Closed.
+   - *Deal Detail*: Page showing terms, stakeholders, and linked songwriter(s).
+   - *Templates*: A section to pull in existing deal templates or Contract Analyzer summaries. Placeholder for integrating the Contract Analyzer in future.
+
+4. **Settings** – configuration and personalization.
+   - *Spotify & APIs*: Manage tokens, refresh schedules, region filters.
+   - *Database & Storage*: Choose backend (Replit DB, Neon, Airtable).
+   - *User Preferences*: Theme, notifications, default view.
+   - *Automation*: Toggle weekly scrapes, enrichment routines.
+   - Hidden "Dev" section for internal settings (Exa or Puppeteer logs).
+
+Please implement this sidebar structure using the existing design system (dark theme, glassmorphism) and ensure it can expand/collapse submenus. You don’t need to fully build the pages yet; just create the navigational structure and placeholders for content.
