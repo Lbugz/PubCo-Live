@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown, Music2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -14,7 +14,7 @@ import { DetailsDrawer } from "@/components/details-drawer";
 import { TagManager } from "@/components/tag-manager";
 import { PlaylistManager } from "@/components/playlist-manager";
 import { type PlaylistSnapshot, type Tag, type TrackedPlaylist } from "@shared/schema";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -28,6 +28,7 @@ import {
 type ViewMode = "table" | "card" | "kanban";
 
 export default function Dashboard() {
+  const [location] = useLocation();
   const [selectedWeek, setSelectedWeek] = useState<string>("latest");
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("all");
   const [selectedTag, setSelectedTag] = useState<string>("all");
@@ -87,6 +88,15 @@ export default function Dashboard() {
   const clearSelection = () => {
     setSelectedTrackIds(new Set());
   };
+
+  // Handle playlist query parameter from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const playlistParam = params.get('playlist');
+    if (playlistParam) {
+      setSelectedPlaylist(playlistParam);
+    }
+  }, [location]);
 
   const { data: weeks, isLoading: weeksLoading } = useQuery<string[]>({
     queryKey: ["/api/weeks"],

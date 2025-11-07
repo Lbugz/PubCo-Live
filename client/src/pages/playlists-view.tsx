@@ -30,6 +30,11 @@ export default function PlaylistsView() {
     queryKey: ["/api/tracked-playlists"],
   });
 
+  // Normalize source value for consistent filtering
+  const normalizeSource = (source: string | null) => {
+    return source || "unknown";
+  };
+
   // Filter playlists
   const filteredPlaylists = useMemo(() => {
     let filtered = [...playlists];
@@ -46,7 +51,7 @@ export default function PlaylistsView() {
 
     // Source filter
     if (sourceFilter !== "all") {
-      filtered = filtered.filter(p => p.source === sourceFilter);
+      filtered = filtered.filter(p => normalizeSource(p.source) === sourceFilter);
     }
 
     return filtered;
@@ -62,10 +67,10 @@ export default function PlaylistsView() {
     return { total, active, paused, error };
   }, [playlists]);
 
-  // Get unique sources for filter
+  // Get unique sources for filter, including "unknown" for playlists without a source
   const sources = useMemo(() => {
-    const uniqueSources = new Set(playlists.map(p => p.source).filter(Boolean));
-    return Array.from(uniqueSources);
+    const uniqueSources = new Set(playlists.map(p => normalizeSource(p.source)));
+    return Array.from(uniqueSources).sort();
   }, [playlists]);
 
   const openDrawer = (playlist: TrackedPlaylist) => {
@@ -169,8 +174,8 @@ export default function PlaylistsView() {
               <SelectContent>
                 <SelectItem value="all">All Sources</SelectItem>
                 {sources.map(source => (
-                  <SelectItem key={source} value={source || "unknown"}>
-                    {source || "Unknown"}
+                  <SelectItem key={source} value={source}>
+                    {source.charAt(0).toUpperCase() + source.slice(1)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -241,7 +246,9 @@ export default function PlaylistsView() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{playlist.source || "spotify"}</Badge>
+                      <Badge variant="outline">
+                        {normalizeSource(playlist.source).charAt(0).toUpperCase() + normalizeSource(playlist.source).slice(1)}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-right">{formatNumber(playlist.totalTracks)}</TableCell>
                     <TableCell className="text-muted-foreground">{playlist.curator || "—"}</TableCell>
@@ -323,7 +330,9 @@ export default function PlaylistsView() {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Source</p>
-                      <p className="font-medium">{selectedPlaylist.source || "spotify"}</p>
+                      <p className="font-medium">
+                        {normalizeSource(selectedPlaylist.source).charAt(0).toUpperCase() + normalizeSource(selectedPlaylist.source).slice(1)}
+                      </p>
                     </div>
                   </div>
 
