@@ -245,10 +245,10 @@ export default function Dashboard() {
                   {weeksLoading ? "Loading..." : weeks?.[0] ? `Week of ${weeks[0]}` : "No data"}
                 </span>
               </div>
-              {!spotifyStatus?.authenticated ? (
+              {!spotifyStatus?.authenticated && (
                 <Button
                   onClick={() => window.open("/api/spotify/auth", "_blank")}
-                  variant="default"
+                  variant="gradient"
                   size="default"
                   className="gap-2"
                   data-testid="button-authorize-spotify"
@@ -256,57 +256,73 @@ export default function Dashboard() {
                   <Music2 className="h-4 w-4" />
                   <span className="hidden sm:inline">Authorize Spotify</span>
                 </Button>
-              ) : (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="default"
-                      size="default"
-                      className="gap-2"
-                      disabled={fetchPlaylistsMutation.isPending}
-                      data-testid="button-fetch-data"
-                    >
-                      <RefreshCw className={`h-4 w-4 ${fetchPlaylistsMutation.isPending ? "animate-spin" : ""}`} />
-                      <span className="hidden sm:inline">
-                        {fetchPlaylistsMutation.isPending ? "Fetching..." : "Fetch Data"}
-                      </span>
-                      {!fetchPlaylistsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>Fetch Options</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'all' })} data-testid="menu-fetch-all">
-                      Fetch All Playlists
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'editorial' })} data-testid="menu-fetch-editorial">
-                      Fetch Editorial Playlists Only
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'non-editorial' })} data-testid="menu-fetch-non-editorial">
-                      Fetch Non-Editorial Playlists Only
-                    </DropdownMenuItem>
-                    {trackedPlaylists.length > 0 && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuLabel>Fetch Specific Playlist</DropdownMenuLabel>
-                        {trackedPlaylists.map((playlist) => (
-                          <DropdownMenuItem 
-                            key={playlist.id} 
-                            onClick={() => fetchPlaylistsMutation.mutate({ mode: 'specific', playlistId: playlist.id })}
-                            data-testid={`menu-fetch-playlist-${playlist.id}`}
-                          >
-                            {playlist.name}
-                          </DropdownMenuItem>
-                        ))}
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
               )}
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          {/* Unified Control Panel */}
+          <UnifiedControlPanel
+            totalTracks={tracks?.length || 0}
+            highPotential={highPotentialCount}
+            mediumPotential={mediumPotentialCount}
+            avgScore={parseFloat(avgScore)}
+            fetchDataButton={
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="secondary"
+                    variant="gradient"
+                    size="default"
+                    className="gap-2"
+                    disabled={fetchPlaylistsMutation.isPending}
+                    data-testid="button-fetch-data"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${fetchPlaylistsMutation.isPending ? "animate-spin" : ""}`} />
+                    <span className="hidden sm:inline">
+                      {fetchPlaylistsMutation.isPending ? "Fetching..." : "Fetch Data"}
+                    </span>
+                    {!fetchPlaylistsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuLabel>Fetch Options</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'all' })} data-testid="menu-fetch-all">
+                    Fetch All Playlists
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'editorial' })} data-testid="menu-fetch-editorial">
+                    Fetch Editorial Playlists Only
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'non-editorial' })} data-testid="menu-fetch-non-editorial">
+                    Fetch Non-Editorial Playlists Only
+                  </DropdownMenuItem>
+                  {trackedPlaylists.length > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Fetch Specific Playlist</DropdownMenuLabel>
+                      {trackedPlaylists.map((playlist) => (
+                        <DropdownMenuItem 
+                          key={playlist.id} 
+                          onClick={() => fetchPlaylistsMutation.mutate({ mode: 'specific', playlistId: playlist.id })}
+                          data-testid={`menu-fetch-playlist-${playlist.id}`}
+                        >
+                          {playlist.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            }
+            enrichMBButton={
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
                     size="default"
                     className="gap-2"
                     disabled={enrichMetadataMutation.isPending || !tracks || tracks.length === 0}
@@ -319,7 +335,7 @@ export default function Dashboard() {
                     {!enrichMetadataMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="start" className="w-56">
                   <DropdownMenuLabel>MusicBrainz Enrich Options</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => enrichMetadataMutation.mutate({ mode: 'all' })} data-testid="menu-enrich-mb-all">
@@ -342,10 +358,12 @@ export default function Dashboard() {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+            }
+            enrichCreditsButton={
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="secondary"
+                    variant="outline"
                     size="default"
                     className="gap-2"
                     disabled={enrichCreditsMutation.isPending || !tracks || tracks.length === 0}
@@ -358,7 +376,7 @@ export default function Dashboard() {
                     {!enrichCreditsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="start" className="w-56">
                   <DropdownMenuLabel>Spotify Credits Enrich Options</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => enrichCreditsMutation.mutate({ mode: 'all' })} data-testid="menu-enrich-credits-all">
@@ -381,6 +399,8 @@ export default function Dashboard() {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+            }
+            exportButton={
               <Button
                 onClick={handleExport}
                 variant="outline"
@@ -392,44 +412,17 @@ export default function Dashboard() {
                 <Download className="h-4 w-4" />
                 <span className="hidden sm:inline">Export</span>
               </Button>
-              <PlaylistManager />
-              <TagManager />
-              <Button variant="outline" size="sm" className="gap-2" asChild data-testid="button-comparison">
+            }
+            playlistManagerButton={<PlaylistManager />}
+            tagManagerButton={<TagManager />}
+            compareButton={
+              <Button variant="outline" size="default" className="gap-2" asChild data-testid="button-comparison">
                 <Link href="/comparison">
                   <BarChart3 className="h-4 w-4" />
                   <span className="hidden lg:inline">Compare</span>
                 </Link>
               </Button>
-              <ThemeToggle />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          {/* Unified Control Panel */}
-          <UnifiedControlPanel
-            totalTracks={tracks?.length || 0}
-            highPotential={highPotentialCount}
-            mediumPotential={mediumPotentialCount}
-            avgScore={parseFloat(avgScore)}
-            onFetchData={() => fetchPlaylistsMutation.mutate({ mode: 'all' })}
-            onEnrichMB={() => enrichMetadataMutation.mutate({ mode: 'all' })}
-            onEnrichCredits={() => enrichCreditsMutation.mutate({ mode: 'all' })}
-            onExport={handleExport}
-            onManagePlaylists={() => {
-              toast({
-                title: "Manage Playlists",
-                description: "Please use the Manage Playlists button in the header",
-              });
-            }}
-            onManageTags={() => {
-              toast({
-                title: "Manage Tags",
-                description: "Please use the Manage Tags button in the header",
-              });
-            }}
+            }
             weeks={weeks || []}
             selectedWeek={selectedWeek}
             onWeekChange={setSelectedWeek}
@@ -446,8 +439,6 @@ export default function Dashboard() {
             activeFilters={activeFilters}
             onFilterToggle={toggleFilter}
             onClearFilters={clearFilters}
-            isLoading={fetchPlaylistsMutation.isPending}
-            isEnriching={enrichMetadataMutation.isPending || enrichCreditsMutation.isPending}
           />
 
           {/* View Switcher */}
