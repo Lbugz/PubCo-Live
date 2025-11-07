@@ -47,17 +47,12 @@ export async function fetchEditorialTracksViaNetwork(
     const seenOffsets = new Set<number>();
     const allItems: any[] = [];
     
-    // Intercept network responses
+    // Intercept network responses - capture ALL JSON to see what Spotify uses
     page.on("response", async (res) => {
       const url = res.url();
       
-      // Filter for Spotify playlist track API calls
-      const isTrackPage =
-        (url.includes("/v1/playlists/") && url.includes("/tracks")) ||
-        (url.includes("spclient") && url.includes("playlist")) ||
-        (url.includes("api.spotify.com") && url.includes("tracks"));
-      
-      if (!isTrackPage) return;
+      // Only process JSON responses from Spotify domains
+      if (!url.includes('spotify.com') && !url.includes('spclient')) return;
       
       try {
         const ct = (res.headers()["content-type"] || "").toLowerCase();
@@ -65,16 +60,30 @@ export async function fetchEditorialTracksViaNetwork(
         
         const json = await res.json();
         
-        // Check for Web API style response with items array
-        if (json?.items && Array.isArray(json.items) && json.items.length > 0) {
+        // Log all Spotify JSON responses to understand their structure
+        if (json?.items || json?.tracks || json?.content) {
+          console.log(`[Network Capture] Found JSON response from: ${url.substring(0, 100)}...`);
+        }
+        
+        // Check for various response formats Spotify might use
+        let items = null;
+        if (json?.items && Array.isArray(json.items)) {
+          items = json.items;
+        } else if (json?.tracks?.items && Array.isArray(json.tracks.items)) {
+          items = json.tracks.items;
+        } else if (json?.content?.items && Array.isArray(json.content.items)) {
+          items = json.content.items;
+        }
+        
+        if (items && items.length > 0) {
           // Try to infer offset from URL
           const urlObj = new URL(url);
-          const offset = Number(urlObj.searchParams.get("offset") || 0);
+          const offset = Number(urlObj.searchParams.get("offset") || urlObj.searchParams.get("fromRow") || 0);
           
           if (!seenOffsets.has(offset)) {
             seenOffsets.add(offset);
-            allItems.push(...json.items);
-            console.log(`[Network Capture] Captured page offset=${offset} count=${json.items.length} total=${allItems.length}`);
+            allItems.push(...items);
+            console.log(`[Network Capture] ✅ Captured page offset=${offset} count=${items.length} total=${allItems.length}`);
           }
         }
       } catch (err) {
