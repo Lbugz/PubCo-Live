@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, Download, Calendar, TrendingUp, ListMusic, Target, RefreshCw, Sparkles, BarChart3, FileText, ChevronDown } from "lucide-react";
+import { Music2, Download, Calendar, TrendingUp, ListMusic, Target, RefreshCw, Sparkles, BarChart3, FileText, ChevronDown, Filter, X } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 
 type FilterKey = 'hasIsrc' | 'noIsrc' | 'hasCredits' | 'noCredits' | 'hasPublisher' | 'noPublisher' | 'hasSongwriter' | 'noSongwriter';
 
@@ -517,83 +519,148 @@ export default function Dashboard() {
                 />
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground">Filters:</span>
-                <Badge
-                  variant={activeFilters.has('hasIsrc') ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleFilter('hasIsrc')}
-                  data-testid="filter-has-isrc"
-                >
-                  Has ISRC
-                </Badge>
-                <Badge
-                  variant={activeFilters.has('noIsrc') ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleFilter('noIsrc')}
-                  data-testid="filter-no-isrc"
-                >
-                  No ISRC
-                </Badge>
-                <Badge
-                  variant={activeFilters.has('hasCredits') ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleFilter('hasCredits')}
-                  data-testid="filter-has-credits"
-                >
-                  Has Credits
-                </Badge>
-                <Badge
-                  variant={activeFilters.has('noCredits') ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleFilter('noCredits')}
-                  data-testid="filter-no-credits"
-                >
-                  No Credits
-                </Badge>
-                <Badge
-                  variant={activeFilters.has('hasPublisher') ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleFilter('hasPublisher')}
-                  data-testid="filter-has-publisher"
-                >
-                  Has Publisher
-                </Badge>
-                <Badge
-                  variant={activeFilters.has('noPublisher') ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleFilter('noPublisher')}
-                  data-testid="filter-no-publisher"
-                >
-                  No Publisher
-                </Badge>
-                <Badge
-                  variant={activeFilters.has('hasSongwriter') ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleFilter('hasSongwriter')}
-                  data-testid="filter-has-songwriter"
-                >
-                  Has Songwriter
-                </Badge>
-                <Badge
-                  variant={activeFilters.has('noSongwriter') ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleFilter('noSongwriter')}
-                  data-testid="filter-no-songwriter"
-                >
-                  No Songwriter
-                </Badge>
-                {activeFilters.size > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setActiveFilters(new Set())}
-                    data-testid="button-clear-filters"
-                  >
-                    Clear All
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2" data-testid="button-open-filters">
+                    <Filter className="h-4 w-4" />
+                    Completeness Filters
+                    {activeFilters.size > 0 && (
+                      <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+                        {activeFilters.size}
+                      </Badge>
+                    )}
                   </Button>
-                )}
-              </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="start">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-sm">Filter by Completeness</h4>
+                      {activeFilters.size > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto py-1 px-2 text-xs"
+                          onClick={() => setActiveFilters(new Set())}
+                          data-testid="button-clear-filters"
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs font-medium text-muted-foreground mb-2">ISRC Code</div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant={activeFilters.has('hasIsrc') ? "default" : "outline"}
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => toggleFilter('hasIsrc')}
+                            data-testid="filter-has-isrc"
+                          >
+                            Has ISRC
+                          </Button>
+                          <Button
+                            variant={activeFilters.has('noIsrc') ? "default" : "outline"}
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => toggleFilter('noIsrc')}
+                            data-testid="filter-no-isrc"
+                          >
+                            No ISRC
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div>
+                        <div className="text-xs font-medium text-muted-foreground mb-2">Credits Data</div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant={activeFilters.has('hasCredits') ? "default" : "outline"}
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => toggleFilter('hasCredits')}
+                            data-testid="filter-has-credits"
+                          >
+                            Has Credits
+                          </Button>
+                          <Button
+                            variant={activeFilters.has('noCredits') ? "default" : "outline"}
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => toggleFilter('noCredits')}
+                            data-testid="filter-no-credits"
+                          >
+                            No Credits
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div>
+                        <div className="text-xs font-medium text-muted-foreground mb-2">Publisher Info</div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant={activeFilters.has('hasPublisher') ? "default" : "outline"}
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => toggleFilter('hasPublisher')}
+                            data-testid="filter-has-publisher"
+                          >
+                            Has Publisher
+                          </Button>
+                          <Button
+                            variant={activeFilters.has('noPublisher') ? "default" : "outline"}
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => toggleFilter('noPublisher')}
+                            data-testid="filter-no-publisher"
+                          >
+                            No Publisher
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div>
+                        <div className="text-xs font-medium text-muted-foreground mb-2">Songwriter Info</div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant={activeFilters.has('hasSongwriter') ? "default" : "outline"}
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => toggleFilter('hasSongwriter')}
+                            data-testid="filter-has-songwriter"
+                          >
+                            Has Songwriter
+                          </Button>
+                          <Button
+                            variant={activeFilters.has('noSongwriter') ? "default" : "outline"}
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => toggleFilter('noSongwriter')}
+                            data-testid="filter-no-songwriter"
+                          >
+                            No Songwriter
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {activeFilters.size > 0 && (
+                      <div className="pt-2 text-xs text-muted-foreground">
+                        Showing tracks matching all {activeFilters.size} active filter{activeFilters.size > 1 ? 's' : ''}
+                      </div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
 
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium whitespace-nowrap">Score: {scoreRange[0]}-{scoreRange[1]}</span>
