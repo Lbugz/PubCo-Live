@@ -25,6 +25,7 @@ The frontend is a single-page React application built with a modular component a
 - **Bulk Selection System**: Added checkbox-based bulk selection with cross-filter preservation using membership checking (`.every()` and `.some()`) for indeterminate states. Select-all checkbox properly handles filtered track sets.
 - **Bulk Actions Toolbar**: Created sticky glassmorphism toolbar that appears when tracks are selected, showing selection count and total filtered count. Includes action buttons for enrichment, tagging, export, and clear selection with loading states.
 - **Apply to Selected vs All Filtered**: Enhanced bulk actions with dropdown menus offering two operation modes: "Apply to Selected (X tracks)" for currently selected tracks, and "Apply to All Filtered (Y tracks)" for all tracks matching current filters. Includes dynamic track counts and accurate toast feedback.
+- **Fixed Left-Hand Sidebar Navigation**: Implemented Shadcn sidebar component with expandable sections for Discovery (Playlists View, Tracks View), Relationships/CRM (Contacts, Engagements, Opportunities), Deals (Pipeline, Deal Detail, Templates), and Settings (Spotify & APIs, Database & Storage, User Preferences, Automation, Dev). Features dark/glass styling, location-aware auto-expansion, active-state highlighting, and hover interactions using the hover-elevate utility.
 
 ### Technical Implementations
 - **Data Fetching**: Utilizes TanStack Query for efficient data fetching.

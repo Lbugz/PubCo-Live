@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Sparkles, Loader2, Lightbulb, Target, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,8 +36,12 @@ export function TrackAIInsights({ track, open: controlledOpen, onOpenChange }: T
   const [loading, setLoading] = useState(false);
   const [insights, setInsights] = useState<AIInsights | null>(null);
   const { toast } = useToast();
+  const hasGeneratedRef = useRef(false);
 
   const handleGenerate = useCallback(async () => {
+    if (hasGeneratedRef.current) return;
+    hasGeneratedRef.current = true;
+    
     setLoading(true);
     try {
       const result = await apiRequest("POST", `/api/tracks/${track.id}/ai-insights`, {});
@@ -54,11 +58,15 @@ export function TrackAIInsights({ track, open: controlledOpen, onOpenChange }: T
   }, [track.id, toast]);
 
   // Auto-generate insights when dialog is opened externally (controlled mode)
+  // Reset generation flag when dialog closes
   useEffect(() => {
-    if (open && !insights && !loading) {
+    if (!open) {
+      hasGeneratedRef.current = false;
+    } else if (open && !insights && !loading && !hasGeneratedRef.current) {
       handleGenerate();
     }
-  }, [open, insights, loading, handleGenerate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
