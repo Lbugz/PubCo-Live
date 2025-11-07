@@ -1,0 +1,127 @@
+Perfect — now that your **sidebar navigation** is fully in place and we’ve cleaned up the dashboard header and control panel, here’s how we can **set up the “Playlists View” section** to match your design system and product goals.
+
+---
+
+## 🎧 **Playlists View Setup Plan**
+
+### 1. **Page Purpose**
+
+The *Playlists View* is your high-level discovery dashboard — where playlist metadata, sync status, and enrichment potential are managed.
+It’s designed to help A&R or data analysts spot where valuable tracks live (before diving into Tracks View).
+
+---
+
+### 2. **File & Folder Structure**
+
+Inside your Replit app, under `client/src/components/features/playlists/`:
+
+```
+/features/playlists/
+│
+├── PlaylistsPage.tsx          ← main route component (/playlists)
+├── PlaylistsTable.tsx         ← table view (default)
+├── PlaylistCard.tsx           ← card view (alternative grid)
+├── PlaylistFilters.tsx        ← filter bar (source, date, genre, region)
+├── PlaylistDrawer.tsx         ← slide-in panel for playlist details
+└── usePlaylistsQuery.ts       ← React Query data hook for fetching playlists
+```
+
+You already have shared UI patterns (`FilterBar`, `StatsCards`, `UnifiedControlPanel`), so these files extend those patterns rather than replacing them.
+
+---
+
+### 3. **Layout Composition**
+
+```tsx
+<PlaylistsPage>
+  <PageHeader title="Playlists" actions={<AddPlaylistButton />} />
+  <StatsRow metrics={['Total', 'High Potential', 'Medium Potential', 'Avg Score']} />
+  <PlaylistFilters />
+  <ViewSwitcher options={['Table', 'Card']} />
+  <PlaylistsTable />  // default view
+  <PlaylistDrawer />  // opens on row click
+</PlaylistsPage>
+```
+
+---
+
+### 4. **Playlists Table Columns**
+
+| Column            | Description                                 | Example           |
+| ----------------- | ------------------------------------------- | ----------------- |
+| **Playlist Name** | Primary identifier (clickable opens Drawer) | Fresh Finds Folk  |
+| **Source**        | Spotify / Apple / CSV / Manual              | Spotify           |
+| **Tracks**        | Count of contained tracks                   | 243               |
+| **Curator**       | Owner / editor name                         | @spotifyeditorial |
+| **Last Updated**  | Last sync timestamp                         | Nov 7 2025        |
+| **Status**        | Active / Paused / Error (badge color-coded) | 🟢 Active         |
+| **Actions**       | Refresh / View Tracks / Export              | ⋮ menu            |
+
+---
+
+### 5. **Filters**
+
+* **Source:** Dropdown (Spotify / Apple / CSV / Manual)
+* **Curator Type:** Dropdown (Editorial / User / Label)
+* **Last Updated:** Date range or “All Dates” (fixed!)
+* **Genre:** Multi-select
+* **Search:** By name or curator
+
+All filters use the existing `FilterBar` pattern for consistent UI.
+
+---
+
+### 6. **Playlist Drawer Details**
+
+When clicking a playlist row:
+
+| Section       | Fields                                       |
+| ------------- | -------------------------------------------- |
+| **Header**    | Artwork, name, curator, external link        |
+| **Stats**     | Total tracks, High %, Avg score, Last synced |
+| **Sync Info** | Source type, API status, logs                |
+| **Actions**   | “View Tracks”, “Sync Now”, “Export Metadata” |
+
+---
+
+### 7. **UI Styling**
+
+| Element         | Tailwind Tokens                                           |
+| --------------- | --------------------------------------------------------- |
+| Card Background | `bg-[#0a0a0a]/90 backdrop-blur-xl border border-white/10` |
+| Header Gradient | `from-[#4156E8] to-[#19E3FF]`                             |
+| Text            | Headings = `Space Grotesk`, Body = `Inter`                |
+| Active Row      | `bg-primary/10`                                           |
+| Stat Cards      | `rounded-2xl shadow-inner/10 text-blue-400`               |
+
+---
+
+### 8. **Data Model**
+
+```ts
+interface Playlist {
+  id: string;
+  name: string;
+  source: 'spotify' | 'apple' | 'csv' | 'manual';
+  curator: string;
+  totalTracks: number;
+  lastSyncedAt: string;
+  status: 'active' | 'paused' | 'error';
+  genre?: string;
+  followers?: number;
+}
+```
+
+---
+
+### 9. **Next Steps**
+
+**Option A — Code Implementation**
+I can draft the code scaffold for `PlaylistsPage.tsx`, `PlaylistsTable.tsx`, and `PlaylistDrawer.tsx` following this structure.
+
+**Option B — Visual Wireframe (Canvas)**
+I can generate a **Canvas preview** showing how the Playlists View will look (table + drawer + filters) before coding.
+
+---
+
+Would you like me to proceed with **Option A (code scaffold)** or **Option B (visual wireframe)** next?

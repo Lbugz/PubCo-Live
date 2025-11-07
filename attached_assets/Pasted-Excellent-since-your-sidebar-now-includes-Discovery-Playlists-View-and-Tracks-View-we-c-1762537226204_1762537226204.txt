@@ -1,0 +1,133 @@
+Excellent — since your sidebar now includes **Discovery → Playlists View** and **Tracks View**, we can treat **Playlists View** as the “macro dashboard” for your data pipeline.
+Below is a full design and data structure proposal to make this section both scalable and visually aligned with the AI Pub Feed design system you’ve built.
+
+---
+
+## 🎛️ **Playlists View — Proposed Architecture**
+
+### 🔹 1. **Purpose**
+
+Centralize all tracked or imported playlists—both from APIs (Spotify, Apple, CSV) and manual uploads.
+It’s the top of your “Discovery” funnel: one level above individual tracks.
+
+---
+
+### 🔹 2. **Layout Structure**
+
+| Section                       | Description                                                               | UI Pattern                                                     |
+| ----------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **Header Bar**                | Title + “Add Playlist” button + Refresh icon                              | Sticky, gradient top bar                                       |
+| **Stats Row**                 | Quick metrics: Total Playlists, Total Tracks, Active Sources, Last Synced | 4 StatCards (re-use from Pub Feed)                             |
+| **Filters Bar**               | Source, Curator Type, Last Updated, Genre                                 | Dropdowns + Search                                             |
+| **Playlists Table/Grid**      | Core display (table view by default, optional card view)                  | Toggle between `Table` / `Card` using ViewSwitcher             |
+| **Details Drawer (optional)** | Opens when clicking a playlist row                                        | Slide-in panel with metadata, track preview, enrichment status |
+
+---
+
+### 🔹 3. **Table Columns (default)**
+
+| Column                 | Data Source                       | Example                          |
+| ---------------------- | --------------------------------- | -------------------------------- |
+| 🧾 **Playlist Name**   | Spotify API / CSV title           | *Fresh Finds Indie*              |
+| 🎧 **Source**          | Enum: Spotify, Apple, CSV, Manual | *Spotify*                        |
+| 🎵 **Total Tracks**    | Count of track records            | *243*                            |
+| 🕒 **Last Updated**    | UTC timestamp                     | *Nov 6 2025 · 13:42 UTC*         |
+| 👤 **Curator / Owner** | Spotify owner / custom field      | *@spotifyeditorial*              |
+| 🔗 **Sync Status**     | Enum + badge                      | *Active / Error / Paused*        |
+| ⚙️ **Actions**         | Inline menu (3-dot)               | *Refresh / View Tracks / Export* |
+
+**Optional columns** (togglable in column picker): Region, Genre, Average Score, MLC Enrichment Status.
+
+---
+
+### 🔹 4. **Card View (Alternative)**
+
+Each playlist → compact card:
+
+* Playlist artwork (from Spotify API or uploaded image)
+* Playlist name + curator
+* Metrics: tracks count, last updated
+* Buttons: **View Tracks**, **Sync**, **Export**
+
+Grid layout: 1 → 2 → 3 columns responsive (mobile/tablet/desktop).
+
+---
+
+### 🔹 5. **Interactions**
+
+| Action             | Behavior                                                                               |
+| ------------------ | -------------------------------------------------------------------------------------- |
+| **Add Playlist +** | Opens modal → input URL / upload CSV / manual entry                                    |
+| **Refresh All**    | Triggers batch API sync for all sources                                                |
+| **Row Click**      | Opens details drawer with: description, curator, followers, last sync time, error logs |
+| **View Tracks**    | Navigates to `Tracks View` with filter `playlistId={id}`                               |
+| **Export CSV**     | Downloads playlist metadata                                                            |
+| **Bulk Select**    | Multi-refresh, export, or delete actions                                               |
+
+---
+
+### 🔹 6. **Details Drawer / Side Panel**
+
+When a user clicks a playlist row:
+
+**Top:** Playlist artwork + basic info
+**Middle:** Stats (Tracks count, High potential tracks, Avg score, Last sync)
+**Bottom:** Action buttons (“View Tracks”, “Sync Now”, “Open in Spotify”)
+
+---
+
+### 🔹 7. **Data Model**
+
+**`playlists` table**
+
+| Field            | Type     | Notes                                       |
+| ---------------- | -------- | ------------------------------------------- |
+| `id`             | UUID     | primary key                                 |
+| `name`           | string   | Playlist title                              |
+| `source`         | enum     | `'spotify' \| 'apple' \| 'csv' \| 'manual'` |
+| `external_id`    | string   | Spotify/Apple ID                            |
+| `url`            | string   | external link                               |
+| `total_tracks`   | int      | number of tracks                            |
+| `last_synced_at` | datetime |                                             |
+| `curator`        | string   | owner/editor                                |
+| `genre`          | string   | optional                                    |
+| `region`         | string   | ISO-country code                            |
+| `status`         | enum     | `'active' \| 'paused' \| 'error'`           |
+| `followers`      | int      | optional                                    |
+| `notes`          | text     | for internal tracking                       |
+
+---
+
+### 🔹 8. **Future Enhancements**
+
+* 🔍 **Playlist Insights** → charts of growth (weekly new tracks)
+* 🧠 **Enrichment Toggle** → MLC / MusicBrainz / Drokit data overlay
+* 📆 **Historical View** → snapshots over time
+* 🤝 **Link to CRM** → cross-reference songwriters or labels in Roster view
+
+---
+
+### 🔹 9. **Component Mapping (React + Shadcn UI)**
+
+| Component              | Source File                                 |
+| ---------------------- | ------------------------------------------- |
+| `PlaylistsTable.tsx`   | `client/src/components/features/playlists/` |
+| `PlaylistCard.tsx`     | same folder                                 |
+| `PlaylistDrawer.tsx`   | shared with `TracksDrawer` logic            |
+| `PlaylistFilters.tsx`  | reusable FilterBar pattern                  |
+| `PlaylistsPage.tsx`    | page route `/playlists`                     |
+| `usePlaylistsQuery.ts` | React Query hook for data fetching          |
+
+---
+
+### 🔹 10. **Visual Theme Alignment**
+
+* Background → `bg-[#0a0a0a]/90` + `backdrop-blur-xl`
+* Gradient headers → blue #4156E8 → cyan #19E3FF
+* Active row highlight → `bg-primary/20`
+* StatCard icons → `text-blue-400/80`
+* Typography → Space Grotesk (headings) + Inter (body)
+
+---
+
+Would you like me to generate the **component skeletons and file structure** (`PlaylistsTable.tsx`, `PlaylistDrawer.tsx`, etc.) ready to paste into your Replit app, or should I prepare the **UI wireframe (Canvas preview)** to visualize the layout first?
