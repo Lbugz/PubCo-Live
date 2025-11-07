@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { type TrackedPlaylist } from "@shared/schema";
 import { StatsCard } from "@/components/stats-card";
 import { Button } from "@/components/ui/button";
@@ -25,9 +27,40 @@ export default function PlaylistsView() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<TrackedPlaylist | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [, navigate] = useLocation();
+  const { toast } = useToast();
 
   const { data: playlists = [], isLoading } = useQuery<TrackedPlaylist[]>({
     queryKey: ["/api/tracked-playlists"],
+  });
+
+  const fetchPlaylistDataMutation = useMutation({
+    mutationFn: async (spotifyPlaylistId: string) => {
+      const response = await apiRequest("POST", "/api/fetch-playlists", { 
+        mode: 'specific', 
+        playlistId: spotifyPlaylistId 
+      });
+      return await response.json();
+    },
+    onSuccess: (data: any, spotifyPlaylistId: string) => {
+      const playlist = playlists.find(p => p.playlistId === spotifyPlaylistId);
+      const totalSkipped = data.completenessResults?.reduce((sum: number, r: any) => sum + (r.skipped || 0), 0) || 0;
+      const totalNew = data.completenessResults?.reduce((sum: number, r: any) => sum + (r.new || 0), 0) || 0;
+      
+      toast({
+        title: "Playlist data fetched successfully",
+        description: `${playlist?.name || 'Playlist'}: ${totalNew} new tracks added, ${totalSkipped} duplicates skipped`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/playlist-snapshot"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to fetch playlist data",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   // Normalize source value for consistent filtering
@@ -274,6 +307,16 @@ export default function PlaylistsView() {
                             <Eye className="h-4 w-4 mr-2" />
                             View Tracks
                           </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fetchPlaylistDataMutation.mutate(playlist.playlistId);
+                            }}
+                            disabled={fetchPlaylistDataMutation.isPending}
+                          >
+                            <RefreshCw className={cn("h-4 w-4 mr-2", fetchPlaylistDataMutation.isPending && "animate-spin")} />
+                            Fetch Data
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => {
                             e.stopPropagation();
                             window.open(playlist.spotifyUrl, "_blank");
@@ -387,6 +430,16 @@ export default function PlaylistsView() {
                     >
                       <Eye className="h-4 w-4 mr-2" />
                       View Tracks
+                    </Button>
+                    <Button
+                      className="w-full justify-start"
+                      variant="outline"
+                      onClick={() => fetchPlaylistDataMutation.mutate(selectedPlaylist.playlistId)}
+                      disabled={fetchPlaylistDataMutation.isPending}
+                      data-testid="button-drawer-fetch-data"
+                    >
+                      <RefreshCw className={cn("h-4 w-4 mr-2", fetchPlaylistDataMutation.isPending && "animate-spin")} />
+                      {fetchPlaylistDataMutation.isPending ? "Fetching..." : "Fetch Data"}
                     </Button>
                     <Button
                       className="w-full justify-start"
