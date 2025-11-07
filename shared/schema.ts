@@ -67,6 +67,7 @@ export const trackedPlaylists = pgTable("tracked_playlists", {
   name: text("name").notNull(),
   playlistId: text("playlist_id").notNull().unique(),
   spotifyUrl: text("spotify_url").notNull(),
+  status: text("status"),
   isEditorial: integer("is_editorial").notNull().default(0),
   totalTracks: integer("total_tracks"),
   lastFetchCount: integer("last_fetch_count").default(0),
@@ -83,6 +84,23 @@ export const insertTrackedPlaylistSchema = createInsertSchema(trackedPlaylists).
 
 export type InsertTrackedPlaylist = z.infer<typeof insertTrackedPlaylistSchema>;
 export type TrackedPlaylist = typeof trackedPlaylists.$inferSelect;
+
+export const activityHistory = pgTable("activity_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  trackId: varchar("track_id").notNull().references(() => playlistSnapshots.id, { onDelete: "cascade" }),
+  eventType: text("event_type").notNull(),
+  eventDescription: text("event_description").notNull(),
+  metadata: text("metadata"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertActivityHistorySchema = createInsertSchema(activityHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertActivityHistory = z.infer<typeof insertActivityHistorySchema>;
+export type ActivityHistory = typeof activityHistory.$inferSelect;
 
 export const playlists = [
   {
