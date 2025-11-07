@@ -15,7 +15,7 @@ app.get('/health', (req, res) => {
 });
 
 app.post('/scrape-playlist', async (req, res) => {
-  const { playlistUrl } = req.body;
+  const { playlistUrl, cookies } = req.body;
   
   if (!playlistUrl) {
     return res.status(400).json({ 
@@ -25,6 +25,7 @@ app.post('/scrape-playlist', async (req, res) => {
   }
   
   console.log(`[Scraper API] Received request for: ${playlistUrl}`);
+  console.log(`[Scraper API] Cookies provided: ${cookies ? 'YES' : 'NO'}`);
   let browser;
   
   try {
@@ -44,6 +45,13 @@ app.post('/scrape-playlist', async (req, res) => {
     });
     
     const [page] = await browser.pages();
+    
+    // Inject cookies if provided
+    if (cookies && Array.isArray(cookies) && cookies.length > 0) {
+      console.log(`[Scraper] Injecting ${cookies.length} cookies...`);
+      await page.setCookie(...cookies);
+      console.log(`[Scraper] ✅ Cookies injected successfully`);
+    }
     
     page.on("response", async (response) => {
       const url = response.url();
