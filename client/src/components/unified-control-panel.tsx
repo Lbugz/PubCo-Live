@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -38,13 +38,14 @@ interface UnifiedControlPanelProps {
   mediumPotential: number;
   avgScore: number;
   
-  // Actions
-  onFetchData?: () => void;
-  onEnrichMB?: () => void;
-  onEnrichCredits?: () => void;
-  onExport?: () => void;
-  onManagePlaylists?: () => void;
-  onManageTags?: () => void;
+  // Action components (allow passing custom components for dropdowns and managers)
+  fetchDataButton?: ReactNode;
+  enrichMBButton?: ReactNode;
+  enrichCreditsButton?: ReactNode;
+  exportButton?: ReactNode;
+  playlistManagerButton?: ReactNode;
+  tagManagerButton?: ReactNode;
+  compareButton?: ReactNode;
   
   // Filters
   weeks: string[];
@@ -68,10 +69,6 @@ interface UnifiedControlPanelProps {
   activeFilters?: string[];
   onFilterToggle?: (filter: string) => void;
   onClearFilters?: () => void;
-  
-  // Loading states
-  isLoading?: boolean;
-  isEnriching?: boolean;
 }
 
 const filterOptions = [
@@ -90,12 +87,13 @@ export function UnifiedControlPanel({
   highPotential,
   mediumPotential,
   avgScore,
-  onFetchData,
-  onEnrichMB,
-  onEnrichCredits,
-  onExport,
-  onManagePlaylists,
-  onManageTags,
+  fetchDataButton,
+  enrichMBButton,
+  enrichCreditsButton,
+  exportButton,
+  playlistManagerButton,
+  tagManagerButton,
+  compareButton,
   weeks = [],
   selectedWeek,
   onWeekChange,
@@ -112,8 +110,6 @@ export function UnifiedControlPanel({
   activeFilters = [],
   onFilterToggle,
   onClearFilters,
-  isLoading,
-  isEnriching,
 }: UnifiedControlPanelProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -128,69 +124,23 @@ export function UnifiedControlPanel({
       {/* Actions Row */}
       <div className="glass-panel p-4 rounded-lg">
         <div className="flex flex-wrap items-center gap-3">
-          <Button
-            variant="gradient"
-            onClick={onFetchData}
-            disabled={isLoading}
-            className="gap-2"
-            data-testid="button-fetch-data"
-          >
-            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-            Fetch Data
-          </Button>
-
+          {/* Primary Actions */}
+          {fetchDataButton}
+          
+          {/* Enrichment Actions */}
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={onEnrichMB}
-              disabled={isEnriching}
-              className="gap-2"
-              data-testid="button-enrich-mb"
-            >
-              <Sparkles className="h-4 w-4" />
-              Enrich (MB)
-            </Button>
-            <Button
-              variant="outline"
-              onClick={onEnrichCredits}
-              disabled={isEnriching}
-              className="gap-2"
-              data-testid="button-enrich-credits"
-            >
-              <Music className="h-4 w-4" />
-              Enrich (Credits)
-            </Button>
+            {enrichMBButton}
+            {enrichCreditsButton}
           </div>
 
-          <Button
-            variant="outline"
-            onClick={onExport}
-            className="gap-2"
-            data-testid="button-export"
-          >
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
+          {/* Export */}
+          {exportButton}
 
+          {/* Management & Compare */}
           <div className="flex gap-2 ml-auto">
-            <Button
-              variant="ghost"
-              onClick={onManagePlaylists}
-              className="gap-2"
-              data-testid="button-manage-playlists"
-            >
-              <List className="h-4 w-4" />
-              <span className="hidden sm:inline">Manage Playlists</span>
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={onManageTags}
-              className="gap-2"
-              data-testid="button-manage-tags"
-            >
-              <Tags className="h-4 w-4" />
-              <span className="hidden sm:inline">Manage Tags</span>
-            </Button>
+            {playlistManagerButton}
+            {tagManagerButton}
+            {compareButton}
           </div>
         </div>
       </div>
