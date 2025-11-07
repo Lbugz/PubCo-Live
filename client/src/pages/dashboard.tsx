@@ -25,13 +25,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+type FilterKey = 'hasIsrc' | 'noIsrc' | 'hasCredits' | 'noCredits' | 'hasPublisher' | 'noPublisher' | 'hasSongwriter' | 'noSongwriter';
+
 export default function Dashboard() {
   const [selectedWeek, setSelectedWeek] = useState<string>("latest");
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("all");
   const [selectedTag, setSelectedTag] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [scoreRange, setScoreRange] = useState<number[]>([0, 10]);
+  const [activeFilters, setActiveFilters] = useState<Set<FilterKey>>(new Set());
   const { toast } = useToast();
+
+  const toggleFilter = (filter: FilterKey) => {
+    setActiveFilters(prev => {
+      const newFilters = new Set(prev);
+      if (newFilters.has(filter)) {
+        newFilters.delete(filter);
+      } else {
+        newFilters.add(filter);
+      }
+      return newFilters;
+    });
+  };
 
   const { data: weeks, isLoading: weeksLoading } = useQuery<string[]>({
     queryKey: ["/api/weeks"],
@@ -157,7 +172,30 @@ export default function Dashboard() {
       track.artistName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       track.label?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesScore = track.unsignedScore >= scoreRange[0] && track.unsignedScore <= scoreRange[1];
-    return matchesPlaylist && matchesSearch && matchesScore;
+    
+    // Advanced filters
+    let matchesAdvancedFilters = true;
+    if (activeFilters.size > 0) {
+      const hasIsrc = !!track.isrc;
+      const hasCredits = !!track.publisher || !!track.songwriter;
+      const hasPublisher = !!track.publisher;
+      const hasSongwriter = !!track.songwriter;
+      
+      const filterMatches = {
+        hasIsrc,
+        noIsrc: !hasIsrc,
+        hasCredits,
+        noCredits: !hasCredits,
+        hasPublisher,
+        noPublisher: !hasPublisher,
+        hasSongwriter,
+        noSongwriter: !hasSongwriter,
+      };
+      
+      matchesAdvancedFilters = Array.from(activeFilters).every(filter => filterMatches[filter]);
+    }
+    
+    return matchesPlaylist && matchesSearch && matchesScore && matchesAdvancedFilters;
   }) || [];
 
   const highPotentialCount = tracks?.filter(t => t.unsignedScore >= 7).length || 0;
@@ -477,6 +515,84 @@ export default function Dashboard() {
                   className="w-full sm:w-64"
                   data-testid="input-search"
                 />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Filters:</span>
+                <Badge
+                  variant={activeFilters.has('hasIsrc') ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleFilter('hasIsrc')}
+                  data-testid="filter-has-isrc"
+                >
+                  Has ISRC
+                </Badge>
+                <Badge
+                  variant={activeFilters.has('noIsrc') ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleFilter('noIsrc')}
+                  data-testid="filter-no-isrc"
+                >
+                  No ISRC
+                </Badge>
+                <Badge
+                  variant={activeFilters.has('hasCredits') ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleFilter('hasCredits')}
+                  data-testid="filter-has-credits"
+                >
+                  Has Credits
+                </Badge>
+                <Badge
+                  variant={activeFilters.has('noCredits') ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleFilter('noCredits')}
+                  data-testid="filter-no-credits"
+                >
+                  No Credits
+                </Badge>
+                <Badge
+                  variant={activeFilters.has('hasPublisher') ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleFilter('hasPublisher')}
+                  data-testid="filter-has-publisher"
+                >
+                  Has Publisher
+                </Badge>
+                <Badge
+                  variant={activeFilters.has('noPublisher') ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleFilter('noPublisher')}
+                  data-testid="filter-no-publisher"
+                >
+                  No Publisher
+                </Badge>
+                <Badge
+                  variant={activeFilters.has('hasSongwriter') ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleFilter('hasSongwriter')}
+                  data-testid="filter-has-songwriter"
+                >
+                  Has Songwriter
+                </Badge>
+                <Badge
+                  variant={activeFilters.has('noSongwriter') ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleFilter('noSongwriter')}
+                  data-testid="filter-no-songwriter"
+                >
+                  No Songwriter
+                </Badge>
+                {activeFilters.size > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActiveFilters(new Set())}
+                    data-testid="button-clear-filters"
+                  >
+                    Clear All
+                  </Button>
+                )}
               </div>
 
               <div className="flex items-center gap-3">
