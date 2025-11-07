@@ -11,6 +11,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Database, Sparkles, Tag as TagIcon, UserPlus, ExternalLink, X, Clock, Music } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { TrackTagPopover } from "@/components/track-tag-popover";
+import { TrackContactDialog } from "@/components/track-contact-dialog";
 
 interface TrackSidePanelProps {
   track: PlaylistSnapshot | null;
@@ -163,23 +165,27 @@ export function TrackSidePanel({ track, open, onClose, onEnrichMB, onEnrichCredi
                     {aiInsightsMutation.isPending ? "Generating..." : "Generate AI Insights"}
                   </Button>
                   
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2"
-                    data-testid="action-add-tags"
-                  >
-                    <TagIcon className="h-4 w-4" />
-                    Add Tags
-                  </Button>
+                  <TrackTagPopover trackId={track.id} asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-2"
+                      data-testid="action-add-tags"
+                    >
+                      <TagIcon className="h-4 w-4" />
+                      Add Tags
+                    </Button>
+                  </TrackTagPopover>
                   
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2"
-                    data-testid="action-contact-artist"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    Contact Artist
-                  </Button>
+                  <TrackContactDialog track={track} asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-2"
+                      data-testid="action-contact-artist"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Contact Artist
+                    </Button>
+                  </TrackContactDialog>
                   
                   <Button
                     variant="outline"

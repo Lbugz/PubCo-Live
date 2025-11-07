@@ -201,7 +201,7 @@ export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits, onR
                 </div>
               </div>
               
-              <div className="col-span-1 lg:col-span-1 flex justify-start lg:justify-end gap-2 flex-wrap">
+              <div className="col-span-1 lg:col-span-1 flex justify-start lg:justify-end gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                 {(!track.publisher || !track.songwriter) && (onEnrichMB || onEnrichCredits) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
