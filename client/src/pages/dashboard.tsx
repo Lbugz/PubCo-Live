@@ -1,22 +1,21 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, Download, Calendar, TrendingUp, ListMusic, Target, RefreshCw, Sparkles, BarChart3, FileText, ChevronDown, Filter, X } from "lucide-react";
+import { Music2, Download, Calendar, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
-import { StatsCard } from "@/components/stats-card";
+import { Badge } from "@/components/ui/badge";
+import { UnifiedControlPanel } from "@/components/unified-control-panel";
 import { TrackTable } from "@/components/track-table";
+import { CardView } from "@/components/card-view";
+import { KanbanView } from "@/components/kanban-view";
+import { DetailsDrawer } from "@/components/details-drawer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TagManager } from "@/components/tag-manager";
 import { PlaylistManager } from "@/components/playlist-manager";
-import { TrackSidePanel } from "@/components/track-side-panel";
 import { type PlaylistSnapshot, type Tag, type TrackedPlaylist } from "@shared/schema";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,23 +24,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 
-type FilterKey = 'hasIsrc' | 'noIsrc' | 'hasCredits' | 'noCredits' | 'hasPublisher' | 'noPublisher' | 'hasSongwriter' | 'noSongwriter';
+type ViewMode = "table" | "card" | "kanban";
 
 export default function Dashboard() {
   const [selectedWeek, setSelectedWeek] = useState<string>("latest");
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("all");
   const [selectedTag, setSelectedTag] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [scoreRange, setScoreRange] = useState<number[]>([0, 10]);
-  const [activeFilters, setActiveFilters] = useState<FilterKey[]>([]);
+  const [scoreRange, setScoreRange] = useState<[number, number]>([0, 10]);
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<PlaylistSnapshot | null>(null);
-  const [sidePanelOpen, setSidePanelOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
   const { toast } = useToast();
 
-  const toggleFilter = (filter: FilterKey) => {
+  const toggleFilter = (filter: string) => {
     setActiveFilters(prev => {
       if (prev.includes(filter)) {
         return prev.filter(f => f !== filter);
@@ -49,6 +47,10 @@ export default function Dashboard() {
         return [...prev, filter];
       }
     });
+  };
+
+  const clearFilters = () => {
+    setActiveFilters([]);
   };
 
   const { data: weeks, isLoading: weeksLoading } = useQuery<string[]>({
@@ -184,15 +186,15 @@ export default function Dashboard() {
       const hasPublisher = !!track.publisher;
       const hasSongwriter = !!track.songwriter;
       
-      const filterMatches = {
-        hasIsrc,
-        noIsrc: !hasIsrc,
-        hasCredits,
-        noCredits: !hasCredits,
-        hasPublisher,
-        noPublisher: !hasPublisher,
-        hasSongwriter,
-        noSongwriter: !hasSongwriter,
+      const filterMatches: Record<string, boolean> = {
+        "has-isrc": hasIsrc,
+        "no-isrc": !hasIsrc,
+        "has-credits": hasCredits,
+        "no-credits": !hasCredits,
+        "has-publisher": hasPublisher,
+        "no-publisher": !hasPublisher,
+        "has-songwriter": hasSongwriter,
+        "no-songwriter": !hasSongwriter,
       };
       
       matchesAdvancedFilters = activeFilters.every(filter => filterMatches[filter]);
@@ -405,303 +407,140 @@ export default function Dashboard() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {tracksLoading ? (
-              <>
-                <Skeleton className="h-32" />
-                <Skeleton className="h-32" />
-                <Skeleton className="h-32" />
-                <Skeleton className="h-32" />
-              </>
-            ) : (
-              <>
-                <StatsCard
-                  title="Total Tracks"
-                  value={tracks?.length || 0}
-                  icon={ListMusic}
-                  testId="stat-total-tracks"
-                />
-                <StatsCard
-                  title="High Potential"
-                  value={highPotentialCount}
-                  subtitle="Score 7-10"
-                  icon={Target}
-                  variant="success"
-                  testId="stat-high-potential"
-                />
-                <StatsCard
-                  title="Medium Potential"
-                  value={mediumPotentialCount}
-                  subtitle="Score 4-6"
-                  icon={TrendingUp}
-                  variant="warning"
-                  testId="stat-medium-potential"
-                />
-                <StatsCard
-                  title="Avg Score"
-                  value={avgScore}
-                  subtitle="Out of 10"
-                  icon={Music2}
-                  testId="stat-avg-score"
-                />
-              </>
-            )}
-          </div>
+        <div className="space-y-6">
+          {/* Unified Control Panel */}
+          <UnifiedControlPanel
+            totalTracks={tracks?.length || 0}
+            highPotential={highPotentialCount}
+            mediumPotential={mediumPotentialCount}
+            avgScore={parseFloat(avgScore)}
+            onFetchData={() => fetchPlaylistsMutation.mutate({ mode: 'all' })}
+            onEnrichMB={() => enrichMetadataMutation.mutate({ mode: 'all' })}
+            onEnrichCredits={() => enrichCreditsMutation.mutate({ mode: 'all' })}
+            onExport={handleExport}
+            onManagePlaylists={() => {
+              toast({
+                title: "Manage Playlists",
+                description: "Please use the Manage Playlists button in the header",
+              });
+            }}
+            onManageTags={() => {
+              toast({
+                title: "Manage Tags",
+                description: "Please use the Manage Tags button in the header",
+              });
+            }}
+            weeks={weeks || []}
+            selectedWeek={selectedWeek}
+            onWeekChange={setSelectedWeek}
+            playlists={playlists || []}
+            selectedPlaylist={selectedPlaylist}
+            onPlaylistChange={setSelectedPlaylist}
+            tags={tags}
+            selectedTag={selectedTag}
+            onTagChange={setSelectedTag}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            scoreRange={scoreRange}
+            onScoreRangeChange={setScoreRange}
+            activeFilters={activeFilters}
+            onFilterToggle={toggleFilter}
+            onClearFilters={clearFilters}
+            isLoading={fetchPlaylistsMutation.isPending}
+            isEnriching={enrichMetadataMutation.isPending || enrichCreditsMutation.isPending}
+          />
 
-          <div className="rounded-lg border bg-card p-4">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-center">
-                <div className="w-full sm:w-48">
-                  <Select value={selectedWeek} onValueChange={setSelectedWeek} disabled={weeksLoading}>
-                    <SelectTrigger data-testid="select-week">
-                      <SelectValue placeholder="Select week" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="latest" data-testid="option-week-latest">Latest Week</SelectItem>
-                      {weeks?.map((week) => (
-                        <SelectItem key={week} value={week} data-testid={`option-week-${week}`}>
-                          {week}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+          {/* View Switcher */}
+          <div className="flex items-center justify-between glass-panel p-3 rounded-lg">
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === "table" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("table")}
+                className="gap-2"
+                data-testid="button-view-table"
+              >
+                <LayoutList className="h-4 w-4" />
+                Table
+              </Button>
+              <Button
+                variant={viewMode === "card" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("card")}
+                className="gap-2"
+                data-testid="button-view-card"
+              >
+                <LayoutGrid className="h-4 w-4" />
+                Card
+              </Button>
+              <Button
+                variant={viewMode === "kanban" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("kanban")}
+                className="gap-2"
+                data-testid="button-view-kanban"
+              >
+                <Kanban className="h-4 w-4" />
+                Kanban
+              </Button>
+            </div>
 
-                <div className="w-full sm:w-48">
-                  <Select value={selectedPlaylist} onValueChange={setSelectedPlaylist}>
-                    <SelectTrigger data-testid="select-playlist">
-                      <SelectValue placeholder="All playlists" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all" data-testid="option-playlist-all">All Playlists</SelectItem>
-                      {playlists?.map((playlist) => {
-                        const trackedPlaylist = trackedPlaylists.find(p => p.name === playlist);
-                        const totalTracks = trackedPlaylist?.totalTracks;
-                        return (
-                          <SelectItem key={playlist} value={playlist} data-testid={`option-playlist-${playlist}`}>
-                            <div className="flex items-center justify-between gap-2 w-full">
-                              <span className="truncate">{playlist}</span>
-                              {(totalTracks !== null && totalTracks !== undefined) && (
-                                <Badge variant="secondary" className="ml-auto text-xs shrink-0">
-                                  {totalTracks}
-                                </Badge>
-                              )}
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="w-full sm:w-48">
-                  <Select value={selectedTag} onValueChange={setSelectedTag}>
-                    <SelectTrigger data-testid="select-tag">
-                      <SelectValue placeholder="All tags" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all" data-testid="option-tag-all">All Tags</SelectItem>
-                      {tags?.map((tag) => (
-                        <SelectItem key={tag.id} value={tag.id} data-testid={`option-tag-${tag.id}`}>
-                          {tag.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Input
-                  placeholder="Search tracks, artists, labels..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full sm:w-64"
-                  data-testid="input-search"
-                />
-              </div>
-
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2" data-testid="button-open-filters">
-                    <Filter className="h-4 w-4" />
-                    Completeness Filters
-                    {activeFilters.length > 0 && (
-                      <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
-                        {activeFilters.length}
-                      </Badge>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80" align="start">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm">Filter by Completeness</h4>
-                      {activeFilters.length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto py-1 px-2 text-xs"
-                          onClick={() => setActiveFilters([])}
-                          data-testid="button-clear-filters"
-                        >
-                          <X className="h-3 w-3 mr-1" />
-                          Clear
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div>
-                        <div className="text-xs font-medium text-muted-foreground mb-2">ISRC Code</div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant={activeFilters.includes('hasIsrc') ? "default" : "outline"}
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => toggleFilter('hasIsrc')}
-                            data-testid="filter-has-isrc"
-                          >
-                            Has ISRC
-                          </Button>
-                          <Button
-                            variant={activeFilters.includes('noIsrc') ? "default" : "outline"}
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => toggleFilter('noIsrc')}
-                            data-testid="filter-no-isrc"
-                          >
-                            No ISRC
-                          </Button>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div>
-                        <div className="text-xs font-medium text-muted-foreground mb-2">Credits Data</div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant={activeFilters.includes('hasCredits') ? "default" : "outline"}
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => toggleFilter('hasCredits')}
-                            data-testid="filter-has-credits"
-                          >
-                            Has Credits
-                          </Button>
-                          <Button
-                            variant={activeFilters.includes('noCredits') ? "default" : "outline"}
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => toggleFilter('noCredits')}
-                            data-testid="filter-no-credits"
-                          >
-                            No Credits
-                          </Button>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div>
-                        <div className="text-xs font-medium text-muted-foreground mb-2">Publisher Info</div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant={activeFilters.includes('hasPublisher') ? "default" : "outline"}
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => toggleFilter('hasPublisher')}
-                            data-testid="filter-has-publisher"
-                          >
-                            Has Publisher
-                          </Button>
-                          <Button
-                            variant={activeFilters.includes('noPublisher') ? "default" : "outline"}
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => toggleFilter('noPublisher')}
-                            data-testid="filter-no-publisher"
-                          >
-                            No Publisher
-                          </Button>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div>
-                        <div className="text-xs font-medium text-muted-foreground mb-2">Songwriter Info</div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant={activeFilters.includes('hasSongwriter') ? "default" : "outline"}
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => toggleFilter('hasSongwriter')}
-                            data-testid="filter-has-songwriter"
-                          >
-                            Has Songwriter
-                          </Button>
-                          <Button
-                            variant={activeFilters.includes('noSongwriter') ? "default" : "outline"}
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => toggleFilter('noSongwriter')}
-                            data-testid="filter-no-songwriter"
-                          >
-                            No Songwriter
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {activeFilters.length > 0 && (
-                      <div className="pt-2 text-xs text-muted-foreground">
-                        Showing tracks matching all {activeFilters.length} active filter{activeFilters.length > 1 ? 's' : ''}
-                      </div>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium whitespace-nowrap">Score: {scoreRange[0]}-{scoreRange[1]}</span>
-                <Slider
-                  min={0}
-                  max={10}
-                  step={1}
-                  value={scoreRange}
-                  onValueChange={setScoreRange}
-                  className="w-32"
-                  data-testid="slider-score-range"
-                />
-              </div>
+            <div className="text-sm text-muted-foreground" data-testid="text-results-count">
+              {filteredTracks.length} {filteredTracks.length === 1 ? "result" : "results"}
             </div>
           </div>
 
-          <TrackTable 
-            tracks={filteredTracks} 
-            isLoading={tracksLoading}
-            onEnrichMB={(trackId) => enrichMetadataMutation.mutate({ mode: 'track', trackId })}
-            onEnrichCredits={(trackId) => enrichCreditsMutation.mutate({ mode: 'track', trackId })}
-            onRowClick={(track) => {
-              setSelectedTrack(track);
-              setSidePanelOpen(true);
-            }}
-          />
+          {/* View Content */}
+          {viewMode === "table" && (
+            <TrackTable 
+              tracks={filteredTracks} 
+              isLoading={tracksLoading}
+              onEnrichMB={(trackId) => enrichMetadataMutation.mutate({ mode: 'track', trackId })}
+              onEnrichCredits={(trackId) => enrichCreditsMutation.mutate({ mode: 'track', trackId })}
+              onRowClick={(track) => {
+                setSelectedTrack(track);
+                setDrawerOpen(true);
+              }}
+            />
+          )}
+
+          {viewMode === "card" && (
+            <CardView
+              tracks={filteredTracks}
+              isLoading={tracksLoading}
+              onTrackClick={(track) => {
+                setSelectedTrack(track);
+                setDrawerOpen(true);
+              }}
+              onEnrichMB={(trackId) => enrichMetadataMutation.mutate({ mode: 'track', trackId })}
+              onEnrichCredits={(trackId) => enrichCreditsMutation.mutate({ mode: 'track', trackId })}
+            />
+          )}
+
+          {viewMode === "kanban" && (
+            <KanbanView
+              tracks={filteredTracks}
+              isLoading={tracksLoading}
+              onTrackClick={(track) => {
+                setSelectedTrack(track);
+                setDrawerOpen(true);
+              }}
+              onEnrichMB={(trackId) => enrichMetadataMutation.mutate({ mode: 'track', trackId })}
+              onEnrichCredits={(trackId) => enrichCreditsMutation.mutate({ mode: 'track', trackId })}
+            />
+          )}
         </div>
       </main>
 
-      <TrackSidePanel
+      <DetailsDrawer
         track={selectedTrack}
-        open={sidePanelOpen}
-        onClose={() => setSidePanelOpen(false)}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
         onEnrichMB={(trackId) => {
           enrichMetadataMutation.mutate({ mode: 'track', trackId });
-          setSidePanelOpen(false);
         }}
         onEnrichCredits={(trackId) => {
           enrichCreditsMutation.mutate({ mode: 'track', trackId });
-          setSidePanelOpen(false);
         }}
       />
     </div>
