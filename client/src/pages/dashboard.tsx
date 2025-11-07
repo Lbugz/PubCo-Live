@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Music2, Download, Calendar, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -228,6 +228,162 @@ export default function Dashboard() {
     }
   };
 
+  // Memoize action buttons to prevent infinite re-renders
+  const fetchDataButton = useMemo(() => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="gradient"
+          size="default"
+          className="gap-2"
+          disabled={fetchPlaylistsMutation.isPending}
+          data-testid="button-fetch-data"
+        >
+          <RefreshCw className={`h-4 w-4 ${fetchPlaylistsMutation.isPending ? "animate-spin" : ""}`} />
+          <span className="hidden sm:inline">
+            {fetchPlaylistsMutation.isPending ? "Fetching..." : "Fetch Data"}
+          </span>
+          {!fetchPlaylistsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuLabel>Fetch Options</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'all' })} data-testid="menu-fetch-all">
+          Fetch All Playlists
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'editorial' })} data-testid="menu-fetch-editorial">
+          Fetch Editorial Playlists Only
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'non-editorial' })} data-testid="menu-fetch-non-editorial">
+          Fetch Non-Editorial Playlists Only
+        </DropdownMenuItem>
+        {trackedPlaylists.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Fetch Specific Playlist</DropdownMenuLabel>
+            {trackedPlaylists.map((playlist) => (
+              <DropdownMenuItem 
+                key={playlist.id} 
+                onClick={() => fetchPlaylistsMutation.mutate({ mode: 'specific', playlistId: playlist.id })}
+                data-testid={`menu-fetch-playlist-${playlist.id}`}
+              >
+                {playlist.name}
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ), [fetchPlaylistsMutation.isPending, trackedPlaylists]);
+
+  const enrichMBButton = useMemo(() => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="default"
+          className="gap-2"
+          disabled={enrichMetadataMutation.isPending || !tracks || tracks.length === 0}
+          data-testid="button-enrich-musicbrainz"
+        >
+          <Sparkles className={`h-4 w-4 ${enrichMetadataMutation.isPending ? "animate-pulse" : ""}`} />
+          <span className="hidden md:inline">
+            {enrichMetadataMutation.isPending ? "Enriching..." : "Enrich (MB)"}
+          </span>
+          {!enrichMetadataMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuLabel>MusicBrainz Enrich Options</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => enrichMetadataMutation.mutate({ mode: 'all' })} data-testid="menu-enrich-mb-all">
+          Enrich All Unenriched Tracks
+        </DropdownMenuItem>
+        {playlists && playlists.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Enrich by Playlist</DropdownMenuLabel>
+            {playlists.map((playlist) => (
+              <DropdownMenuItem 
+                key={playlist} 
+                onClick={() => enrichMetadataMutation.mutate({ mode: 'playlist', playlistName: playlist })}
+                data-testid={`menu-enrich-mb-playlist-${playlist}`}
+              >
+                {playlist}
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ), [enrichMetadataMutation.isPending, tracks, playlists]);
+
+  const enrichCreditsButton = useMemo(() => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="default"
+          className="gap-2"
+          disabled={enrichCreditsMutation.isPending || !tracks || tracks.length === 0}
+          data-testid="button-enrich-credits"
+        >
+          <FileText className={`h-4 w-4 ${enrichCreditsMutation.isPending ? "animate-pulse" : ""}`} />
+          <span className="hidden md:inline">
+            {enrichCreditsMutation.isPending ? "Scraping..." : "Enrich (Credits)"}
+          </span>
+          {!enrichCreditsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuLabel>Spotify Credits Enrich Options</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => enrichCreditsMutation.mutate({ mode: 'all' })} data-testid="menu-enrich-credits-all">
+          Enrich All Unenriched Tracks
+        </DropdownMenuItem>
+        {playlists && playlists.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Enrich by Playlist</DropdownMenuLabel>
+            {playlists.map((playlist) => (
+              <DropdownMenuItem 
+                key={playlist} 
+                onClick={() => enrichCreditsMutation.mutate({ mode: 'playlist', playlistName: playlist })}
+                data-testid={`menu-enrich-credits-playlist-${playlist}`}
+              >
+                {playlist}
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ), [enrichCreditsMutation.isPending, tracks, playlists]);
+
+  const exportButton = useMemo(() => (
+    <Button
+      onClick={handleExport}
+      variant="outline"
+      size="default"
+      className="gap-2"
+      disabled={!tracks || tracks.length === 0}
+      data-testid="button-export"
+    >
+      <Download className="h-4 w-4" />
+      <span className="hidden sm:inline">Export</span>
+    </Button>
+  ), [tracks, handleExport]);
+
+  const compareButton = useMemo(() => (
+    <Button variant="outline" size="default" className="gap-2" asChild data-testid="button-comparison">
+      <Link href="/comparison">
+        <BarChart3 className="h-4 w-4" />
+        <span className="hidden lg:inline">Compare</span>
+      </Link>
+    </Button>
+  ), []);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -271,158 +427,13 @@ export default function Dashboard() {
             highPotential={highPotentialCount}
             mediumPotential={mediumPotentialCount}
             avgScore={parseFloat(avgScore)}
-            fetchDataButton={
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="gradient"
-                    size="default"
-                    className="gap-2"
-                    disabled={fetchPlaylistsMutation.isPending}
-                    data-testid="button-fetch-data"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${fetchPlaylistsMutation.isPending ? "animate-spin" : ""}`} />
-                    <span className="hidden sm:inline">
-                      {fetchPlaylistsMutation.isPending ? "Fetching..." : "Fetch Data"}
-                    </span>
-                    {!fetchPlaylistsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuLabel>Fetch Options</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'all' })} data-testid="menu-fetch-all">
-                    Fetch All Playlists
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'editorial' })} data-testid="menu-fetch-editorial">
-                    Fetch Editorial Playlists Only
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'non-editorial' })} data-testid="menu-fetch-non-editorial">
-                    Fetch Non-Editorial Playlists Only
-                  </DropdownMenuItem>
-                  {trackedPlaylists.length > 0 && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Fetch Specific Playlist</DropdownMenuLabel>
-                      {trackedPlaylists.map((playlist) => (
-                        <DropdownMenuItem 
-                          key={playlist.id} 
-                          onClick={() => fetchPlaylistsMutation.mutate({ mode: 'specific', playlistId: playlist.id })}
-                          data-testid={`menu-fetch-playlist-${playlist.id}`}
-                        >
-                          {playlist.name}
-                        </DropdownMenuItem>
-                      ))}
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            }
-            enrichMBButton={
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="default"
-                    className="gap-2"
-                    disabled={enrichMetadataMutation.isPending || !tracks || tracks.length === 0}
-                    data-testid="button-enrich-musicbrainz"
-                  >
-                    <Sparkles className={`h-4 w-4 ${enrichMetadataMutation.isPending ? "animate-pulse" : ""}`} />
-                    <span className="hidden md:inline">
-                      {enrichMetadataMutation.isPending ? "Enriching..." : "Enrich (MB)"}
-                    </span>
-                    {!enrichMetadataMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuLabel>MusicBrainz Enrich Options</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => enrichMetadataMutation.mutate({ mode: 'all' })} data-testid="menu-enrich-mb-all">
-                    Enrich All Unenriched Tracks
-                  </DropdownMenuItem>
-                  {playlists && playlists.length > 0 && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Enrich by Playlist</DropdownMenuLabel>
-                      {playlists.map((playlist) => (
-                        <DropdownMenuItem 
-                          key={playlist} 
-                          onClick={() => enrichMetadataMutation.mutate({ mode: 'playlist', playlistName: playlist })}
-                          data-testid={`menu-enrich-mb-playlist-${playlist}`}
-                        >
-                          {playlist}
-                        </DropdownMenuItem>
-                      ))}
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            }
-            enrichCreditsButton={
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="default"
-                    className="gap-2"
-                    disabled={enrichCreditsMutation.isPending || !tracks || tracks.length === 0}
-                    data-testid="button-enrich-credits"
-                  >
-                    <FileText className={`h-4 w-4 ${enrichCreditsMutation.isPending ? "animate-pulse" : ""}`} />
-                    <span className="hidden md:inline">
-                      {enrichCreditsMutation.isPending ? "Scraping..." : "Enrich (Credits)"}
-                    </span>
-                    {!enrichCreditsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuLabel>Spotify Credits Enrich Options</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => enrichCreditsMutation.mutate({ mode: 'all' })} data-testid="menu-enrich-credits-all">
-                    Enrich All Unenriched Tracks
-                  </DropdownMenuItem>
-                  {playlists && playlists.length > 0 && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Enrich by Playlist</DropdownMenuLabel>
-                      {playlists.map((playlist) => (
-                        <DropdownMenuItem 
-                          key={playlist} 
-                          onClick={() => enrichCreditsMutation.mutate({ mode: 'playlist', playlistName: playlist })}
-                          data-testid={`menu-enrich-credits-playlist-${playlist}`}
-                        >
-                          {playlist}
-                        </DropdownMenuItem>
-                      ))}
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            }
-            exportButton={
-              <Button
-                onClick={handleExport}
-                variant="outline"
-                size="default"
-                className="gap-2"
-                disabled={!tracks || tracks.length === 0}
-                data-testid="button-export"
-              >
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Export</span>
-              </Button>
-            }
+            fetchDataButton={fetchDataButton}
+            enrichMBButton={enrichMBButton}
+            enrichCreditsButton={enrichCreditsButton}
+            exportButton={exportButton}
             playlistManagerButton={<PlaylistManager />}
             tagManagerButton={<TagManager />}
-            compareButton={
-              <Button variant="outline" size="default" className="gap-2" asChild data-testid="button-comparison">
-                <Link href="/comparison">
-                  <BarChart3 className="h-4 w-4" />
-                  <span className="hidden lg:inline">Compare</span>
-                </Link>
-              </Button>
-            }
+            compareButton={compareButton}
             weeks={weeks || []}
             selectedWeek={selectedWeek}
             onWeekChange={setSelectedWeek}
