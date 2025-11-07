@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Music2, Download, Calendar, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UnifiedControlPanel } from "@/components/unified-control-panel";
+import { BulkActionsToolbar } from "@/components/bulk-actions-toolbar";
 import { TrackTable } from "@/components/track-table";
 import { CardView } from "@/components/card-view";
 import { KanbanView } from "@/components/kanban-view";
@@ -260,6 +261,93 @@ export default function Dashboard() {
       console.error("Export failed:", error);
     }
   };
+
+  const handleBulkEnrichMB = useCallback(() => {
+    const selectedTrackIdArray = Array.from(selectedTrackIds);
+    selectedTrackIdArray.forEach(trackId => {
+      enrichMetadataMutation.mutate({ mode: 'track', trackId });
+    });
+    toast({
+      title: "Enriching tracks",
+      description: `Started MusicBrainz enrichment for ${selectedTrackIdArray.length} tracks`,
+    });
+  }, [selectedTrackIds, enrichMetadataMutation, toast]);
+
+  const handleBulkEnrichCredits = useCallback(() => {
+    const selectedTrackIdArray = Array.from(selectedTrackIds);
+    selectedTrackIdArray.forEach(trackId => {
+      enrichCreditsMutation.mutate({ mode: 'track', trackId });
+    });
+    toast({
+      title: "Enriching tracks",
+      description: `Started Spotify credits enrichment for ${selectedTrackIdArray.length} tracks`,
+    });
+  }, [selectedTrackIds, enrichCreditsMutation, toast]);
+
+  const handleBulkExport = useCallback(async () => {
+    try {
+      const selectedTracks = tracks?.filter(t => selectedTrackIds.has(t.id)) || [];
+      
+      const headers = [
+        "Track Name", "Artist", "Album", "ISRC", "Playlist", "Label", 
+        "Publisher", "Songwriter", "Composer", "Producer", "Score",
+        "Instagram", "Twitter", "TikTok", "Email", "Notes"
+      ];
+      
+      const rows = selectedTracks.map(track => [
+        track.trackName,
+        track.artistName,
+        track.albumName || "",
+        track.isrc || "",
+        track.playlistName,
+        track.label || "",
+        track.publisher || "",
+        track.songwriters?.join("; ") || "",
+        track.composers?.join("; ") || "",
+        track.producers?.join("; ") || "",
+        track.unsignedScore.toString(),
+        track.instagram || "",
+        track.twitter || "",
+        track.tiktok || "",
+        track.email || "",
+        track.notes || ""
+      ]);
+      
+      const csvContent = [
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(","))
+      ].join("\n");
+      
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `selected-pub-leads-${selectedWeek}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Export successful",
+        description: `Exported ${selectedTracks.length} selected tracks`,
+      });
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast({
+        title: "Export failed",
+        description: "Failed to export selected tracks",
+        variant: "destructive",
+      });
+    }
+  }, [tracks, selectedTrackIds, selectedWeek, toast]);
+
+  const handleBulkTag = useCallback(() => {
+    toast({
+      title: "Bulk tagging",
+      description: "Bulk tagging feature coming soon",
+    });
+  }, [toast]);
 
   // Memoize action buttons to prevent infinite re-renders
   const fetchDataButton = useMemo(() => (
@@ -529,6 +617,19 @@ export default function Dashboard() {
               {filteredTracks.length} {filteredTracks.length === 1 ? "result" : "results"}
             </div>
           </div>
+
+          {/* Bulk Actions Toolbar */}
+          <BulkActionsToolbar
+            selectedCount={selectedTrackIds.size}
+            totalFilteredCount={filteredTracks.length}
+            onEnrichMB={handleBulkEnrichMB}
+            onEnrichCredits={handleBulkEnrichCredits}
+            onExport={handleBulkExport}
+            onTag={handleBulkTag}
+            onClearSelection={clearSelection}
+            isEnrichingMB={enrichMetadataMutation.isPending}
+            isEnrichingCredits={enrichCreditsMutation.isPending}
+          />
 
           {/* View Content */}
           {viewMode === "table" && (
