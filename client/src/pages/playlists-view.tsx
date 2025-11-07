@@ -452,7 +452,20 @@ export default function PlaylistsView() {
 
                   <div>
                     <p className="text-xs text-muted-foreground">Fetch Method</p>
-                    <Badge variant="secondary">{selectedPlaylist.fetchMethod || "api"}</Badge>
+                    <Badge 
+                      variant={
+                        selectedPlaylist.fetchMethod === 'network-capture' ? 'default' :
+                        selectedPlaylist.fetchMethod === 'dom-capture' ? 'outline' :
+                        'secondary'
+                      }
+                    >
+                      {
+                        selectedPlaylist.fetchMethod === 'network-capture' ? 'Network Capture' :
+                        selectedPlaylist.fetchMethod === 'dom-capture' ? 'DOM Capture' :
+                        selectedPlaylist.fetchMethod === 'scraping' ? 'Basic Scraping' :
+                        'API'
+                      }
+                    </Badge>
                   </div>
 
                   {selectedPlaylist.isEditorial === 1 && (

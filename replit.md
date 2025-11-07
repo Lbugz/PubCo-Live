@@ -38,6 +38,9 @@ The frontend is a single-page React application built with a modular component a
 - **AI Lead Prioritization**: Integrates GPT-4o-mini for generating insights, outreach strategies, and scoring rationale.
 - **Custom Playlist Tracking**: Supports adding, managing, and bulk importing Spotify playlists via URL/ID, including automatic metadata fetching and duplicate prevention.
 - **Spotify Credits Scraping**: Employs Puppeteer to scrape songwriter, composer, producer, and publisher credits directly from Spotify track pages, complementing MusicBrainz enrichment.
+- **Advanced Editorial Playlist Capture**: Two-tier approach for editorial playlists inaccessible via API:
+  - **Network Capture (Primary)**: Intercepts JSON responses from Spotify's web player API using Puppeteer's `page.on('response')` to capture all playlist tracks without DOM limitations.
+  - **DOM Harvester (Fallback)**: Uses `MutationObserver` to track virtualized row swaps and harvest track data during scrolling if network capture yields insufficient results.
 - **Enhanced CSV Export**: Includes all metadata and contact fields for comprehensive outreach.
 
 ### System Design Choices
@@ -54,4 +57,4 @@ The frontend is a single-page React application built with a modular component a
 - **MusicBrainz API**: For enriching tracks with publisher and songwriter metadata via ISRC.
 - **Neon (PostgreSQL)**: Managed PostgreSQL database for data storage.
 - **GPT-4o-mini (via Replit AI Integrations)**: For AI-powered lead prioritization and insights.
-- **Puppeteer**: Used for web scraping Spotify track credits and editorial playlists. **Known Limitation**: Spotify's virtualized scrolling only exposes ~28 DOM rows at a time, making it impossible to scrape all 160+ tracks from large editorial playlists.
+- **Puppeteer**: Used for web scraping Spotify track credits and editorial playlists. **Network Capture Method**: Intercepts Spotify's internal API responses to bypass virtualized scrolling limitations and capture all tracks from editorial playlists (160+ tracks). **DOM Harvester**: Fallback method using `MutationObserver` for edge cases where network capture fails.

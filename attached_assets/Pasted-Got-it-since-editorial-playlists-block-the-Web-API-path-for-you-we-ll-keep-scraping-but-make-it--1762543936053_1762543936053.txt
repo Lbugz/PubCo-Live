@@ -1,0 +1,241 @@
+Got it — since editorial playlists block the Web API path for you, we’ll keep scraping but make it **robust against Spotify’s virtualized list**. Here are two proven scraper patterns you can implement (and a ready-to-paste Agent prompt for Replit to build them).
+
+---
+
+# ✅ What to implement
+
+## Approach A — **Network-capture scraper (best)**
+
+Don’t read the DOM at all. Let the web player load as usual and **capture the JSON** that the page itself requests for playlist tracks. This bypasses virtualization because you’re consuming the same paginated data the app uses.
+
+**Key ideas**
+
+* Launch a **headed** browser with a **persistent profile** (so Spotify stays logged-in).
+* Navigate to the playlist URL (e.g., Fresh Finds).
+* `page.on('response', …)` and filter URLs that include Spotify track pages (they’re usually `/v1/…/playlists/{id}/tracks?offset=…` or `spclient.wg.spotify.com` endpoints).
+* Parse each JSON response, accumulate `items`, and stop when `next === null` or when offsets stop increasing.
+* Map into your schema and save.
+
+**Puppeteer TS skeleton**
+
+```ts
+import fs from "node:fs/promises";
+import puppeteer from "puppeteer";
+
+export async function fetchEditorialTracksViaNetwork(playlistUrl: string) {
+  const browser = await puppeteer.launch({
+    headless: false,  // headed so Spotify runs full app logic
+    args: ["--window-size=1440,900"],
+    defaultViewport: { width: 1440, height: 900 },
+  });
+  const [page] = await browser.pages();
+
+  // Accumulator
+  const seenOffsets = new Set<number>();
+  const allItems: any[] = [];
+
+  page.on("response", async (res) => {
+    const url = res.url();
+    // Heuristic: capture playlist track JSON calls from the web app
+    const isTrackPage =
+      url.includes("/v1/playlists/") && url.includes("/tracks?") ||
+      url.includes("spclient") && url.includes("playlist");
+
+    if (!isTrackPage) return;
+
+    try {
+      const ct = (res.headers()["content-type"] || "").toLowerCase();
+      if (!ct.includes("application/json")) return;
+      const json = await res.json();
+
+      // Web API style
+      if (json?.items?.length) {
+        // Try to infer offset from url
+        const offset = Number(new URL(url).searchParams.get("offset") || 0);
+        if (!seenOffsets.has(offset)) {
+          seenOffsets.add(offset);
+          allItems.push(...json.items);
+          // Optional: emit progress event to UI
+          // console.log(`Fetched page offset=${offset} count=${json.items.length}`);
+        }
+      }
+    } catch {}
+  });
+
+  await page.goto(playlistUrl, { waitUntil: "networkidle2" });
+
+  // Nudge the app to prefetch subsequent pages (scroll a bit)
+  for (let i = 0; i < 20; i++) {
+    await page.mouse.wheel({ deltaY: 800 });
+    await page.waitForTimeout(700);
+  }
+
+  // Wait for late requests
+  await page.waitForTimeout(2000);
+
+  await browser.close();
+
+  // Map to your schema
+  const tracks = allItems.map((it: any) => {
+    const t = it.track || it; // normalize
+    return {
+      source: "spotify_editorial_network",
+      trackId: t?.id,
+      isrc: t?.external_ids?.isrc,
+      name: t?.name,
+      artists: (t?.artists || []).map((a: any) => a.name),
+      album: t?.album?.name,
+      added_at: it?.added_at,
+      popularity: t?.popularity,
+      duration_ms: t?.duration_ms,
+    };
+  });
+
+  // Save or return
+  await fs.writeFile("playlist_tracks.json", JSON.stringify(tracks, null, 2));
+  return tracks;
+}
+```
+
+> Why this works: Spotify’s app *must* fetch real JSON to render the list. Intercepting those responses gives you the **full dataset**, independent of how many rows are mounted in the DOM.
+
+---
+
+## Approach B — **DOM-aware virtualization harvester (fallback)**
+
+Run a headed browser, scroll **pixel-by-pixel**, and use a `MutationObserver` in the page to **capture the row’s data as the virtualized cells swap**. Deduplicate on a composite key.
+
+**Puppeteer TS skeleton**
+
+```ts
+import puppeteer from "puppeteer";
+
+export async function harvestVirtualizedRows(playlistUrl: string) {
+  const browser = await puppeteer.launch({
+    headless: false, slowMo: 30,
+    args: ["--window-size=1440,900"],
+    defaultViewport: { width: 1440, height: 900 },
+  });
+  const [page] = await browser.pages();
+  await page.goto(playlistUrl, { waitUntil: "networkidle2" });
+
+  // Expose sink to collect rows from the page context
+  const results: any[] = [];
+  await page.exposeFunction("PUSH_ROW", (row: any) => results.push(row));
+
+  await page.evaluate(() => {
+    // Attach a MutationObserver to the virtualized list container
+    const container = document.querySelector('[data-testid="playlist-tracklist"]') ||
+                      document.querySelector('[role="grid"]');
+    if (!container) return;
+
+    const seen = new Set<string>();
+
+    function rowToJson(row: Element) {
+      // Adapt these selectors to your current DOM (inspect in devtools)
+      const track = row.querySelector('[data-testid="track-name"]')?.textContent?.trim() || "";
+      const artists = Array.from(row.querySelectorAll('[data-testid="track-artist"]'))
+        .map(n => n.textContent?.trim()).filter(Boolean);
+      const album = row.querySelector('[data-testid="track-album"]')?.textContent?.trim() || "";
+      const key = `${track}::${artists.join(",")}::${album}`;
+      if (!track || seen.has(key)) return;
+      seen.add(key);
+      // @ts-ignore
+      window.PUSH_ROW({ track, artists, album });
+    }
+
+    // Initial harvest
+    container.querySelectorAll('[role="row"]').forEach(rowToJson);
+
+    const mo = new MutationObserver(() => {
+      container.querySelectorAll('[role="row"]').forEach(rowToJson);
+    });
+    mo.observe(container, { childList: true, subtree: true });
+  });
+
+  // Drive the scroll to force virtualization swaps
+  let lastCount = 0, stagnant = 0;
+  for (let i = 0; i < 400; i++) {
+    await page.mouse.wheel({ deltaY: 650 });
+    await page.waitForTimeout(450);
+    if (results.length === lastCount) stagnant++;
+    else { stagnant = 0; lastCount = results.length; }
+    if (stagnant > 12) break; // stop when we haven't seen new rows in a while
+  }
+
+  await browser.close();
+  return results; // deduped rows
+}
+```
+
+> Works when Spotify renders DOM content correctly in a headed session and your selectors are accurate. It’s slower and flakier than Approach A but still viable.
+
+---
+
+# 🔧 Replit Agent — pasteable build prompt
+
+Use this with your Replit assistant (Build mode):
+
+> **Goal:** Implement a robust **Editorial Playlist Track Fetcher** that avoids the 28-row cap from Spotify’s virtualized web player.
+> **Deliverables:**
+>
+> 1. `server/scrapers/spotifyEditorialNetwork.ts` implementing **Approach A (network-capture)** as default.
+> 2. `server/scrapers/spotifyEditorialDom.ts` implementing **Approach B (virtualization harvester)** as fallback.
+> 3. `server/routes/playlistFetch.ts` endpoint `POST /api/fetch/playlist` that receives `{ playlistUrl }`, runs A then B if A returns < 50 tracks, and persists results to DB (`playlist_tracks` table).
+> 4. Update **Fetch Data** button to call the endpoint and show progress states (“Capturing network…”, “Scrolling capture…”, “Saved 160 tracks”).
+> 5. Store runs with `source` tags: `"spotify_editorial_network"` or `"spotify_editorial_dom"`.
+> 6. Add a settings toggle in **Settings → Spotify & APIs**: “Use DOM fallback if network capture < N tracks” (default N=50).
+>
+> **Notes:**
+>
+> * Launch puppeteer **headed** (`headless: false`) with persistent session dir (`userDataDir: './.spotify-profile'`) so Spotify remains logged in after first auth.
+> * Use `page.on('response', …)` to collect Web API or `spclient` JSON pages; map items → `{trackId, name, artists[], album, isrc, popularity, duration_ms, added_at}`.
+> * After network capture, scroll a few times to encourage subsequent page fetches; then wait 2s for late requests.
+> * If network capture yields < N tracks, run DOM harvester with `MutationObserver` + pixel scrolling and dedupe by `(name, artists, album)`.
+> * Return unified results and write to `playlist_tracks`.
+> * Update UI badges to show source: **API**, **Network**, or **DOM**.
+>
+> **Files to create/update:**
+>
+> * `server/scrapers/spotifyEditorialNetwork.ts` (network)
+> * `server/scrapers/spotifyEditorialDom.ts` (dom)
+> * `server/routes/playlistFetch.ts` (router)
+> * `client/src/components/features/playlists/PlaylistsPage.tsx` (wire progress)
+> * `client/src/components/features/tracks/TrackTable.tsx` (optional: show capture source per track)
+>
+> **Acceptance:** Trigger from Playlists View → “Fetch Data”. Expect **≈160 tracks** for Fresh Finds. Show toast with total and capture source.
+
+---
+
+# 🗃️ DB contract (simple)
+
+Table `playlist_tracks` (Neon/Postgres):
+
+* `id` (uuid pk)
+* `playlist_id` (text)
+* `source` (text) — `spotify_editorial_network` | `spotify_editorial_dom`
+* `track_id` (text)
+* `isrc` (text)
+* `name` (text)
+* `artists` (jsonb)
+* `album` (text)
+* `popularity` (int)
+* `duration_ms` (int)
+* `added_at` (timestamptz)
+* `captured_at` (timestamptz default now())
+
+---
+
+# 🧪 Operator tips
+
+* Run headed; keep the window foregrounded during capture.
+* Use `slowMo: 30` and short waits between scrolls to give React time to recycle rows.
+* If you still cap at ~28, check:
+
+  * You’re logged in (persistent profile).
+  * Response listener filters aren’t too strict.
+  * DOM selectors (for fallback) match current Spotify markup.
+
+---
+
+If you want, I can tailor the exact URL filters for the **network-capture** to match what your current build is seeing in DevTools (paste one of the actual request URLs you see in the Network tab), and I’ll tighten the regex so it only collects the correct JSON pages.

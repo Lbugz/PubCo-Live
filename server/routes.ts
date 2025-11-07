@@ -7,6 +7,8 @@ import { searchByISRC } from "./musicbrainz";
 import { generateAIInsights } from "./ai-insights";
 import { playlists, type InsertPlaylistSnapshot, insertTagSchema, insertTrackedPlaylistSchema } from "@shared/schema";
 import { scrapeSpotifyPlaylist, scrapeTrackCredits } from "./scraper";
+import { fetchEditorialTracksViaNetwork } from "./scrapers/spotifyEditorialNetwork";
+import { harvestVirtualizedRows } from "./scrapers/spotifyEditorialDom";
 
 // Helper function to fetch all tracks from a playlist with pagination
 async function fetchAllPlaylistTracks(spotify: any, playlistId: string): Promise<any[]> {
@@ -838,7 +840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 playlistName: playlist.name,
                 playlistId: playlist.playlistId,
                 trackName: track.name,
-                artistName: track.artists.map(a => a.name).join(", "),
+                artistName: track.artists.map((a: any) => a.name).join(", "),
                 spotifyUrl: track.external_urls.spotify,
                 isrc: track.external_ids?.isrc || null,
                 label: label,
@@ -853,21 +855,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             playlistTracks = allPlaylistItems;
           } catch (apiError: any) {
-            // API failed (likely 404 for editorial playlist), try scraping
-            console.log(`API fetch failed for ${playlist.name}: ${apiError.message}. Falling back to scraping...`);
-            fetchMethod = 'scraping';
+            // API failed (likely 404 for editorial playlist), try advanced scraping
+            console.log(`API fetch failed for ${playlist.name}: ${apiError.message}. Trying network capture...`);
             
-            const scrapeResult = await scrapeSpotifyPlaylist(playlist.spotifyUrl);
+            // Try network capture first (best method)
+            const networkResult = await fetchEditorialTracksViaNetwork(playlist.spotifyUrl);
+            let capturedTracks: any[] = [];
             
-            if (!scrapeResult.success || !scrapeResult.tracks) {
-              console.error(`Scraping also failed for ${playlist.name}: ${scrapeResult.error}`);
-              continue;
+            if (networkResult.success && networkResult.tracks.length >= 50) {
+              console.log(`Network capture successful: ${networkResult.tracks.length} tracks`);
+              fetchMethod = 'network-capture';
+              capturedTracks = networkResult.tracks;
+            } else {
+              // Network capture failed or returned too few tracks, try DOM fallback
+              console.log(`Network capture insufficient (${networkResult.tracks.length} tracks). Trying DOM fallback...`);
+              const domResult = await harvestVirtualizedRows(playlist.spotifyUrl);
+              
+              if (domResult.success && domResult.tracks.length > networkResult.tracks.length) {
+                console.log(`DOM fallback successful: ${domResult.tracks.length} tracks`);
+                fetchMethod = 'dom-capture';
+                capturedTracks = domResult.tracks;
+              } else if (networkResult.success && networkResult.tracks.length > 0) {
+                console.log(`Using network capture results: ${networkResult.tracks.length} tracks`);
+                fetchMethod = 'network-capture';
+                capturedTracks = networkResult.tracks;
+              } else {
+                console.error(`Both capture methods failed for ${playlist.name}`);
+                continue;
+              }
             }
             
-            console.log(`Scraping completed: ${scrapeResult.tracks.length} tracks`);
-            
-            for (const scrapedTrack of scrapeResult.tracks) {
-              const trackKey = `${playlist.playlistId}_${scrapedTrack.spotifyUrl}`;
+            // Process captured tracks
+            for (const capturedTrack of capturedTracks) {
+              const trackUrl = capturedTrack.spotifyUrl || `https://open.spotify.com/track/${capturedTrack.trackId}`;
+              const trackKey = `${playlist.playlistId}_${trackUrl}`;
+              
               if (existingTrackKeys.has(trackKey)) {
                 skippedCount++;
                 continue;
@@ -880,25 +902,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 writer: null,
               });
               
+              const artistName = Array.isArray(capturedTrack.artists) 
+                ? capturedTrack.artists.join(", ") 
+                : capturedTrack.artists || "Unknown";
+              
               const newTrack = {
                 week: today,
                 playlistName: playlist.name,
                 playlistId: playlist.playlistId,
-                trackName: scrapedTrack.trackName,
-                artistName: scrapedTrack.artistName,
-                spotifyUrl: scrapedTrack.spotifyUrl,
-                isrc: null,
+                trackName: capturedTrack.name,
+                artistName: artistName,
+                spotifyUrl: trackUrl,
+                isrc: capturedTrack.isrc || null,
                 label: null,
                 unsignedScore: score,
-                addedAt: new Date(),
-                dataSource: "scraping",
+                addedAt: capturedTrack.addedAt || new Date(),
+                dataSource: fetchMethod,
               };
               
               allTracks.push(newTrack);
               existingTrackKeys.add(trackKey);
             }
             
-            playlistTracks = scrapeResult.tracks;
+            playlistTracks = capturedTracks;
           }
           
           // Update completeness status
@@ -909,6 +935,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             playlistTotalTracks, 
             new Date()
           );
+          
+          // Update fetch method used for this playlist
+          await storage.updatePlaylistMetadata(playlist.id, { fetchMethod });
           
           const isComplete = playlistTotalTracks !== null && fetchCount >= playlistTotalTracks;
           completenessResults.push({
