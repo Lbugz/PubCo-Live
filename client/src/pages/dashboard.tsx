@@ -262,31 +262,41 @@ export default function Dashboard() {
     }
   };
 
-  const handleBulkEnrichMB = useCallback(() => {
-    const selectedTrackIdArray = Array.from(selectedTrackIds);
-    selectedTrackIdArray.forEach(trackId => {
+  const handleBulkEnrichMB = useCallback((mode: "selected" | "filtered") => {
+    const trackIds = mode === "selected" 
+      ? Array.from(selectedTrackIds)
+      : filteredTracks.map(t => t.id);
+    
+    trackIds.forEach(trackId => {
       enrichMetadataMutation.mutate({ mode: 'track', trackId });
     });
+    
     toast({
       title: "Enriching tracks",
-      description: `Started MusicBrainz enrichment for ${selectedTrackIdArray.length} tracks`,
+      description: `Started MusicBrainz enrichment for ${trackIds.length} ${mode === "selected" ? "selected" : "filtered"} tracks`,
     });
-  }, [selectedTrackIds, enrichMetadataMutation, toast]);
+  }, [selectedTrackIds, filteredTracks, enrichMetadataMutation, toast]);
 
-  const handleBulkEnrichCredits = useCallback(() => {
-    const selectedTrackIdArray = Array.from(selectedTrackIds);
-    selectedTrackIdArray.forEach(trackId => {
+  const handleBulkEnrichCredits = useCallback((mode: "selected" | "filtered") => {
+    const trackIds = mode === "selected" 
+      ? Array.from(selectedTrackIds)
+      : filteredTracks.map(t => t.id);
+    
+    trackIds.forEach(trackId => {
       enrichCreditsMutation.mutate({ mode: 'track', trackId });
     });
+    
     toast({
       title: "Enriching tracks",
-      description: `Started Spotify credits enrichment for ${selectedTrackIdArray.length} tracks`,
+      description: `Started Spotify credits enrichment for ${trackIds.length} ${mode === "selected" ? "selected" : "filtered"} tracks`,
     });
-  }, [selectedTrackIds, enrichCreditsMutation, toast]);
+  }, [selectedTrackIds, filteredTracks, enrichCreditsMutation, toast]);
 
-  const handleBulkExport = useCallback(async () => {
+  const handleBulkExport = useCallback(async (mode: "selected" | "filtered") => {
     try {
-      const selectedTracks = tracks?.filter(t => selectedTrackIds.has(t.id)) || [];
+      const exportTracks = mode === "selected"
+        ? tracks?.filter(t => selectedTrackIds.has(t.id)) || []
+        : filteredTracks;
       
       const headers = [
         "Track Name", "Artist", "Album", "ISRC", "Playlist", "Label", 
@@ -294,7 +304,7 @@ export default function Dashboard() {
         "Instagram", "Twitter", "TikTok", "Email", "Notes"
       ];
       
-      const rows = selectedTracks.map(track => [
+      const rows = exportTracks.map(track => [
         track.trackName,
         track.artistName,
         track.albumName || "",
@@ -322,7 +332,7 @@ export default function Dashboard() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `selected-pub-leads-${selectedWeek}.csv`;
+      a.download = `${mode === "selected" ? "selected" : "filtered"}-pub-leads-${selectedWeek}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -330,24 +340,25 @@ export default function Dashboard() {
       
       toast({
         title: "Export successful",
-        description: `Exported ${selectedTracks.length} selected tracks`,
+        description: `Exported ${exportTracks.length} ${mode === "selected" ? "selected" : "filtered"} tracks`,
       });
     } catch (error) {
       console.error("Export failed:", error);
       toast({
         title: "Export failed",
-        description: "Failed to export selected tracks",
+        description: "Failed to export tracks",
         variant: "destructive",
       });
     }
-  }, [tracks, selectedTrackIds, selectedWeek, toast]);
+  }, [tracks, selectedTrackIds, filteredTracks, selectedWeek, toast]);
 
-  const handleBulkTag = useCallback(() => {
+  const handleBulkTag = useCallback((mode: "selected" | "filtered") => {
+    const count = mode === "selected" ? selectedTrackIds.size : filteredTracks.length;
     toast({
       title: "Bulk tagging",
-      description: "Bulk tagging feature coming soon",
+      description: `Bulk tagging ${count} ${mode === "selected" ? "selected" : "filtered"} tracks coming soon`,
     });
-  }, [toast]);
+  }, [selectedTrackIds, filteredTracks, toast]);
 
   // Memoize action buttons to prevent infinite re-renders
   const fetchDataButton = useMemo(() => (
