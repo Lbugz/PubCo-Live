@@ -5,7 +5,7 @@ import { getUncachableSpotifyClient, getAuthUrl, exchangeCodeForToken, isAuthent
 import { calculateUnsignedScore } from "./scoring";
 import { searchByISRC } from "./musicbrainz";
 import { generateAIInsights } from "./ai-insights";
-import { playlists, type InsertPlaylistSnapshot, insertTagSchema, insertTrackedPlaylistSchema } from "@shared/schema";
+import { playlists, type InsertPlaylistSnapshot, type PlaylistSnapshot, insertTagSchema, insertTrackedPlaylistSchema } from "@shared/schema";
 import { scrapeSpotifyPlaylist, scrapeTrackCredits } from "./scraper";
 import { fetchEditorialTracksViaNetwork } from "./scrapers/spotifyEditorialNetwork";
 import { harvestVirtualizedRows } from "./scrapers/spotifyEditorialDom";
@@ -534,14 +534,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { mode = 'all', trackId, playlistName, limit = 10 } = req.body;
       
-      // Get tracks that don't have songwriter/publisher data yet
-      let tracks = await storage.getUnenrichedTracks(limit);
+      let tracks: PlaylistSnapshot[] = [];
       
-      // Filter based on mode
+      // Handle different modes
       if (mode === 'track' && trackId) {
-        tracks = tracks.filter(t => t.id === trackId);
-      } else if (mode === 'playlist' && playlistName) {
-        tracks = tracks.filter(t => t.playlistName === playlistName);
+        // For single track, fetch it directly
+        const track = await storage.getTrackById(trackId);
+        if (track) {
+          tracks = [track];
+        }
+      } else {
+        // For 'all' or 'playlist', get unenriched tracks first
+        tracks = await storage.getUnenrichedTracks(limit);
+        
+        // Filter by playlist if needed
+        if (mode === 'playlist' && playlistName) {
+          tracks = tracks.filter(t => t.playlistName === playlistName);
+        }
       }
       
       if (tracks.length === 0) {
@@ -550,7 +559,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           enrichedCount: 0,
           failedCount: 0,
           totalProcessed: 0,
-          message: "No tracks need Spotify Credits enrichment"
+          message: mode === 'track' ? "Track not found" : "No tracks need Spotify Credits enrichment"
         });
       }
 
