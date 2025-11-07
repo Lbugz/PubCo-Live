@@ -1,10 +1,10 @@
 import { type PlaylistSnapshot } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle2, XCircle, ExternalLink, Sparkles } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TrackActionsDropdown } from "./track-actions-dropdown";
 
 interface KanbanViewProps {
   tracks: PlaylistSnapshot[];
@@ -78,37 +78,12 @@ export function KanbanView({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-1 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
-          {(!track.publisher || !track.songwriter) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEnrichMB?.(track.id);
-              }}
-              className="flex-1 gap-1 text-xs h-7"
-            >
-              <Sparkles className="h-2.5 w-2.5" />
-              Enrich
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            asChild
-            className="gap-1 text-xs h-7"
-          >
-            <a
-              href={track.spotifyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ExternalLink className="h-2.5 w-2.5" />
-              View
-            </a>
-          </Button>
+        <div className="flex justify-end pt-2 border-t" onClick={(e) => e.stopPropagation()}>
+          <TrackActionsDropdown
+            track={track}
+            onEnrichMB={onEnrichMB}
+            onEnrichCredits={onEnrichCredits}
+          />
         </div>
       </div>
     </Card>

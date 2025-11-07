@@ -1,9 +1,9 @@
 import { type PlaylistSnapshot } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, ExternalLink, Sparkles, Tag as TagIcon, UserPlus } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TrackActionsDropdown } from "./track-actions-dropdown";
 
 interface CardViewProps {
   tracks: PlaylistSnapshot[];
@@ -155,39 +155,12 @@ export function CardView({
             </div>
 
             {/* Actions */}
-            <div className="flex gap-2 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
-              {(!track.publisher || !track.songwriter) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEnrichMB?.(track.id);
-                  }}
-                  className="flex-1 gap-1"
-                  data-testid={`button-enrich-${track.id}`}
-                >
-                  <Sparkles className="h-3 w-3" />
-                  Enrich
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                asChild
-                className="gap-1"
-                data-testid={`button-spotify-${track.id}`}
-              >
-                <a
-                  href={track.spotifyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  Spotify
-                </a>
-              </Button>
+            <div className="flex justify-end pt-2 border-t" onClick={(e) => e.stopPropagation()}>
+              <TrackActionsDropdown
+                track={track}
+                onEnrichMB={onEnrichMB}
+                onEnrichCredits={onEnrichCredits}
+              />
             </div>
           </div>
         </Card>

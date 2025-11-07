@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Sparkles, Loader2, Lightbulb, Target, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,7 +37,7 @@ export function TrackAIInsights({ track, open: controlledOpen, onOpenChange }: T
   const [insights, setInsights] = useState<AIInsights | null>(null);
   const { toast } = useToast();
 
-  const handleGenerate = async () => {
+  const handleGenerate = useCallback(async () => {
     setLoading(true);
     try {
       const result = await apiRequest("POST", `/api/tracks/${track.id}/ai-insights`, {});
@@ -51,14 +51,14 @@ export function TrackAIInsights({ track, open: controlledOpen, onOpenChange }: T
     } finally {
       setLoading(false);
     }
-  };
+  }, [track.id, toast]);
 
   // Auto-generate insights when dialog is opened externally (controlled mode)
   useEffect(() => {
     if (open && !insights && !loading) {
       handleGenerate();
     }
-  }, [open]);
+  }, [open, insights, loading, handleGenerate]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
