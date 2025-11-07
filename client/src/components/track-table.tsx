@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { type PlaylistSnapshot, type Tag } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { TrackActionsDropdown } from "./track-actions-dropdown";
+import { SongwriterDisplay } from "./songwriter-display";
 import { useQuery } from "@tanstack/react-query";
 import { getTagColorClass } from "./tag-manager";
 
@@ -177,8 +178,11 @@ export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits, onR
               </div>
               
               <div className="col-span-1 lg:col-span-2">
-                <div className="text-sm" data-testid={`text-songwriter-${track.id}`}>
-                  {track.songwriter || <span className="text-muted-foreground italic">Unknown</span>}
+                <div className="text-sm">
+                  <SongwriterDisplay
+                    songwriters={track.songwriter}
+                    testId={`text-songwriter-${track.id}`}
+                  />
                 </div>
               </div>
               

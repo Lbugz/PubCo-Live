@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TrackActionsDropdown } from "./track-actions-dropdown";
+import { SongwriterDisplay } from "./songwriter-display";
 
 interface CardViewProps {
   tracks: PlaylistSnapshot[];
@@ -146,12 +147,14 @@ export function CardView({
                   <span className="font-medium">{track.publisher}</span>
                 </div>
               )}
-              {track.songwriter && (
-                <div>
-                  <span className="text-muted-foreground">Songwriter:</span>{" "}
-                  <span className="font-medium">{track.songwriter}</span>
-                </div>
-              )}
+              <div>
+                <span className="text-muted-foreground">Songwriter:</span>{" "}
+                <SongwriterDisplay
+                  songwriters={track.songwriter}
+                  className="font-medium inline-flex"
+                  testId={`text-songwriter-${track.id}`}
+                />
+              </div>
             </div>
 
             {/* Actions */}
