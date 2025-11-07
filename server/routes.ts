@@ -351,6 +351,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let totalTracks = null;
       let isEditorial = 0;
       let fetchMethod = 'api';
+      let curator = null;
+      let followers = null;
+      let source = 'spotify';
       
       if (isAuthenticated()) {
         try {
@@ -358,6 +361,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const playlistData = await spotify.playlists.getPlaylist(validatedPlaylist.playlistId, "from_token" as any);
           
           totalTracks = playlistData.tracks?.total || null;
+          curator = playlistData.owner?.display_name || null;
+          followers = playlistData.followers?.total || null;
           
           // Determine if it's editorial based on owner
           // Editorial playlists are typically owned by Spotify (owner.id === "spotify")
@@ -366,7 +371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             fetchMethod = 'scraping'; // Editorial playlists are better scraped
           }
           
-          console.log(`Playlist "${playlistData.name}": totalTracks=${totalTracks}, isEditorial=${isEditorial}, owner=${playlistData.owner?.display_name}`);
+          console.log(`Playlist "${playlistData.name}": totalTracks=${totalTracks}, isEditorial=${isEditorial}, owner=${playlistData.owner?.display_name}, followers=${followers}`);
         } catch (error: any) {
           // If API call fails (404), likely editorial playlist
           if (error?.message?.includes('404')) {
@@ -382,6 +387,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalTracks,
         isEditorial,
         fetchMethod,
+        curator,
+        source,
+        followers,
         isComplete: 0,
         lastFetchCount: 0,
       });
