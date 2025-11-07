@@ -1,0 +1,18 @@
+{
+  "name": "spotify-playlist-scraper-api",
+  "version": "1.0.0",
+  "description": "Microservice API for scraping Spotify editorial playlists with network capture",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "puppeteer": "^22.0.0",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

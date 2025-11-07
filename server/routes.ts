@@ -855,33 +855,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             playlistTracks = allPlaylistItems;
           } catch (apiError: any) {
-            // API failed (likely 404 for editorial playlist), try advanced scraping
-            console.log(`API fetch failed for ${playlist.name}: ${apiError.message}. Trying network capture...`);
+            // API failed (likely 404 for editorial playlist), call scraper microservice
+            console.log(`API fetch failed for ${playlist.name}: ${apiError.message}. Calling scraper microservice...`);
             
-            // Try network capture first (best method)
-            const networkResult = await fetchEditorialTracksViaNetwork(playlist.spotifyUrl);
+            const scraperApiUrl = process.env.SCRAPER_API_URL;
             let capturedTracks: any[] = [];
             
-            if (networkResult.success && networkResult.tracks.length >= 50) {
-              console.log(`Network capture successful: ${networkResult.tracks.length} tracks`);
-              fetchMethod = 'network-capture';
-              capturedTracks = networkResult.tracks;
-            } else {
-              // Network capture failed or returned too few tracks, try DOM fallback
-              console.log(`Network capture insufficient (${networkResult.tracks.length} tracks). Trying DOM fallback...`);
-              const domResult = await harvestVirtualizedRows(playlist.spotifyUrl);
+            if (scraperApiUrl) {
+              try {
+                console.log(`Calling scraper API at: ${scraperApiUrl}`);
+                const scraperResponse = await fetch(`${scraperApiUrl}/scrape-playlist`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ playlistUrl: playlist.spotifyUrl })
+                });
+                
+                if (!scraperResponse.ok) {
+                  throw new Error(`Scraper API returned ${scraperResponse.status}`);
+                }
+                
+                const scraperData = await scraperResponse.json();
+                
+                if (scraperData.success && scraperData.tracks.length > 0) {
+                  console.log(`✅ Scraper API success: ${scraperData.tracks.length} tracks`);
+                  fetchMethod = scraperData.method || 'microservice-scraper';
+                  capturedTracks = scraperData.tracks;
+                } else {
+                  console.warn(`Scraper API returned 0 tracks for ${playlist.name}`);
+                }
+              } catch (scraperError: any) {
+                console.error(`Scraper API error for ${playlist.name}:`, scraperError.message);
+                // Fall through to local scraping if microservice fails
+              }
+            }
+            
+            // If microservice not configured or failed, try local scraping
+            if (capturedTracks.length === 0) {
+              console.log(`Falling back to local network capture...`);
+              const networkResult = await fetchEditorialTracksViaNetwork(playlist.spotifyUrl);
               
-              if (domResult.success && domResult.tracks.length > networkResult.tracks.length) {
-                console.log(`DOM fallback successful: ${domResult.tracks.length} tracks`);
-                fetchMethod = 'dom-capture';
-                capturedTracks = domResult.tracks;
-              } else if (networkResult.success && networkResult.tracks.length > 0) {
-                console.log(`Using network capture results: ${networkResult.tracks.length} tracks`);
+              if (networkResult.success && networkResult.tracks.length >= 50) {
+                console.log(`Local network capture successful: ${networkResult.tracks.length} tracks`);
                 fetchMethod = 'network-capture';
                 capturedTracks = networkResult.tracks;
               } else {
-                console.error(`Both capture methods failed for ${playlist.name}`);
-                continue;
+                console.log(`Local network capture insufficient (${networkResult.tracks.length} tracks). Trying DOM fallback...`);
+                const domResult = await harvestVirtualizedRows(playlist.spotifyUrl);
+                
+                if (domResult.success && domResult.tracks.length > networkResult.tracks.length) {
+                  console.log(`DOM fallback successful: ${domResult.tracks.length} tracks`);
+                  fetchMethod = 'dom-capture';
+                  capturedTracks = domResult.tracks;
+                } else if (networkResult.success && networkResult.tracks.length > 0) {
+                  console.log(`Using local network capture results: ${networkResult.tracks.length} tracks`);
+                  fetchMethod = 'network-capture';
+                  capturedTracks = networkResult.tracks;
+                } else {
+                  console.error(`All capture methods failed for ${playlist.name}`);
+                  continue;
+                }
               }
             }
             
