@@ -25,10 +25,10 @@ interface TrackTableProps {
   onRowClick?: (track: PlaylistSnapshot) => void;
 }
 
-function getScoreBadgeVariant(score: number): "default" | "secondary" | "outline" {
-  if (score >= 7) return "default";
-  if (score >= 4) return "secondary";
-  return "outline";
+function getScoreBadgeVariant(score: number): "high" | "medium" | "low" {
+  if (score >= 7) return "high";
+  if (score >= 4) return "medium";
+  return "low";
 }
 
 function getScoreLabel(score: number): string {
@@ -78,10 +78,10 @@ export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits, onR
 
   if (tracks.length === 0) {
     return (
-      <Card className="p-12">
+      <Card className="glass-panel p-12">
         <div className="flex flex-col items-center justify-center text-center">
           <Music className="h-16 w-16 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2" data-testid="text-empty-state-title">No tracks found</h3>
+          <h3 className="text-lg font-semibold font-heading mb-2" data-testid="text-empty-state-title">No tracks found</h3>
           <p className="text-sm text-muted-foreground max-w-md">
             Try adjusting your filters or select a different week to view publishing leads.
           </p>
@@ -91,8 +91,9 @@ export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits, onR
   }
 
   return (
-    <div className="space-y-2">
-      <div className="hidden lg:grid lg:grid-cols-12 gap-4 px-4 py-3 text-sm font-medium text-muted-foreground uppercase tracking-wide border-b">
+    <div className="relative">
+      {/* Sticky Header - Desktop Only */}
+      <div className="hidden lg:grid lg:grid-cols-12 gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
         <div className="col-span-2">Track</div>
         <div className="col-span-2">Artist</div>
         <div className="col-span-2">Playlist</div>
@@ -102,11 +103,15 @@ export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits, onR
         <div className="col-span-1 text-right">Actions</div>
       </div>
 
-      <div className="space-y-2">
-        {tracks.map((track) => (
+      {/* Track Rows with Zebra Striping */}
+      <div className="space-y-0">
+        {tracks.map((track, index) => (
           <Card
             key={track.id}
-            className="hover-elevate cursor-pointer"
+            className={cn(
+              "hover-gradient cursor-pointer interactive-scale rounded-none border-x-0 border-t-0",
+              index % 2 === 0 ? "bg-card/50" : "bg-card/30"
+            )}
             data-testid={`card-track-${track.id}`}
             onClick={() => onRowClick?.(track)}
           >
@@ -189,11 +194,7 @@ export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits, onR
                 <div className="flex items-center gap-2">
                   <Badge
                     variant={getScoreBadgeVariant(track.unsignedScore)}
-                    className={cn(
-                      "font-semibold min-w-[4rem] justify-center",
-                      track.unsignedScore >= 7 && "bg-chart-2 text-white border-chart-2",
-                      track.unsignedScore >= 4 && track.unsignedScore < 7 && "bg-chart-4 text-white border-chart-4"
-                    )}
+                    className="font-semibold min-w-[4rem] justify-center"
                     data-testid={`badge-score-${track.id}`}
                   >
                     {getScoreLabel(track.unsignedScore)} {track.unsignedScore}
