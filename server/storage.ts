@@ -1,4 +1,4 @@
-import { playlistSnapshots, tags, trackTags, trackedPlaylists, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist } from "@shared/schema";
+import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, inArray } from "drizzle-orm";
 
@@ -26,6 +26,8 @@ export interface IStorage {
   updatePlaylistMetadata(id: string, metadata: { totalTracks?: number | null; isEditorial?: number; fetchMethod?: string | null }): Promise<void>;
   deleteTrackedPlaylist(id: string): Promise<void>;
   updateTrackContact(id: string, contact: { instagram?: string; twitter?: string; tiktok?: string; email?: string; contactNotes?: string }): Promise<void>;
+  logActivity(activity: InsertActivityHistory): Promise<void>;
+  getTrackActivity(trackId: string): Promise<ActivityHistory[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -214,6 +216,17 @@ export class DatabaseStorage implements IStorage {
     await db.update(playlistSnapshots)
       .set(contact)
       .where(eq(playlistSnapshots.id, id));
+  }
+
+  async logActivity(activity: InsertActivityHistory): Promise<void> {
+    await db.insert(activityHistory).values(activity);
+  }
+
+  async getTrackActivity(trackId: string): Promise<ActivityHistory[]> {
+    return db.select()
+      .from(activityHistory)
+      .where(eq(activityHistory.trackId, trackId))
+      .orderBy(desc(activityHistory.createdAt));
   }
 }
 

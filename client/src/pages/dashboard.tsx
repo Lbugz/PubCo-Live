@@ -12,6 +12,7 @@ import { TrackTable } from "@/components/track-table";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TagManager } from "@/components/tag-manager";
 import { PlaylistManager } from "@/components/playlist-manager";
+import { TrackSidePanel } from "@/components/track-side-panel";
 import { type PlaylistSnapshot, type Tag, type TrackedPlaylist } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,8 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [scoreRange, setScoreRange] = useState<number[]>([0, 10]);
   const [activeFilters, setActiveFilters] = useState<Set<FilterKey>>(new Set());
+  const [selectedTrack, setSelectedTrack] = useState<PlaylistSnapshot | null>(null);
+  const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const { toast } = useToast();
 
   const toggleFilter = (filter: FilterKey) => {
@@ -682,9 +685,27 @@ export default function Dashboard() {
             isLoading={tracksLoading}
             onEnrichMB={(trackId) => enrichMetadataMutation.mutate({ mode: 'track', trackId })}
             onEnrichCredits={(trackId) => enrichCreditsMutation.mutate({ mode: 'track', trackId })}
+            onRowClick={(track) => {
+              setSelectedTrack(track);
+              setSidePanelOpen(true);
+            }}
           />
         </div>
       </main>
+
+      <TrackSidePanel
+        track={selectedTrack}
+        open={sidePanelOpen}
+        onClose={() => setSidePanelOpen(false)}
+        onEnrichMB={(trackId) => {
+          enrichMetadataMutation.mutate({ mode: 'track', trackId });
+          setSidePanelOpen(false);
+        }}
+        onEnrichCredits={(trackId) => {
+          enrichCreditsMutation.mutate({ mode: 'track', trackId });
+          setSidePanelOpen(false);
+        }}
+      />
     </div>
   );
 }

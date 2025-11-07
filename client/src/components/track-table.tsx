@@ -22,6 +22,7 @@ interface TrackTableProps {
   isLoading?: boolean;
   onEnrichMB?: (trackId: string) => void;
   onEnrichCredits?: (trackId: string) => void;
+  onRowClick?: (track: PlaylistSnapshot) => void;
 }
 
 function getScoreBadgeVariant(score: number): "default" | "secondary" | "outline" {
@@ -64,7 +65,7 @@ function TrackTags({ trackId }: { trackId: string }) {
   );
 }
 
-export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits }: TrackTableProps) {
+export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits, onRowClick }: TrackTableProps) {
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -105,8 +106,9 @@ export function TrackTable({ tracks, isLoading, onEnrichMB, onEnrichCredits }: T
         {tracks.map((track) => (
           <Card
             key={track.id}
-            className="hover-elevate"
+            className="hover-elevate cursor-pointer"
             data-testid={`card-track-${track.id}`}
+            onClick={() => onRowClick?.(track)}
           >
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 items-center">
               <div className="col-span-1 lg:col-span-2">

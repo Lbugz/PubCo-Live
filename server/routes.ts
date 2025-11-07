@@ -307,10 +307,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         contactNotes,
       });
+      
+      // Log activity
+      await storage.logActivity({
+        trackId: req.params.trackId,
+        eventType: "contact_updated",
+        eventDescription: "Contact information updated",
+        metadata: JSON.stringify({ instagram, twitter, tiktok, email, contactNotes }),
+      });
+      
       res.json({ success: true });
     } catch (error) {
       console.error("Error updating track contact:", error);
       res.status(500).json({ error: "Failed to update contact information" });
+    }
+  });
+
+  app.get("/api/tracks/:trackId/activity", async (req, res) => {
+    try {
+      const activity = await storage.getTrackActivity(req.params.trackId);
+      res.json(activity);
+    } catch (error) {
+      console.error("Error fetching track activity:", error);
+      res.status(500).json({ error: "Failed to fetch activity history" });
     }
   });
 
