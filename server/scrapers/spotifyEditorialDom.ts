@@ -55,6 +55,24 @@ export async function harvestVirtualizedRows(
     const pageUrl = page.url();
     console.log(`[DOM Capture] Page loaded: ${pageTitle} (${pageUrl})`);
     
+    // Try to dismiss cookie consent
+    try {
+      await page.waitForSelector('#onetrust-accept-btn-handler, button[id*="accept"]', { timeout: 3000 });
+      await page.click('#onetrust-accept-btn-handler, button[id*="accept"]');
+      console.log(`[DOM Capture] Cookie consent dismissed`);
+      await wait(2000);
+    } catch {
+      console.log(`[DOM Capture] No cookie consent or already dismissed`);
+    }
+    
+    // Wait for playlist content to load
+    try {
+      await page.waitForSelector('[data-testid="playlist-tracklist"], [role="grid"]', { timeout: 10000 });
+      console.log(`[DOM Capture] Playlist content loaded`);
+    } catch {
+      console.log(`[DOM Capture] ⚠️  Warning: Playlist content selector not found`);
+    }
+    
     // Inject MutationObserver to capture virtualized rows
     await page.evaluate(() => {
       // Find the virtualized list container

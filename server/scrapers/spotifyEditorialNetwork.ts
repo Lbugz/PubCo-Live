@@ -105,19 +105,22 @@ export async function fetchEditorialTracksViaNetwork(
     
     // Check for login or cookie consent
     const needsLogin = pageUrl.includes('/login') || pageUrl.includes('/authorize');
-    const hasCookieConsent = await page.$('[id*="onetrust"], [class*="cookie"], [class*="consent"]');
     
     if (needsLogin) {
       console.log(`[Network Capture] ⚠️  Spotify login required. Waiting 30 seconds for manual login...`);
       await wait(30000);
-    } else if (hasCookieConsent) {
-      console.log(`[Network Capture] Cookie consent detected, attempting to dismiss...`);
-      try {
-        await page.click('[id="onetrust-accept-btn-handler"], button:has-text("Accept")');
-        await wait(2000);
-      } catch {
-        console.log(`[Network Capture] Could not auto-dismiss cookie consent`);
-      }
+    }
+    
+    // Try multiple ways to dismiss cookie consent
+    console.log(`[Network Capture] Attempting to dismiss cookie consent...`);
+    try {
+      // Wait for and click the accept button
+      await page.waitForSelector('#onetrust-accept-btn-handler, button[id*="accept"], button[id*="agree"]', { timeout: 5000 });
+      await page.click('#onetrust-accept-btn-handler, button[id*="accept"], button[id*="agree"]');
+      console.log(`[Network Capture] ✅ Cookie consent dismissed`);
+      await wait(2000);
+    } catch {
+      console.log(`[Network Capture] No cookie consent found or already dismissed`);
     }
     
     // Wait for initial content to load
