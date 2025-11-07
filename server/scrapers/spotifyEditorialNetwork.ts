@@ -138,6 +138,18 @@ export async function fetchEditorialTracksViaNetwork(
     // Wait for any late requests
     await wait(2000);
     
+    // Save cookies for future use with microservice
+    try {
+      const cookies = await page.cookies();
+      const fs = await import('fs');
+      const path = await import('path');
+      const cookiesPath = path.join(process.cwd(), 'spotify-cookies.json');
+      fs.writeFileSync(cookiesPath, JSON.stringify(cookies, null, 2));
+      console.log(`[Network Capture] Saved ${cookies.length} cookies for future microservice use`);
+    } catch (err) {
+      console.warn('[Network Capture] Failed to save cookies:', err);
+    }
+    
     await browser.close();
     browser = undefined;
     

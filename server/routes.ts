@@ -864,10 +864,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (scraperApiUrl) {
               try {
                 console.log(`Calling scraper API at: ${scraperApiUrl}`);
+                
+                // Load saved Spotify cookies if available
+                let spotifyCookies: any[] = [];
+                try {
+                  const fs = await import('fs');
+                  const path = await import('path');
+                  const cookiesPath = path.join(process.cwd(), 'spotify-cookies.json');
+                  
+                  if (fs.existsSync(cookiesPath)) {
+                    const cookiesData = fs.readFileSync(cookiesPath, 'utf8');
+                    spotifyCookies = JSON.parse(cookiesData);
+                    console.log(`Loaded ${spotifyCookies.length} saved Spotify cookies`);
+                  } else {
+                    console.log('No saved cookies found - microservice will attempt unauthenticated access');
+                  }
+                } catch (cookieError) {
+                  console.warn('Failed to load cookies, continuing without:', cookieError);
+                }
+                
                 const scraperResponse = await fetch(`${scraperApiUrl}/scrape-playlist`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ playlistUrl: playlist.spotifyUrl })
+                  body: JSON.stringify({ 
+                    playlistUrl: playlist.spotifyUrl,
+                    cookies: spotifyCookies
+                  })
                 });
                 
                 if (!scraperResponse.ok) {
