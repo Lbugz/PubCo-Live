@@ -361,72 +361,89 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
       const publishers: string[] = [];
       const allCredits: Array<{ name: string; role: string }> = [];
       
-      // Find Credits section by looking through all divs for one containing "Credits" text
-      let creditsSection: Element | null = null;
-      const allDivs = document.querySelectorAll('div');
-      for (const div of allDivs) {
-        const text = div.textContent || '';
-        if (text.includes('Credits') && text.length < 100) {
-          // Found a likely Credits header, get parent container
-          creditsSection = div.parentElement || div;
-          break;
+      // Get all text nodes in the modal to parse credit structure
+      const allText = document.body.innerText;
+      const lines = allText.split('\n').map(l => l.trim()).filter(Boolean);
+      
+      // Pattern matching for Spotify's credit format:
+      // - "Written by" followed by name(s)
+      // - "Produced by" followed by name(s)
+      // - "Source:" followed by label name
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const nextLine = lines[i + 1] || '';
+        
+        // Check for role labels
+        if (line.toLowerCase().includes('written by') || line.toLowerCase().includes('songwriter')) {
+          // Next line(s) should contain writer names
+          if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
+            writers.push(nextLine);
+            allCredits.push({ name: nextLine, role: 'Writer' });
+          }
+        }
+        
+        if (line.toLowerCase().includes('produced by') || line.toLowerCase().includes('producer')) {
+          // Next line(s) should contain producer names
+          if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
+            producers.push(nextLine);
+            allCredits.push({ name: nextLine, role: 'Producer' });
+          }
+        }
+        
+        if (line.toLowerCase().includes('composer')) {
+          if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
+            composers.push(nextLine);
+            allCredits.push({ name: nextLine, role: 'Composer' });
+          }
+        }
+        
+        // Source is typically the label/publisher
+        if (line.toLowerCase().startsWith('source:')) {
+          const label = line.replace(/source:/i, '').trim();
+          if (label) {
+            publishers.push(label);
+            allCredits.push({ name: label, role: 'Label/Publisher' });
+          }
         }
       }
       
-      if (creditsSection) {
-        // Look for credit items - Spotify typically uses links or specific divs for names
-        const creditRows = creditsSection.querySelectorAll('div[role="row"], li, .credit-row, div');
+      // Alternative: Look for structured divs with adjacent text
+      const allElements = document.querySelectorAll('div, span, p');
+      allElements.forEach((el) => {
+        const text = el.textContent?.trim().toLowerCase() || '';
         
-        creditRows.forEach((row) => {
-          const nameEl = row.querySelector('a, span[dir="auto"]');
-          const roleEl = row.querySelector('span:not([dir="auto"])');
+        // Find role label elements
+        if (text === 'written by' || text === 'songwriter' || text === 'writer') {
+          // Get next sibling or parent's next sibling for the name
+          let nameEl = el.nextElementSibling;
+          if (!nameEl && el.parentElement) {
+            nameEl = el.parentElement.nextElementSibling;
+          }
           
-          const name = nameEl?.textContent?.trim() || '';
-          const role = roleEl?.textContent?.trim() || '';
-          
-          if (name && role && name.length > 1 && name.length < 100) {
-            allCredits.push({ name, role });
-            
-            const roleLower = role.toLowerCase();
-            if (roleLower.includes('writer') || roleLower.includes('lyricist')) {
+          const name = nameEl?.textContent?.trim();
+          if (name && name.length > 1 && name.length < 100 && !name.toLowerCase().includes(' by')) {
+            if (!writers.includes(name)) {
               writers.push(name);
-            }
-            if (roleLower.includes('composer')) {
-              composers.push(name);
-            }
-            if (roleLower.includes('producer')) {
-              producers.push(name);
-            }
-            if (roleLower.includes('publisher')) {
-              publishers.push(name);
+              allCredits.push({ name, role: 'Writer' });
             }
           }
-        });
-      }
-      
-      // Fallback: Look for credit-related data attributes
-      const creditItems = document.querySelectorAll('[data-testid*="credit"]');
-      creditItems.forEach((item) => {
-        const links = item.querySelectorAll('a');
-        const text = item.textContent?.toLowerCase() || '';
+        }
         
-        links.forEach((link) => {
-          const name = link.textContent?.trim();
-          if (name && name.length > 1 && name.length < 100) {
-            if (text.includes('writer') || text.includes('lyricist')) {
-              if (!writers.includes(name)) writers.push(name);
-            }
-            if (text.includes('composer')) {
-              if (!composers.includes(name)) composers.push(name);
-            }
-            if (text.includes('producer')) {
-              if (!producers.includes(name)) producers.push(name);
-            }
-            if (text.includes('publisher')) {
-              if (!publishers.includes(name)) publishers.push(name);
+        if (text === 'produced by' || text === 'producer') {
+          let nameEl = el.nextElementSibling;
+          if (!nameEl && el.parentElement) {
+            nameEl = el.parentElement.nextElementSibling;
+          }
+          
+          const name = nameEl?.textContent?.trim();
+          if (name && name.length > 1 && name.length < 100 && !name.toLowerCase().includes(' by')) {
+            if (!producers.includes(name)) {
+              producers.push(name);
+              allCredits.push({ name, role: 'Producer' });
             }
           }
-        });
+        }
       });
       
       return {
