@@ -50,8 +50,8 @@ The frontend is a single-page React application built with a modular component a
 - **Spotify Integration**: Uses the Spotify API for playlist and track data, including a custom scraping solution for detailed credits.
 
 ## External Dependencies
-- **Spotify API**: For fetching playlist and track data.
+- **Spotify API**: For fetching playlist and track data. **Note**: Editorial playlists owned by Spotify return 404 errors and cannot be accessed via API.
 - **MusicBrainz API**: For enriching tracks with publisher and songwriter metadata via ISRC.
 - **Neon (PostgreSQL)**: Managed PostgreSQL database for data storage.
 - **GPT-4o-mini (via Replit AI Integrations)**: For AI-powered lead prioritization and insights.
-- **Puppeteer**: Used for web scraping Spotify track credits.
+- **Puppeteer**: Used for web scraping Spotify track credits and editorial playlists. **Known Limitation**: Spotify's virtualized scrolling only exposes ~28 DOM rows at a time, making it impossible to scrape all 160+ tracks from large editorial playlists.

@@ -795,60 +795,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let playlistTotalTracks = playlist.totalTracks;
           let skippedCount = 0;
           
-          // Fetch all tracks using unified Spotify API with pagination
-          console.log(`Fetching playlist via API: ${playlist.name} (isEditorial=${playlist.isEditorial})`);
-          const allPlaylistItems = await fetchAllPlaylistTracks(spotify, playlist.playlistId);
-          
-          // Get playlist metadata for total track count
-          const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId, "from_token" as any);
-          if (!playlistTotalTracks && playlistData.tracks?.total) {
-            playlistTotalTracks = playlistData.tracks.total;
-          }
-          
-          if (!allPlaylistItems || allPlaylistItems.length === 0) {
-            console.warn(`No tracks found for playlist: ${playlist.name}`);
-            continue;
-          }
-          
-          for (const item of allPlaylistItems) {
-            if (!item.track || item.track.type !== "track") continue;
+          // Try API first, fall back to scraping for editorial playlists
+          let fetchMethod = 'api';
+          try {
+            console.log(`Attempting API fetch for: ${playlist.name} (isEditorial=${playlist.isEditorial})`);
+            const allPlaylistItems = await fetchAllPlaylistTracks(spotify, playlist.playlistId);
             
-            const track = item.track;
-            const trackKey = `${playlist.playlistId}_${track.external_urls.spotify}`;
+            // Get playlist metadata for total track count
+            const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId, "from_token" as any);
+            if (!playlistTotalTracks && playlistData.tracks?.total) {
+              playlistTotalTracks = playlistData.tracks.total;
+            }
             
-            if (existingTrackKeys.has(trackKey)) {
-              skippedCount++;
+            if (!allPlaylistItems || allPlaylistItems.length === 0) {
+              throw new Error('No tracks returned from API');
+            }
+            
+            console.log(`API fetch successful: ${allPlaylistItems.length} tracks`);
+            
+            for (const item of allPlaylistItems) {
+              if (!item.track || item.track.type !== "track") continue;
+              
+              const track = item.track;
+              const trackKey = `${playlist.playlistId}_${track.external_urls.spotify}`;
+              
+              if (existingTrackKeys.has(trackKey)) {
+                skippedCount++;
+                continue;
+              }
+              
+              const label = track.album?.label || null;
+              
+              const score = calculateUnsignedScore({
+                playlistName: playlist.name,
+                label: label,
+                publisher: null,
+                writer: null,
+              });
+              
+              const newTrack = {
+                week: today,
+                playlistName: playlist.name,
+                playlistId: playlist.playlistId,
+                trackName: track.name,
+                artistName: track.artists.map(a => a.name).join(", "),
+                spotifyUrl: track.external_urls.spotify,
+                isrc: track.external_ids?.isrc || null,
+                label: label,
+                unsignedScore: score,
+                addedAt: new Date(item.added_at),
+                dataSource: "api",
+              };
+              
+              allTracks.push(newTrack);
+              existingTrackKeys.add(trackKey);
+            }
+            
+            playlistTracks = allPlaylistItems;
+          } catch (apiError: any) {
+            // API failed (likely 404 for editorial playlist), try scraping
+            console.log(`API fetch failed for ${playlist.name}: ${apiError.message}. Falling back to scraping...`);
+            fetchMethod = 'scraping';
+            
+            const scrapeResult = await scrapeSpotifyPlaylist(playlist.spotifyUrl);
+            
+            if (!scrapeResult.success || !scrapeResult.tracks) {
+              console.error(`Scraping also failed for ${playlist.name}: ${scrapeResult.error}`);
               continue;
             }
             
-            const label = track.album?.label || null;
+            console.log(`Scraping completed: ${scrapeResult.tracks.length} tracks`);
             
-            const score = calculateUnsignedScore({
-              playlistName: playlist.name,
-              label: label,
-              publisher: null,
-              writer: null,
-            });
+            for (const scrapedTrack of scrapeResult.tracks) {
+              const trackKey = `${playlist.playlistId}_${scrapedTrack.spotifyUrl}`;
+              if (existingTrackKeys.has(trackKey)) {
+                skippedCount++;
+                continue;
+              }
+              
+              const score = calculateUnsignedScore({
+                playlistName: playlist.name,
+                label: null,
+                publisher: null,
+                writer: null,
+              });
+              
+              const newTrack = {
+                week: today,
+                playlistName: playlist.name,
+                playlistId: playlist.playlistId,
+                trackName: scrapedTrack.trackName,
+                artistName: scrapedTrack.artistName,
+                spotifyUrl: scrapedTrack.spotifyUrl,
+                isrc: null,
+                label: null,
+                unsignedScore: score,
+                addedAt: new Date(),
+                dataSource: "scraping",
+              };
+              
+              allTracks.push(newTrack);
+              existingTrackKeys.add(trackKey);
+            }
             
-            const newTrack = {
-              week: today,
-              playlistName: playlist.name,
-              playlistId: playlist.playlistId,
-              trackName: track.name,
-              artistName: track.artists.map(a => a.name).join(", "),
-              spotifyUrl: track.external_urls.spotify,
-              isrc: track.external_ids?.isrc || null,
-              label: label,
-              unsignedScore: score,
-              addedAt: new Date(item.added_at),
-              dataSource: "api",
-            };
-            
-            allTracks.push(newTrack);
-            existingTrackKeys.add(trackKey);
+            playlistTracks = scrapeResult.tracks;
           }
-          
-          playlistTracks = allPlaylistItems;
           
           // Update completeness status
           const fetchCount = playlistTracks.length;
