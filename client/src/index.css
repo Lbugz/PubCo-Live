@@ -48,7 +48,7 @@
 
   --popover-border: 0 0% 89%;
 
-  --primary: 221 83% 53%;
+  --primary: 233 79% 58%;
 
   --primary-foreground: 0 0% 98%;
 
@@ -60,23 +60,27 @@
 
   --muted-foreground: 0 0% 45%;
 
-  --accent: 220 13% 91%;
+  --accent: 187 100% 55%;
 
-  --accent-foreground: 0 0% 9%;
+  --accent-foreground: 0 0% 98%;
 
   --destructive: 0 84% 60%;
 
   --destructive-foreground: 0 0% 98%;
 
   --input: 0 0% 80%;
-  --ring: 221 83% 53%;
-  --chart-1: 221 83% 53%;
-  --chart-2: 142 76% 36%;
+  --ring: 233 79% 58%;
+  --chart-1: 233 79% 58%;
+  --chart-2: 142 76% 45%;
   --chart-3: 262 83% 58%;
-  --chart-4: 32 95% 44%;
-  --chart-5: 340 82% 52%;
+  --chart-4: 45 93% 47%;
+  --chart-5: 0 84% 60%;
+  --status-high: 142 76% 45%;
+  --status-medium: 45 93% 47%;
+  --status-low: 0 84% 60%;
 
   --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: "Space Grotesk", Inter, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: "SF Mono", Monaco, "Cascadia Code", Menlo, monospace;
   --radius: .5rem; /* 8px */
@@ -166,7 +170,7 @@
 
   --popover-border: 0 0% 18%;
 
-  --primary: 221 83% 53%;
+  --primary: 233 79% 58%;
 
   --primary-foreground: 0 0% 98%;
 
@@ -178,21 +182,24 @@
 
   --muted-foreground: 0 0% 63%;
 
-  --accent: 220 13% 16%;
+  --accent: 187 100% 55%;
 
-  --accent-foreground: 0 0% 98%;
+  --accent-foreground: 220 13% 5%;
 
   --destructive: 0 84% 60%;
 
   --destructive-foreground: 0 0% 98%;
 
   --input: 0 0% 27%;
-  --ring: 221 83% 53%;
-  --chart-1: 217 91% 60%;
+  --ring: 233 79% 58%;
+  --chart-1: 233 79% 58%;
   --chart-2: 142 70% 45%;
   --chart-3: 262 83% 65%;
-  --chart-4: 32 98% 56%;
-  --chart-5: 340 75% 60%;
+  --chart-4: 45 93% 56%;
+  --chart-5: 0 84% 60%;
+  --status-high: 142 70% 45%;
+  --status-medium: 45 93% 56%;
+  --status-low: 0 84% 60%;
 
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.3);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.4);
@@ -351,5 +358,78 @@
   .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
+  }
+
+  /* Glassmorphism utilities */
+  .glass {
+    @apply backdrop-blur-md bg-opacity-80;
+  }
+
+  .glass-panel {
+    @apply backdrop-blur-xl bg-card/90 border border-white/10;
+  }
+
+  .glass-header {
+    @apply backdrop-blur-lg bg-background/80 border-b border-white/5;
+  }
+
+  /* Interactive animations */
+  .interactive-scale {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .interactive-scale:hover {
+    @apply scale-[1.02];
+  }
+
+  .interactive-scale:active {
+    @apply scale-[0.98];
+  }
+
+  .interactive-fade {
+    @apply transition-opacity duration-300 ease-in-out;
+  }
+
+  .rotate-icon {
+    @apply transition-transform duration-200 ease-out;
+  }
+
+  .rotate-icon[data-state="open"] {
+    @apply rotate-180;
+  }
+
+  /* Gradient utilities */
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary to-accent;
+  }
+
+  .gradient-status-high {
+    @apply bg-gradient-to-r from-green-500 to-emerald-400;
+  }
+
+  .gradient-status-medium {
+    @apply bg-gradient-to-r from-yellow-500 to-amber-400;
+  }
+
+  .gradient-status-low {
+    @apply bg-gradient-to-r from-red-500 to-rose-400;
+  }
+
+  /* Hover gradient effect for table rows */
+  .hover-gradient {
+    @apply relative overflow-hidden;
+  }
+
+  .hover-gradient::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.05), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-out;
+  }
+
+  .hover-gradient:hover::before {
+    transform: translateX(100%);
   }
 }

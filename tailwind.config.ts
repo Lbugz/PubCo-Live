@@ -76,6 +76,9 @@ export default {
           border: "var(--sidebar-accent-border)"
         },
         status: {
+          high: "hsl(var(--status-high) / <alpha-value>)",
+          medium: "hsl(var(--status-medium) / <alpha-value>)",
+          low: "hsl(var(--status-low) / <alpha-value>)",
           online: "rgb(34 197 94)",
           away: "rgb(245 158 11)",
           busy: "rgb(239 68 68)",
@@ -84,6 +87,7 @@ export default {
       },
       fontFamily: {
         sans: ["var(--font-sans)"],
+        heading: ["var(--font-heading)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
       },
