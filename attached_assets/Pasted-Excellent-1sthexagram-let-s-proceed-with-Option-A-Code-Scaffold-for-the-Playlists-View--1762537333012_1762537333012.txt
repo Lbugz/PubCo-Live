@@ -1,0 +1,269 @@
+Excellent, 1sthexagram — let’s proceed with **Option A (Code Scaffold)** for the **Playlists View**.
+Below is the complete scaffold you can copy directly into your Replit app to integrate this new view under **Discovery → Playlists View**.
+
+---
+
+## 🧩 1. Folder Structure
+
+Create this inside your project:
+
+```
+client/src/components/features/playlists/
+│
+├── PlaylistsPage.tsx
+├── PlaylistsTable.tsx
+├── PlaylistDrawer.tsx
+├── PlaylistFilters.tsx
+└── usePlaylistsQuery.ts
+```
+
+---
+
+## 📄 2. `PlaylistsPage.tsx`
+
+Main page route — integrates filters, table, and drawer.
+
+```tsx
+import { useState } from "react";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatsCards } from "@/components/ui/stats-cards";
+import { PlaylistFilters } from "./PlaylistFilters";
+import { PlaylistsTable } from "./PlaylistsTable";
+import { PlaylistDrawer } from "./PlaylistDrawer";
+import { usePlaylistsQuery } from "./usePlaylistsQuery";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+
+export const PlaylistsPage = () => {
+  const { data: playlists, isLoading } = usePlaylistsQuery();
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+
+  return (
+    <div className="p-6 space-y-6">
+      <PageHeader
+        title="Playlists"
+        actions={
+          <Button variant="gradient" size="sm">
+            <Plus className="mr-2 h-4 w-4" /> Add Playlist
+          </Button>
+        }
+      />
+
+      <StatsCards
+        items={[
+          { label: "Total", value: playlists?.length || 0, icon: "Library" },
+          { label: "Active", value: playlists?.filter(p => p.status === "active").length || 0 },
+          { label: "Paused", value: playlists?.filter(p => p.status === "paused").length || 0 },
+          { label: "Error", value: playlists?.filter(p => p.status === "error").length || 0 },
+        ]}
+      />
+
+      <PlaylistFilters />
+
+      <PlaylistsTable
+        playlists={playlists || []}
+        isLoading={isLoading}
+        onSelect={setSelectedPlaylist}
+      />
+
+      <PlaylistDrawer
+        playlist={selectedPlaylist}
+        onClose={() => setSelectedPlaylist(null)}
+      />
+    </div>
+  );
+};
+
+export default PlaylistsPage;
+```
+
+---
+
+## 📄 3. `PlaylistsTable.tsx`
+
+```tsx
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { MoreHorizontal } from "lucide-react";
+
+export const PlaylistsTable = ({ playlists, onSelect, isLoading }) => {
+  if (isLoading) return <div className="text-gray-400">Loading playlists...</div>;
+
+  return (
+    <div className="glass-panel rounded-2xl overflow-hidden border border-white/10">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Playlist</TableHead>
+            <TableHead>Source</TableHead>
+            <TableHead>Tracks</TableHead>
+            <TableHead>Curator</TableHead>
+            <TableHead>Last Updated</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {playlists.map((p) => (
+            <TableRow
+              key={p.id}
+              onClick={() => onSelect(p)}
+              className="hover:bg-primary/5 cursor-pointer transition-colors"
+            >
+              <TableCell className="font-medium">{p.name}</TableCell>
+              <TableCell>{p.source}</TableCell>
+              <TableCell>{p.totalTracks}</TableCell>
+              <TableCell>{p.curator}</TableCell>
+              <TableCell>{p.lastSyncedAt || "—"}</TableCell>
+              <TableCell>
+                <Badge
+                  variant={
+                    p.status === "active"
+                      ? "success"
+                      : p.status === "paused"
+                      ? "warning"
+                      : "destructive"
+                  }
+                >
+                  {p.status}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <MoreHorizontal className="h-4 w-4 text-gray-400" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+};
+```
+
+---
+
+## 📄 4. `PlaylistDrawer.tsx`
+
+```tsx
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
+
+export const PlaylistDrawer = ({ playlist, onClose }) => {
+  if (!playlist) return null;
+
+  return (
+    <Drawer open={!!playlist} onOpenChange={onClose}>
+      <DrawerContent className="bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10">
+        <DrawerHeader>
+          <DrawerTitle className="flex items-center justify-between">
+            {playlist.name}
+            <Badge>{playlist.source}</Badge>
+          </DrawerTitle>
+        </DrawerHeader>
+
+        <div className="p-6 space-y-4 text-sm text-gray-300">
+          <p><b>Curator:</b> {playlist.curator}</p>
+          <p><b>Total Tracks:</b> {playlist.totalTracks}</p>
+          <p><b>Last Synced:</b> {playlist.lastSyncedAt || "—"}</p>
+          <p><b>Status:</b> {playlist.status}</p>
+        </div>
+
+        <div className="flex gap-2 p-6 border-t border-white/10">
+          <Button variant="gradient" className="w-full">
+            View Tracks
+          </Button>
+          <Button variant="outline" className="w-full">
+            <ExternalLink className="mr-2 h-4 w-4" /> Open in Spotify
+          </Button>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+};
+```
+
+---
+
+## 📄 5. `PlaylistFilters.tsx`
+
+```tsx
+import { Input } from "@/components/ui/input";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+
+export const PlaylistFilters = () => (
+  <div className="flex flex-wrap gap-3 items-center mb-4">
+    <Select>
+      <SelectTrigger className="w-[180px]">
+        <SelectValue placeholder="All Dates" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="week">This Week</SelectItem>
+        <SelectItem value="month">This Month</SelectItem>
+        <SelectItem value="all">All Dates</SelectItem>
+      </SelectContent>
+    </Select>
+
+    <Select>
+      <SelectTrigger className="w-[180px]">
+        <SelectValue placeholder="All Sources" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="spotify">Spotify</SelectItem>
+        <SelectItem value="apple">Apple</SelectItem>
+        <SelectItem value="csv">CSV</SelectItem>
+      </SelectContent>
+    </Select>
+
+    <Input
+      placeholder="Search playlists..."
+      className="w-[240px] bg-white/5 border-white/10"
+    />
+  </div>
+);
+```
+
+---
+
+## 📄 6. `usePlaylistsQuery.ts`
+
+```ts
+import { useQuery } from "@tanstack/react-query";
+
+export const usePlaylistsQuery = () => {
+  return useQuery({
+    queryKey: ["playlists"],
+    queryFn: async () => {
+      const res = await fetch("/api/playlists");
+      return res.json();
+    },
+  });
+};
+```
+
+---
+
+## ⚙️ 7. **Add Route**
+
+In your `AppRouter.tsx` or equivalent route file:
+
+```tsx
+import PlaylistsPage from "@/components/features/playlists/PlaylistsPage";
+
+// ...
+<Route path="/playlists" element={<PlaylistsPage />} />
+```
+
+---
+
+## 🌈 8. **Visual Summary**
+
+* Dark glass background (`bg-[#0a0a0a]/95` + `backdrop-blur-xl`)
+* Unified gradient CTAs (blue→cyan)
+* Badges for status (`success`, `warning`, `destructive`)
+* Drawer for details (same animation pattern as Deals)
+
+---
+
+Would you like me to also include a **mock playlist dataset (mockData.ts)** and a **React Query mock endpoint** so you can preview the UI before connecting live Spotify data?
