@@ -150,7 +150,7 @@ export function TrackTable({
                     />
                   )}
                 </div>
-              <div className="col-span-1 lg:col-span-2">
+              <div className="col-span-1 lg:col-span-1">
                 <div className="font-medium" data-testid={`text-track-name-${track.id}`}>{track.trackName}</div>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {track.isrc ? (
@@ -195,19 +195,19 @@ export function TrackTable({
                 <TrackTags trackId={track.id} />
               </div>
               
-              <div className="col-span-1 lg:col-span-2">
+              <div className="col-span-1 lg:col-span-1">
                 <div className="text-sm text-muted-foreground" data-testid={`text-artist-${track.id}`}>
                   {track.artistName}
                 </div>
               </div>
               
-              <div className="col-span-1 lg:col-span-2">
+              <div className="col-span-1 lg:col-span-1">
                 <Badge variant="outline" className="font-normal" data-testid={`badge-playlist-${track.id}`}>
                   {track.playlistName}
                 </Badge>
               </div>
               
-              <div className="col-span-1 lg:col-span-2">
+              <div className="col-span-1 lg:col-span-1">
                 <div className="text-sm space-y-1" data-testid={`text-label-${track.id}`}>
                   <div>{track.label || <span className="text-muted-foreground italic">Unknown label</span>}</div>
                   {track.publisher && (
@@ -218,7 +218,7 @@ export function TrackTable({
                 </div>
               </div>
               
-              <div className="col-span-1 lg:col-span-2">
+              <div className="col-span-1 lg:col-span-1">
                 <div className="text-sm">
                   <SongwriterDisplay
                     songwriters={track.songwriter}
