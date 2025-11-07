@@ -741,7 +741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (mode === 'non-editorial') {
         trackedPlaylists = allTrackedPlaylists.filter(p => p.isEditorial !== 1);
       } else if (mode === 'specific' && playlistId) {
-        trackedPlaylists = allTrackedPlaylists.filter(p => p.id === playlistId);
+        trackedPlaylists = allTrackedPlaylists.filter(p => p.playlistId === playlistId);
       }
       
       if (trackedPlaylists.length === 0) {
