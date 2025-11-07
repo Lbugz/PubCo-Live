@@ -36,6 +36,7 @@ interface TrackCredits {
   writers: string[];
   composers: string[];
   producers: string[];
+  labels: string[];
   publishers: string[];
   allCredits: Array<{ name: string; role: string }>;
 }
@@ -358,6 +359,7 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
       const writers: string[] = [];
       const composers: string[] = [];
       const producers: string[] = [];
+      const labels: string[] = [];
       const publishers: string[] = [];
       const allCredits: Array<{ name: string; role: string }> = [];
       
@@ -368,7 +370,7 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
       // Pattern matching for Spotify's credit format:
       // - "Written by" followed by name(s)
       // - "Produced by" followed by name(s)
-      // - "Source:" followed by label name
+      // - "Source:" followed by label name (record label)
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -398,12 +400,20 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
           }
         }
         
-        // Source is typically the label/publisher
+        // Source is the record label
         if (line.toLowerCase().startsWith('source:')) {
-          const label = line.replace(/source:/i, '').trim();
-          if (label) {
-            publishers.push(label);
-            allCredits.push({ name: label, role: 'Label/Publisher' });
+          const labelName = line.replace(/source:/i, '').trim();
+          if (labelName) {
+            labels.push(labelName);
+            allCredits.push({ name: labelName, role: 'Label' });
+          }
+        }
+        
+        // Look for actual publishers (different from labels)
+        if (line.toLowerCase().includes('publisher') && !line.toLowerCase().startsWith('source:')) {
+          if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
+            publishers.push(nextLine);
+            allCredits.push({ name: nextLine, role: 'Publisher' });
           }
         }
       }
@@ -450,6 +460,7 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         writers: Array.from(new Set(writers)),
         composers: Array.from(new Set(composers)),
         producers: Array.from(new Set(producers)),
+        labels: Array.from(new Set(labels)),
         publishers: Array.from(new Set(publishers)),
         allCredits
       };

@@ -575,20 +575,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const creditsResult = await scrapeTrackCredits(track.spotifyUrl);
           
           if (creditsResult.success && creditsResult.credits) {
-            const { writers, composers, publishers } = creditsResult.credits;
+            const { writers, composers, labels, publishers } = creditsResult.credits;
             
             // Combine writers and composers into songwriter field
             const songwriters = [...writers, ...composers].filter(Boolean);
             const songwriterString = songwriters.length > 0 ? songwriters.join(", ") : undefined;
             const publisherString = publishers.length > 0 ? publishers.join(", ") : undefined;
+            const labelString = labels.length > 0 ? labels.join(", ") : undefined;
             
             await storage.updateTrackMetadata(track.id, {
               songwriter: songwriterString,
               publisher: publisherString,
+              label: labelString,
               enrichedAt: new Date(),
             });
             
-            console.log(`✅ Enriched: ${track.trackName} - ${songwriters.length} songwriters, ${publishers.length} publishers`);
+            console.log(`✅ Enriched: ${track.trackName} - ${songwriters.length} songwriters, ${labels.length} labels, ${publishers.length} publishers`);
             enrichedCount++;
           } else {
             console.warn(`⚠️ Failed to scrape credits for ${track.trackName}: ${creditsResult.error}`);
