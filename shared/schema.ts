@@ -74,6 +74,11 @@ export const trackedPlaylists = pgTable("tracked_playlists", {
   isComplete: integer("is_complete").notNull().default(0),
   fetchMethod: text("fetch_method").default("api"),
   lastChecked: timestamp("last_checked"),
+  curator: text("curator"),
+  source: text("source").default("spotify"),
+  genre: text("genre"),
+  region: text("region"),
+  followers: integer("followers"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
