@@ -18,9 +18,13 @@ The frontend is a single-page React application built with a modular component a
 **Recent UI/UX Improvements (November 2025):**
 - **Unified Control Panel**: Consolidated ALL header controls into UnifiedControlPanel using component slot pattern. Header now displays only logo, week info, and theme toggle. Authorize Spotify button relocated from header to control panel's Actions row.
 - **Optimized Filters Layout**: Redesigned filters/search component by moving score range slider into Completeness Filters dropdown, tightened spacing, and reduced select widths for more compact layout.
-- **Actions Consolidation**: Created TrackActionsDropdown component with 3-dot menu (MoreVertical icon) that consolidates all per-track actions (Enrich MB, Enrich Credits, AI Insights, Tag, Contact, Spotify link) into a single dropdown. Applied to track table view.
+- **Actions Consolidation**: Created TrackActionsDropdown component with 3-dot menu (MoreVertical icon) that consolidates all per-track actions (Enrich MB, Enrich Credits, AI Insights, Tag, Contact, Spotify link) into a single dropdown. Applied to track table, card, and kanban views.
 - **Controlled Dialog Pattern**: Refactored TrackAIInsights, TrackTagPopover, and TrackContactDialog to accept controlled state (open/onOpenChange props), allowing external components to trigger them programmatically while maintaining standalone usage.
 - **Auto-fetch AI Insights**: Implemented useEffect in TrackAIInsights that auto-triggers data fetching when dialog is opened externally via controlled state, ensuring insights load correctly from dropdown menu.
+- **Songwriter Display Format**: Implemented "First Songwriter +2" format with expandable badge to show all songwriters, improving information density while maintaining readability.
+- **Bulk Selection System**: Added checkbox-based bulk selection with cross-filter preservation using membership checking (`.every()` and `.some()`) for indeterminate states. Select-all checkbox properly handles filtered track sets.
+- **Bulk Actions Toolbar**: Created sticky glassmorphism toolbar that appears when tracks are selected, showing selection count and total filtered count. Includes action buttons for enrichment, tagging, export, and clear selection with loading states.
+- **Apply to Selected vs All Filtered**: Enhanced bulk actions with dropdown menus offering two operation modes: "Apply to Selected (X tracks)" for currently selected tracks, and "Apply to All Filtered (Y tracks)" for all tracks matching current filters. Includes dynamic track counts and accurate toast feedback.
 
 ### Technical Implementations
 - **Data Fetching**: Utilizes TanStack Query for efficient data fetching.
