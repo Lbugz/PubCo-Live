@@ -89,8 +89,32 @@ export async function fetchEditorialTracksViaNetwork(
       timeout: 60000 
     });
     
+    // Check if we hit a login wall
+    const pageTitle = await page.title();
+    const pageUrl = page.url();
+    console.log(`[Network Capture] Page loaded: ${pageTitle} (${pageUrl})`);
+    
+    // Check for login or cookie consent
+    const needsLogin = pageUrl.includes('/login') || pageUrl.includes('/authorize');
+    const hasCookieConsent = await page.$('[id*="onetrust"], [class*="cookie"], [class*="consent"]');
+    
+    if (needsLogin) {
+      console.log(`[Network Capture] ⚠️  Spotify login required. Waiting 30 seconds for manual login...`);
+      await wait(30000);
+    } else if (hasCookieConsent) {
+      console.log(`[Network Capture] Cookie consent detected, attempting to dismiss...`);
+      try {
+        await page.click('[id="onetrust-accept-btn-handler"], button:has-text("Accept")');
+        await wait(2000);
+      } catch {
+        console.log(`[Network Capture] Could not auto-dismiss cookie consent`);
+      }
+    }
+    
     // Wait for initial content to load
     await wait(3000);
+    
+    console.log(`[Network Capture] Captured ${allItems.length} items so far from initial load`);
     
     // Scroll to trigger additional page loads
     console.log(`[Network Capture] Scrolling to trigger pagination...`);

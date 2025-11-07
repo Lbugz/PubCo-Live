@@ -50,6 +50,11 @@ export async function harvestVirtualizedRows(
     const results: any[] = [];
     await page.exposeFunction("PUSH_ROW", (row: any) => results.push(row));
     
+    // Check page status
+    const pageTitle = await page.title();
+    const pageUrl = page.url();
+    console.log(`[DOM Capture] Page loaded: ${pageTitle} (${pageUrl})`);
+    
     // Inject MutationObserver to capture virtualized rows
     await page.evaluate(() => {
       // Find the virtualized list container
@@ -102,9 +107,9 @@ export async function harvestVirtualizedRows(
           
           seen.add(key);
           // @ts-ignore - exposeFunction makes this available
-          window.PUSH_ROW({ track, artists, album, spotifyUrl: fullUrl });
+          (window as any).PUSH_ROW({ track, artists, album, spotifyUrl: fullUrl });
         } catch (err) {
-          // Silently skip problematic rows
+          console.error('[DOM Capture] Row extraction error:', err);
         }
       }
       
