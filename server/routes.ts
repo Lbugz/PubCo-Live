@@ -495,8 +495,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Combine writers and composers into songwriter field
             const songwriters = [...writers, ...composers].filter(Boolean);
-            const songwriterString = songwriters.length > 0 ? songwriters.join(", ") : null;
-            const publisherString = publishers.length > 0 ? publishers.join(", ") : null;
+            const songwriterString = songwriters.length > 0 ? songwriters.join(", ") : undefined;
+            const publisherString = publishers.length > 0 ? publishers.join(", ") : undefined;
             
             await storage.updateTrackMetadata(track.id, {
               songwriter: songwriterString,

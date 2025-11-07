@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, Download, Calendar, TrendingUp, ListMusic, Target, RefreshCw, Sparkles, BarChart3 } from "lucide-react";
+import { Music2, Download, Calendar, TrendingUp, ListMusic, Target, RefreshCw, Sparkles, BarChart3, FileText } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -100,7 +100,7 @@ export default function Dashboard() {
     },
     onSuccess: (data: any) => {
       toast({
-        title: "Enrichment Complete!",
+        title: "MusicBrainz Enrichment Complete!",
         description: `Enriched ${data.enrichedCount} of ${data.totalProcessed} tracks with publisher/songwriter data`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
@@ -109,6 +109,27 @@ export default function Dashboard() {
       toast({
         title: "Error",
         description: error.message || "Failed to enrich metadata",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const enrichCreditsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/enrich-credits", { limit: 10 });
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Spotify Credits Enrichment Complete!",
+        description: `Enriched ${data.enrichedCount} of ${data.totalProcessed} tracks (${data.failedCount} failed)`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to enrich credits",
         variant: "destructive",
       });
     },
@@ -199,11 +220,24 @@ export default function Dashboard() {
                 size="default"
                 className="gap-2"
                 disabled={enrichMetadataMutation.isPending || !tracks || tracks.length === 0}
-                data-testid="button-enrich"
+                data-testid="button-enrich-musicbrainz"
               >
                 <Sparkles className={`h-4 w-4 ${enrichMetadataMutation.isPending ? "animate-pulse" : ""}`} />
                 <span className="hidden md:inline">
-                  {enrichMetadataMutation.isPending ? "Enriching..." : "Enrich"}
+                  {enrichMetadataMutation.isPending ? "Enriching..." : "Enrich (MB)"}
+                </span>
+              </Button>
+              <Button
+                onClick={() => enrichCreditsMutation.mutate()}
+                variant="secondary"
+                size="default"
+                className="gap-2"
+                disabled={enrichCreditsMutation.isPending || !tracks || tracks.length === 0}
+                data-testid="button-enrich-credits"
+              >
+                <FileText className={`h-4 w-4 ${enrichCreditsMutation.isPending ? "animate-pulse" : ""}`} />
+                <span className="hidden md:inline">
+                  {enrichCreditsMutation.isPending ? "Scraping..." : "Enrich (Credits)"}
                 </span>
               </Button>
               <Button
