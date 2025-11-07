@@ -38,6 +38,8 @@ export default function Dashboard() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set());
+  const [playlistManagerOpen, setPlaylistManagerOpen] = useState(false);
+  const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const { toast } = useToast();
 
   const toggleFilter = (filter: string) => {
@@ -259,6 +261,14 @@ export default function Dashboard() {
     } catch (error) {
       console.error("Export failed:", error);
     }
+  };
+
+  const handleOpenPlaylistManager = () => {
+    setPlaylistManagerOpen(true);
+  };
+
+  const handleOpenTagManager = () => {
+    setTagManagerOpen(true);
   };
 
   const handleBulkEnrichMB = useCallback((mode: "selected" | "filtered") => {
@@ -546,9 +556,12 @@ export default function Dashboard() {
             enrichMBButton={enrichMBButton}
             enrichCreditsButton={enrichCreditsButton}
             exportButton={exportButton}
-            playlistManagerButton={<PlaylistManager />}
-            tagManagerButton={<TagManager />}
+            playlistManagerButton={<PlaylistManager open={playlistManagerOpen} onOpenChange={setPlaylistManagerOpen} />}
+            tagManagerButton={<TagManager open={tagManagerOpen} onOpenChange={setTagManagerOpen} />}
             compareButton={compareButton}
+            onExport={handleExport}
+            onPlaylistManager={handleOpenPlaylistManager}
+            onTagManager={handleOpenTagManager}
             weeks={weeks || []}
             selectedWeek={selectedWeek}
             onWeekChange={setSelectedWeek}

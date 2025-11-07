@@ -19,8 +19,16 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { type TrackedPlaylist } from "@shared/schema";
 
-export function PlaylistManager() {
-  const [open, setOpen] = useState(false);
+interface PlaylistManagerProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function PlaylistManager({ open: controlledOpen, onOpenChange }: PlaylistManagerProps = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [scrapeUrl, setScrapeUrl] = useState("");
   const [scrapeName, setScrapeName] = useState("");

@@ -34,9 +34,17 @@ const TAG_COLORS = [
   { value: "gray", label: "Gray" },
 ];
 
-export function TagManager() {
+interface TagManagerProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function TagManager({ open: controlledOpen, onOpenChange }: TagManagerProps = {}) {
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("blue");
 

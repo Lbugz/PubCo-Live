@@ -36,6 +36,7 @@ import {
   Filter,
   ChevronDown,
   MoreHorizontal,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +56,11 @@ interface UnifiedControlPanelProps {
   playlistManagerButton?: ReactNode;
   tagManagerButton?: ReactNode;
   compareButton?: ReactNode;
+  
+  // Action handlers for dropdown menu items
+  onExport?: () => void;
+  onPlaylistManager?: () => void;
+  onTagManager?: () => void;
   
   // Filters
   weeks: string[];
@@ -104,6 +110,9 @@ export function UnifiedControlPanel({
   playlistManagerButton,
   tagManagerButton,
   compareButton,
+  onExport,
+  onPlaylistManager,
+  onTagManager,
   weeks = [],
   selectedWeek,
   onWeekChange,
@@ -155,25 +164,23 @@ export function UnifiedControlPanel({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="glass-panel">
-              <DropdownMenuItem asChild>
-                <div className="w-full cursor-pointer" onClick={(e) => e.stopPropagation()}>
-                  {exportButton}
-                </div>
+              <DropdownMenuItem onSelect={() => onExport?.()} data-testid="menu-export">
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onPlaylistManager?.()} data-testid="menu-playlists">
+                <List className="mr-2 h-4 w-4" />
+                Manage Playlists
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onTagManager?.()} data-testid="menu-tags">
+                <Tags className="mr-2 h-4 w-4" />
+                Manage Tags
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <div className="w-full cursor-pointer" onClick={(e) => e.stopPropagation()}>
-                  {playlistManagerButton}
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <div className="w-full cursor-pointer" onClick={(e) => e.stopPropagation()}>
-                  {tagManagerButton}
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <div className="w-full cursor-pointer" onClick={(e) => e.stopPropagation()}>
-                  {compareButton}
-                </div>
+                <a href="/comparison" className="flex items-center" data-testid="menu-compare">
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Compare Weeks
+                </a>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
