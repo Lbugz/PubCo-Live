@@ -116,10 +116,14 @@ export default function Dashboard() {
 
   const enrichCreditsMutation = useMutation({
     mutationFn: async () => {
+      console.log("Starting credits enrichment mutation...");
       const response = await apiRequest("POST", "/api/enrich-credits", { limit: 10 });
-      return await response.json();
+      const data = await response.json();
+      console.log("Credits enrichment response:", data);
+      return data;
     },
     onSuccess: (data: any) => {
+      console.log("Credits enrichment success:", data);
       toast({
         title: "Spotify Credits Enrichment Complete!",
         description: `Enriched ${data.enrichedCount} of ${data.totalProcessed} tracks (${data.failedCount} failed)`,
@@ -127,6 +131,7 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
     },
     onError: (error: any) => {
+      console.error("Credits enrichment error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to enrich credits",

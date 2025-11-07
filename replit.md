@@ -149,6 +149,20 @@ Users can add and manage any Spotify playlists to track (no longer limited to Fr
 - Actionable export features
 
 ## Recent Changes
+- 2025-11-07: **Spotify Credits Scraping Enrichment**
+  - **New scrapeTrackCredits() Function**: Uses Puppeteer to visit track pages and extract credits data
+    - Navigates to track URLs, finds Credits section via XPath
+    - Extracts songwriter, composer, producer, and publisher information
+    - Handles both visible credits and 3-dot menu access
+    - Robust selectors that work with Puppeteer (no invalid :has-text() selectors)
+  - **POST /api/enrich-credits Endpoint**: Batch processes up to 10 tracks with 2.5s rate limiting
+    - Prevents anti-bot detection with proper delays
+    - Returns success/failure counts for each batch
+  - **Dual Enrichment UI**: Dashboard now has two enrichment buttons:
+    - "Enrich (MB)": MusicBrainz API enrichment (existing)
+    - "Enrich (Credits)": Spotify Credits scraping (new)
+    - Clear labeling to differentiate enrichment methods
+
 - 2025-11-06: **Bulk CSV Import Feature**
   - **CSV Upload**: Upload CSV files with multiple playlists (URL or ID format)
   - **Auto-Detection**: Automatically detects editorial vs non-editorial playlists

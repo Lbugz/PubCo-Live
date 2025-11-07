@@ -241,18 +241,24 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
     // Look for Credits section on the right panel
     console.log("Looking for Credits section...");
     
-    // Try to find the Credits section directly (visible in right panel)
-    let creditsFound = false;
-    try {
-      await page.waitForSelector('div:has-text("Credits")', { timeout: 5000 });
-      creditsFound = true;
-      console.log("Found Credits section in right panel");
-    } catch (error) {
-      console.log("Credits section not immediately visible, trying 3-dot menu...");
-    }
+    // Check if Credits section is visible using page.evaluate()
+    let creditsFound = await page.evaluate(() => {
+      const allElements = document.querySelectorAll('div, section');
+      for (const el of allElements) {
+        const text = el.textContent || '';
+        if (text.includes('Credits') && text.length < 100) {
+          return true;
+        }
+      }
+      return false;
+    });
     
-    // If credits not visible, try clicking 3-dot menu
-    if (!creditsFound) {
+    if (creditsFound) {
+      console.log("Found Credits section in right panel");
+    } else {
+      console.log("Credits section not immediately visible, trying 3-dot menu...");
+      
+      // Try clicking 3-dot menu to open credits
       try {
         // Click the 3-dot menu button
         const menuButton = await page.$('button[aria-label*="More options"], button[data-testid="more-button"]');
@@ -260,10 +266,20 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
           await menuButton.click();
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          // Click "View credits" option
-          const creditsOption = await page.$('button:has-text("View credits"), [role="menuitem"]:has-text("View credits")');
-          if (creditsOption) {
-            await creditsOption.click();
+          // Find and click "View credits" using page.evaluate()
+          const creditsClicked = await page.evaluate(() => {
+            const allButtons = document.querySelectorAll('button, [role="menuitem"]');
+            for (const btn of allButtons) {
+              const text = btn.textContent || '';
+              if (text.toLowerCase().includes('view credits') || text.toLowerCase().includes('credits')) {
+                (btn as HTMLElement).click();
+                return true;
+              }
+            }
+            return false;
+          });
+          
+          if (creditsClicked) {
             await new Promise(resolve => setTimeout(resolve, 2000));
             creditsFound = true;
             console.log("Opened Credits via menu");
@@ -291,13 +307,21 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
       const publishers: string[] = [];
       const allCredits: Array<{ name: string; role: string }> = [];
       
-      // Find all credit items in the Credits section
-      const creditElements = document.querySelectorAll('[data-testid="credit-item"], .credit-item, div:has-text("Composer") + div, div:has-text("Lyricist") + div, div:has-text("Producer") + div, div:has-text("Writer") + div');
+      // Find Credits section by looking through all divs for one containing "Credits" text
+      let creditsSection: Element | null = null;
+      const allDivs = document.querySelectorAll('div');
+      for (const div of allDivs) {
+        const text = div.textContent || '';
+        if (text.includes('Credits') && text.length < 100) {
+          // Found a likely Credits header, get parent container
+          creditsSection = div.parentElement || div;
+          break;
+        }
+      }
       
-      // Also try to find credits in a more generic way
-      const creditsSection = document.querySelector('div:has-text("Credits")');
       if (creditsSection) {
-        const creditRows = creditsSection.querySelectorAll('div[role="row"], li, .credit-row');
+        // Look for credit items - Spotify typically uses links or specific divs for names
+        const creditRows = creditsSection.querySelectorAll('div[role="row"], li, .credit-row, div');
         
         creditRows.forEach((row) => {
           const nameEl = row.querySelector('a, span[dir="auto"]');
@@ -306,7 +330,7 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
           const name = nameEl?.textContent?.trim() || '';
           const role = roleEl?.textContent?.trim() || '';
           
-          if (name && role) {
+          if (name && role && name.length > 1 && name.length < 100) {
             allCredits.push({ name, role });
             
             const roleLower = role.toLowerCase();
@@ -325,6 +349,31 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
           }
         });
       }
+      
+      // Fallback: Look for credit-related data attributes
+      const creditItems = document.querySelectorAll('[data-testid*="credit"]');
+      creditItems.forEach((item) => {
+        const links = item.querySelectorAll('a');
+        const text = item.textContent?.toLowerCase() || '';
+        
+        links.forEach((link) => {
+          const name = link.textContent?.trim();
+          if (name && name.length > 1 && name.length < 100) {
+            if (text.includes('writer') || text.includes('lyricist')) {
+              if (!writers.includes(name)) writers.push(name);
+            }
+            if (text.includes('composer')) {
+              if (!composers.includes(name)) composers.push(name);
+            }
+            if (text.includes('producer')) {
+              if (!producers.includes(name)) producers.push(name);
+            }
+            if (text.includes('publisher')) {
+              if (!publishers.includes(name)) publishers.push(name);
+            }
+          }
+        });
+      });
       
       return {
         writers: Array.from(new Set(writers)),
