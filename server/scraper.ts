@@ -158,7 +158,7 @@ async function autoScroll(page: Page): Promise<void> {
   
   let previousTrackCount = 0;
   let stableCount = 0;
-  const maxStableIterations = 8;
+  const maxStableIterations = 10;
   const maxScrollIterations = 100;
   
   for (let i = 0; i < maxScrollIterations; i++) {
@@ -180,36 +180,44 @@ async function autoScroll(page: Page): Promise<void> {
     
     previousTrackCount = currentTrackCount;
     
-    await page.evaluate(() => {
+    const scrollInfo = await page.evaluate(() => {
       const selectors = [
         '[data-testid="playlist-tracklist"]',
-        '[data-testid="tracklist"]',
         '.main-view-container__scroll-node',
-        '[role="presentation"]',
-        'main',
+        '[data-overlayscrollbars-viewport]',
+        'div[style*="overflow"]',
       ];
       
-      let scrolled = false;
+      let foundElement = null;
+      let elementInfo = '';
+      
       for (const selector of selectors) {
         const element = document.querySelector(selector) as HTMLElement;
-        if (element && element.scrollHeight > element.clientHeight) {
-          element.scrollTop = element.scrollHeight;
-          scrolled = true;
-          break;
+        if (element) {
+          const hasScroll = element.scrollHeight > element.clientHeight;
+          elementInfo = `${selector}: scrollHeight=${element.scrollHeight}, clientHeight=${element.clientHeight}, hasScroll=${hasScroll}`;
+          
+          if (hasScroll) {
+            const scrollDistance = element.scrollHeight - element.scrollTop;
+            element.scrollBy(0, 1000);
+            foundElement = selector;
+            break;
+          }
         }
       }
       
-      if (!scrolled) {
-        window.scrollTo(0, document.body.scrollHeight);
-      }
-      
-      const lastRow = document.querySelector('[data-testid="tracklist-row"]:last-child');
-      if (lastRow) {
-        lastRow.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }
+      return { foundElement, elementInfo };
     });
     
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log(`Scroll info: ${scrollInfo.elementInfo}`);
+    if (scrollInfo.foundElement) {
+      console.log(`Successfully scrolled element: ${scrollInfo.foundElement}`);
+    } else {
+      console.log('No scrollable element found, trying keyboard navigation');
+      await page.keyboard.press('PageDown');
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 2500));
   }
   
   console.log("Auto-scroll complete");
