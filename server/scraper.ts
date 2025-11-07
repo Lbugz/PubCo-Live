@@ -32,6 +32,20 @@ interface ScrapeResult {
   error?: string;
 }
 
+interface TrackCredits {
+  writers: string[];
+  composers: string[];
+  producers: string[];
+  publishers: string[];
+  allCredits: Array<{ name: string; role: string }>;
+}
+
+interface CreditsResult {
+  success: boolean;
+  credits?: TrackCredits;
+  error?: string;
+}
+
 export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<ScrapeResult> {
   let browser: Browser | null = null;
   
@@ -179,4 +193,167 @@ async function autoScroll(page: Page): Promise<void> {
   }
   
   console.log("Auto-scroll complete");
+}
+
+export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResult> {
+  let browser: Browser | null = null;
+  
+  try {
+    console.log(`Starting credits scrape for: ${trackUrl}`);
+    
+    const chromiumPath = getChromiumPath();
+    
+    browser = await puppeteer.launch({
+      headless: true,
+      executablePath: chromiumPath,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--disable-software-rasterizer",
+        "--disable-extensions",
+      ],
+    });
+    
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1920, height: 1080 });
+    
+    if (fs.existsSync(COOKIES_FILE)) {
+      try {
+        const cookiesString = fs.readFileSync(COOKIES_FILE, "utf8");
+        const cookies = JSON.parse(cookiesString);
+        await page.setCookie(...cookies);
+        console.log("Loaded saved Spotify cookies");
+      } catch (error) {
+        console.warn("Failed to load cookies, continuing without authentication:", error);
+      }
+    }
+    
+    console.log("Navigating to track page...");
+    await page.goto(trackUrl, { 
+      waitUntil: "networkidle2", 
+      timeout: 60000 
+    });
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Look for Credits section on the right panel
+    console.log("Looking for Credits section...");
+    
+    // Try to find the Credits section directly (visible in right panel)
+    let creditsFound = false;
+    try {
+      await page.waitForSelector('div:has-text("Credits")', { timeout: 5000 });
+      creditsFound = true;
+      console.log("Found Credits section in right panel");
+    } catch (error) {
+      console.log("Credits section not immediately visible, trying 3-dot menu...");
+    }
+    
+    // If credits not visible, try clicking 3-dot menu
+    if (!creditsFound) {
+      try {
+        // Click the 3-dot menu button
+        const menuButton = await page.$('button[aria-label*="More options"], button[data-testid="more-button"]');
+        if (menuButton) {
+          await menuButton.click();
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Click "View credits" option
+          const creditsOption = await page.$('button:has-text("View credits"), [role="menuitem"]:has-text("View credits")');
+          if (creditsOption) {
+            await creditsOption.click();
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            creditsFound = true;
+            console.log("Opened Credits via menu");
+          }
+        }
+      } catch (error) {
+        console.warn("Could not open credits via menu:", error);
+      }
+    }
+    
+    if (!creditsFound) {
+      await browser.close();
+      return {
+        success: false,
+        error: "Could not find Credits section"
+      };
+    }
+    
+    // Extract credits information
+    console.log("Extracting credits data...");
+    const credits = await page.evaluate(() => {
+      const writers: string[] = [];
+      const composers: string[] = [];
+      const producers: string[] = [];
+      const publishers: string[] = [];
+      const allCredits: Array<{ name: string; role: string }> = [];
+      
+      // Find all credit items in the Credits section
+      const creditElements = document.querySelectorAll('[data-testid="credit-item"], .credit-item, div:has-text("Composer") + div, div:has-text("Lyricist") + div, div:has-text("Producer") + div, div:has-text("Writer") + div');
+      
+      // Also try to find credits in a more generic way
+      const creditsSection = document.querySelector('div:has-text("Credits")');
+      if (creditsSection) {
+        const creditRows = creditsSection.querySelectorAll('div[role="row"], li, .credit-row');
+        
+        creditRows.forEach((row) => {
+          const nameEl = row.querySelector('a, span[dir="auto"]');
+          const roleEl = row.querySelector('span:not([dir="auto"])');
+          
+          const name = nameEl?.textContent?.trim() || '';
+          const role = roleEl?.textContent?.trim() || '';
+          
+          if (name && role) {
+            allCredits.push({ name, role });
+            
+            const roleLower = role.toLowerCase();
+            if (roleLower.includes('writer') || roleLower.includes('lyricist')) {
+              writers.push(name);
+            }
+            if (roleLower.includes('composer')) {
+              composers.push(name);
+            }
+            if (roleLower.includes('producer')) {
+              producers.push(name);
+            }
+            if (roleLower.includes('publisher')) {
+              publishers.push(name);
+            }
+          }
+        });
+      }
+      
+      return {
+        writers: Array.from(new Set(writers)),
+        composers: Array.from(new Set(composers)),
+        producers: Array.from(new Set(producers)),
+        publishers: Array.from(new Set(publishers)),
+        allCredits
+      };
+    });
+    
+    console.log(`Extracted ${credits.allCredits.length} credits`);
+    
+    await browser.close();
+    
+    return {
+      success: true,
+      credits
+    };
+    
+  } catch (error: any) {
+    console.error("Credits scraping error:", error);
+    
+    if (browser) {
+      await browser.close();
+    }
+    
+    return {
+      success: false,
+      error: error.message || "Unknown credits scraping error",
+    };
+  }
 }
