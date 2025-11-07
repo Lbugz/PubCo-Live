@@ -158,8 +158,8 @@ async function autoScroll(page: Page): Promise<void> {
   
   let previousTrackCount = 0;
   let stableCount = 0;
-  const maxStableIterations = 5;
-  const maxScrollIterations = 50;
+  const maxStableIterations = 8;
+  const maxScrollIterations = 100;
   
   for (let i = 0; i < maxScrollIterations; i++) {
     const currentTrackCount = await page.evaluate(() => {
@@ -181,15 +181,35 @@ async function autoScroll(page: Page): Promise<void> {
     previousTrackCount = currentTrackCount;
     
     await page.evaluate(() => {
-      const scrollableElement = document.querySelector('[data-testid="playlist-tracklist"]') as HTMLElement;
-      if (scrollableElement) {
-        scrollableElement.scrollTop = scrollableElement.scrollHeight;
-      } else {
-        window.scrollTo(0, document.documentElement.scrollHeight);
+      const selectors = [
+        '[data-testid="playlist-tracklist"]',
+        '[data-testid="tracklist"]',
+        '.main-view-container__scroll-node',
+        '[role="presentation"]',
+        'main',
+      ];
+      
+      let scrolled = false;
+      for (const selector of selectors) {
+        const element = document.querySelector(selector) as HTMLElement;
+        if (element && element.scrollHeight > element.clientHeight) {
+          element.scrollTop = element.scrollHeight;
+          scrolled = true;
+          break;
+        }
+      }
+      
+      if (!scrolled) {
+        window.scrollTo(0, document.body.scrollHeight);
+      }
+      
+      const lastRow = document.querySelector('[data-testid="tracklist-row"]:last-child');
+      if (lastRow) {
+        lastRow.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
     });
     
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 2000));
   }
   
   console.log("Auto-scroll complete");
