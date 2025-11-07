@@ -159,22 +159,22 @@ async function autoScrollAndCollectTracks(page: Page): Promise<Array<{
       const tracks: any[] = [];
       let lastRowIndex = 0;
       
-      rows.forEach(row => {
-        const rowIndex = parseInt(row.getAttribute('aria-rowindex') || '0');
+      rows.forEach((row, index) => {
+        const rowIndex = parseInt(row.getAttribute('aria-rowindex') || `${index + 1}`);
         if (rowIndex > lastRowIndex) {
           lastRowIndex = rowIndex;
         }
         
-        const trackNameEl = row.querySelector('[data-testid="internal-track-link"] > div');
-        const artistNameEl = row.querySelector('[data-testid="internal-track-link"]')?.nextElementSibling;
-        const albumEl = row.querySelector('[data-testid="cell-album"] a');
+        const trackNameEl = row.querySelector('[data-testid="internal-track-link"] div[dir="auto"]');
+        const artistLinkEl = row.querySelector('a[href*="/artist/"]');
+        const albumEl = row.querySelector('a[href*="/album/"]');
         const durationEl = row.querySelector('[data-testid="duration-cell-container"]');
         const trackLinkEl = row.querySelector('[data-testid="internal-track-link"]') as HTMLAnchorElement;
         
-        if (trackNameEl && artistNameEl && trackLinkEl?.href) {
+        if (trackNameEl && trackLinkEl?.href) {
           tracks.push({
             trackName: trackNameEl.textContent?.trim() || "",
-            artistName: artistNameEl.textContent?.trim() || "",
+            artistName: artistLinkEl?.textContent?.trim() || "",
             album: albumEl?.textContent?.trim() || "",
             duration: durationEl?.textContent?.trim() || "",
             spotifyUrl: trackLinkEl.href,
@@ -185,18 +185,28 @@ async function autoScrollAndCollectTracks(page: Page): Promise<Array<{
       const tracklistElement = document.querySelector('[data-testid="playlist-tracklist"]');
       const totalRows = tracklistElement ? parseInt(tracklistElement.getAttribute('aria-rowcount') || '0') : 0;
       
-      const selectors = [
-        '[data-testid="playlist-tracklist"]',
+      const scrollableSelectors = [
         '.main-view-container__scroll-node',
         '[data-overlayscrollbars-viewport]',
+        'div[data-overlayscrollbars-contents]',
       ];
       
-      for (const selector of selectors) {
+      let scrolled = false;
+      for (const selector of scrollableSelectors) {
         const element = document.querySelector(selector) as HTMLElement;
-        if (element && element.scrollHeight > element.clientHeight) {
-          element.scrollBy(0, 1000);
-          break;
+        if (element) {
+          const beforeScroll = element.scrollTop;
+          element.scrollBy({ top: 1500, behavior: 'auto' });
+          const afterScroll = element.scrollTop;
+          if (afterScroll > beforeScroll) {
+            scrolled = true;
+            break;
+          }
         }
+      }
+      
+      if (!scrolled) {
+        window.scrollBy({ top: 1500, behavior: 'auto' });
       }
       
       return { tracks, lastRowIndex, totalRows };
