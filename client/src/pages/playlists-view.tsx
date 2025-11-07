@@ -409,7 +409,11 @@ export default function PlaylistsView() {
                       <p className="font-medium">{formatNumber(selectedPlaylist.totalTracks)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Last Fetch</p>
+                      <p className="text-xs text-muted-foreground">Tracks in DB</p>
+                      <p className="font-medium">{formatNumber((selectedPlaylist as any).tracksInDb)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Last Fetch Count</p>
                       <p className="font-medium">{formatNumber(selectedPlaylist.lastFetchCount)}</p>
                     </div>
                     <div>
@@ -422,6 +426,13 @@ export default function PlaylistsView() {
                         {normalizeSource(selectedPlaylist.source).charAt(0).toUpperCase() + normalizeSource(selectedPlaylist.source).slice(1)}
                       </p>
                     </div>
+                  </div>
+                  
+                  <div>
+                    <p className="text-xs text-muted-foreground">Last Fetched</p>
+                    <p className="font-medium">
+                      {selectedPlaylist.lastChecked ? formatDate(selectedPlaylist.lastChecked) : 'Never'}
+                    </p>
                   </div>
 
                   {selectedPlaylist.curator && (

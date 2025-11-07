@@ -158,7 +158,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTrackedPlaylists(): Promise<TrackedPlaylist[]> {
-    return db.select().from(trackedPlaylists).orderBy(trackedPlaylists.name);
+    const result = await db
+      .select({
+        id: trackedPlaylists.id,
+        name: trackedPlaylists.name,
+        playlistId: trackedPlaylists.playlistId,
+        spotifyUrl: trackedPlaylists.spotifyUrl,
+        status: trackedPlaylists.status,
+        isEditorial: trackedPlaylists.isEditorial,
+        totalTracks: trackedPlaylists.totalTracks,
+        lastFetchCount: trackedPlaylists.lastFetchCount,
+        isComplete: trackedPlaylists.isComplete,
+        fetchMethod: trackedPlaylists.fetchMethod,
+        lastChecked: trackedPlaylists.lastChecked,
+        curator: trackedPlaylists.curator,
+        source: trackedPlaylists.source,
+        genre: trackedPlaylists.genre,
+        region: trackedPlaylists.region,
+        followers: trackedPlaylists.followers,
+        createdAt: trackedPlaylists.createdAt,
+        tracksInDb: sql<number>`CAST(COUNT(DISTINCT ${playlistSnapshots.id}) AS INTEGER)`,
+      })
+      .from(trackedPlaylists)
+      .leftJoin(playlistSnapshots, eq(trackedPlaylists.playlistId, playlistSnapshots.playlistId))
+      .groupBy(trackedPlaylists.id)
+      .orderBy(trackedPlaylists.name);
+    
+    return result as any;
   }
 
   async getTrackedPlaylistBySpotifyId(playlistId: string): Promise<TrackedPlaylist | null> {
