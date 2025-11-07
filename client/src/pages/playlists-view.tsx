@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw } from "lucide-react";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { type TrackedPlaylist } from "@shared/schema";
@@ -33,6 +33,11 @@ export default function PlaylistsView() {
     queryKey: ["/api/tracked-playlists"],
   });
 
+  const { data: spotifyStatus } = useQuery<{ authenticated: boolean }>({
+    queryKey: ["/api/spotify/status"],
+    refetchInterval: 5000, // Poll every 5s to check auth status
+  });
+
   const fetchPlaylistDataMutation = useMutation({
     mutationFn: async (spotifyPlaylistId: string) => {
       const response = await apiRequest("POST", "/api/fetch-playlists", { 
@@ -44,7 +49,7 @@ export default function PlaylistsView() {
     onSuccess: (data: any, spotifyPlaylistId: string) => {
       const playlist = playlists.find(p => p.playlistId === spotifyPlaylistId);
       const totalSkipped = data.completenessResults?.reduce((sum: number, r: any) => sum + (r.skipped || 0), 0) || 0;
-      const totalNew = data.completenessResults?.reduce((sum: number, r: any) => sum + (r.new || 0), 0) || 0;
+      const totalNew = data.tracksAdded || 0;
       
       toast({
         title: "Playlist data fetched successfully",
@@ -141,14 +146,54 @@ export default function PlaylistsView() {
     }
   };
 
+  const handleAuthorizeSpotify = () => {
+    window.location.href = "/api/spotify/auth";
+  };
+
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold mb-2 gradient-text">Playlists</h1>
-        <p className="text-muted-foreground">
-          Manage and track your Spotify playlists
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-2 gradient-text">Playlists</h1>
+          <p className="text-muted-foreground">
+            Manage and track your Spotify playlists
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Spotify Connection Status */}
+          <div 
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border"
+            data-testid="spotify-connection-status"
+          >
+            {spotifyStatus === undefined ? (
+              <>
+                <RefreshCw className="h-4 w-4 text-muted-foreground animate-spin" data-testid="icon-spotify-loading" />
+                <span className="text-sm font-medium text-muted-foreground" data-testid="text-spotify-status">Checking status...</span>
+              </>
+            ) : spotifyStatus.authenticated ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 text-green-500" data-testid="icon-spotify-connected" />
+                <span className="text-sm font-medium" data-testid="text-spotify-status">Spotify Connected</span>
+              </>
+            ) : (
+              <>
+                <XCircle className="h-4 w-4 text-red-500" data-testid="icon-spotify-disconnected" />
+                <span className="text-sm font-medium text-muted-foreground" data-testid="text-spotify-status">Not Connected</span>
+              </>
+            )}
+          </div>
+          {/* Authorize Button */}
+          {spotifyStatus?.authenticated === false && (
+            <Button
+              onClick={handleAuthorizeSpotify}
+              variant="default"
+              data-testid="button-authorize-spotify"
+            >
+              Authorize Spotify
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
