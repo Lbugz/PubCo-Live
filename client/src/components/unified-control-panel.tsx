@@ -17,6 +17,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Download,
   RefreshCw,
   Sparkles,
@@ -29,6 +35,7 @@ import {
   Search,
   Filter,
   ChevronDown,
+  MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -139,15 +146,37 @@ export function UnifiedControlPanel({
             {enrichCreditsButton}
           </div>
 
-          {/* Export */}
-          {exportButton}
-
-          {/* Management & Compare */}
-          <div className="flex gap-2 ml-auto">
-            {playlistManagerButton}
-            {tagManagerButton}
-            {compareButton}
-          </div>
+          {/* More Actions Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="default" className="gap-2 ml-auto" data-testid="button-more-actions">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="hidden sm:inline">More</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="glass-panel">
+              <DropdownMenuItem asChild>
+                <div className="w-full cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                  {exportButton}
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <div className="w-full cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                  {playlistManagerButton}
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <div className="w-full cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                  {tagManagerButton}
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <div className="w-full cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                  {compareButton}
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -188,9 +217,10 @@ export function UnifiedControlPanel({
           {/* Dropdowns */}
           <Select value={selectedWeek} onValueChange={onWeekChange}>
             <SelectTrigger className="w-[160px]" data-testid="select-week">
-              <SelectValue placeholder="Select week" />
+              <SelectValue placeholder="All Dates" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">All Dates</SelectItem>
               {weeks.map((week) => (
                 <SelectItem key={week} value={week}>
                   {week}
