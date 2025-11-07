@@ -6,7 +6,7 @@ import { calculateUnsignedScore } from "./scoring";
 import { searchByISRC } from "./musicbrainz";
 import { generateAIInsights } from "./ai-insights";
 import { playlists, type InsertPlaylistSnapshot, insertTagSchema, insertTrackedPlaylistSchema } from "@shared/schema";
-import { scrapeSpotifyPlaylist } from "./scraper";
+import { scrapeSpotifyPlaylist, scrapeTrackCredits } from "./scraper";
 
 // HTML entity decoder
 function decodeHTMLEntities(text: string): string {
@@ -461,6 +461,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error enriching metadata:", error);
       res.status(500).json({ error: "Failed to enrich metadata" });
+    }
+  });
+
+  app.post("/api/enrich-credits", async (req, res) => {
+    try {
+      const { limit = 10 } = req.body;
+      
+      // Get tracks that don't have songwriter/publisher data yet
+      const tracks = await storage.getUnenrichedTracks(limit);
+      
+      if (tracks.length === 0) {
+        return res.json({ 
+          success: true, 
+          enrichedCount: 0,
+          message: "No tracks need credits enrichment"
+        });
+      }
+
+      console.log(`Starting credits enrichment for ${tracks.length} tracks...`);
+      
+      let enrichedCount = 0;
+      let failedCount = 0;
+      
+      for (const track of tracks) {
+        try {
+          console.log(`Scraping credits for: ${track.trackName} by ${track.artistName}`);
+          
+          const creditsResult = await scrapeTrackCredits(track.spotifyUrl);
+          
+          if (creditsResult.success && creditsResult.credits) {
+            const { writers, composers, publishers } = creditsResult.credits;
+            
+            // Combine writers and composers into songwriter field
+            const songwriters = [...writers, ...composers].filter(Boolean);
+            const songwriterString = songwriters.length > 0 ? songwriters.join(", ") : null;
+            const publisherString = publishers.length > 0 ? publishers.join(", ") : null;
+            
+            await storage.updateTrackMetadata(track.id, {
+              songwriter: songwriterString,
+              publisher: publisherString,
+              enrichedAt: new Date(),
+            });
+            
+            console.log(`✅ Enriched: ${track.trackName} - ${songwriters.length} songwriters, ${publishers.length} publishers`);
+            enrichedCount++;
+          } else {
+            console.warn(`⚠️ Failed to scrape credits for ${track.trackName}: ${creditsResult.error}`);
+            failedCount++;
+          }
+          
+          // Rate limiting: 2.5 seconds between requests
+          await new Promise(resolve => setTimeout(resolve, 2500));
+        } catch (error: any) {
+          console.error(`Error scraping credits for track ${track.id}:`, error);
+          failedCount++;
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        enrichedCount,
+        failedCount,
+        totalProcessed: tracks.length,
+        message: `Enriched ${enrichedCount} tracks with Spotify Credits (${failedCount} failed)`
+      });
+    } catch (error) {
+      console.error("Error enriching credits:", error);
+      res.status(500).json({ error: "Failed to enrich credits" });
     }
   });
 
