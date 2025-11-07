@@ -36,20 +36,18 @@ export default function Dashboard() {
   const [selectedTag, setSelectedTag] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [scoreRange, setScoreRange] = useState<number[]>([0, 10]);
-  const [activeFilters, setActiveFilters] = useState<Set<FilterKey>>(new Set());
+  const [activeFilters, setActiveFilters] = useState<FilterKey[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<PlaylistSnapshot | null>(null);
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const { toast } = useToast();
 
   const toggleFilter = (filter: FilterKey) => {
     setActiveFilters(prev => {
-      const newFilters = new Set(prev);
-      if (newFilters.has(filter)) {
-        newFilters.delete(filter);
+      if (prev.includes(filter)) {
+        return prev.filter(f => f !== filter);
       } else {
-        newFilters.add(filter);
+        return [...prev, filter];
       }
-      return newFilters;
     });
   };
 
@@ -180,7 +178,7 @@ export default function Dashboard() {
     
     // Advanced filters
     let matchesAdvancedFilters = true;
-    if (activeFilters.size > 0) {
+    if (activeFilters.length > 0) {
       const hasIsrc = !!track.isrc;
       const hasCredits = !!track.publisher || !!track.songwriter;
       const hasPublisher = !!track.publisher;
@@ -197,7 +195,7 @@ export default function Dashboard() {
         noSongwriter: !hasSongwriter,
       };
       
-      matchesAdvancedFilters = Array.from(activeFilters).every(filter => filterMatches[filter]);
+      matchesAdvancedFilters = activeFilters.every(filter => filterMatches[filter]);
     }
     
     return matchesPlaylist && matchesSearch && matchesScore && matchesAdvancedFilters;
@@ -527,9 +525,9 @@ export default function Dashboard() {
                   <Button variant="outline" size="sm" className="gap-2" data-testid="button-open-filters">
                     <Filter className="h-4 w-4" />
                     Completeness Filters
-                    {activeFilters.size > 0 && (
+                    {activeFilters.length > 0 && (
                       <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
-                        {activeFilters.size}
+                        {activeFilters.length}
                       </Badge>
                     )}
                   </Button>
@@ -538,12 +536,12 @@ export default function Dashboard() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-sm">Filter by Completeness</h4>
-                      {activeFilters.size > 0 && (
+                      {activeFilters.length > 0 && (
                         <Button
                           variant="ghost"
                           size="sm"
                           className="h-auto py-1 px-2 text-xs"
-                          onClick={() => setActiveFilters(new Set())}
+                          onClick={() => setActiveFilters([])}
                           data-testid="button-clear-filters"
                         >
                           <X className="h-3 w-3 mr-1" />
@@ -557,7 +555,7 @@ export default function Dashboard() {
                         <div className="text-xs font-medium text-muted-foreground mb-2">ISRC Code</div>
                         <div className="flex gap-2">
                           <Button
-                            variant={activeFilters.has('hasIsrc') ? "default" : "outline"}
+                            variant={activeFilters.includes('hasIsrc') ? "default" : "outline"}
                             size="sm"
                             className="flex-1"
                             onClick={() => toggleFilter('hasIsrc')}
@@ -566,7 +564,7 @@ export default function Dashboard() {
                             Has ISRC
                           </Button>
                           <Button
-                            variant={activeFilters.has('noIsrc') ? "default" : "outline"}
+                            variant={activeFilters.includes('noIsrc') ? "default" : "outline"}
                             size="sm"
                             className="flex-1"
                             onClick={() => toggleFilter('noIsrc')}
@@ -583,7 +581,7 @@ export default function Dashboard() {
                         <div className="text-xs font-medium text-muted-foreground mb-2">Credits Data</div>
                         <div className="flex gap-2">
                           <Button
-                            variant={activeFilters.has('hasCredits') ? "default" : "outline"}
+                            variant={activeFilters.includes('hasCredits') ? "default" : "outline"}
                             size="sm"
                             className="flex-1"
                             onClick={() => toggleFilter('hasCredits')}
@@ -592,7 +590,7 @@ export default function Dashboard() {
                             Has Credits
                           </Button>
                           <Button
-                            variant={activeFilters.has('noCredits') ? "default" : "outline"}
+                            variant={activeFilters.includes('noCredits') ? "default" : "outline"}
                             size="sm"
                             className="flex-1"
                             onClick={() => toggleFilter('noCredits')}
@@ -609,7 +607,7 @@ export default function Dashboard() {
                         <div className="text-xs font-medium text-muted-foreground mb-2">Publisher Info</div>
                         <div className="flex gap-2">
                           <Button
-                            variant={activeFilters.has('hasPublisher') ? "default" : "outline"}
+                            variant={activeFilters.includes('hasPublisher') ? "default" : "outline"}
                             size="sm"
                             className="flex-1"
                             onClick={() => toggleFilter('hasPublisher')}
@@ -618,7 +616,7 @@ export default function Dashboard() {
                             Has Publisher
                           </Button>
                           <Button
-                            variant={activeFilters.has('noPublisher') ? "default" : "outline"}
+                            variant={activeFilters.includes('noPublisher') ? "default" : "outline"}
                             size="sm"
                             className="flex-1"
                             onClick={() => toggleFilter('noPublisher')}
@@ -635,7 +633,7 @@ export default function Dashboard() {
                         <div className="text-xs font-medium text-muted-foreground mb-2">Songwriter Info</div>
                         <div className="flex gap-2">
                           <Button
-                            variant={activeFilters.has('hasSongwriter') ? "default" : "outline"}
+                            variant={activeFilters.includes('hasSongwriter') ? "default" : "outline"}
                             size="sm"
                             className="flex-1"
                             onClick={() => toggleFilter('hasSongwriter')}
@@ -644,7 +642,7 @@ export default function Dashboard() {
                             Has Songwriter
                           </Button>
                           <Button
-                            variant={activeFilters.has('noSongwriter') ? "default" : "outline"}
+                            variant={activeFilters.includes('noSongwriter') ? "default" : "outline"}
                             size="sm"
                             className="flex-1"
                             onClick={() => toggleFilter('noSongwriter')}
@@ -656,9 +654,9 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    {activeFilters.size > 0 && (
+                    {activeFilters.length > 0 && (
                       <div className="pt-2 text-xs text-muted-foreground">
-                        Showing tracks matching all {activeFilters.size} active filter{activeFilters.size > 1 ? 's' : ''}
+                        Showing tracks matching all {activeFilters.length} active filter{activeFilters.length > 1 ? 's' : ''}
                       </div>
                     )}
                   </div>
