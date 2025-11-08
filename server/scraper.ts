@@ -1,6 +1,7 @@
 import puppeteer, { Browser, Page } from "puppeteer";
 import fs from "fs";
 import path from "path";
+import { recordAuthSuccess, recordAuthFailure } from "./auth-monitor";
 import { execSync } from "child_process";
 
 const COOKIES_FILE = path.join(process.cwd(), "spotify_cookies.json");
@@ -76,17 +77,20 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
     // Load cookies from Replit Secret or file
     try {
       let cookies;
+      let cookieSource: "secret" | "file" | "none" = "none";
       
       // Priority 1: Load from Replit Secret (production)
       if (process.env.SPOTIFY_COOKIES_JSON) {
         console.log("Loading cookies from SPOTIFY_COOKIES_JSON secret");
         cookies = JSON.parse(process.env.SPOTIFY_COOKIES_JSON);
+        cookieSource = "secret";
       } 
       // Priority 2: Load from file (local development)
       else if (fs.existsSync(COOKIES_FILE)) {
         console.log("Loading cookies from spotify-cookies.json file");
         const cookiesString = fs.readFileSync(COOKIES_FILE, "utf8");
         cookies = JSON.parse(cookiesString);
+        cookieSource = "file";
       }
       
       if (cookies) {
@@ -97,6 +101,9 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
         if (spDcCookie) {
           const expiryDate = new Date(spDcCookie.expires * 1000);
           console.log(`✓ Authenticated (sp_dc expires: ${expiryDate.toLocaleDateString()})`);
+          
+          // Record successful auth
+          recordAuthSuccess(cookieSource, expiryDate);
         } else {
           console.warn("⚠️ sp_dc cookie not found - may not be authenticated");
         }
@@ -106,6 +113,19 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
     } catch (error) {
       console.warn("Failed to load cookies:", error);
     }
+    
+    // Monitor for authentication failures
+    page.on('response', async (response) => {
+      const status = response.status();
+      const url = response.url();
+      
+      // Detect auth failures
+      if (status === 401 && url.includes('spotify.com')) {
+        recordAuthFailure(401, `Unauthorized access to ${url}`);
+      } else if (status === 403 && url.includes('spotify.com')) {
+        recordAuthFailure(403, `Forbidden access to ${url}`);
+      }
+    });
     
     console.log("Navigating to playlist page...");
     await page.goto(playlistUrl, { 
@@ -300,17 +320,20 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
     // Load cookies from Replit Secret or file
     try {
       let cookies;
+      let cookieSource: "secret" | "file" | "none" = "none";
       
       // Priority 1: Load from Replit Secret (production)
       if (process.env.SPOTIFY_COOKIES_JSON) {
         console.log("Loading cookies from SPOTIFY_COOKIES_JSON secret");
         cookies = JSON.parse(process.env.SPOTIFY_COOKIES_JSON);
+        cookieSource = "secret";
       } 
       // Priority 2: Load from file (local development)
       else if (fs.existsSync(COOKIES_FILE)) {
         console.log("Loading cookies from spotify-cookies.json file");
         const cookiesString = fs.readFileSync(COOKIES_FILE, "utf8");
         cookies = JSON.parse(cookiesString);
+        cookieSource = "file";
       }
       
       if (cookies) {
@@ -321,6 +344,9 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         if (spDcCookie) {
           const expiryDate = new Date(spDcCookie.expires * 1000);
           console.log(`✓ Authenticated (sp_dc expires: ${expiryDate.toLocaleDateString()})`);
+          
+          // Record successful auth
+          recordAuthSuccess(cookieSource, expiryDate);
         } else {
           console.warn("⚠️ sp_dc cookie not found - may not be authenticated");
         }
