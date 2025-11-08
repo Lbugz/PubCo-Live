@@ -1,4 +1,4 @@
-import cron from "node-cron";
+import * as cron from "node-cron";
 import type { IStorage } from "./storage";
 import { getAuthStatus } from "./auth-monitor";
 
@@ -8,20 +8,12 @@ import { getAuthStatus } from "./auth-monitor";
  * Manages scheduled jobs for automatic playlist scraping.
  * All jobs are controlled by the ENABLE_AUTO_SCRAPE environment variable.
  * 
- * Scheduling format (cron):
- *   ┌────────────── second (optional, 0-59)
- *   │ ┌──────────── minute (0-59)
- *   │ │ ┌────────── hour (0-23)
- *   │ │ │ ┌──────── day of month (1-31)
- *   │ │ │ │ ┌────── month (1-12)
- *   │ │ │ │ │ ┌──── day of week (0-7, 0/7 = Sunday)
- *   │ │ │ │ │ │
- *   * * * * * *
+ * Cron format: minute hour day month weekday
  * 
  * Examples:
  *   '0 9 * * 5' = Every Friday at 9:00 AM
  *   '0 0 * * 0' = Every Sunday at midnight
- *   '0 */6 * * *' = Every 6 hours
+ *   '0 /6 * * *' = Every 6 hours (note: use asterisk/6 without spaces)
  */
 
 interface ScheduledJob {
@@ -29,7 +21,7 @@ interface ScheduledJob {
   schedule: string;
   description: string;
   task: () => Promise<void>;
-  cronJob?: cron.ScheduledTask;
+  cronJob?: ReturnType<typeof cron.schedule>;
 }
 
 const scheduledJobs: ScheduledJob[] = [];
@@ -105,9 +97,6 @@ export function startScheduler() {
         console.error(`❌ [${new Date().toISOString()}] Failed: ${job.name}`);
         console.error(error);
       }
-    }, {
-      scheduled: true,
-      timezone: "America/New_York" // Adjust timezone as needed
     });
     
     console.log(`   ✓ ${job.name}`);
@@ -192,18 +181,18 @@ export async function initializeScheduler(storage: IStorage) {
           // Store tracks in database
           const weekId = `week-${new Date().toISOString().split('T')[0]}`;
           
-          for (const track of result.tracks) {
-            await storage.createTrack({
-              weekId,
-              playlistName: result.playlistName || "Fresh Finds",
-              trackName: track.trackName,
-              artistName: track.artistName,
-              album: track.album,
-              duration: track.duration,
-              spotifyUrl: track.spotifyUrl,
-              addedAt: new Date(),
-            });
-          }
+          const tracksToInsert = result.tracks.map(track => ({
+            week: weekId,
+            playlistName: result.playlistName || "Fresh Finds",
+            trackName: track.trackName,
+            artistName: track.artistName,
+            album: track.album,
+            duration: track.duration,
+            spotifyUrl: track.spotifyUrl,
+            addedAt: new Date(),
+          }));
+          
+          await storage.insertTracks(tracksToInsert);
           
           console.log(`✅ Stored ${result.tracks.length} tracks in database`);
         } else {

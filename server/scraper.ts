@@ -102,8 +102,10 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
           const expiryDate = new Date(spDcCookie.expires * 1000);
           console.log(`✓ Authenticated (sp_dc expires: ${expiryDate.toLocaleDateString()})`);
           
-          // Record successful auth
-          recordAuthSuccess(cookieSource, expiryDate);
+          // Record successful auth (only if from secret or file)
+          if (cookieSource !== "none") {
+            recordAuthSuccess(cookieSource, expiryDate);
+          }
         } else {
           console.warn("⚠️ sp_dc cookie not found - may not be authenticated");
         }
@@ -345,8 +347,10 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
           const expiryDate = new Date(spDcCookie.expires * 1000);
           console.log(`✓ Authenticated (sp_dc expires: ${expiryDate.toLocaleDateString()})`);
           
-          // Record successful auth
-          recordAuthSuccess(cookieSource, expiryDate);
+          // Record successful auth (only if from secret or file)
+          if (cookieSource !== "none") {
+            recordAuthSuccess(cookieSource, expiryDate);
+          }
         } else {
           console.warn("⚠️ sp_dc cookie not found - may not be authenticated");
         }
