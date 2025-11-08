@@ -96,7 +96,7 @@ export default function Dashboard() {
     if (playlistParam) {
       setSelectedPlaylist(playlistParam);
     }
-  }, [location]);
+  }, []); // Run only on mount to read initial URL params
 
   const { data: weeks, isLoading: weeksLoading } = useQuery<string[]>({
     queryKey: ["/api/weeks"],
