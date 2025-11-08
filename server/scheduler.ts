@@ -155,8 +155,71 @@ export function getSchedulerStatus() {
 export async function initializeScheduler(storage: IStorage) {
   console.log("🔧 Initializing scheduler with storage...");
   
-  // Jobs will be registered here as we add them
-  // For now, this is just a placeholder
+  // Register Fresh Finds weekly scrape job
+  registerJob(
+    "Fresh Finds Weekly Update",
+    "0 9 * * 5", // Every Friday at 9:00 AM
+    "Fridays at 9:00 AM",
+    async () => {
+      console.log("🎵 Starting Fresh Finds weekly scrape...");
+      
+      // Fresh Finds playlist URL
+      const FRESH_FINDS_URL = "https://open.spotify.com/playlist/37i9dQZF1DX4dyzvuaRJ0n";
+      
+      try {
+        // Try microservice first, fall back to direct scraping
+        let result;
+        const microserviceUrl = process.env.SCRAPER_API_URL;
+        
+        if (microserviceUrl) {
+          console.log("Using microservice for Fresh Finds scrape...");
+          const response = await fetch(`${microserviceUrl}/scrape-playlist`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ playlistUrl: FRESH_FINDS_URL }),
+          });
+          
+          result = await response.json();
+        } else {
+          console.log("Microservice not available, using direct scraping...");
+          const { scrapeSpotifyPlaylist } = await import("./scraper");
+          result = await scrapeSpotifyPlaylist(FRESH_FINDS_URL);
+        }
+        
+        if (result.success && result.tracks) {
+          console.log(`✅ Scraped ${result.tracks.length} tracks from Fresh Finds`);
+          
+          // Store tracks in database
+          const weekId = `week-${new Date().toISOString().split('T')[0]}`;
+          
+          for (const track of result.tracks) {
+            await storage.createTrack({
+              weekId,
+              playlistName: result.playlistName || "Fresh Finds",
+              trackName: track.trackName,
+              artistName: track.artistName,
+              album: track.album,
+              duration: track.duration,
+              spotifyUrl: track.spotifyUrl,
+              addedAt: new Date(),
+            });
+          }
+          
+          console.log(`✅ Stored ${result.tracks.length} tracks in database`);
+        } else {
+          console.error("❌ Scrape failed:", result.error);
+        }
+      } catch (error) {
+        console.error("❌ Fresh Finds scrape error:", error);
+        throw error;
+      }
+    }
+  );
+  
+  // Future jobs can be registered here:
+  // - Other playlist updates
+  // - Data enrichment jobs
+  // - Cleanup/maintenance tasks
   
   // Start the scheduler (will only actually start if ENABLE_AUTO_SCRAPE=true)
   startScheduler();

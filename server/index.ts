@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from "./storage";
+import { initializeScheduler } from "./scheduler";
 
 const app = express();
 
@@ -65,6 +67,9 @@ app.use((req, res, next) => {
   } else {
     serveStatic(app);
   }
+
+  // Initialize the scheduler for automated jobs
+  await initializeScheduler(storage);
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.
