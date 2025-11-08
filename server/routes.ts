@@ -764,7 +764,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/fetch-playlists", async (req, res) => {
     try {
       const { mode = 'all', playlistId } = req.body;
-      const spotify = await getUncachableSpotifyClient();
       const today = new Date().toISOString().split('T')[0];
       
       const allTrackedPlaylists = await storage.getTrackedPlaylists();
@@ -791,6 +790,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Only get Spotify client if we have non-editorial playlists to fetch
+      const hasNonEditorialPlaylists = trackedPlaylists.some(p => p.isEditorial !== 1);
+      let spotify: any = null;
+      
+      if (hasNonEditorialPlaylists) {
+        try {
+          spotify = await getUncachableSpotifyClient();
+        } catch (authError) {
+          console.warn('Failed to get Spotify client (not authenticated). Editorial playlists will use scraping.');
+        }
+      }
+      
       // Get existing tracks for this week to avoid duplicates
       const existingTracks = await storage.getTracksByWeek(today);
       const existingTrackKeys = new Set(
@@ -808,9 +819,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let playlistTotalTracks = playlist.totalTracks;
           let skippedCount = 0;
           
-          // Try API first, fall back to scraping for editorial playlists
+          // For editorial playlists, skip API and go straight to scraping
+          // For non-editorial playlists, try API first
           let fetchMethod = 'api';
+          
           try {
+            if (playlist.isEditorial === 1) {
+              // Editorial playlist - skip OAuth/API, use scraping directly
+              console.log(`Editorial playlist detected: ${playlist.name}. Skipping API, using scraper microservice...`);
+              throw new Error('Editorial playlist - using scraper');
+            }
+            
+            if (!spotify) {
+              throw new Error('Spotify client not available (not authenticated)');
+            }
             console.log(`Attempting API fetch for: ${playlist.name} (isEditorial=${playlist.isEditorial})`);
             const allPlaylistItems = await fetchAllPlaylistTracks(spotify, playlist.playlistId);
             
