@@ -73,15 +73,38 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
     
     await page.setViewport({ width: 1920, height: 1080 });
     
-    if (fs.existsSync(COOKIES_FILE)) {
-      try {
+    // Load cookies from Replit Secret or file
+    try {
+      let cookies;
+      
+      // Priority 1: Load from Replit Secret (production)
+      if (process.env.SPOTIFY_COOKIES_JSON) {
+        console.log("Loading cookies from SPOTIFY_COOKIES_JSON secret");
+        cookies = JSON.parse(process.env.SPOTIFY_COOKIES_JSON);
+      } 
+      // Priority 2: Load from file (local development)
+      else if (fs.existsSync(COOKIES_FILE)) {
+        console.log("Loading cookies from spotify-cookies.json file");
         const cookiesString = fs.readFileSync(COOKIES_FILE, "utf8");
-        const cookies = JSON.parse(cookiesString);
-        await page.setCookie(...cookies);
-        console.log("Loaded saved Spotify cookies");
-      } catch (error) {
-        console.warn("Failed to load cookies, continuing without authentication:", error);
+        cookies = JSON.parse(cookiesString);
       }
+      
+      if (cookies) {
+        await page.setCookie(...cookies);
+        
+        // Check for sp_dc cookie (main auth token)
+        const spDcCookie = cookies.find((c: any) => c.name === 'sp_dc');
+        if (spDcCookie) {
+          const expiryDate = new Date(spDcCookie.expires * 1000);
+          console.log(`✓ Authenticated (sp_dc expires: ${expiryDate.toLocaleDateString()})`);
+        } else {
+          console.warn("⚠️ sp_dc cookie not found - may not be authenticated");
+        }
+      } else {
+        console.warn("⚠️ No cookies found - continuing without authentication");
+      }
+    } catch (error) {
+      console.warn("Failed to load cookies:", error);
     }
     
     console.log("Navigating to playlist page...");
@@ -274,15 +297,38 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
     const page = await browser.newPage();
     await page.setViewport({ width: 1920, height: 1080 });
     
-    if (fs.existsSync(COOKIES_FILE)) {
-      try {
+    // Load cookies from Replit Secret or file
+    try {
+      let cookies;
+      
+      // Priority 1: Load from Replit Secret (production)
+      if (process.env.SPOTIFY_COOKIES_JSON) {
+        console.log("Loading cookies from SPOTIFY_COOKIES_JSON secret");
+        cookies = JSON.parse(process.env.SPOTIFY_COOKIES_JSON);
+      } 
+      // Priority 2: Load from file (local development)
+      else if (fs.existsSync(COOKIES_FILE)) {
+        console.log("Loading cookies from spotify-cookies.json file");
         const cookiesString = fs.readFileSync(COOKIES_FILE, "utf8");
-        const cookies = JSON.parse(cookiesString);
-        await page.setCookie(...cookies);
-        console.log("Loaded saved Spotify cookies");
-      } catch (error) {
-        console.warn("Failed to load cookies, continuing without authentication:", error);
+        cookies = JSON.parse(cookiesString);
       }
+      
+      if (cookies) {
+        await page.setCookie(...cookies);
+        
+        // Check for sp_dc cookie (main auth token)
+        const spDcCookie = cookies.find((c: any) => c.name === 'sp_dc');
+        if (spDcCookie) {
+          const expiryDate = new Date(spDcCookie.expires * 1000);
+          console.log(`✓ Authenticated (sp_dc expires: ${expiryDate.toLocaleDateString()})`);
+        } else {
+          console.warn("⚠️ sp_dc cookie not found - may not be authenticated");
+        }
+      } else {
+        console.warn("⚠️ No cookies found - continuing without authentication");
+      }
+    } catch (error) {
+      console.warn("Failed to load cookies:", error);
     }
     
     console.log("Navigating to track page...");
