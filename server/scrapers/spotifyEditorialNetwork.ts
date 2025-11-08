@@ -111,16 +111,34 @@ export async function fetchEditorialTracksViaNetwork(
       await wait(30000);
     }
     
-    // Try multiple ways to dismiss cookie consent
-    console.log(`[Network Capture] Attempting to dismiss cookie consent...`);
-    try {
-      // Wait for and click the accept button
-      await page.waitForSelector('#onetrust-accept-btn-handler, button[id*="accept"], button[id*="agree"]', { timeout: 5000 });
-      await page.click('#onetrust-accept-btn-handler, button[id*="accept"], button[id*="agree"]');
-      console.log(`[Network Capture] ✅ Cookie consent dismissed`);
-      await wait(2000);
-    } catch {
-      console.log(`[Network Capture] No cookie consent found or already dismissed`);
+    // Handle cookie consent banner
+    console.log(`[Network Capture] Checking for cookie consent banner...`);
+    const consentSelectors = [
+      '#onetrust-accept-btn-handler',
+      'button[id*="onetrust-accept"]',
+      'button[aria-label*="Accept"]',
+      'button[aria-label*="accept"]',
+      '[data-testid="accept-all-cookies"]',
+      'button[id*="accept"]',
+      'button[id*="agree"]',
+    ];
+    
+    let consentAccepted = false;
+    for (const selector of consentSelectors) {
+      try {
+        await page.waitForSelector(selector, { timeout: 3000 });
+        await page.click(selector);
+        console.log(`[Network Capture] ✅ Accepted cookie consent using: ${selector}`);
+        await wait(2000);
+        consentAccepted = true;
+        break;
+      } catch (e) {
+        // Continue to next selector
+      }
+    }
+    
+    if (!consentAccepted) {
+      console.log(`[Network Capture] No cookie consent banner found (already accepted or not shown)`);
     }
     
     // Wait for initial content to load

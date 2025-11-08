@@ -6,6 +6,38 @@ import { execSync } from "child_process";
 
 const COOKIES_FILE = path.join(process.cwd(), "spotify_cookies.json");
 
+async function handleCookieConsent(page: Page): Promise<void> {
+  try {
+    console.log("[Consent] Checking for cookie consent banner...");
+    
+    const consentSelectors = [
+      '#onetrust-accept-btn-handler',
+      'button[id*="onetrust-accept"]',
+      'button[aria-label*="Accept"]',
+      'button[aria-label*="accept"]',
+      '[data-testid="accept-all-cookies"]',
+      'button[id*="accept"]',
+      'button[id*="agree"]',
+    ];
+    
+    for (const selector of consentSelectors) {
+      try {
+        await page.waitForSelector(selector, { timeout: 3000 });
+        await page.click(selector);
+        console.log(`[Consent] ✅ Accepted cookie consent using selector: ${selector}`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return;
+      } catch (e) {
+        // Continue to next selector
+      }
+    }
+    
+    console.log("[Consent] No consent banner found (already accepted or not shown)");
+  } catch (error) {
+    console.log("[Consent] Error handling consent:", error);
+  }
+}
+
 function getChromiumPath(): string | undefined {
   try {
     const chromiumPath = execSync("which chromium || which chromium-browser || which google-chrome", {
@@ -134,6 +166,9 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
       waitUntil: "networkidle2", 
       timeout: 60000 
     });
+    
+    // Handle cookie consent banner if present
+    await handleCookieConsent(page);
     
     await new Promise(resolve => setTimeout(resolve, 3000));
     
@@ -366,6 +401,9 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
       waitUntil: "networkidle2", 
       timeout: 60000 
     });
+    
+    // Handle cookie consent banner if present
+    await handleCookieConsent(page);
     
     await new Promise(resolve => setTimeout(resolve, 2000));
     
