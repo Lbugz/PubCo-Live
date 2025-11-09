@@ -42,13 +42,11 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Build frontend (Vite looks for index.html in /client)
-WORKDIR /app/client
-RUN npx vite build
+# Build frontend using locally installed vite
+RUN ./node_modules/.bin/vite build
 
-# Build backend (esbuild bundles to /app/dist)
-WORKDIR /app
-RUN npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+# Build backend
+RUN ./node_modules/.bin/esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
 # Production stage
 FROM node:20-slim
@@ -85,7 +83,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --omit=dev
 
-# Copy built application (contains both server and frontend)
+# Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
 # Expose port for Railway
