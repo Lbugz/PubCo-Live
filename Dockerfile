@@ -42,8 +42,8 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Build application (run commands directly to bypass package.json cache)
-RUN npx vite build && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+# Build application using package.json script
+RUN npm run build
 
 # Production stage
 FROM node:20-slim
