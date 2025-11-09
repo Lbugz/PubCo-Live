@@ -15,9 +15,13 @@ type ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState | undefined>(undefined);
 
+const THEME_STORAGE_KEY = "theme:v2";
+const LEGACY_THEME_KEY = "theme";
+
 export function ThemeProvider({ children, defaultTheme = "light" }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const stored = localStorage.getItem("theme") as Theme;
+    localStorage.removeItem(LEGACY_THEME_KEY);
+    const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme;
     return stored || defaultTheme;
   });
 
@@ -25,7 +29,7 @@ export function ThemeProvider({ children, defaultTheme = "light" }: ThemeProvide
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(theme);
-    localStorage.setItem("theme", theme);
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
   const setTheme = (newTheme: Theme) => {

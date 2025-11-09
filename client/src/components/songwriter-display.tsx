@@ -54,6 +54,7 @@ export function SongwriterDisplay({ songwriters, className, testId }: Songwriter
       <span>{firstSongwriter}</span>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
+          asChild
           onClick={(e) => e.stopPropagation()}
         >
           <Badge
