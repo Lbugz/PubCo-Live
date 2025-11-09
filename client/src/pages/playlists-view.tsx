@@ -63,6 +63,28 @@ export default function PlaylistsView() {
     },
   });
 
+  const refreshMetadataMutation = useMutation({
+    mutationFn: async (playlistId: string) => {
+      const response = await apiRequest("POST", `/api/tracked-playlists/${playlistId}/refresh-metadata`, {});
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Metadata refreshed",
+        description: `Updated curator${data.curator ? `: ${data.curator}` : ''} and followers${data.followers ? `: ${data.followers.toLocaleString()}` : ''}`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to refresh metadata",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Normalize source value for consistent filtering
   const normalizeSource = (source: string | null) => {
     return source || "unknown";
@@ -457,6 +479,16 @@ export default function PlaylistsView() {
                     >
                       <RefreshCw className={cn("h-4 w-4 mr-2", fetchPlaylistDataMutation.isPending && "animate-spin")} />
                       {fetchPlaylistDataMutation.isPending ? "Fetching..." : "Fetch Data"}
+                    </Button>
+                    <Button
+                      className="w-full justify-start"
+                      variant="outline"
+                      onClick={() => refreshMetadataMutation.mutate(selectedPlaylist.id)}
+                      disabled={refreshMetadataMutation.isPending}
+                      data-testid="button-drawer-refresh-metadata"
+                    >
+                      <RefreshCw className={cn("h-4 w-4 mr-2", refreshMetadataMutation.isPending && "animate-spin")} />
+                      {refreshMetadataMutation.isPending ? "Refreshing..." : "Refresh Metadata"}
                     </Button>
                     <Button
                       className="w-full justify-start"

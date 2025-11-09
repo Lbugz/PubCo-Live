@@ -433,6 +433,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/tracked-playlists/:id/refresh-metadata", async (req, res) => {
+    try {
+      const playlist = await storage.getTrackedPlaylists();
+      const targetPlaylist = playlist.find(p => p.id === req.params.id);
+      
+      if (!targetPlaylist) {
+        return res.status(404).json({ error: "Playlist not found" });
+      }
+      
+      if (!isAuthenticated()) {
+        return res.status(401).json({ error: "Spotify authentication required" });
+      }
+      
+      const spotify = await getUncachableSpotifyClient();
+      const playlistData = await spotify.playlists.getPlaylist(targetPlaylist.playlistId, "from_token" as any);
+      
+      const curator = playlistData.owner?.display_name || null;
+      const followers = playlistData.followers?.total || null;
+      const totalTracks = playlistData.tracks?.total || null;
+      
+      await storage.updateTrackedPlaylistMetadata(req.params.id, {
+        curator,
+        followers,
+        totalTracks,
+      });
+      
+      console.log(`Refreshed metadata for "${targetPlaylist.name}": curator="${curator}", followers=${followers}, totalTracks=${totalTracks}`);
+      
+      res.json({ 
+        success: true, 
+        curator,
+        followers,
+        totalTracks,
+      });
+    } catch (error: any) {
+      console.error("Error refreshing playlist metadata:", error);
+      res.status(500).json({ error: error.message || "Failed to refresh metadata" });
+    }
+  });
+
   app.delete("/api/tracked-playlists/:id", async (req, res) => {
     try {
       await storage.deleteTrackedPlaylist(req.params.id);
