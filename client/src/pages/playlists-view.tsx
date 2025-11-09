@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { type TrackedPlaylist } from "@shared/schema";
@@ -31,11 +31,6 @@ export default function PlaylistsView() {
 
   const { data: playlists = [], isLoading } = useQuery<TrackedPlaylist[]>({
     queryKey: ["/api/tracked-playlists"],
-  });
-
-  const { data: spotifyStatus } = useQuery<{ authenticated: boolean }>({
-    queryKey: ["/api/spotify/status"],
-    refetchInterval: 5000, // Poll every 5s to check auth status
   });
 
   const fetchPlaylistDataMutation = useMutation({
@@ -146,57 +141,8 @@ export default function PlaylistsView() {
     }
   };
 
-  const handleAuthorizeSpotify = () => {
-    window.open("/api/spotify/auth", "_blank");
-  };
-
   return (
     <div className="p-8 space-y-6 fade-in">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4 slide-up">
-        <div>
-          <h1 className="font-display text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent animate-gradient mb-2">
-            Playlists
-          </h1>
-          <p className="text-muted-foreground">
-            Manage and track your Spotify playlists
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Spotify Connection Status */}
-          <div 
-            className="flex items-center gap-2 px-3 py-2 rounded-lg glass-panel backdrop-blur-xl border border-primary/20"
-            data-testid="spotify-connection-status"
-          >
-            {spotifyStatus === undefined ? (
-              <>
-                <RefreshCw className="h-4 w-4 text-muted-foreground animate-spin" data-testid="icon-spotify-loading" />
-                <span className="text-sm font-medium text-muted-foreground" data-testid="text-spotify-status">Checking status...</span>
-              </>
-            ) : spotifyStatus.authenticated ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 text-green-500" data-testid="icon-spotify-connected" />
-                <span className="text-sm font-medium" data-testid="text-spotify-status">Spotify Connected</span>
-              </>
-            ) : (
-              <>
-                <XCircle className="h-4 w-4 text-red-500" data-testid="icon-spotify-disconnected" />
-                <span className="text-sm font-medium text-muted-foreground" data-testid="text-spotify-status">Not Connected</span>
-              </>
-            )}
-          </div>
-          {/* Authorize Button */}
-          {spotifyStatus?.authenticated === false && (
-            <Button
-              onClick={handleAuthorizeSpotify}
-              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity"
-              data-testid="button-authorize-spotify"
-            >
-              Authorize Spotify
-            </Button>
-          )}
-        </div>
-      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 slide-in-right">

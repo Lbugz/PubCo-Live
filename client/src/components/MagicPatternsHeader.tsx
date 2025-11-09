@@ -1,5 +1,7 @@
 import { useLocation } from 'wouter';
-import { Menu, BellIcon, CheckCircle, Music, ListMusic } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Menu, BellIcon, CheckCircle2, XCircle, RefreshCw, Music, ListMusic } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -7,6 +9,11 @@ interface HeaderProps {
 
 export function MagicPatternsHeader({ onMenuClick }: HeaderProps) {
   const [location] = useLocation();
+
+  const { data: spotifyStatus } = useQuery<{ authenticated: boolean }>({
+    queryKey: ["/api/spotify/status"],
+    refetchInterval: 30000,
+  });
 
   const getHeaderContent = () => {
     if (location === '/playlists') {
@@ -28,6 +35,10 @@ export function MagicPatternsHeader({ onMenuClick }: HeaderProps) {
       subtitle: 'AI-Powered Publishing Lead Discovery',
       icon: null
     };
+  };
+
+  const handleAuthorizeSpotify = () => {
+    window.open("/api/spotify/auth", "_blank");
   };
 
   const content = getHeaderContent();
@@ -57,11 +68,41 @@ export function MagicPatternsHeader({ onMenuClick }: HeaderProps) {
             </p>
           </div>
         </div>
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center px-4 py-2 rounded-full bg-success/10 backdrop-blur-sm text-success border border-success/20 shadow-lg">
-            <CheckCircle className="h-4 w-4 mr-2" />
-            <span className="text-sm font-medium">Spotify Connected</span>
+        <div className="flex items-center gap-3">
+          {/* Spotify Connection Status */}
+          <div 
+            className="flex items-center gap-2 px-3 py-2 rounded-lg glass-panel backdrop-blur-xl border border-primary/20"
+            data-testid="spotify-connection-status"
+          >
+            {spotifyStatus === undefined ? (
+              <>
+                <RefreshCw className="h-4 w-4 text-muted-foreground animate-spin" data-testid="icon-spotify-loading" />
+                <span className="text-sm font-medium text-muted-foreground" data-testid="text-spotify-status">Checking...</span>
+              </>
+            ) : spotifyStatus.authenticated ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 text-green-500" data-testid="icon-spotify-connected" />
+                <span className="text-sm font-medium" data-testid="text-spotify-status">Spotify Connected</span>
+              </>
+            ) : (
+              <>
+                <XCircle className="h-4 w-4 text-red-500" data-testid="icon-spotify-disconnected" />
+                <span className="text-sm font-medium text-muted-foreground" data-testid="text-spotify-status">Not Connected</span>
+              </>
+            )}
           </div>
+          
+          {/* Authorize Button */}
+          {spotifyStatus?.authenticated === false && (
+            <Button
+              onClick={handleAuthorizeSpotify}
+              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity"
+              data-testid="button-authorize-spotify"
+            >
+              Authorize Spotify
+            </Button>
+          )}
+          
           <button 
             className="p-2.5 rounded-xl text-textSecondary hover:text-textPrimary hover:bg-white/10 transition-all duration-200 relative"
             data-testid="button-notifications"
