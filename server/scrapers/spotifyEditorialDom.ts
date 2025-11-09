@@ -38,6 +38,24 @@ export async function harvestVirtualizedRows(
     });
 
     const [page] = await browser.pages();
+    
+    // Load saved cookies if available
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const cookiesPath = path.join(process.cwd(), 'spotify-cookies.json');
+      if (fs.existsSync(cookiesPath)) {
+        const cookiesString = fs.readFileSync(cookiesPath, 'utf8');
+        const cookies = JSON.parse(cookiesString);
+        await page.setCookie(...cookies);
+        console.log(`[DOM Capture] Loaded ${cookies.length} saved cookies`);
+      } else {
+        console.log(`[DOM Capture] No saved cookies found, will need manual login`);
+      }
+    } catch (err) {
+      console.warn('[DOM Capture] Failed to load cookies:', err);
+    }
+    
     await page.goto(playlistUrl, { 
       waitUntil: "networkidle2",
       timeout: 60000 

@@ -43,6 +43,23 @@ export async function fetchEditorialTracksViaNetwork(
 
     const [page] = await browser.pages();
     
+    // Load saved cookies if available
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const cookiesPath = path.join(process.cwd(), 'spotify-cookies.json');
+      if (fs.existsSync(cookiesPath)) {
+        const cookiesString = fs.readFileSync(cookiesPath, 'utf8');
+        const cookies = JSON.parse(cookiesString);
+        await page.setCookie(...cookies);
+        console.log(`[Network Capture] Loaded ${cookies.length} saved cookies`);
+      } else {
+        console.log(`[Network Capture] No saved cookies found, will need manual login`);
+      }
+    } catch (err) {
+      console.warn('[Network Capture] Failed to load cookies:', err);
+    }
+    
     // Accumulator for captured data
     const seenOffsets = new Set<number>();
     const allItems: any[] = [];
