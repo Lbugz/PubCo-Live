@@ -1062,7 +1062,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 isrc: capturedTrack.isrc || null,
                 label: null,
                 unsignedScore: score,
-                addedAt: capturedTrack.addedAt || new Date(),
+                addedAt: capturedTrack.addedAt ? new Date(capturedTrack.addedAt) : new Date(),
                 dataSource: fetchMethod,
               };
               
