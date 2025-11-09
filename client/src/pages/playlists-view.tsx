@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -32,6 +32,16 @@ export default function PlaylistsView() {
   const { data: playlists = [], isLoading } = useQuery<TrackedPlaylist[]>({
     queryKey: ["/api/tracked-playlists"],
   });
+
+  // Auto-update selectedPlaylist when playlists data changes
+  useEffect(() => {
+    if (selectedPlaylist && playlists.length > 0) {
+      const updated = playlists.find(p => p.id === selectedPlaylist.id);
+      if (updated) {
+        setSelectedPlaylist(updated);
+      }
+    }
+  }, [playlists, selectedPlaylist?.id]);
 
   const fetchPlaylistDataMutation = useMutation({
     mutationFn: async (spotifyPlaylistId: string) => {
