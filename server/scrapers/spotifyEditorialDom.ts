@@ -162,8 +162,20 @@ export async function harvestVirtualizedRows(
           if (seen.has(key)) return;
           
           seen.add(key);
-          // @ts-ignore - exposeFunction makes this available
-          (window as any).PUSH_ROW({ track, artists, album, spotifyUrl: fullUrl });
+          
+          // Safely call PUSH_ROW with serializable data only
+          try {
+            const rowData = {
+              track: String(track),
+              artists: artists.map(a => String(a)),
+              album: album ? String(album) : null,
+              spotifyUrl: String(fullUrl)
+            };
+            // @ts-ignore - exposeFunction makes this available
+            (window as any).PUSH_ROW(rowData);
+          } catch (pushErr) {
+            console.error('[DOM Capture] PUSH_ROW error:', pushErr);
+          }
         } catch (err) {
           console.error('[DOM Capture] Row extraction error:', err);
         }

@@ -91,17 +91,10 @@ export async function fetchEditorialTracksViaNetwork(
         console.log(`[Network Capture] JSON from: ${url.substring(0, 120)}`);
         console.log(`[Network Capture] JSON keys: ${Object.keys(json).join(', ')}`);
         
-        // Check for Spotify's NEW GraphQL pathfinder API
-        if (url.includes('pathfinder') && json?.data) {
-          console.log(`[Network Capture] 🔍 Pathfinder data keys: ${Object.keys(json.data).join(', ')}`);
-          // Dive deeper into the data structure
-          if (typeof json.data === 'object') {
-            for (const key of Object.keys(json.data)) {
-              if (json.data[key] && typeof json.data[key] === 'object') {
-                console.log(`[Network Capture] 🔍 data.${key} keys: ${Object.keys(json.data[key]).join(', ')}`);
-              }
-            }
-          }
+        // Check for Spotify's NEW GraphQL pathfinder API and dump FULL response
+        if (url.includes('pathfinder')) {
+          console.log(`[Network Capture] 🔍 FULL PATHFINDER RESPONSE:`);
+          console.log(JSON.stringify(json, null, 2).substring(0, 5000)); // First 5000 chars
         }
         
         // Log all Spotify JSON responses to understand their structure
