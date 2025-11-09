@@ -29,6 +29,9 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+# Cache bust to force rebuild - Updated: 2025-11-09
+ARG CACHEBUST=20251109
+
 # Copy package files
 COPY package*.json ./
 
