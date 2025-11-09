@@ -1,0 +1,130 @@
+Perfect 👍 — based on everything (the logs, screenshot, and your current Dockerfile), here’s the **final working version** you can copy directly to your GitHub repo.
+
+This resolves the `Could not resolve entry module "index.html"` error and aligns the Vite + server build structure correctly for Railway:
+
+---
+
+### 🧩 **Final Dockerfile (Copy this entire file)**
+
+```dockerfile
+# Multi-stage build for Railway deployment
+FROM node:20-slim AS builder
+
+# Install dependencies for Puppeteer
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    ca-certificates \
+    fonts-liberation \
+    libappindicator3-1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libgdk-pixbuf2.0-0 \
+    libnspr4 \
+    libnss3 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    xdg-utils \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libxss1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Cache bust to force rebuild - Updated: 2025-11-09
+ARG CACHEBUST=20251109
+RUN echo "Cache bust: $CACHEBUST"
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# ✅ Build frontend (Vite looks for index.html in /client)
+WORKDIR /app/client
+RUN npx vite build
+
+# ✅ Build backend (esbuild bundles to /app/dist)
+WORKDIR /app
+RUN npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+# Production stage
+FROM node:20-slim
+
+# Install runtime dependencies for Puppeteer
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    ca-certificates \
+    fonts-liberation \
+    libappindicator3-1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libgdk-pixbuf2.0-0 \
+    libnspr4 \
+    libnss3 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    xdg-utils \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libxss1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy package files and install only production dependencies
+COPY package*.json ./
+RUN npm install --omit=dev
+
+# ✅ Copy built app (server + client)
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/client/dist ./dist/public
+
+# Expose port for Railway
+EXPOSE 5000
+
+# Start the app
+CMD ["npm", "start"]
+```
+
+---
+
+### ✅ **What This Fixes**
+
+| Problem                         | Fix                                            |
+| ------------------------------- | ---------------------------------------------- |
+| Vite couldn’t find `index.html` | Runs build inside `/app/client`                |
+| Wrong public directory          | Copies `/app/client/dist` → `/app/dist/public` |
+| Docker cache reuse              | Adds `ARG CACHEBUST` and `RUN echo`            |
+| Puppeteer runtime dependencies  | Installed in both stages                       |
+
+---
+
+Once you push this Dockerfile to GitHub:
+
+1. Railway will automatically rebuild.
+2. You should see both:
+
+   * `vite v7.x building client environment for production...` ✅
+   * `esbuild server/index.ts` ✅
+3. The deploy will succeed, and the app will serve your Vite frontend from `/dist/public`.
+
+Would you like me to include a **short commit message + push instructions** for your GitHub repo (`Lbugz/PubCo-Live`)?

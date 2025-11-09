@@ -1,0 +1,95 @@
+✅ I’ve reviewed your uploaded deployment logs in detail — here’s what’s going on:
+
+---
+
+### 🔍 **Primary Error**
+
+```
+error during build:
+Could not resolve entry module "index.html".
+```
+
+➡️ This is thrown by **Vite** during `npx vite build`, confirming that Vite can’t locate your app’s entry file (`index.html`) in the directory it’s told to treat as the `root`.
+
+---
+
+### ⚙️ **Current Build Context**
+
+From your `vite.config.ts` (as seen earlier):
+
+```ts
+root: path.resolve(import.meta.dirname, "client"),
+outDir: path.resolve(import.meta.dirname, "dist/public")
+```
+
+* **Root** = `/app/client`
+* **Output** = `/app/dist/public`
+
+But in your **Dockerfile**, you’re currently running:
+
+```dockerfile
+RUN npx vite build && npx esbuild server/index.ts ...
+```
+
+with **no `--config` or `--cwd` argument**, meaning the working directory at build time (`/app`) does **not** contain `index.html`.
+
+---
+
+### 💡 **Fix**
+
+You have **two options**:
+
+#### **Option 1 — Simplest fix (recommended)**
+
+Add this line **before the build step** in your Dockerfile:
+
+```dockerfile
+WORKDIR /app/client
+RUN npx vite build
+WORKDIR /app
+RUN npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+```
+
+That ensures Vite runs from the correct context (where `index.html` actually lives).
+
+#### **Option 2 — Use explicit config path**
+
+Keep working directory as `/app`, but tell Vite where to build:
+
+```dockerfile
+RUN npx vite build --config client/vite.config.ts
+```
+
+Both approaches tell Vite where `index.html` is.
+
+---
+
+### 🧱 **Final Dockerfile Section Example**
+
+Here’s what the corrected build section should look like:
+
+```dockerfile
+# Copy source code
+COPY . .
+
+# Build frontend and backend
+WORKDIR /app/client
+RUN npx vite build
+
+WORKDIR /app
+RUN npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+```
+
+---
+
+### ✅ **Summary**
+
+| Issue                                         | Root Cause                                                    | Fix                                                        |
+| --------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------- |
+| `Could not resolve entry module "index.html"` | Vite run from `/app`, but `index.html` lives in `/app/client` | Run `vite build` from `/app/client` or specify config path |
+
+---
+
+If you update your Dockerfile with that `WORKDIR /app/client` block and redeploy, the build should **succeed** and produce `dist/public/` properly.
+
+Would you like me to show the **full corrected multi-stage Dockerfile** including this change, ready to copy over?
