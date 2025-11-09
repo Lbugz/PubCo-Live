@@ -24,8 +24,11 @@ app.post('/scrape-playlist', async (req, res) => {
     });
   }
   
+  const startTime = Date.now();
+  console.log(`[Scraper API] =====================================`);
   console.log(`[Scraper API] Received request for: ${playlistUrl}`);
   console.log(`[Scraper API] Cookies provided: ${cookies ? 'YES' : 'NO'}`);
+  console.log(`[Scraper API] Memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
   let browser;
   
   try {
@@ -33,12 +36,16 @@ app.post('/scrape-playlist', async (req, res) => {
     const allItems = [];
     
     browser = await puppeteer.launch({
-      headless: false,
+      headless: 'new',
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
+        '--disable-extensions',
+        '--disable-accelerated-2d-canvas',
+        '--single-process',
+        '--no-zygote',
         '--window-size=1440,900',
       ],
       defaultViewport: { width: 1440, height: 900 },
@@ -143,15 +150,6 @@ if (!consentAccepted) {
       });
     }
     
-    try {
-      await page.waitForSelector('#onetrust-accept-btn-handler, button[id*="accept"]', { timeout: 5000 });
-      await page.click('#onetrust-accept-btn-handler, button[id*="accept"]');
-      console.log(`[Scraper] Cookie consent dismissed`);
-      await wait(2000);
-    } catch {
-      console.log(`[Scraper] No cookie consent`);
-    }
-    
     await wait(3000);
     console.log(`[Scraper] Initial items captured: ${allItems.length}`);
     
@@ -185,29 +183,47 @@ if (!consentAccepted) {
       })
       .filter(t => t !== null);
     
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    const memoryUsed = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+    
     console.log(`[Scraper] ✅ Success! Returning ${tracks.length} tracks`);
+    console.log(`[Scraper] Duration: ${duration}s | Memory: ${memoryUsed}MB`);
+    console.log(`[Scraper API] =====================================`);
     
     res.json({
       success: true,
       tracks,
       totalCaptured: tracks.length,
-      method: 'network-capture'
+      method: 'network-capture',
+      duration: `${duration}s`,
+      memoryUsed: `${memoryUsed}MB`
     });
     
   } catch (error) {
-    console.error(`[Scraper] Error:`, error.message);
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    const memoryUsed = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+    
+    console.error(`[Scraper] ❌ Error after ${duration}s:`, error.message);
+    console.error(`[Scraper] Error stack:`, error.stack);
+    console.error(`[Scraper] Memory at error: ${memoryUsed}MB`);
+    console.log(`[Scraper API] =====================================`);
     
     if (browser) {
       try {
         await browser.close();
-      } catch {}
+        console.log(`[Scraper] Browser closed after error`);
+      } catch (closeError) {
+        console.error(`[Scraper] Failed to close browser:`, closeError.message);
+      }
     }
     
     res.status(500).json({
       success: false,
       error: error.message,
       tracks: [],
-      totalCaptured: 0
+      totalCaptured: 0,
+      duration: `${duration}s`,
+      memoryUsed: `${memoryUsed}MB`
     });
   }
 });
