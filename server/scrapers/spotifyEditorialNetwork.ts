@@ -65,8 +65,18 @@ export async function fetchEditorialTracksViaNetwork(
     const allItems: any[] = [];
     
     // Intercept network responses - capture ALL JSON to see what Spotify uses
+    let responseCount = 0;
     page.on("response", async (res) => {
       const url = res.url();
+      
+      // DEBUG: Log ALL Spotify requests to see what's happening
+      if (url.includes('spotify.com') || url.includes('spclient')) {
+        responseCount++;
+        if (responseCount <= 10) { // Only log first 10 to avoid spam
+          console.log(`[Network Capture] Response #${responseCount}: ${url.substring(0, 120)}`);
+          console.log(`[Network Capture] Content-Type: ${res.headers()["content-type"]}`);
+        }
+      }
       
       // Only process JSON responses from Spotify domains
       if (!url.includes('spotify.com') && !url.includes('spclient')) return;
@@ -107,8 +117,12 @@ export async function fetchEditorialTracksViaNetwork(
             console.log(`[Network Capture] ✅ Captured page offset=${offset} count=${items.length} total=${allItems.length}`);
           }
         }
-      } catch (err) {
-        // Silently ignore parsing errors
+      } catch (err: any) {
+        // Log parsing errors to debug
+        if (url.includes('playlist') || url.includes('track')) {
+          console.log(`[Network Capture] ⚠️  Error parsing response from: ${url.substring(0, 100)}`);
+          console.log(`[Network Capture] Error: ${err.message}`);
+        }
       }
     });
     
