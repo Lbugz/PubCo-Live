@@ -42,11 +42,11 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# ✅ Build frontend (Vite looks for index.html in /client)
+# Build frontend (Vite looks for index.html in /client)
 WORKDIR /app/client
 RUN npx vite build
 
-# ✅ Build backend (esbuild bundles to /app/dist)
+# Build backend (esbuild bundles to /app/dist)
 WORKDIR /app
 RUN npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
@@ -81,16 +81,15 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy package files and install only production dependencies
+# Copy package files and install production dependencies
 COPY package*.json ./
 RUN npm install --omit=dev
 
-# ✅ Copy built app (server + client)
+# Copy built application (contains both server and frontend)
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/client/dist ./dist/public
 
 # Expose port for Railway
 EXPOSE 5000
 
-# Start the app
+# Start application
 CMD ["npm", "start"]
