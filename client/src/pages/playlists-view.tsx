@@ -155,7 +155,9 @@ export default function PlaylistsView() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4 slide-up">
         <div>
-          <h1 className="text-3xl font-bold mb-2 gradient-text">Playlists</h1>
+          <h1 className="font-display text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent animate-gradient mb-2">
+            Playlists
+          </h1>
           <p className="text-muted-foreground">
             Manage and track your Spotify playlists
           </p>
@@ -187,7 +189,7 @@ export default function PlaylistsView() {
           {spotifyStatus?.authenticated === false && (
             <Button
               onClick={handleAuthorizeSpotify}
-              variant="default"
+              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity"
               data-testid="button-authorize-spotify"
             >
               Authorize Spotify
