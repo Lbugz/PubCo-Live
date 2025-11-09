@@ -33,11 +33,11 @@ export default function PlaylistsView() {
     queryKey: ["/api/tracked-playlists"],
   });
 
-  // Auto-update selectedPlaylist when playlists data changes
+  // Auto-update selectedPlaylist when playlists data changes (with guard to prevent infinite loop)
   useEffect(() => {
     if (selectedPlaylist && playlists.length > 0) {
       const updated = playlists.find(p => p.id === selectedPlaylist.id);
-      if (updated) {
+      if (updated && updated !== selectedPlaylist) {
         setSelectedPlaylist(updated);
       }
     }
@@ -348,10 +348,11 @@ export default function PlaylistsView() {
                     <TableCell>{getStatusBadge(playlist.status)}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuTrigger asChild>
                           <Button 
                             variant="ghost" 
                             size="icon"
+                            onClick={(e) => e.stopPropagation()}
                             data-testid={`button-playlist-actions-${playlist.id}`}
                           >
                             <MoreVertical className="h-4 w-4" />
