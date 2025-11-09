@@ -43,6 +43,29 @@ export default function PlaylistsView() {
     }
   }, [playlists, selectedPlaylist?.id]);
 
+  const enrichTracksMutation = useMutation({
+    mutationFn: async (playlistId: string) => {
+      const response = await apiRequest("POST", `/api/playlists/${playlistId}/enrich-tracks`, {});
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Track enrichment complete",
+        description: `${data.enrichedCount} tracks enriched with credits, ${data.failedCount} failed`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/playlist-snapshot"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Enrichment failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const fetchPlaylistDataMutation = useMutation({
     mutationFn: async (spotifyPlaylistId: string) => {
       const response = await apiRequest("POST", "/api/fetch-playlists", { 
@@ -63,6 +86,16 @@ export default function PlaylistsView() {
       
       queryClient.invalidateQueries({ queryKey: ["/api/playlist-snapshot"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
+      
+      // Auto-trigger enrichment after successful fetch
+      if (playlist && totalNew > 0) {
+        console.log(`Auto-triggering enrichment for playlist ${playlist.id}...`);
+        toast({
+          title: "Starting track enrichment",
+          description: "Fetching songwriters and publishers...",
+        });
+        enrichTracksMutation.mutate(playlist.playlistId);
+      }
     },
     onError: (error: Error) => {
       toast({

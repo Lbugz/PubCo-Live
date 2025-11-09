@@ -19,6 +19,7 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   publisher: text("publisher"),
   songwriter: text("songwriter"),
   enrichedAt: timestamp("enriched_at"),
+  enrichmentStatus: text("enrichment_status").default("pending"),
   instagram: text("instagram"),
   twitter: text("twitter"),
   tiktok: text("tiktok"),

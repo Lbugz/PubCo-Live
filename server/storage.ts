@@ -117,7 +117,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(playlistSnapshots).where(eq(playlistSnapshots.week, week));
   }
 
-  async updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; songwriter?: string; enrichedAt?: Date }): Promise<void> {
+  async updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; songwriter?: string; enrichedAt?: Date; enrichmentStatus?: string }): Promise<void> {
     await db.update(playlistSnapshots)
       .set(metadata)
       .where(eq(playlistSnapshots.id, id));
@@ -128,6 +128,22 @@ export class DatabaseStorage implements IStorage {
       .from(playlistSnapshots)
       .where(sql`${playlistSnapshots.enrichedAt} IS NULL`)
       .limit(limit);
+  }
+
+  async getUnenrichedTracksByPlaylist(playlistId: string, limit: number = 50): Promise<PlaylistSnapshot[]> {
+    return db.select()
+      .from(playlistSnapshots)
+      .where(
+        sql`${playlistSnapshots.playlistId} = ${playlistId} AND (${playlistSnapshots.enrichmentStatus} = 'pending' OR ${playlistSnapshots.enrichmentStatus} IS NULL)`
+      )
+      .limit(limit);
+  }
+
+  async updateEnrichmentStatus(trackIds: string[], status: string): Promise<void> {
+    if (trackIds.length === 0) return;
+    await db.update(playlistSnapshots)
+      .set({ enrichmentStatus: status })
+      .where(sql`${playlistSnapshots.id} IN (${sql.join(trackIds.map(id => sql`${id}`), sql`, `)})`);
   }
 
   async getAllTags(): Promise<Tag[]> {

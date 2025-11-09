@@ -661,6 +661,175 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Railway-backed track enrichment endpoint
+  app.post("/api/playlists/:playlistId/enrich-tracks", async (req, res) => {
+    const enrichingTrackIds: string[] = [];
+    
+    try {
+      const { playlistId } = req.params;
+      const scraperApiUrl = process.env.SCRAPER_API_URL;
+
+      if (!scraperApiUrl) {
+        return res.status(500).json({
+          success: false,
+          error: 'SCRAPER_API_URL not configured'
+        });
+      }
+
+      // Get unenriched tracks for this playlist
+      const unenrichedTracks = await storage.getUnenrichedTracksByPlaylist(playlistId, 100);
+
+      if (unenrichedTracks.length === 0) {
+        return res.json({
+          success: true,
+          enrichedCount: 0,
+          failedCount: 0,
+          totalProcessed: 0,
+          message: 'No tracks need enrichment'
+        });
+      }
+
+      console.log(`Starting Railway enrichment for ${unenrichedTracks.length} tracks...`);
+
+      // Mark tracks as enriching and track IDs for cleanup
+      enrichingTrackIds.push(...unenrichedTracks.map(t => t.id));
+      await storage.updateEnrichmentStatus(enrichingTrackIds, 'enriching');
+
+      // Split into batches of 12 tracks (Railway limit)
+      const BATCH_SIZE = 12;
+      const batches = [];
+      for (let i = 0; i < unenrichedTracks.length; i += BATCH_SIZE) {
+        batches.push(unenrichedTracks.slice(i, i + BATCH_SIZE));
+      }
+
+      console.log(`Processing ${batches.length} batches...`);
+
+      let enrichedCount = 0;
+      let failedCount = 0;
+      const failedTrackIds: string[] = [];
+
+      // Process batches sequentially
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        console.log(`Processing batch ${i + 1}/${batches.length} (${batch.length} tracks)...`);
+
+        try {
+          // Load cookies
+          const fs = await import('fs');
+          const path = await import('path');
+          const cookiesPath = path.join(process.cwd(), 'spotify-cookies.json');
+          let spotifyCookies = null;
+
+          if (fs.existsSync(cookiesPath)) {
+            const cookiesData = fs.readFileSync(cookiesPath, 'utf8');
+            spotifyCookies = JSON.parse(cookiesData);
+          }
+
+          // Call Railway scraper
+          const response = await fetch(`${scraperApiUrl}/enrich-tracks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tracks: batch.map(t => ({
+                trackId: t.id,
+                spotifyUrl: t.spotifyUrl
+              })),
+              cookies: spotifyCookies
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`Railway API returned ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          // Update database with results
+          for (const result of data.results) {
+            const track = batch.find(t => t.id === result.trackId);
+            if (!track) continue;
+
+            if (result.success && result.credits) {
+              // Combine songwriters and composers
+              const songwriters = [
+                ...(result.credits.songwriters || []),
+                ...(result.credits.composers || [])
+              ].filter(Boolean);
+
+              const publishers = result.credits.publishers || [];
+              const labels = result.credits.labels || [];
+
+              await storage.updateTrackMetadata(result.trackId, {
+                songwriter: songwriters.length > 0 ? songwriters.join(', ') : undefined,
+                publisher: publishers.length > 0 ? publishers.join(', ') : undefined,
+                label: labels.length > 0 ? labels.join(', ') : undefined,
+                enrichedAt: new Date(),
+                enrichmentStatus: 'completed'
+              });
+
+              enrichedCount++;
+              console.log(`✅ Enriched: ${track.trackName}`);
+            } else {
+              // Mark as failed
+              await storage.updateTrackMetadata(result.trackId, {
+                enrichmentStatus: 'failed'
+              });
+              failedCount++;
+              failedTrackIds.push(result.trackId);
+              console.warn(`❌ Failed: ${track.trackName} - ${result.error}`);
+            }
+          }
+
+          console.log(`Batch ${i + 1} complete: ${data.summary.succeeded} succeeded, ${data.summary.failed} failed`);
+
+        } catch (error: any) {
+          console.error(`Batch ${i + 1} error:`, error.message);
+          
+          // Mark all tracks in batch as failed
+          for (const track of batch) {
+            await storage.updateTrackMetadata(track.id, {
+              enrichmentStatus: 'failed'
+            });
+            failedCount++;
+            failedTrackIds.push(track.id);
+          }
+        }
+
+        // Brief pause between batches
+        if (i < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      res.json({
+        success: true,
+        enrichedCount,
+        failedCount,
+        totalProcessed: unenrichedTracks.length,
+        failedTrackIds,
+        message: `Railway enrichment complete: ${enrichedCount} succeeded, ${failedCount} failed`
+      });
+
+    } catch (error: any) {
+      console.error('Error in Railway enrichment:', error);
+      
+      // Reset any tracks still in enriching state back to pending
+      if (enrichingTrackIds.length > 0) {
+        try {
+          await storage.updateEnrichmentStatus(enrichingTrackIds, 'pending');
+          console.log(`Reset ${enrichingTrackIds.length} tracks from 'enriching' to 'pending' after error`);
+        } catch (resetError) {
+          console.error('Failed to reset enriching tracks:', resetError);
+        }
+      }
+      
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to enrich tracks'
+      });
+    }
+  });
+
   app.post("/api/tracks/:trackId/ai-insights", async (req, res) => {
     try {
       const track = await storage.getTrackById(req.params.trackId);
