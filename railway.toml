@@ -1,9 +1,8 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install && npx esbuild server/scraper-server.ts --platform=node --external:puppeteer --external:express --bundle --format=esm --outfile=dist/scraper.js && ls -la dist/"
 
 [deploy]
-startCommand = "node dist/scraper.js"
+startCommand = "npx tsx server/scraper-server.ts"
 
 [nixpacks]
 aptPkgs = [
