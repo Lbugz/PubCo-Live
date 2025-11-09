@@ -91,6 +91,19 @@ export async function fetchEditorialTracksViaNetwork(
         console.log(`[Network Capture] JSON from: ${url.substring(0, 120)}`);
         console.log(`[Network Capture] JSON keys: ${Object.keys(json).join(', ')}`);
         
+        // Check for Spotify's NEW GraphQL pathfinder API
+        if (url.includes('pathfinder') && json?.data) {
+          console.log(`[Network Capture] 🔍 Pathfinder data keys: ${Object.keys(json.data).join(', ')}`);
+          // Dive deeper into the data structure
+          if (typeof json.data === 'object') {
+            for (const key of Object.keys(json.data)) {
+              if (json.data[key] && typeof json.data[key] === 'object') {
+                console.log(`[Network Capture] 🔍 data.${key} keys: ${Object.keys(json.data[key]).join(', ')}`);
+              }
+            }
+          }
+        }
+        
         // Log all Spotify JSON responses to understand their structure
         if (json?.items || json?.tracks || json?.content) {
           console.log(`[Network Capture] ✅ Found items/tracks/content array!`);
