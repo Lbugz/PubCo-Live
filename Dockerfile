@@ -80,9 +80,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --omit=dev
 
-# Copy built application from builder
+# Copy built application from builder (includes both server and frontend)
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/client/dist ./client/dist
 
 # Expose port (Railway will provide PORT env var)
 EXPOSE 5000
