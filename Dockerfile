@@ -29,24 +29,19 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Cache bust to force rebuild - Updated: 2025-11-09
-ARG CACHEBUST=20251109
-RUN echo "Cache bust: $CACHEBUST"
+# Cache bust - change this number if cache issues persist
+ARG CACHEBUST=2025110902
+RUN echo "Build: $CACHEBUST"
 
-# Copy package files
+# Copy package files and install ALL dependencies
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
 
-# Copy source code
+# Copy all source code
 COPY . .
 
-# Build frontend using locally installed vite
-RUN ./node_modules/.bin/vite build
-
-# Build backend
-RUN ./node_modules/.bin/esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+# Run the build script from package.json
+RUN npm run build
 
 # Production stage
 FROM node:20-slim
@@ -83,10 +78,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --omit=dev
 
-# Copy built application from builder
+# Copy built application
 COPY --from=builder /app/dist ./dist
 
-# Expose port for Railway
+# Expose port
 EXPOSE 5000
 
 # Start application
