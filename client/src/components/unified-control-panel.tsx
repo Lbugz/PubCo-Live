@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { StatCard } from "@/components/stat-card";
+import { StatsCard } from "@/components/stats-card";
 import {
   Select,
   SelectContent,
@@ -189,27 +189,27 @@ export function UnifiedControlPanel({
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
+        <StatsCard
           title="Total Tracks"
           value={totalTracks.toLocaleString()}
           icon={Music}
           variant="default"
         />
-        <StatCard
+        <StatsCard
           title="High Potential"
           value={highPotential.toLocaleString()}
           subtitle="Score 7-10"
           icon={Target}
-          variant="high"
+          variant="success"
         />
-        <StatCard
+        <StatsCard
           title="Medium Potential"
           value={mediumPotential.toLocaleString()}
           subtitle="Score 4-6"
           icon={TrendingUp}
-          variant="medium"
+          variant="warning"
         />
-        <StatCard
+        <StatsCard
           title="Avg Score"
           value={avgScore.toFixed(1)}
           subtitle="Out of 10"

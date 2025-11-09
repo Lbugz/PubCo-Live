@@ -138,11 +138,6 @@ export default function Dashboard() {
     queryKey: ["/api/tags"],
   });
 
-  const { data: spotifyStatus, refetch: refetchSpotifyStatus } = useQuery<{ authenticated: boolean }>({
-    queryKey: ["/api/spotify/status"],
-    refetchInterval: 3000, // Poll every 3s to check auth status
-  });
-
   const fetchPlaylistsMutation = useMutation({
     mutationFn: async ({ mode = 'all', playlistId }: { mode?: string; playlistId?: string }) => {
       console.log("Starting fetch playlists mutation...", { mode, playlistId });
@@ -520,7 +515,7 @@ export default function Dashboard() {
   const exportButton = useMemo(() => (
     <Button
       onClick={handleExport}
-      variant="outline"
+      variant="gradient"
       size="default"
       className="gap-2"
       disabled={!tracks || tracks.length === 0}
@@ -540,33 +535,26 @@ export default function Dashboard() {
     </Button>
   ), []);
 
-  const authorizeSpotifyButton = useMemo(() => {
-    if (spotifyStatus?.authenticated) return null;
-    return (
-      <Button
-        onClick={() => window.open("/api/spotify/auth", "_blank")}
-        variant="gradient"
-        size="default"
-        className="gap-2"
-        data-testid="button-authorize-spotify"
-      >
-        <Music2 className="h-4 w-4" />
-        <span className="hidden sm:inline">Authorize Spotify</span>
-      </Button>
-    );
-  }, [spotifyStatus?.authenticated]);
-
   return (
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6 fade-in">
+          {/* Header */}
+          <div className="slide-up">
+            <h1 className="font-display text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent animate-gradient mb-2">
+              Tracks
+            </h1>
+            <p className="text-muted-foreground">
+              Discover and manage unsigned talent from your Spotify playlists
+            </p>
+          </div>
+
           {/* Unified Control Panel */}
           <UnifiedControlPanel
             totalTracks={tracks?.length || 0}
             highPotential={highPotentialCount}
             mediumPotential={mediumPotentialCount}
             avgScore={parseFloat(avgScore)}
-            authorizeSpotifyButton={authorizeSpotifyButton}
             fetchDataButton={fetchDataButton}
             enrichMBButton={enrichMBButton}
             enrichCreditsButton={enrichCreditsButton}
