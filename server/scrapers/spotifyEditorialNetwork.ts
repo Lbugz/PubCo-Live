@@ -63,6 +63,7 @@ export async function fetchEditorialTracksViaNetwork(
     // Accumulator for captured data
     const seenOffsets = new Set<number>();
     const allItems: any[] = [];
+    const capturedTracks = new Set<string>(); // Track duplicate tracks from GraphQL
     
     // Intercept network responses - capture ALL JSON to see what Spotify uses
     let responseCount = 0;
@@ -114,7 +115,7 @@ export async function fetchEditorialTracksViaNetwork(
               const artistNames = trackData.artists?.items?.map((a: any) => a.profile?.name).filter(Boolean) || [];
               const albumName = trackData.albumOfTrack?.name || null;
               
-              allTracks.push({
+              allItems.push({
                 id: trackId,
                 name: trackName,
                 artists: artistNames,
@@ -126,7 +127,7 @@ export async function fetchEditorialTracksViaNetwork(
             }
           }
           
-          console.log(`[Network Capture] Total captured: ${allTracks.length} unique tracks`);
+          console.log(`[Network Capture] Total captured from pathfinder: ${allItems.length} unique tracks`);
           return; // Skip old format parsing
         }
         
