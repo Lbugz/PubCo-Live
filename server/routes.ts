@@ -903,8 +903,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 try {
                   const fs = await import('fs');
                   const path = await import('path');
-                  const cookiesPath = path.join(process.cwd(), 'spotify-cookies.json');
-                  
+                  const cookiesPath = path.join(process.cwd(), 'spotify_cookies.json');
+
                   if (fs.existsSync(cookiesPath)) {
                     const cookiesData = fs.readFileSync(cookiesPath, 'utf8');
                     spotifyCookies = JSON.parse(cookiesData);
