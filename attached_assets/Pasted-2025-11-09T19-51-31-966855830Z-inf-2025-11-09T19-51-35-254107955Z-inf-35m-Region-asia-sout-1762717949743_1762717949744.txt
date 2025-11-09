@@ -1,0 +1,107 @@
+2025-11-09T19:51:31.966855830Z [inf]  
+2025-11-09T19:51:35.254107955Z [inf]  [35m[Region: asia-southeast1][0m
+2025-11-09T19:51:35.260791009Z [inf]  [35m=========================
+2025-11-09T19:51:35.260814857Z [inf]  Using Detected Dockerfile
+2025-11-09T19:51:35.260818482Z [inf]  =========================
+2025-11-09T19:51:35.260822055Z [inf]  [0m
+2025-11-09T19:51:35.260834542Z [inf]  context: 3c4x-
+2025-11-09T19:51:35.425783578Z [inf]  [internal] load build definition from Dockerfile
+2025-11-09T19:51:35.425828580Z [inf]  [internal] load build definition from Dockerfile
+2025-11-09T19:51:35.425844485Z [inf]  [internal] load build definition from Dockerfile
+2025-11-09T19:51:35.425856561Z [inf]  [internal] load build definition from Dockerfile
+2025-11-09T19:51:35.431855122Z [inf]  [internal] load build definition from Dockerfile
+2025-11-09T19:51:35.434053526Z [inf]  [internal] load metadata for docker.io/library/node:20-slim
+2025-11-09T19:51:36.161182114Z [inf]  [internal] load metadata for docker.io/library/node:20-slim
+2025-11-09T19:51:36.161658480Z [inf]  [internal] load .dockerignore
+2025-11-09T19:51:36.161691234Z [inf]  [internal] load .dockerignore
+2025-11-09T19:51:36.161704322Z [inf]  [internal] load .dockerignore
+2025-11-09T19:51:36.161750076Z [inf]  [internal] load .dockerignore
+2025-11-09T19:51:36.169089570Z [inf]  [internal] load .dockerignore
+2025-11-09T19:51:36.173267657Z [inf]  [builder 8/8] RUN npm run build
+2025-11-09T19:51:36.173299205Z [inf]  [builder 7/8] COPY . .
+2025-11-09T19:51:36.173311107Z [inf]  [builder 6/8] RUN npm install
+2025-11-09T19:51:36.173321094Z [inf]  [builder 5/8] COPY package*.json ./
+2025-11-09T19:51:36.173335183Z [inf]  [builder 4/8] RUN echo "Cache bust: 202511091940"
+2025-11-09T19:51:36.173342126Z [inf]  [stage-1 5/6] RUN npm install --omit=dev
+2025-11-09T19:51:36.173347820Z [inf]  [stage-1 4/6] COPY package*.json ./
+2025-11-09T19:51:36.173353817Z [inf]  [internal] load build context
+2025-11-09T19:51:36.173360052Z [inf]  [builder 3/8] WORKDIR /app
+2025-11-09T19:51:36.173372056Z [inf]  [builder 2/8] RUN apt-get update && apt-get install -y     wget     gnupg     ca-certificates     fonts-liberation     libappindicator3-1     libasound2     libatk-bridge2.0-0     libatk1.0-0     libcups2     libdbus-1-3     libgdk-pixbuf2.0-0     libnspr4     libnss3     libx11-xcb1     libxcomposite1     libxdamage1     libxrandr2     xdg-utils     libgbm1     libpango-1.0-0     libcairo2     libxss1     && rm -rf /var/lib/apt/lists/*
+2025-11-09T19:51:36.173379060Z [inf]  [builder 1/8] FROM docker.io/library/node:20-slim@sha256:12541e65a3777c6035245518eb43006ed08ca8c684e68cd04ecb4653bdf6cfe1
+2025-11-09T19:51:36.173394626Z [inf]  [stage-1 6/6] COPY --from=builder /app/dist ./dist
+2025-11-09T19:51:36.173407853Z [inf]  [internal] load build context
+2025-11-09T19:51:36.173416607Z [inf]  [builder 1/8] FROM docker.io/library/node:20-slim@sha256:12541e65a3777c6035245518eb43006ed08ca8c684e68cd04ecb4653bdf6cfe1
+2025-11-09T19:51:36.178968375Z [inf]  [builder 1/8] FROM docker.io/library/node:20-slim@sha256:12541e65a3777c6035245518eb43006ed08ca8c684e68cd04ecb4653bdf6cfe1
+2025-11-09T19:51:36.180262104Z [inf]  [builder 2/8] RUN apt-get update && apt-get install -y     wget     gnupg     ca-certificates     fonts-liberation     libappindicator3-1     libasound2     libatk-bridge2.0-0     libatk1.0-0     libcups2     libdbus-1-3     libgdk-pixbuf2.0-0     libnspr4     libnss3     libx11-xcb1     libxcomposite1     libxdamage1     libxrandr2     xdg-utils     libgbm1     libpango-1.0-0     libcairo2     libxss1     && rm -rf /var/lib/apt/lists/*
+2025-11-09T19:51:36.180283227Z [inf]  [builder 3/8] WORKDIR /app
+2025-11-09T19:51:36.180301427Z [inf]  [internal] load build context
+2025-11-09T19:51:36.180309181Z [inf]  [builder 4/8] RUN echo "Cache bust: 202511091940"
+2025-11-09T19:51:36.188268622Z [inf]  [internal] load build context
+2025-11-09T19:51:36.191155551Z [inf]  [stage-1 4/6] COPY package*.json ./
+2025-11-09T19:51:36.191204397Z [inf]  [stage-1 5/6] RUN npm install --omit=dev
+2025-11-09T19:51:36.258965752Z [inf]  Cache bust: 202511091940
+
+2025-11-09T19:51:36.291351755Z [inf]  [builder 4/8] RUN echo "Cache bust: 202511091940"
+2025-11-09T19:51:36.292840601Z [inf]  [builder 5/8] COPY package*.json ./
+2025-11-09T19:51:36.311087086Z [inf]  [builder 5/8] COPY package*.json ./
+2025-11-09T19:51:36.312215969Z [inf]  [builder 6/8] RUN npm install
+2025-11-09T19:51:41.648728111Z [inf]  npm warn deprecated puppeteer@22.15.0: < 24.15.0 is no longer supported
+
+2025-11-09T19:51:41.744708023Z [inf]  npm warn deprecated puppeteer@22.15.0: < 24.15.0 is no longer supported
+
+2025-11-09T19:51:53.690650884Z [inf]  
+added 189 packages, and audited 190 packages in 17s
+
+24 packages are looking for funding
+
+2025-11-09T19:51:53.690670052Z [inf]    run `npm fund` for details
+
+2025-11-09T19:51:53.691447492Z [inf]  
+found 0 vulnerabilities
+
+2025-11-09T19:51:53.692447415Z [inf]  npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.6.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.2
+npm notice To update run: npm install -g npm@11.6.2
+npm notice
+
+2025-11-09T19:51:53.699600482Z [inf]  
+added 189 packages, and audited 190 packages in 17s
+
+2025-11-09T19:51:53.699613136Z [inf]  
+
+2025-11-09T19:51:53.699616593Z [inf]  24 packages are looking for funding
+
+2025-11-09T19:51:53.699644544Z [inf]    run `npm fund` for details
+
+2025-11-09T19:51:53.700475999Z [inf]  
+found 0 vulnerabilities
+
+2025-11-09T19:51:53.701492007Z [inf]  npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.6.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.2
+npm notice To update run: npm install -g npm@11.6.2
+npm notice
+
+2025-11-09T19:51:54.072445398Z [inf]  [stage-1 5/6] RUN npm install --omit=dev
+2025-11-09T19:51:54.077228036Z [inf]  [builder 6/8] RUN npm install
+2025-11-09T19:51:54.078602705Z [inf]  [builder 7/8] COPY . .
+2025-11-09T19:51:54.135609863Z [inf]  [builder 7/8] COPY . .
+2025-11-09T19:51:54.137588720Z [inf]  [builder 8/8] RUN npm run build
+2025-11-09T19:51:54.303308293Z [inf]  npm error Missing script: "build"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+
+2025-11-09T19:51:54.304818101Z [inf]  npm error A complete log of this run can be found in: /root/.npm/_logs/2025-11-09T19_51_54_256Z-debug-0.log
+
+2025-11-09T19:51:54.335435126Z [err]  [builder 8/8] RUN npm run build
+2025-11-09T19:51:54.351023252Z [err]  Dockerfile:46
+2025-11-09T19:51:54.351047684Z [err]  -------------------
+2025-11-09T19:51:54.351052067Z [err]  44 |
+2025-11-09T19:51:54.351056277Z [err]  45 |     # Build application using package.json script
+2025-11-09T19:51:54.351061875Z [err]  46 | >>> RUN npm run build
+2025-11-09T19:51:54.351065629Z [err]  47 |
+2025-11-09T19:51:54.351068804Z [err]  48 |     # Production stage
+2025-11-09T19:51:54.351072367Z [err]  -------------------
+2025-11-09T19:51:54.351076398Z [err]  ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
