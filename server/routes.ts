@@ -979,12 +979,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   fetchMethod = scraperData.method || 'microservice-scraper';
                   capturedTracks = scraperData.tracks;
                   
-                  // Update playlist metadata if totalTracks is available
-                  if (scraperData.totalTracks !== undefined && scraperData.totalTracks !== null) {
+                  // Update playlist metadata (totalTracks, curator, followers)
+                  const hasMetadata = 
+                    scraperData.totalTracks !== undefined || 
+                    scraperData.curator !== undefined || 
+                    scraperData.followers !== undefined;
+                  
+                  if (hasMetadata) {
                     await storage.updateTrackedPlaylistMetadata(playlist.id, {
-                      totalTracks: scraperData.totalTracks
+                      totalTracks: scraperData.totalTracks !== undefined ? scraperData.totalTracks : undefined,
+                      curator: scraperData.curator !== undefined ? scraperData.curator : undefined,
+                      followers: scraperData.followers !== undefined ? scraperData.followers : undefined,
                     });
-                    console.log(`Updated playlist totalTracks: ${scraperData.totalTracks}`);
+                    console.log(`Updated playlist metadata: totalTracks=${scraperData.totalTracks}, curator="${scraperData.curator}", followers=${scraperData.followers}`);
                   }
                 } else {
                   console.warn(`Scraper API returned 0 tracks for ${playlist.name}`);
