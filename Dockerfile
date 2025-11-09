@@ -29,18 +29,20 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Cache bust - change this number if cache issues persist
-ARG CACHEBUST=2025110902
-RUN echo "Build: $CACHEBUST"
+# Cache bust to force rebuild - Updated: 2025-11-09T19:40
+ARG CACHEBUST=202511091940
+RUN echo "Cache bust: $CACHEBUST"
 
-# Copy package files and install ALL dependencies
+# Copy package files
 COPY package*.json ./
+
+# Install dependencies (use npm install since there's no lock file)
 RUN npm install
 
-# Copy all source code
+# Copy source code
 COPY . .
 
-# Run the build script from package.json
+# Build application using package.json script
 RUN npm run build
 
 # Production stage
@@ -78,7 +80,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --omit=dev
 
-# Copy built application
+# Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
 # Expose port
