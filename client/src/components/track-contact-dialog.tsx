@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { User, Instagram, Twitter, Mail, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,9 +20,17 @@ interface TrackContactDialogProps {
   track: PlaylistSnapshot;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  children?: ReactNode;
+  asChild?: boolean;
 }
 
-export function TrackContactDialog({ track, open: controlledOpen, onOpenChange }: TrackContactDialogProps) {
+export function TrackContactDialog({
+  track,
+  open: controlledOpen,
+  onOpenChange,
+  children,
+  asChild,
+}: TrackContactDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
@@ -63,18 +71,24 @@ export function TrackContactDialog({ track, open: controlledOpen, onOpenChange }
     }
   };
 
+  const triggerAsChild = (asChild ?? !!children) && !!children;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant={hasContact ? "secondary" : "ghost"}
-          size="sm"
-          className="gap-2"
-          data-testid={`button-contact-${track.id}`}
-        >
-          <User className="h-4 w-4" />
-          <span className="hidden sm:inline">Contact</span>
-        </Button>
+      <DialogTrigger asChild={triggerAsChild}>
+        {triggerAsChild ? (
+          children
+        ) : (
+          <Button
+            variant={hasContact ? "secondary" : "ghost"}
+            size="sm"
+            className="gap-2"
+            data-testid={`button-contact-${track.id}`}
+          >
+            <User className="h-4 w-4" />
+            <span className="hidden sm:inline">Contact</span>
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-2xl" data-testid={`dialog-contact-${track.id}`}>
         <DialogHeader>

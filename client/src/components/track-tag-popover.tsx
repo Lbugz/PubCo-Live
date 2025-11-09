@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -17,9 +17,17 @@ interface TrackTagPopoverProps {
   trackId: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  children?: ReactNode;
+  asChild?: boolean;
 }
 
-export function TrackTagPopover({ trackId, open: controlledOpen, onOpenChange }: TrackTagPopoverProps) {
+export function TrackTagPopover({
+  trackId,
+  open: controlledOpen,
+  onOpenChange,
+  children,
+  asChild,
+}: TrackTagPopoverProps) {
   const { toast } = useToast();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -84,18 +92,24 @@ export function TrackTagPopover({ trackId, open: controlledOpen, onOpenChange }:
   const trackTagIds = new Set(trackTags.map((t) => t.id));
   const availableTags = allTags.filter((tag) => !trackTagIds.has(tag.id));
 
+  const triggerAsChild = (asChild ?? !!children) && !!children;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-2"
-          data-testid={`button-tag-track-${trackId}`}
-        >
-          <Tag className="h-4 w-4" />
-          Tag
-        </Button>
+      <PopoverTrigger asChild={triggerAsChild}>
+        {triggerAsChild ? (
+          children
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            data-testid={`button-tag-track-${trackId}`}
+          >
+            <Tag className="h-4 w-4" />
+            Tag
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-80" data-testid={`popover-tags-${trackId}`}>
         <div className="space-y-4">

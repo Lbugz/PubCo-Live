@@ -18,6 +18,9 @@ interface MusicBrainzRecording {
     label?: {
       name: string;
     };
+    work?: {
+      id: string;
+    };
   }>;
 }
 

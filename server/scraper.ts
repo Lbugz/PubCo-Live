@@ -50,7 +50,7 @@ function getChromiumPath(): string | undefined {
   }
 }
 
-interface ScrapedTrack {
+export interface ScrapedTrack {
   trackName: string;
   artistName: string;
   album: string;
@@ -58,7 +58,7 @@ interface ScrapedTrack {
   spotifyUrl: string;
 }
 
-interface ScrapeResult {
+export interface ScrapeResult {
   success: boolean;
   playlistName?: string;
   tracks?: ScrapedTrack[];
@@ -413,13 +413,10 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
     // Check if Credits section is visible using page.evaluate()
     let creditsFound = await page.evaluate(() => {
       const allElements = document.querySelectorAll('div, section');
-      for (const el of allElements) {
+      return Array.from(allElements).some((el) => {
         const text = el.textContent || '';
-        if (text.includes('Credits') && text.length < 100) {
-          return true;
-        }
-      }
-      return false;
+        return text.includes('Credits') && text.length < 100;
+      });
     });
     
     if (creditsFound) {
@@ -438,10 +435,12 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
           // Find and click "View credits" using page.evaluate()
           const creditsClicked = await page.evaluate(() => {
             const allButtons = document.querySelectorAll('button, [role="menuitem"]');
-            for (const btn of allButtons) {
+            for (const btn of Array.from(allButtons)) {
               const text = btn.textContent || '';
               if (text.toLowerCase().includes('view credits') || text.toLowerCase().includes('credits')) {
-                (btn as HTMLElement).click();
+                if (btn instanceof HTMLElement) {
+                  btn.click();
+                }
                 return true;
               }
             }

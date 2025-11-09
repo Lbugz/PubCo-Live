@@ -1,6 +1,9 @@
 import * as cron from "node-cron";
 import type { IStorage } from "./storage";
 import { getAuthStatus } from "./auth-monitor";
+import { calculateUnsignedScore } from "./scoring";
+import type { InsertPlaylistSnapshot } from "@shared/schema";
+import type { ScrapeResult } from "./scraper";
 
 /**
  * Automated Scraping Scheduler
@@ -154,10 +157,11 @@ export async function initializeScheduler(storage: IStorage) {
       
       // Fresh Finds playlist URL
       const FRESH_FINDS_URL = "https://open.spotify.com/playlist/37i9dQZF1DX4dyzvuaRJ0n";
+      const FRESH_FINDS_PLAYLIST_ID = "37i9dQZF1DX4dyzvuaRJ0n";
       
       try {
         // Try microservice first, fall back to direct scraping
-        let result;
+        let result: ScrapeResult | undefined;
         const microserviceUrl = process.env.SCRAPER_API_URL;
         
         if (microserviceUrl) {
@@ -168,30 +172,43 @@ export async function initializeScheduler(storage: IStorage) {
             body: JSON.stringify({ playlistUrl: FRESH_FINDS_URL }),
           });
           
-          result = await response.json();
+          result = await response.json() as ScrapeResult;
         } else {
           console.log("Microservice not available, using direct scraping...");
           const { scrapeSpotifyPlaylist } = await import("./scraper");
           result = await scrapeSpotifyPlaylist(FRESH_FINDS_URL);
         }
         
-        if (result.success && result.tracks) {
+        if (result?.success && result.tracks) {
           console.log(`✅ Scraped ${result.tracks.length} tracks from Fresh Finds`);
-          
+
           // Store tracks in database
-          const weekId = `week-${new Date().toISOString().split('T')[0]}`;
-          
-          const tracksToInsert = result.tracks.map(track => ({
-            week: weekId,
-            playlistName: result.playlistName || "Fresh Finds",
-            trackName: track.trackName,
-            artistName: track.artistName,
-            album: track.album,
-            duration: track.duration,
-            spotifyUrl: track.spotifyUrl,
-            addedAt: new Date(),
-          }));
-          
+          const today = new Date().toISOString().split('T')[0];
+          const playlistName = result.playlistName || "Fresh Finds";
+
+          const tracksToInsert: InsertPlaylistSnapshot[] = result.tracks.map(track => {
+            const score = calculateUnsignedScore({
+              playlistName,
+              label: null,
+              publisher: null,
+              writer: null,
+            });
+
+            return {
+              week: today,
+              playlistName,
+              playlistId: FRESH_FINDS_PLAYLIST_ID,
+              trackName: track.trackName,
+              artistName: track.artistName,
+              spotifyUrl: track.spotifyUrl,
+              isrc: null,
+              label: null,
+              unsignedScore: score,
+              addedAt: new Date(),
+              dataSource: "scraped",
+            };
+          });
+
           await storage.insertTracks(tracksToInsert);
           
           console.log(`✅ Stored ${result.tracks.length} tracks in database`);

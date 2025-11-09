@@ -326,20 +326,20 @@ export default function Dashboard() {
       const rows = exportTracks.map(track => [
         track.trackName,
         track.artistName,
-        track.albumName || "",
+        "",
         track.isrc || "",
         track.playlistName,
         track.label || "",
         track.publisher || "",
-        track.songwriters?.join("; ") || "",
-        track.composers?.join("; ") || "",
-        track.producers?.join("; ") || "",
+        track.songwriter || "",
+        "",
+        "",
         track.unsignedScore.toString(),
         track.instagram || "",
         track.twitter || "",
         track.tiktok || "",
         track.email || "",
-        track.notes || ""
+        track.contactNotes || ""
       ]);
       
       const csvContent = [
