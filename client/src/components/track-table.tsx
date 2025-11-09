@@ -105,8 +105,7 @@ export function TrackTable({
         <div className="flex items-center">
           {onToggleSelectAll && (
             <Checkbox
-              checked={allSelected}
-              indeterminate={someSelected ? true : undefined}
+              checked={someSelected ? "indeterminate" : allSelected}
               onCheckedChange={onToggleSelectAll}
               onClick={(e) => e.stopPropagation()}
               data-testid="checkbox-select-all"
