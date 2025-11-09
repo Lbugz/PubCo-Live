@@ -1,9 +1,9 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install && npm run build"
+buildCommand = "npm install --production && npx esbuild server/scraper-server.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/scraper.js"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "node dist/scraper.js"
 
 [nixpacks]
 aptPkgs = [
