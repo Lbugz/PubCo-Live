@@ -1,0 +1,37 @@
+# Check if scraper.js is in root
+cat scraper.js | head -20
+total 492
+drwxr-xr-x 1 runner runner    854 Nov  9 01:16 .
+drwxrwxrwx 1 runner runner     70 Nov  8 23:51 ..
+drwxr-xr-x 1 runner runner   7214 Nov  9 01:16 attached_assets
+drwxr-xr-x 1 runner runner     60 Nov  7 20:16 .cache
+drwxr-xr-x 1 runner runner     38 Nov  6 02:51 client
+-rw-r--r-- 1 runner runner    459 Nov  6 02:48 components.json
+drwx------ 1 runner runner     88 Nov  7 19:49 .config
+-rw-r--r-- 1 runner runner   8367 Nov  8 18:00 COOKIE_SETUP.md
+-rw-r--r-- 1 runner runner   5341 Nov  6 02:49 design_guidelines.md
+-rw-r--r-- 1 runner runner    325 Nov  6 02:48 drizzle.config.ts
+-rw-r--r-- 1 runner runner   3091 Nov  7 22:04 extract-spotify-cookies.cjs
+drwxr-xr-x 1 runner runner    148 Nov  9 01:16 .git
+-rw-r--r-- 1 runner runner     88 Nov  7 21:48 .gitignore
+drwxr-xr-x 1 runner runner     10 Nov  6 02:39 .local
+drwxr-xr-x 1 runner runner   8462 Nov  8 17:55 node_modules
+-rw-r--r-- 1 runner runner   3739 Nov  8 17:55 package.json
+-rw-r--r-- 1 runner runner 332441 Nov  8 17:55 package-lock.json
+-rw-r--r-- 1 runner runner  52537 Nov  6 22:18 playlist_dropdown.png
+-rw-r--r-- 1 runner runner     80 Nov  6 02:48 postcss.config.js
+-rwxr-xr-x 1 runner runner   1994 Nov  9 01:16 railway-patch.sh
+-rw-r--r-- 1 runner runner   2608 Nov  8 23:29 RAILWAY_SCRAPER_UPDATE.md
+-rw-r--r-- 1 runner runner   1506 Nov  9 01:16 .replit
+-rw-r--r-- 1 runner runner   7603 Nov  7 19:37 replit.md
+drwxr-xr-x 1 runner runner    130 Nov  7 21:39 scraper-microservice
+drwxr-xr-x 1 runner runner    264 Nov  8 23:30 server
+drwxr-xr-x 1 runner runner     18 Nov  7 17:47 shared
+-rw-r--r-- 1 runner runner   4265 Nov  8 17:52 spotify-auth-export.js
+-rw-r--r-- 1 runner runner   5994 Nov  7 22:21 spotify-cookies.json
+-rw-r--r-- 1 runner runner   5905 Nov  7 19:30 spotify_cookies.json
+-rw-r--r-- 1 runner runner   4271 Nov  7 15:19 tailwind.config.ts
+-rw-r--r-- 1 runner runner    657 Nov  6 02:48 tsconfig.json
+drwxr-xr-x 1 runner runner     20 Nov  8 17:55 .upm
+-rw-r--r-- 1 runner runner   1080 Nov  6 02:48 vite.config.ts
+cat: scraper.js: No such file or directory
