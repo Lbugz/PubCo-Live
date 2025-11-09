@@ -171,7 +171,7 @@ export function TrackTable({
                       No ISRC
                     </Badge>
                   )}
-                  {track.dataSource === "scraped" ? (
+                  {track.dataSource === "scraped" && (
                     <Badge 
                       variant="outline" 
                       className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-xs"
@@ -179,15 +179,6 @@ export function TrackTable({
                     >
                       <Cloud className="w-3 h-3 mr-1" />
                       Scraped
-                    </Badge>
-                  ) : (
-                    <Badge 
-                      variant="outline" 
-                      className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20 text-xs"
-                      data-testid={`badge-source-api-${track.id}`}
-                    >
-                      <Database className="w-3 h-3 mr-1" />
-                      API
                     </Badge>
                   )}
                 </div>
