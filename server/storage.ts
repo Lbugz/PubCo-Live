@@ -1,9 +1,10 @@
 import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, desc, inArray } from "drizzle-orm";
+import { eq, sql, desc, inArray, and } from "drizzle-orm";
 
 export interface IStorage {
   getTracksByWeek(week: string): Promise<PlaylistSnapshot[]>;
+  getTracksByPlaylist(playlistId: string, week?: string): Promise<PlaylistSnapshot[]>;
   getTrackById(id: string): Promise<PlaylistSnapshot | null>;
   getLatestWeek(): Promise<string | null>;
   getAllWeeks(): Promise<string[]>;
@@ -45,6 +46,19 @@ export class DatabaseStorage implements IStorage {
       .from(playlistSnapshots)
       .where(eq(playlistSnapshots.week, week))
       .orderBy(desc(playlistSnapshots.unsignedScore));
+  }
+
+  async getTracksByPlaylist(playlistId: string, week?: string): Promise<PlaylistSnapshot[]> {
+    const conditions = [eq(playlistSnapshots.playlistId, playlistId)];
+    
+    if (week && week !== "all") {
+      conditions.push(eq(playlistSnapshots.week, week));
+    }
+    
+    return db.select()
+      .from(playlistSnapshots)
+      .where(and(...conditions))
+      .orderBy(desc(playlistSnapshots.week), desc(playlistSnapshots.unsignedScore));
   }
 
   async getTrackById(id: string): Promise<PlaylistSnapshot | null> {

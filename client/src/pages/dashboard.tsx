@@ -105,11 +105,17 @@ export default function Dashboard() {
   const { data: tracks, isLoading: tracksLoading } = useQuery<PlaylistSnapshot[]>({
     queryKey: selectedTag !== "all" 
       ? ["/api/tracks", "tag", selectedTag]
+      : selectedPlaylist !== "all"
+      ? ["/api/tracks", "playlist", selectedPlaylist, selectedWeek]
       : ["/api/tracks", selectedWeek],
     queryFn: async ({ queryKey }) => {
       if (queryKey[1] === "tag") {
         const response = await fetch(`/api/tracks?tagId=${queryKey[2]}`);
         if (!response.ok) throw new Error("Failed to fetch tracks by tag");
+        return response.json();
+      } else if (queryKey[1] === "playlist") {
+        const response = await fetch(`/api/tracks?playlist=${queryKey[2]}`);
+        if (!response.ok) throw new Error("Failed to fetch tracks by playlist");
         return response.json();
       } else {
         const response = await fetch(`/api/tracks?week=${queryKey[1]}`);
@@ -117,7 +123,7 @@ export default function Dashboard() {
         return response.json();
       }
     },
-    enabled: !!selectedWeek || selectedTag !== "all",
+    enabled: !!selectedWeek || selectedTag !== "all" || selectedPlaylist !== "all",
   });
 
   const { data: playlists } = useQuery<string[]>({
@@ -215,7 +221,6 @@ export default function Dashboard() {
   });
 
   const filteredTracks = tracks?.filter((track) => {
-    const matchesPlaylist = selectedPlaylist === "all" || track.playlistName === selectedPlaylist;
     const matchesSearch = 
       searchQuery === "" ||
       track.trackName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -245,7 +250,7 @@ export default function Dashboard() {
       matchesAdvancedFilters = activeFilters.every(filter => filterMatches[filter]);
     }
     
-    return matchesPlaylist && matchesSearch && matchesScore && matchesAdvancedFilters;
+    return matchesSearch && matchesScore && matchesAdvancedFilters;
   }) || [];
 
   const highPotentialCount = tracks?.filter(t => t.unsignedScore >= 7).length || 0;

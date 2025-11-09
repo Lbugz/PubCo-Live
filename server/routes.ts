@@ -198,10 +198,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const week = req.query.week as string || "latest";
       const tagId = req.query.tagId as string | undefined;
+      const playlistId = req.query.playlist as string | undefined;
       
       let tracks;
       if (tagId) {
         tracks = await storage.getTracksByTag(tagId);
+      } else if (playlistId) {
+        tracks = await storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined);
       } else {
         tracks = await storage.getTracksByWeek(week);
       }
