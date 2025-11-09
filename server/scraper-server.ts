@@ -78,6 +78,8 @@ async function scrapePlaylistHeadless(playlistUrl: string) {
         '--disable-gpu',
         '--disable-software-rasterizer',
         '--disable-extensions',
+        '--ignore-certificate-errors',
+        '--ignore-certificate-errors-spki-list',
       ],
     });
 
