@@ -36,14 +36,19 @@ RUN echo "Cache bust: $CACHEBUST"
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (use npm install since there's no lock file)
+# Install dependencies
 RUN npm install
 
 # Copy source code
 COPY . .
 
-# Build application (run commands directly to bypass package.json cache)
-RUN npx vite build && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+# ✅ Build frontend (Vite looks for index.html in /client)
+WORKDIR /app/client
+RUN npx vite build
+
+# ✅ Build backend (esbuild bundles to /app/dist)
+WORKDIR /app
+RUN npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
 # Production stage
 FROM node:20-slim
@@ -76,15 +81,16 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy package files and install production dependencies
+# Copy package files and install only production dependencies
 COPY package*.json ./
 RUN npm install --omit=dev
 
-# Copy built application from builder (includes both server and frontend)
+# ✅ Copy built app (server + client)
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/client/dist ./dist/public
 
-# Expose port (Railway will provide PORT env var)
+# Expose port for Railway
 EXPOSE 5000
 
-# Start application
+# Start the app
 CMD ["npm", "start"]
