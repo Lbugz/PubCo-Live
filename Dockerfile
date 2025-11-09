@@ -31,6 +31,7 @@ WORKDIR /app
 
 # Cache bust to force rebuild - Updated: 2025-11-09
 ARG CACHEBUST=20251109
+RUN echo "Cache bust: $CACHEBUST"
 
 # Copy package files
 COPY package*.json ./
