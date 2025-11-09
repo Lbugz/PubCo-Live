@@ -26,7 +26,6 @@ app.post('/scrape-playlist', async (req, res) => {
 
     // Set cookies if provided
     if (cookies && cookies.length > 0) {
-      // Save cookies to file for Puppeteer to use
       const fs = await import('fs');
       const path = await import('path');
       const cookiesPath = path.join(process.cwd(), 'spotify-cookies.json');
@@ -34,7 +33,6 @@ app.post('/scrape-playlist', async (req, res) => {
       console.log(`[Scraper API] Saved ${cookies.length} cookies`);
     }
 
-    // Run the scraper with Railway-optimized headless config
     const result = await scrapePlaylistHeadless(playlistUrl);
 
     if (result.success) {
@@ -71,7 +69,7 @@ async function scrapePlaylistHeadless(playlistUrl: string) {
   let browser;
   try {
     browser = await puppeteer.launch({
-      headless: true, // Must be headless for Railway
+      headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -123,13 +121,11 @@ async function scrapePlaylistHeadless(playlistUrl: string) {
         if (url.includes('pathfinder') && json?.data?.playlistV2) {
           const playlistData = json.data.playlistV2;
           
-          // Capture curator name
           if (playlistData.ownerV2?.data?.name) {
             curator = playlistData.ownerV2.data.name;
             console.log(`[Headless Scraper] Curator: ${curator}`);
           }
           
-          // Capture followers count
           if (playlistData.followers !== undefined) {
             followers = playlistData.followers;
             console.log(`[Headless Scraper] Followers: ${followers}`);
@@ -139,7 +135,6 @@ async function scrapePlaylistHeadless(playlistUrl: string) {
             const graphqlItems = playlistData.content.items;
             console.log(`[Headless Scraper] ✅ Found ${graphqlItems.length} tracks in GraphQL response`);
             
-            // Capture total track count from GraphQL response
             if (playlistData.content.totalCount !== undefined) {
               totalTracks = playlistData.content.totalCount;
               console.log(`[Headless Scraper] Total tracks in playlist: ${totalTracks}`);
@@ -175,7 +170,6 @@ async function scrapePlaylistHeadless(playlistUrl: string) {
     console.log(`[Headless Scraper] Navigating to playlist...`);
     await page.goto(playlistUrl, { waitUntil: 'networkidle2', timeout: 60000 });
     
-    // Wait for tracks to load
     await new Promise(resolve => setTimeout(resolve, 5000));
     
     await browser.close();
@@ -203,10 +197,209 @@ async function scrapePlaylistHeadless(playlistUrl: string) {
   }
 }
 
-const PORT = process.env.PORT || 5000;
+// Enrich tracks endpoint - batch credit scraping
+app.post('/enrich-tracks', async (req, res) => {
+  try {
+    const { tracks, cookies } = req.body;
+
+    if (!tracks || !Array.isArray(tracks)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'tracks array is required' 
+      });
+    }
+
+    const MAX_BATCH_SIZE = 12;
+    if (tracks.length > MAX_BATCH_SIZE) {
+      return res.status(400).json({
+        success: false,
+        error: `Batch size exceeds maximum of ${MAX_BATCH_SIZE} tracks`
+      });
+    }
+
+    console.log(`[Enrich Tracks] Processing ${tracks.length} tracks...`);
+
+    // Load cookies if provided
+    if (cookies && cookies.length > 0) {
+      const fs = await import('fs');
+      const path = await import('path');
+      const cookiesPath = path.join(process.cwd(), 'spotify-cookies.json');
+      fs.writeFileSync(cookiesPath, JSON.stringify(cookies));
+      console.log(`[Enrich Tracks] Saved ${cookies.length} cookies`);
+    }
+
+    const startTime = Date.now();
+    const results = await enrichTracksBatch(tracks);
+    const durationMs = Date.now() - startTime;
+
+    const succeeded = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
+
+    console.log(`[Enrich Tracks] ✅ Complete: ${succeeded} succeeded, ${failed} failed (${durationMs}ms)`);
+
+    return res.json({
+      success: true,
+      results,
+      summary: {
+        total: tracks.length,
+        succeeded,
+        failed,
+        durationMs
+      }
+    });
+  } catch (error: any) {
+    console.error('[Enrich Tracks] Error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Enrichment failed'
+    });
+  }
+});
+
+// Batch enrichment helper
+async function enrichTracksBatch(tracks: Array<{ trackId: string; spotifyUrl: string }>) {
+  let browser;
+  const results = [];
+
+  try {
+    console.log('[Batch Enricher] Launching browser...');
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-extensions',
+        '--ignore-certificate-errors',
+        '--ignore-certificate-errors-spki-list',
+      ],
+    });
+
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1920, height: 1080 });
+
+    // Load cookies
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const cookiesPath = path.join(process.cwd(), 'spotify-cookies.json');
+      if (fs.existsSync(cookiesPath)) {
+        const cookiesString = fs.readFileSync(cookiesPath, 'utf8');
+        const cookies = JSON.parse(cookiesString);
+        await page.setCookie(...cookies);
+        console.log('[Batch Enricher] Loaded cookies');
+      }
+    } catch (err) {
+      console.warn('[Batch Enricher] No cookies loaded');
+    }
+
+    const TRACK_TIMEOUT_MS = 12000;
+
+    for (const track of tracks) {
+      try {
+        console.log(`[Batch Enricher] Enriching: ${track.trackId}`);
+
+        const enrichmentPromise = scrapeTrackCreditsOnPage(page, track.spotifyUrl);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Track timeout')), TRACK_TIMEOUT_MS)
+        );
+
+        const credits = await Promise.race([enrichmentPromise, timeoutPromise]) as any;
+
+        results.push({
+          trackId: track.trackId,
+          success: true,
+          credits: {
+            songwriters: credits.songwriters || [],
+            composers: credits.composers || [],
+            producers: credits.producers || [],
+            labels: credits.labels || [],
+            publishers: credits.publishers || []
+          }
+        });
+
+        console.log(`[Batch Enricher] ✅ Success: ${track.trackId}`);
+      } catch (error: any) {
+        console.error(`[Batch Enricher] ❌ Failed: ${track.trackId} - ${error.message}`);
+        results.push({
+          trackId: track.trackId,
+          success: false,
+          error: error.message
+        });
+      }
+    }
+
+    await browser.close();
+    return results;
+  } catch (error: any) {
+    if (browser) await browser.close();
+    throw error;
+  }
+}
+
+// Scrape credits using existing page instance
+async function scrapeTrackCreditsOnPage(page: any, trackUrl: string) {
+  console.log(`[Credits Scraper] Navigating to: ${trackUrl}`);
+  
+  await page.goto(trackUrl, { 
+    waitUntil: 'networkidle2', 
+    timeout: 10000 
+  });
+
+  await new Promise(resolve => setTimeout(resolve, 1500));
+
+  const credits = await page.evaluate(() => {
+    const songwriters: string[] = [];
+    const composers: string[] = [];
+    const producers: string[] = [];
+    const labels: string[] = [];
+    const publishers: string[] = [];
+
+    const allText = document.body.innerText;
+    const lines = allText.split('\n');
+
+    let inCreditsSection = false;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      
+      if (trimmed.toLowerCase() === 'credits' || trimmed.toLowerCase() === 'song credits') {
+        inCreditsSection = true;
+        continue;
+      }
+
+      if (inCreditsSection) {
+        if (trimmed.toLowerCase().startsWith('written by') || trimmed.toLowerCase().startsWith('writer')) {
+          const names = trimmed.replace(/^(written by|writer):?\s*/i, '').split(',').map(n => n.trim());
+          songwriters.push(...names);
+        } else if (trimmed.toLowerCase().startsWith('composer')) {
+          const names = trimmed.replace(/^composer:?\s*/i, '').split(',').map(n => n.trim());
+          composers.push(...names);
+        } else if (trimmed.toLowerCase().startsWith('produced by') || trimmed.toLowerCase().startsWith('producer')) {
+          const names = trimmed.replace(/^(produced by|producer):?\s*/i, '').split(',').map(n => n.trim());
+          producers.push(...names);
+        } else if (trimmed.toLowerCase().startsWith('publisher')) {
+          const names = trimmed.replace(/^publisher:?\s*/i, '').split(',').map(n => n.trim());
+          publishers.push(...names);
+        } else if (trimmed.toLowerCase().startsWith('source:') || trimmed.toLowerCase().startsWith('label')) {
+          const names = trimmed.replace(/^(source:|label):?\s*/i, '').split(',').map(n => n.trim());
+          labels.push(...names);
+        }
+      }
+    }
+
+    return { songwriters, composers, producers, labels, publishers };
+  });
+
+  return credits;
+}
+
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Scraper microservice running on port ${PORT}`);
   console.log(`📍 Health check: http://localhost:${PORT}/health`);
   console.log(`🔍 Scrape endpoint: POST http://localhost:${PORT}/scrape-playlist`);
+  console.log(`🔧 Enrich endpoint: POST http://localhost:${PORT}/enrich-tracks`);
 });
