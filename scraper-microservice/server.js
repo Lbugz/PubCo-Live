@@ -97,6 +97,36 @@ app.post('/scrape-playlist', async (req, res) => {
       waitUntil: "networkidle2",
       timeout: 60000 
     });
+// Handle cookie consent banner
+console.log('[Scraper] Checking for cookie consent banner...');
+const consentSelectors = [
+  '#onetrust-accept-btn-handler',
+  'button[id*="onetrust-accept"]',
+  'button[aria-label*="Accept"]',
+  'button[aria-label*="accept"]',
+  '[data-testid="accept-all-cookies"]',
+  'button[id*="accept"]',
+  'button[id*="agree"]',
+];
+
+let consentAccepted = false;
+for (const selector of consentSelectors) {
+  try {
+    await page.waitForSelector(selector, { timeout: 3000 });
+    await page.click(selector);
+    console.log(`[Scraper] ✅ Accepted cookie consent using: ${selector}`);
+    await page.waitForTimeout(2000);
+    consentAccepted = true;
+    break;
+  } catch (e) {
+    // Continue to next selector
+  }
+}
+
+if (!consentAccepted) {
+  console.log('[Scraper] No cookie consent banner found (already accepted or not shown)');
+}
+
     
     const pageTitle = await page.title();
     const pageUrl = page.url();
