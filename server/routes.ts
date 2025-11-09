@@ -948,24 +948,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (capturedTracks.length === 0) {
               console.log(`Falling back to local network capture...`);
               const networkResult = await fetchEditorialTracksViaNetwork(playlist.spotifyUrl);
-              
-              if (networkResult.success && networkResult.tracks.length >= 50) {
-                console.log(`Local network capture successful: ${networkResult.tracks.length} tracks`);
+              const networkTrackCount = networkResult.tracks?.length ?? 0;
+
+              if (networkResult.success && networkTrackCount >= 50) {
+                console.log(`Local network capture successful: ${networkTrackCount} tracks`);
                 fetchMethod = 'network-capture';
-                capturedTracks = networkResult.tracks;
+                capturedTracks = networkResult.tracks ?? [];
               } else {
-                console.log(`Local network capture insufficient (${networkResult.tracks.length} tracks). Trying DOM fallback...`);
+                const networkErrorDetails = networkResult.error ? ` Error: ${networkResult.error}.` : '';
+                console.log(`Local network capture insufficient (${networkTrackCount} tracks).${networkErrorDetails} Trying DOM fallback...`);
                 const domResult = await harvestVirtualizedRows(playlist.spotifyUrl);
-                
-                if (domResult.success && domResult.tracks.length > networkResult.tracks.length) {
-                  console.log(`DOM fallback successful: ${domResult.tracks.length} tracks`);
+                const domTrackCount = domResult.tracks?.length ?? 0;
+
+                if (domResult.success && domTrackCount > networkTrackCount) {
+                  console.log(`DOM fallback successful: ${domTrackCount} tracks`);
                   fetchMethod = 'dom-capture';
-                  capturedTracks = domResult.tracks;
-                } else if (networkResult.success && networkResult.tracks.length > 0) {
-                  console.log(`Using local network capture results: ${networkResult.tracks.length} tracks`);
+                  capturedTracks = domResult.tracks ?? [];
+                } else if (networkResult.success && networkTrackCount > 0) {
+                  console.log(`Using local network capture results: ${networkTrackCount} tracks`);
                   fetchMethod = 'network-capture';
-                  capturedTracks = networkResult.tracks;
+                  capturedTracks = networkResult.tracks ?? [];
                 } else {
+                  if (!domResult.success && domResult.error) {
+                    console.error(`DOM capture failed for ${playlist.name}: ${domResult.error}`);
+                  }
                   console.error(`All capture methods failed for ${playlist.name}`);
                   continue;
                 }
