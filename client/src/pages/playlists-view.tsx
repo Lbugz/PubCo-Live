@@ -151,9 +151,9 @@ export default function PlaylistsView() {
   };
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-8 space-y-6 fade-in">
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 slide-up">
         <div>
           <h1 className="text-3xl font-bold mb-2 gradient-text">Playlists</h1>
           <p className="text-muted-foreground">
@@ -163,7 +163,7 @@ export default function PlaylistsView() {
         <div className="flex flex-wrap items-center gap-3">
           {/* Spotify Connection Status */}
           <div 
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg glass-panel backdrop-blur-xl border border-primary/20"
             data-testid="spotify-connection-status"
           >
             {spotifyStatus === undefined ? (
@@ -197,7 +197,7 @@ export default function PlaylistsView() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 slide-in-right">
         <StatsCard
           title="Total Playlists"
           value={stats.total}
@@ -229,7 +229,7 @@ export default function PlaylistsView() {
       </div>
 
       {/* Filters */}
-      <Card className="glass-panel">
+      <Card className="glass-panel backdrop-blur-xl border border-primary/20">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-3 items-center">
             <div className="flex-1 min-w-[200px]">
@@ -277,7 +277,7 @@ export default function PlaylistsView() {
       </Card>
 
       {/* Table */}
-      <Card className="glass-panel">
+      <Card className="glass-panel backdrop-blur-xl border border-primary/20">
         <CardHeader>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">
@@ -382,7 +382,7 @@ export default function PlaylistsView() {
 
       {/* Details Drawer */}
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto glass-panel backdrop-blur-xl border-l border-primary/20">
           {selectedPlaylist && (
             <>
               <SheetHeader>

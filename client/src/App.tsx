@@ -7,8 +7,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { MagicPatternsHeader } from "@/components/MagicPatternsHeader";
 import { MagicPatternsSidebar } from "@/components/MagicPatternsSidebar";
-import MagicPatternsPlaylistsView from "@/pages/magic-patterns-playlists-view";
-import MagicPatternsTracksView from "@/pages/magic-patterns-tracks-view";
+import Dashboard from "@/pages/dashboard";
+import PlaylistsView from "@/pages/playlists-view";
 import Contacts from "@/pages/contacts";
 import Engagements from "@/pages/engagements";
 import Opportunities from "@/pages/opportunities";
@@ -26,9 +26,9 @@ function Router() {
   return (
     <Switch>
       {/* Discovery */}
-      <Route path="/" component={MagicPatternsTracksView} />
-      <Route path="/tracks" component={MagicPatternsTracksView} />
-      <Route path="/playlists" component={MagicPatternsPlaylistsView} />
+      <Route path="/" component={Dashboard} />
+      <Route path="/tracks" component={Dashboard} />
+      <Route path="/playlists" component={PlaylistsView} />
       
       {/* Relationships/CRM */}
       <Route path="/relationships" component={Contacts} />
