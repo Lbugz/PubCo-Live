@@ -539,16 +539,6 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6 fade-in">
-          {/* Header */}
-          <div className="slide-up">
-            <h1 className="font-display text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent animate-gradient mb-2">
-              Tracks
-            </h1>
-            <p className="text-muted-foreground">
-              Discover and manage unsigned talent from your Spotify playlists
-            </p>
-          </div>
-
           {/* Unified Control Panel */}
           <UnifiedControlPanel
             totalTracks={tracks?.length || 0}
