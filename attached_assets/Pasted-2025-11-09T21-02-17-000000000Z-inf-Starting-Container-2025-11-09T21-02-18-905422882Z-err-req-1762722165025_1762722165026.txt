@@ -1,0 +1,155 @@
+2025-11-09T21:02:17.000000000Z [inf]  Starting Container
+2025-11-09T21:02:18.905422882Z [err]    requireStack: []
+2025-11-09T21:02:18.905425855Z [err]  
+2025-11-09T21:02:18.905433673Z [err]  }
+2025-11-09T21:02:18.905442624Z [err]  
+2025-11-09T21:02:18.905447014Z [err]  Error: Cannot find module '/app/dist/scraper.js'
+2025-11-09T21:02:18.905451840Z [err]  
+2025-11-09T21:02:18.905458101Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+2025-11-09T21:02:18.905459019Z [err]      at Module._load (node:internal/modules/cjs/loader:1038:27)
+2025-11-09T21:02:18.905463487Z [err]  node:internal/modules/cjs/loader:1210
+2025-11-09T21:02:18.905465722Z [err]  Error: Cannot find module '/app/dist/scraper.js'
+2025-11-09T21:02:18.905469019Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+2025-11-09T21:02:18.905469746Z [err]      at Module._load (node:internal/modules/cjs/loader:1038:27)
+2025-11-09T21:02:18.905472315Z [err]    throw err;
+2025-11-09T21:02:18.905475209Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+2025-11-09T21:02:18.905479894Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-11-09T21:02:18.905479996Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+2025-11-09T21:02:18.905481352Z [err]    ^
+2025-11-09T21:02:18.905487842Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T21:02:18.905493078Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-11-09T21:02:18.905497075Z [err]  
+2025-11-09T21:02:18.905500263Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T21:02:18.905505714Z [err]  Node.js v20.19.5
+2025-11-09T21:02:18.905508709Z [err]    requireStack: []
+2025-11-09T21:02:18.905513926Z [err]  node:internal/modules/cjs/loader:1210
+2025-11-09T21:02:18.905518704Z [err]  }
+2025-11-09T21:02:18.905521575Z [err]    throw err;
+2025-11-09T21:02:18.905530897Z [err]    ^
+2025-11-09T21:02:18.908328378Z [err]  Node.js v20.19.5
+2025-11-09T21:02:20.062251504Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T21:02:20.062266408Z [err]    requireStack: []
+2025-11-09T21:02:20.062275289Z [err]  }
+2025-11-09T21:02:20.062286056Z [err]  
+2025-11-09T21:02:20.062295210Z [err]  Node.js v20.19.5
+2025-11-09T21:02:20.062317036Z [err]  node:internal/modules/cjs/loader:1210
+2025-11-09T21:02:20.062323989Z [err]    throw err;
+2025-11-09T21:02:20.062330828Z [err]    ^
+2025-11-09T21:02:20.062338753Z [err]  
+2025-11-09T21:02:20.062345264Z [err]  Error: Cannot find module '/app/dist/scraper.js'
+2025-11-09T21:02:20.062352023Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+2025-11-09T21:02:20.062358528Z [err]      at Module._load (node:internal/modules/cjs/loader:1038:27)
+2025-11-09T21:02:20.062365693Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+2025-11-09T21:02:20.062373925Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-11-09T21:02:21.232003445Z [err]      at Module._load (node:internal/modules/cjs/loader:1038:27)
+2025-11-09T21:02:21.232012670Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+2025-11-09T21:02:21.232018725Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-11-09T21:02:21.232023899Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T21:02:21.232028534Z [err]    requireStack: []
+2025-11-09T21:02:21.232034797Z [err]  }
+2025-11-09T21:02:21.232039755Z [err]  node:internal/modules/cjs/loader:1210
+2025-11-09T21:02:21.232042214Z [err]  
+2025-11-09T21:02:21.232047488Z [err]  Node.js v20.19.5
+2025-11-09T21:02:21.232048799Z [err]    throw err;
+2025-11-09T21:02:21.232055176Z [err]    ^
+2025-11-09T21:02:21.232060486Z [err]  
+2025-11-09T21:02:21.232066800Z [err]  Error: Cannot find module '/app/dist/scraper.js'
+2025-11-09T21:02:21.232072837Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+2025-11-09T21:02:22.176057700Z [err]  }
+2025-11-09T21:02:22.176066813Z [err]  
+2025-11-09T21:02:22.176075065Z [err]  Node.js v20.19.5
+2025-11-09T21:02:22.176158986Z [err]  node:internal/modules/cjs/loader:1210
+2025-11-09T21:02:22.176166628Z [err]    throw err;
+2025-11-09T21:02:22.176172487Z [err]    ^
+2025-11-09T21:02:22.176178217Z [err]  
+2025-11-09T21:02:22.176184180Z [err]  Error: Cannot find module '/app/dist/scraper.js'
+2025-11-09T21:02:22.176190158Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+2025-11-09T21:02:22.176196989Z [err]      at Module._load (node:internal/modules/cjs/loader:1038:27)
+2025-11-09T21:02:22.176203107Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+2025-11-09T21:02:22.176208743Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-11-09T21:02:22.176214062Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T21:02:22.176219888Z [err]    requireStack: []
+2025-11-09T21:02:23.461152307Z [err]  node:internal/modules/cjs/loader:1210
+2025-11-09T21:02:23.461167594Z [err]    throw err;
+2025-11-09T21:02:23.461175407Z [err]    ^
+2025-11-09T21:02:23.461183422Z [err]  
+2025-11-09T21:02:23.461190702Z [err]  Error: Cannot find module '/app/dist/scraper.js'
+2025-11-09T21:02:23.461198842Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+2025-11-09T21:02:23.461207697Z [err]      at Module._load (node:internal/modules/cjs/loader:1038:27)
+2025-11-09T21:02:23.461215242Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+2025-11-09T21:02:23.461222136Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-11-09T21:02:23.461228759Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T21:02:23.461235174Z [err]    requireStack: []
+2025-11-09T21:02:23.461241346Z [err]  }
+2025-11-09T21:02:23.461248181Z [err]  
+2025-11-09T21:02:23.461254884Z [err]  Node.js v20.19.5
+2025-11-09T21:02:24.987078326Z [err]  
+2025-11-09T21:02:24.987088644Z [err]  Node.js v20.19.5
+2025-11-09T21:02:24.987100721Z [err]    throw err;
+2025-11-09T21:02:24.987106388Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+2025-11-09T21:02:24.987113053Z [err]      at Module._load (node:internal/modules/cjs/loader:1038:27)
+2025-11-09T21:02:24.987118308Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+2025-11-09T21:02:24.987124696Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-11-09T21:02:24.987125373Z [err]    ^
+2025-11-09T21:02:24.987132166Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T21:02:24.987137172Z [err]  
+2025-11-09T21:02:24.987143675Z [err]    requireStack: []
+2025-11-09T21:02:24.987145703Z [err]  Error: Cannot find module '/app/dist/scraper.js'
+2025-11-09T21:02:24.987152393Z [err]  }
+2025-11-09T21:02:24.987158927Z [err]  node:internal/modules/cjs/loader:1210
+2025-11-09T21:02:25.972954781Z [err]  node:internal/modules/cjs/loader:1210
+2025-11-09T21:02:25.972967940Z [err]    throw err;
+2025-11-09T21:02:25.972977952Z [err]    ^
+2025-11-09T21:02:25.972992598Z [err]  
+2025-11-09T21:02:25.973000712Z [err]  Error: Cannot find module '/app/dist/scraper.js'
+2025-11-09T21:02:25.973010264Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+2025-11-09T21:02:25.973017872Z [err]      at Module._load (node:internal/modules/cjs/loader:1038:27)
+2025-11-09T21:02:25.973025903Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+2025-11-09T21:02:25.973058086Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-11-09T21:02:25.973067365Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T21:02:25.973075354Z [err]    requireStack: []
+2025-11-09T21:02:25.973083061Z [err]  }
+2025-11-09T21:02:25.973090964Z [err]  
+2025-11-09T21:02:25.973098851Z [err]  Node.js v20.19.5
+2025-11-09T21:02:27.205414073Z [err]  
+2025-11-09T21:02:27.205422157Z [err]  node:internal/modules/cjs/loader:1210
+2025-11-09T21:02:27.205429142Z [err]  Node.js v20.19.5
+2025-11-09T21:02:27.205429343Z [err]    throw err;
+2025-11-09T21:02:27.205435485Z [err]    ^
+2025-11-09T21:02:27.205440941Z [err]  
+2025-11-09T21:02:27.205446629Z [err]  Error: Cannot find module '/app/dist/scraper.js'
+2025-11-09T21:02:27.205452105Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+2025-11-09T21:02:27.205457710Z [err]      at Module._load (node:internal/modules/cjs/loader:1038:27)
+2025-11-09T21:02:27.205462189Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+2025-11-09T21:02:27.205468037Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-11-09T21:02:27.205473738Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T21:02:27.205478837Z [err]    requireStack: []
+2025-11-09T21:02:27.205485797Z [err]  }
+2025-11-09T21:02:28.368565869Z [err]  
+2025-11-09T21:02:28.368579431Z [err]  Node.js v20.19.5
+2025-11-09T21:02:28.368597444Z [err]  node:internal/modules/cjs/loader:1210
+2025-11-09T21:02:28.368604522Z [err]    throw err;
+2025-11-09T21:02:28.368611844Z [err]    ^
+2025-11-09T21:02:28.368620594Z [err]  
+2025-11-09T21:02:28.368627240Z [err]  Error: Cannot find module '/app/dist/scraper.js'
+2025-11-09T21:02:28.368634102Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+2025-11-09T21:02:28.368641925Z [err]      at Module._load (node:internal/modules/cjs/loader:1038:27)
+2025-11-09T21:02:28.368648359Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+2025-11-09T21:02:28.368655137Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-11-09T21:02:28.368661986Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T21:02:28.368668130Z [err]    requireStack: []
+2025-11-09T21:02:28.368679519Z [err]  }
+2025-11-09T21:02:29.484716852Z [err]    requireStack: []
+2025-11-09T21:02:29.484719542Z [err]  node:internal/modules/cjs/loader:1210
+2025-11-09T21:02:29.484728219Z [err]  }
+2025-11-09T21:02:29.484728571Z [err]    throw err;
+2025-11-09T21:02:29.484736463Z [err]    ^
+2025-11-09T21:02:29.484736872Z [err]  
+2025-11-09T21:02:29.484742432Z [err]  Node.js v20.19.5
+2025-11-09T21:02:29.484749549Z [err]  
+2025-11-09T21:02:29.484758727Z [err]  Error: Cannot find module '/app/dist/scraper.js'
+2025-11-09T21:02:29.484768053Z [err]      at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+2025-11-09T21:02:29.484775435Z [err]      at Module._load (node:internal/modules/cjs/loader:1038:27)
+2025-11-09T21:02:29.484784053Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+2025-11-09T21:02:29.484793080Z [err]      at node:internal/main/run_main_module:28:49 {
+2025-11-09T21:02:29.484809972Z [err]    code: 'MODULE_NOT_FOUND',
