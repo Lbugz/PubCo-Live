@@ -82,7 +82,6 @@ RUN npm install --omit=dev
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/client/dist ./client/dist
 
 # Expose port (Railway will provide PORT env var)
 EXPOSE 5000
