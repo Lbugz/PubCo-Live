@@ -91,18 +91,51 @@ export async function fetchEditorialTracksViaNetwork(
         console.log(`[Network Capture] JSON from: ${url.substring(0, 120)}`);
         console.log(`[Network Capture] JSON keys: ${Object.keys(json).join(', ')}`);
         
-        // Check for Spotify's NEW GraphQL pathfinder API and dump FULL response
-        if (url.includes('pathfinder')) {
-          console.log(`[Network Capture] 🔍 FULL PATHFINDER RESPONSE:`);
-          console.log(JSON.stringify(json, null, 2).substring(0, 5000)); // First 5000 chars
+        // Check for Spotify's NEW GraphQL pathfinder API format
+        if (url.includes('pathfinder') && json?.data?.playlistV2?.content?.items) {
+          const graphqlItems = json.data.playlistV2.content.items;
+          console.log(`[Network Capture] ✅ Found ${graphqlItems.length} tracks in pathfinder GraphQL response!`);
+          
+          // Parse GraphQL pathfinder format: data.playlistV2.content.items[]
+          for (const item of graphqlItems) {
+            try {
+              const trackData = item?.itemV2?.data;
+              if (!trackData || trackData.__typename !== 'Track') continue;
+              
+              const trackUri = trackData.uri;
+              const trackId = trackUri?.split(':').pop();
+              if (!trackId) continue;
+              
+              // Skip duplicates
+              if (capturedTracks.has(trackId)) continue;
+              capturedTracks.add(trackId);
+              
+              const trackName = trackData.name || '';
+              const artistNames = trackData.artists?.items?.map((a: any) => a.profile?.name).filter(Boolean) || [];
+              const albumName = trackData.albumOfTrack?.name || null;
+              
+              allTracks.push({
+                id: trackId,
+                name: trackName,
+                artists: artistNames,
+                album: albumName,
+                uri: trackUri,
+              });
+            } catch (err) {
+              console.error('[Network Capture] Error parsing pathfinder track:', err);
+            }
+          }
+          
+          console.log(`[Network Capture] Total captured: ${allTracks.length} unique tracks`);
+          return; // Skip old format parsing
         }
         
         // Log all Spotify JSON responses to understand their structure
         if (json?.items || json?.tracks || json?.content) {
-          console.log(`[Network Capture] ✅ Found items/tracks/content array!`);
+          console.log(`[Network Capture] ✅ Found items/tracks/content array (OLD FORMAT)!`);
         }
         
-        // Check for various response formats Spotify might use
+        // Check for various OLD response formats Spotify might use (fallback)
         let items = null;
         if (json?.items && Array.isArray(json.items)) {
           items = json.items;
