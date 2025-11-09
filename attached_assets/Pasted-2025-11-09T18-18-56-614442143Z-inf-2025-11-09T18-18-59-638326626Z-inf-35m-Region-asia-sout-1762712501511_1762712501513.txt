@@ -1,0 +1,3048 @@
+2025-11-09T18:18:56.614442143Z [inf]  
+2025-11-09T18:18:59.638326626Z [inf]  [35m[Region: asia-southeast1][0m
+2025-11-09T18:18:59.648379176Z [inf]  [35m=========================
+2025-11-09T18:18:59.648407154Z [inf]  Using Detected Dockerfile
+2025-11-09T18:18:59.648413690Z [inf]  =========================
+2025-11-09T18:18:59.648423128Z [inf]  [0m
+2025-11-09T18:18:59.648441228Z [inf]  context: 5wv1-mqfw
+2025-11-09T18:18:59.806906244Z [inf]  [internal] load build definition from Dockerfile
+2025-11-09T18:18:59.806968256Z [inf]  [internal] load build definition from Dockerfile
+2025-11-09T18:18:59.806986230Z [inf]  [internal] load build definition from Dockerfile
+2025-11-09T18:18:59.815211622Z [inf]  [internal] load build definition from Dockerfile
+2025-11-09T18:18:59.817105266Z [inf]  [internal] load metadata for docker.io/library/node:20-slim
+2025-11-09T18:19:01.402893260Z [inf]  [internal] load metadata for docker.io/library/node:20-slim
+2025-11-09T18:19:01.403229371Z [inf]  [internal] load .dockerignore
+2025-11-09T18:19:01.403283205Z [inf]  [internal] load .dockerignore
+2025-11-09T18:19:01.403324960Z [inf]  [internal] load .dockerignore
+2025-11-09T18:19:01.413774566Z [inf]  [internal] load .dockerignore
+2025-11-09T18:19:01.419486772Z [inf]  [stage-1 7/7] COPY --from=builder /app/client/dist ./client/dist
+2025-11-09T18:19:01.419531314Z [inf]  [stage-1 6/7] COPY --from=builder /app/dist ./dist
+2025-11-09T18:19:01.419549484Z [inf]  [builder 7/7] RUN npm run build
+2025-11-09T18:19:01.419560675Z [inf]  [builder 6/7] COPY . .
+2025-11-09T18:19:01.419569073Z [inf]  [builder 5/7] RUN npm install
+2025-11-09T18:19:01.419579994Z [inf]  [stage-1 5/7] RUN npm install --omit=dev
+2025-11-09T18:19:01.419591963Z [inf]  [builder 4/7] COPY package*.json ./
+2025-11-09T18:19:01.419601782Z [inf]  [internal] load build context
+2025-11-09T18:19:01.419612362Z [inf]  [builder 3/7] WORKDIR /app
+2025-11-09T18:19:01.419630666Z [inf]  [builder 2/7] RUN apt-get update && apt-get install -y     wget     gnupg     ca-certificates     fonts-liberation     libappindicator3-1     libasound2     libatk-bridge2.0-0     libatk1.0-0     libcups2     libdbus-1-3     libgdk-pixbuf2.0-0     libnspr4     libnss3     libx11-xcb1     libxcomposite1     libxdamage1     libxrandr2     xdg-utils     libgbm1     libpango-1.0-0     libcairo2     libxss1     && rm -rf /var/lib/apt/lists/*
+2025-11-09T18:19:01.419637110Z [inf]  [builder 1/7] FROM docker.io/library/node:20-slim@sha256:12541e65a3777c6035245518eb43006ed08ca8c684e68cd04ecb4653bdf6cfe1
+2025-11-09T18:19:01.419653110Z [inf]  [builder 1/7] FROM docker.io/library/node:20-slim@sha256:12541e65a3777c6035245518eb43006ed08ca8c684e68cd04ecb4653bdf6cfe1
+2025-11-09T18:19:01.419658993Z [inf]  [internal] load build context
+2025-11-09T18:19:01.419673158Z [inf]  [internal] load build context
+2025-11-09T18:19:01.424966747Z [inf]  [builder 1/7] FROM docker.io/library/node:20-slim@sha256:12541e65a3777c6035245518eb43006ed08ca8c684e68cd04ecb4653bdf6cfe1
+2025-11-09T18:19:01.425229461Z [inf]  [builder 1/7] FROM docker.io/library/node:20-slim@sha256:12541e65a3777c6035245518eb43006ed08ca8c684e68cd04ecb4653bdf6cfe1
+2025-11-09T18:19:01.425257000Z [inf]  [internal] load build context
+2025-11-09T18:19:01.448703520Z [inf]  [internal] load build context
+2025-11-09T18:19:01.449256255Z [inf]  [builder 1/7] FROM docker.io/library/node:20-slim@sha256:12541e65a3777c6035245518eb43006ed08ca8c684e68cd04ecb4653bdf6cfe1
+2025-11-09T18:19:01.451559074Z [inf]  [builder 1/7] FROM docker.io/library/node:20-slim@sha256:12541e65a3777c6035245518eb43006ed08ca8c684e68cd04ecb4653bdf6cfe1
+2025-11-09T18:19:02.354808694Z [inf]  [builder 1/7] FROM docker.io/library/node:20-slim@sha256:12541e65a3777c6035245518eb43006ed08ca8c684e68cd04ecb4653bdf6cfe1
+2025-11-09T18:19:04.079043274Z [inf]  [builder 2/7] RUN apt-get update && apt-get install -y     wget     gnupg     ca-certificates     fonts-liberation     libappindicator3-1     libasound2     libatk-bridge2.0-0     libatk1.0-0     libcups2     libdbus-1-3     libgdk-pixbuf2.0-0     libnspr4     libnss3     libx11-xcb1     libxcomposite1     libxdamage1     libxrandr2     xdg-utils     libgbm1     libpango-1.0-0     libcairo2     libxss1     && rm -rf /var/lib/apt/lists/*
+2025-11-09T18:19:04.182907687Z [inf]  Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB]
+
+2025-11-09T18:19:04.191848515Z [inf]  Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+
+2025-11-09T18:19:04.191867463Z [inf]  Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]
+
+2025-11-09T18:19:04.241258644Z [inf]  Get:4 http://deb.debian.org/debian bookworm/main amd64 Packages [8791 kB]
+
+2025-11-09T18:19:04.298854682Z [inf]  Get:5 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6924 B]
+
+2025-11-09T18:19:04.325528176Z [inf]  Get:6 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [284 kB]
+
+2025-11-09T18:19:05.313975988Z [inf]  Fetched 9337 kB in 1s (8189 kB/s)
+Reading package lists...
+2025-11-09T18:19:05.785445788Z [inf]  
+
+2025-11-09T18:19:05.804688414Z [inf]  Reading package lists...
+2025-11-09T18:19:06.223553245Z [inf]  
+
+2025-11-09T18:19:06.238561232Z [inf]  Building dependency tree...
+2025-11-09T18:19:06.333282564Z [inf]  
+Reading state information...
+2025-11-09T18:19:06.333344894Z [inf]  
+
+2025-11-09T18:19:06.452262144Z [inf]  The following additional packages will be installed:
+  adwaita-icon-theme alsa-topology-conf alsa-ucm-conf at-spi2-common
+  at-spi2-core cpp cpp-12 dbus dbus-bin dbus-daemon dbus-session-bus-common
+  dbus-system-bus-common dbus-user-session dconf-gsettings-backend
+
+2025-11-09T18:19:06.452372101Z [inf]    dconf-service dirmngr dmsetup fontconfig fontconfig-config gnupg-l10n
+  gnupg-utils gpg gpg-agent gpg-wks-client gpg-wks-server gpgconf gpgsm
+
+2025-11-09T18:19:06.452390602Z [inf]    gsettings-desktop-schemas gtk-update-icon-cache hicolor-icon-theme
+  krb5-locales libapparmor1 libargon2-1 libasound2-data libassuan0
+  libatspi2.0-0 libauthen-sasl-perl libavahi-client3 libavahi-common-data
+
+2025-11-09T18:19:06.452396139Z [inf]    libavahi-common3 libayatana-ido3-0.4-0 libayatana-indicator3-7 libbrotli1
+
+2025-11-09T18:19:06.452425781Z [inf]    libbsd0 libcairo-gobject2 libclone-perl libcolord2 libcryptsetup12
+  libdata-dump-perl libdatrie1 libdbusmenu-glib4 libdbusmenu-gtk3-4 libdconf1
+  libdeflate0 libdevmapper1.02.1 libdrm-amdgpu1 libdrm-common libdrm-intel1
+
+2025-11-09T18:19:06.452504795Z [inf]    libdrm-nouveau2 libdrm-radeon1 libdrm2 libedit2 libegl-mesa0 libegl1 libelf1
+  libencode-locale-perl libepoxy0 libexpat1 libfdisk1 libfile-basedir-perl
+  libfile-desktopentry-perl libfile-listing-perl libfile-mimeinfo-perl
+  libfont-afm-perl libfontconfig1 libfontenc1 libfreetype6 libfribidi0
+  libgdbm-compat4 libgdbm6 libgdk-pixbuf-2.0-0 libgdk-pixbuf-xlib-2.0-0
+
+2025-11-09T18:19:06.452514483Z [inf]    libgdk-pixbuf2.0-bin libgdk-pixbuf2.0-common libgl1 libgl1-mesa-dri
+  libglapi-mesa libgles2 libglib2.0-0 libglib2.0-data libglvnd0 libglx-mesa0
+
+2025-11-09T18:19:06.452588306Z [inf]    libglx0 libgpm2 libgraphite2-3 libgssapi-krb5-2 libgtk-3-0 libgtk-3-bin
+  libgtk-3-common libharfbuzz0b libhtml-form-perl libhtml-format-perl
+  libhtml-parser-perl libhtml-tagset-perl libhtml-tree-perl
+  libhttp-cookies-perl libhttp-daemon-perl libhttp-date-perl
+  libhttp-message-perl libhttp-negotiate-perl libice6 libicu72 libio-html-perl
+  libio-socket-ssl-perl libio-stringy-perl libip4tc2 libipc-system-simple-perl
+  libisl23 libjbig0 libjpeg62-turbo libjson-c5 libk5crypto3 libkeyutils1
+  libkmod2 libkrb5-3 libkrb5support0 libksba8 liblcms2-2 libldap-2.5-0
+  libldap-common liblerc4 libllvm15 liblwp-mediatypes-perl
+
+2025-11-09T18:19:06.452628992Z [inf]    liblwp-protocol-https-perl libmailtools-perl libmpc3 libmpfr6 libncursesw6
+  libnet-dbus-perl libnet-http-perl libnet-smtp-ssl-perl libnet-ssleay-perl
+
+2025-11-09T18:19:06.45263872Z [inf]    libnpth0 libnss-systemd libpam-systemd libpangocairo-1.0-0 libpangoft2-1.0-0
+
+2025-11-09T18:19:06.452670757Z [inf]    libpciaccess0 libperl5.36 libpixman-1-0 libpng16-16 libproc2-0 libpsl5
+
+2025-11-09T18:19:06.452882489Z [inf]    libreadline8 libregexp-ipv6-perl librsvg2-2 librsvg2-common libsasl2-2
+  libsasl2-modules libsasl2-modules-db libsensors-config libsensors5 libsm6
+
+2025-11-09T18:19:06.452892298Z [inf]    libsqlite3-0 libssl3 libsystemd-shared libtext-iconv-perl libthai-data
+
+2025-11-09T18:19:06.452899398Z [inf]    libthai0 libtie-ixhash-perl libtiff6 libtimedate-perl libtry-tiny-perl
+
+2025-11-09T18:19:06.452903089Z [inf]    liburi-perl libwayland-client0 libwayland-cursor0 libwayland-egl1
+
+2025-11-09T18:19:06.452934745Z [inf]    libwayland-server0 libwebp7 libwww-perl libwww-robotrules-perl libx11-6
+  libx11-data libx11-protocol-perl libxau6 libxaw7 libxcb-dri2-0 libxcb-dri3-0
+  libxcb-glx0 libxcb-present0 libxcb-randr0 libxcb-render0 libxcb-shape0
+  libxcb-shm0 libxcb-sync1 libxcb-xfixes0 libxcb1 libxcursor1 libxdmcp6
+  libxext6 libxfixes3 libxft2 libxi6 libxinerama1 libxkbcommon0 libxkbfile1
+  libxml-parser-perl libxml-twig-perl libxml-xpathengine-perl libxml2 libxmu6
+
+2025-11-09T18:19:06.452937061Z [inf]    libxmuu1 libxpm4 libxrender1 libxshmfence1 libxt6 libxtst6 libxv1
+
+2025-11-09T18:19:06.453071654Z [inf]    libxxf86dga1 libxxf86vm1 libz3-4 netbase openssl perl perl-modules-5.36
+
+2025-11-09T18:19:06.453190469Z [inf]    perl-openssl-defaults pinentry-curses procps psmisc publicsuffix
+
+2025-11-09T18:19:06.453262935Z [inf]    readline-common shared-mime-info systemd systemd-sysv systemd-timesyncd
+  x11-common x11-utils x11-xserver-utils xdg-user-dirs xkb-data zutty
+
+2025-11-09T18:19:06.454230254Z [inf]  Suggested packages:
+  cpp-doc gcc-12-locales cpp-12-doc pinentry-gnome3 tor parcimonie xloadimage
+  scdaemon libasound2-plugins alsa-utils libdigest-hmac-perl libgssapi-perl
+  colord cups-common gdbm-l10n low-memory-monitor gpm krb5-doc krb5-user gvfs
+  liblcms2-utils libcrypt-ssleay-perl pciutils sensible-utils librsvg2-bin
+  libsasl2-modules-gssapi-mit | libsasl2-modules-gssapi-heimdal
+  libsasl2-modules-ldap libsasl2-modules-otp libsasl2-modules-sql lm-sensors
+  libsub-name-perl libbusiness-isbn-perl libauthen-ntlm-perl
+  libunicode-map8-perl libunicode-string-perl xml-twig-tools perl-doc
+  libterm-readline-gnu-perl | libterm-readline-perl-perl make
+  libtap-harness-archive-perl debhelper pinentry-doc readline-doc
+  systemd-container systemd-homed systemd-userdbd systemd-boot
+  systemd-resolved libfido2-1 libqrencode4 libtss2-esys-3.0.2-0 libtss2-mu0
+  libtss2-rc0 polkitd | policykit-1 mesa-utils nickle cairo-5c xorg-docs-core
+
+2025-11-09T18:19:07.407922323Z [inf]  The following NEW packages will be installed:
+  adwaita-icon-theme alsa-topology-conf alsa-ucm-conf at-spi2-common
+  at-spi2-core ca-certificates cpp cpp-12 dbus dbus-bin dbus-daemon
+  dbus-session-bus-common dbus-system-bus-common dbus-user-session
+
+2025-11-09T18:19:07.407971482Z [inf]    dconf-gsettings-backend dconf-service dirmngr dmsetup fontconfig
+
+2025-11-09T18:19:07.408030525Z [inf]    fontconfig-config fonts-liberation gnupg gnupg-l10n gnupg-utils gpg
+  gpg-agent gpg-wks-client gpg-wks-server gpgconf gpgsm
+
+2025-11-09T18:19:07.408046762Z [inf]    gsettings-desktop-schemas gtk-update-icon-cache hicolor-icon-theme
+
+2025-11-09T18:19:07.408083748Z [inf]    krb5-locales libapparmor1 libargon2-1 libasound2 libasound2-data libassuan0
+  libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 libauthen-sasl-perl
+  libavahi-client3 libavahi-common-data libavahi-common3
+
+2025-11-09T18:19:07.408092133Z [inf]    libayatana-appindicator3-1 libayatana-ido3-0.4-0 libayatana-indicator3-7
+
+2025-11-09T18:19:07.408140979Z [inf]    libbrotli1 libbsd0 libcairo-gobject2 libcairo2 libclone-perl libcolord2
+  libcryptsetup12 libcups2 libdata-dump-perl libdatrie1 libdbus-1-3
+  libdbusmenu-glib4 libdbusmenu-gtk3-4 libdconf1 libdeflate0
+  libdevmapper1.02.1 libdrm-amdgpu1 libdrm-common libdrm-intel1
+  libdrm-nouveau2 libdrm-radeon1 libdrm2 libedit2 libegl-mesa0 libegl1 libelf1
+  libencode-locale-perl libepoxy0 libexpat1 libfdisk1 libfile-basedir-perl
+  libfile-desktopentry-perl libfile-listing-perl libfile-mimeinfo-perl
+
+2025-11-09T18:19:07.408158564Z [inf]    libfont-afm-perl libfontconfig1 libfontenc1 libfreetype6 libfribidi0 libgbm1
+  libgdbm-compat4 libgdbm6 libgdk-pixbuf-2.0-0 libgdk-pixbuf-xlib-2.0-0
+
+2025-11-09T18:19:07.408203683Z [inf]    libgdk-pixbuf2.0-0 libgdk-pixbuf2.0-bin libgdk-pixbuf2.0-common libgl1
+  libgl1-mesa-dri libglapi-mesa libgles2 libglib2.0-0 libglib2.0-data
+
+2025-11-09T18:19:07.408211285Z [inf]    libglvnd0 libglx-mesa0 libglx0 libgpm2 libgraphite2-3 libgssapi-krb5-2
+
+2025-11-09T18:19:07.408227043Z [inf]    libgtk-3-0 libgtk-3-bin libgtk-3-common libharfbuzz0b libhtml-form-perl
+  libhtml-format-perl libhtml-parser-perl libhtml-tagset-perl
+  libhtml-tree-perl libhttp-cookies-perl libhttp-daemon-perl libhttp-date-perl
+
+2025-11-09T18:19:07.408231942Z [inf]    libhttp-message-perl libhttp-negotiate-perl libice6 libicu72 libio-html-perl
+  libio-socket-ssl-perl libio-stringy-perl libip4tc2 libipc-system-simple-perl
+
+2025-11-09T18:19:07.408264391Z [inf]    libisl23 libjbig0 libjpeg62-turbo libjson-c5 libk5crypto3 libkeyutils1
+  libkmod2 libkrb5-3 libkrb5support0 libksba8 liblcms2-2 libldap-2.5-0
+
+2025-11-09T18:19:07.408268063Z [inf]    libldap-common liblerc4 libllvm15 liblwp-mediatypes-perl
+
+2025-11-09T18:19:07.40830826Z [inf]    liblwp-protocol-https-perl libmailtools-perl libmpc3 libmpfr6 libncursesw6
+
+2025-11-09T18:19:07.408322251Z [inf]    libnet-dbus-perl libnet-http-perl libnet-smtp-ssl-perl libnet-ssleay-perl
+
+2025-11-09T18:19:07.408355506Z [inf]    libnpth0 libnspr4 libnss-systemd libnss3 libpam-systemd libpango-1.0-0
+  libpangocairo-1.0-0 libpangoft2-1.0-0 libpciaccess0 libperl5.36
+
+2025-11-09T18:19:07.408401164Z [inf]    libpixman-1-0 libpng16-16 libproc2-0 libpsl5 libreadline8
+
+2025-11-09T18:19:07.408634016Z [inf]    libregexp-ipv6-perl librsvg2-2 librsvg2-common libsasl2-2 libsasl2-modules
+  libsasl2-modules-db libsensors-config libsensors5 libsm6 libsqlite3-0
+  libssl3 libsystemd-shared libtext-iconv-perl libthai-data libthai0
+
+2025-11-09T18:19:07.409200422Z [inf]    libtie-ixhash-perl libtiff6 libtimedate-perl libtry-tiny-perl liburi-perl
+  libwayland-client0 libwayland-cursor0 libwayland-egl1 libwayland-server0
+  libwebp7 libwww-perl libwww-robotrules-perl libx11-6 libx11-data
+
+2025-11-09T18:19:07.409212531Z [inf]    libx11-protocol-perl libx11-xcb1 libxau6 libxaw7 libxcb-dri2-0 libxcb-dri3-0
+  libxcb-glx0 libxcb-present0 libxcb-randr0 libxcb-render0 libxcb-shape0
+  libxcb-shm0 libxcb-sync1 libxcb-xfixes0 libxcb1 libxcomposite1 libxcursor1
+  libxdamage1 libxdmcp6 libxext6 libxfixes3 libxft2 libxi6 libxinerama1
+  libxkbcommon0 libxkbfile1 libxml-parser-perl libxml-twig-perl
+  libxml-xpathengine-perl libxml2 libxmu6 libxmuu1 libxpm4 libxrandr2
+  libxrender1 libxshmfence1 libxss1 libxt6 libxtst6 libxv1 libxxf86dga1
+  libxxf86vm1 libz3-4 netbase openssl perl perl-modules-5.36
+  perl-openssl-defaults pinentry-curses procps psmisc publicsuffix
+  readline-common shared-mime-info systemd systemd-sysv systemd-timesyncd wget
+  x11-common x11-utils x11-xserver-utils xdg-user-dirs xdg-utils xkb-data
+  zutty
+
+2025-11-09T18:19:07.42987555Z [inf]  0 upgraded, 263 newly installed, 0 to remove and 0 not upgraded.
+Need to get 129 MB of archives.
+After this operation, 514 MB of additional disk space will be used.
+Get:1 http://deb.debian.org/debian-security bookworm-security/main amd64 libssl3 amd64 3.0.17-1~deb12u3 [2028 kB]
+
+2025-11-09T18:19:07.441982919Z [inf]  Get:2 http://deb.debian.org/debian bookworm/main amd64 libargon2-1 amd64 0~20171227-0.3+deb12u1 [19.4 kB]
+
+2025-11-09T18:19:07.442610147Z [inf]  Get:3 http://deb.debian.org/debian bookworm/main amd64 dmsetup amd64 2:1.02.185-2 [82.0 kB]
+
+2025-11-09T18:19:07.443281026Z [inf]  Get:4 http://deb.debian.org/debian bookworm/main amd64 libdevmapper1.02.1 amd64 2:1.02.185-2 [133 kB]
+
+2025-11-09T18:19:07.444287378Z [inf]  Get:5 http://deb.debian.org/debian bookworm/main amd64 libjson-c5 amd64 0.16-2 [44.1 kB]
+
+2025-11-09T18:19:07.444711214Z [inf]  Get:6 http://deb.debian.org/debian bookworm/main amd64 libcryptsetup12 amd64 2:2.6.1-4~deb12u2 [223 kB]
+
+2025-11-09T18:19:07.446216104Z [inf]  Get:7 http://deb.debian.org/debian bookworm/main amd64 libfdisk1 amd64 2.38.1-5+deb12u3 [194 kB]
+
+2025-11-09T18:19:07.447791703Z [inf]  Get:8 http://deb.debian.org/debian bookworm/main amd64 libkmod2 amd64 30+20221128-1 [57.9 kB]
+
+2025-11-09T18:19:07.448335329Z [inf]  Get:9 http://deb.debian.org/debian bookworm/main amd64 libapparmor1 amd64 3.0.8-3 [41.2 kB]
+
+2025-11-09T18:19:07.448672101Z [inf]  Get:10 http://deb.debian.org/debian bookworm/main amd64 libip4tc2 amd64 1.8.9-2 [19.0 kB]
+
+2025-11-09T18:19:07.449123325Z [inf]  Get:11 http://deb.debian.org/debian bookworm/main amd64 libsystemd-shared amd64 252.39-1~deb12u1 [1695 kB]
+
+2025-11-09T18:19:07.459895934Z [inf]  Get:12 http://deb.debian.org/debian bookworm/main amd64 systemd amd64 252.39-1~deb12u1 [3042 kB]
+
+2025-11-09T18:19:07.478152233Z [inf]  Get:13 http://deb.debian.org/debian bookworm/main amd64 systemd-sysv amd64 252.39-1~deb12u1 [42.6 kB]
+
+2025-11-09T18:19:07.478467097Z [inf]  Get:14 http://deb.debian.org/debian bookworm/main amd64 libdbus-1-3 amd64 1.14.10-1~deb12u1 [201 kB]
+
+2025-11-09T18:19:07.479894628Z [inf]  Get:15 http://deb.debian.org/debian bookworm/main amd64 dbus-bin amd64 1.14.10-1~deb12u1 [105 kB]
+
+2025-11-09T18:19:07.480738238Z [inf]  Get:16 http://deb.debian.org/debian bookworm/main amd64 dbus-session-bus-common all 1.14.10-1~deb12u1 [78.2 kB]
+
+2025-11-09T18:19:07.481295952Z [inf]  Get:17 http://deb.debian.org/debian bookworm/main amd64 libexpat1 amd64 2.5.0-1+deb12u2 [99.9 kB]
+
+2025-11-09T18:19:07.482087435Z [inf]  Get:18 http://deb.debian.org/debian bookworm/main amd64 dbus-daemon amd64 1.14.10-1~deb12u1 [184 kB]
+
+2025-11-09T18:19:07.483287154Z [inf]  Get:19 http://deb.debian.org/debian bookworm/main amd64 dbus-system-bus-common all 1.14.10-1~deb12u1 [79.3 kB]
+
+2025-11-09T18:19:07.484084807Z [inf]  Get:20 http://deb.debian.org/debian bookworm/main amd64 dbus amd64 1.14.10-1~deb12u1 [97.4 kB]
+
+2025-11-09T18:19:07.484769496Z [inf]  Get:21 http://deb.debian.org/debian bookworm/main amd64 perl-modules-5.36 all 5.36.0-7+deb12u3 [2815 kB]
+
+2025-11-09T18:19:07.501936324Z [inf]  Get:22 http://deb.debian.org/debian bookworm/main amd64 libgdbm6 amd64 1.23-3 [72.2 kB]
+
+2025-11-09T18:19:07.502648041Z [inf]  Get:23 http://deb.debian.org/debian bookworm/main amd64 libgdbm-compat4 amd64 1.23-3 [48.2 kB]
+
+2025-11-09T18:19:07.503036725Z [inf]  Get:24 http://deb.debian.org/debian bookworm/main amd64 libperl5.36 amd64 5.36.0-7+deb12u3 [4196 kB]
+
+2025-11-09T18:19:07.527675851Z [inf]  Get:25 http://deb.debian.org/debian bookworm/main amd64 perl amd64 5.36.0-7+deb12u3 [239 kB]
+
+2025-11-09T18:19:07.52909752Z [inf]  Get:26 http://deb.debian.org/debian bookworm/main amd64 netbase all 6.4 [12.8 kB]
+
+2025-11-09T18:19:07.529342641Z [inf]  Get:27 http://deb.debian.org/debian bookworm/main amd64 libncursesw6 amd64 6.4-4 [134 kB]
+
+2025-11-09T18:19:07.530118903Z [inf]  Get:28 http://deb.debian.org/debian bookworm/main amd64 libproc2-0 amd64 2:4.0.2-3 [62.8 kB]
+
+2025-11-09T18:19:07.530787901Z [inf]  Get:29 http://deb.debian.org/debian bookworm/main amd64 procps amd64 2:4.0.2-3 [709 kB]
+
+2025-11-09T18:19:07.535244135Z [inf]  Get:30 http://deb.debian.org/debian bookworm/main amd64 readline-common all 8.2-1.3 [69.0 kB]
+
+2025-11-09T18:19:07.535825541Z [inf]  Get:31 http://deb.debian.org/debian-security bookworm-security/main amd64 openssl amd64 3.0.17-1~deb12u3 [1434 kB]
+
+2025-11-09T18:19:07.541542763Z [inf]  Get:32 http://deb.debian.org/debian bookworm/main amd64 ca-certificates all 20230311+deb12u1 [155 kB]
+
+2025-11-09T18:19:07.54248739Z [inf]  Get:33 http://deb.debian.org/debian bookworm/main amd64 krb5-locales all 1.20.1-2+deb12u4 [63.4 kB]
+
+2025-11-09T18:19:07.542850484Z [inf]  Get:34 http://deb.debian.org/debian bookworm/main amd64 libnss-systemd amd64 252.39-1~deb12u1 [163 kB]
+
+2025-11-09T18:19:07.544127978Z [inf]  Get:35 http://deb.debian.org/debian bookworm/main amd64 libpam-systemd amd64 252.39-1~deb12u1 [225 kB]
+
+2025-11-09T18:19:07.545875028Z [inf]  Get:36 http://deb.debian.org/debian bookworm/main amd64 systemd-timesyncd amd64 252.39-1~deb12u1 [63.8 kB]
+
+2025-11-09T18:19:07.546332223Z [inf]  Get:37 http://deb.debian.org/debian bookworm/main amd64 libpsl5 amd64 0.21.2-1 [58.7 kB]
+
+2025-11-09T18:19:07.547040148Z [inf]  Get:38 http://deb.debian.org/debian bookworm/main amd64 wget amd64 1.21.3-1+deb12u1 [937 kB]
+
+2025-11-09T18:19:07.552982217Z [inf]  Get:39 http://deb.debian.org/debian bookworm/main amd64 hicolor-icon-theme all 0.17-2 [11.4 kB]
+
+2025-11-09T18:19:07.553161619Z [inf]  Get:40 http://deb.debian.org/debian bookworm/main amd64 libgdk-pixbuf2.0-common all 2.42.10+dfsg-1+deb12u2 [306 kB]
+
+2025-11-09T18:19:07.555587041Z [inf]  Get:41 http://deb.debian.org/debian bookworm/main amd64 libglib2.0-0 amd64 2.74.6-2+deb12u7 [1401 kB]
+
+2025-11-09T18:19:07.56455352Z [inf]  Get:42 http://deb.debian.org/debian bookworm/main amd64 libicu72 amd64 72.1-3+deb12u1 [9376 kB]
+
+2025-11-09T18:19:07.621967417Z [inf]  Get:43 http://deb.debian.org/debian bookworm/main amd64 libxml2 amd64 2.9.14+dfsg-1.3~deb12u4 [687 kB]
+
+2025-11-09T18:19:07.626060642Z [inf]  Get:44 http://deb.debian.org/debian bookworm/main amd64 shared-mime-info amd64 2.2-1 [729 kB]
+
+2025-11-09T18:19:07.63022257Z [inf]  Get:45 http://deb.debian.org/debian bookworm/main amd64 libjpeg62-turbo amd64 1:2.1.5-2 [166 kB]
+
+2025-11-09T18:19:07.631417173Z [inf]  Get:46 http://deb.debian.org/debian bookworm/main amd64 libpng16-16 amd64 1.6.39-2 [276 kB]
+
+2025-11-09T18:19:07.633081663Z [inf]  Get:47 http://deb.debian.org/debian bookworm/main amd64 libdeflate0 amd64 1.14-1 [61.4 kB]
+
+2025-11-09T18:19:07.633783348Z [inf]  Get:48 http://deb.debian.org/debian bookworm/main amd64 libjbig0 amd64 2.1-6.1 [31.7 kB]
+
+2025-11-09T18:19:07.634174945Z [inf]  Get:49 http://deb.debian.org/debian bookworm/main amd64 liblerc4 amd64 4.0.0+ds-2 [170 kB]
+
+2025-11-09T18:19:07.635610293Z [inf]  Get:50 http://deb.debian.org/debian bookworm/main amd64 libwebp7 amd64 1.2.4-0.2+deb12u1 [286 kB]
+
+2025-11-09T18:19:07.637715008Z [inf]  Get:51 http://deb.debian.org/debian-security bookworm-security/main amd64 libtiff6 amd64 4.5.0-6+deb12u3 [316 kB]
+
+2025-11-09T18:19:07.639193831Z [inf]  Get:52 http://deb.debian.org/debian bookworm/main amd64 libgdk-pixbuf-2.0-0 amd64 2.42.10+dfsg-1+deb12u2 [138 kB]
+
+2025-11-09T18:19:07.640342943Z [inf]  Get:53 http://deb.debian.org/debian bookworm/main amd64 gtk-update-icon-cache amd64 3.24.38-2~deb12u3 [44.2 kB]
+
+2025-11-09T18:19:07.640784028Z [inf]  Get:54 http://deb.debian.org/debian bookworm/main amd64 adwaita-icon-theme all 43-1 [5124 kB]
+
+2025-11-09T18:19:07.674955204Z [inf]  Get:55 http://deb.debian.org/debian bookworm/main amd64 alsa-topology-conf all 1.2.5.1-2 [15.2 kB]
+
+2025-11-09T18:19:07.675102921Z [inf]  Get:56 http://deb.debian.org/debian bookworm/main amd64 libasound2-data all 1.2.8-1 [20.5 kB]
+
+2025-11-09T18:19:07.675340574Z [inf]  Get:57 http://deb.debian.org/debian bookworm/main amd64 libasound2 amd64 1.2.8-1+b1 [362 kB]
+
+2025-11-09T18:19:07.677795727Z [inf]  Get:58 http://deb.debian.org/debian bookworm/main amd64 alsa-ucm-conf all 1.2.8-1 [51.7 kB]
+
+2025-11-09T18:19:07.678097036Z [inf]  Get:59 http://deb.debian.org/debian bookworm/main amd64 at-spi2-common all 2.46.0-5 [162 kB]
+
+2025-11-09T18:19:07.679163738Z [inf]  Get:60 http://deb.debian.org/debian bookworm/main amd64 libxau6 amd64 1:1.0.9-1 [19.7 kB]
+
+2025-11-09T18:19:07.679417574Z [inf]  Get:61 http://deb.debian.org/debian bookworm/main amd64 libbsd0 amd64 0.11.7-2 [117 kB]
+
+2025-11-09T18:19:07.680486584Z [inf]  Get:62 http://deb.debian.org/debian bookworm/main amd64 libxdmcp6 amd64 1:1.1.2-3 [26.3 kB]
+
+2025-11-09T18:19:07.68088007Z [inf]  Get:63 http://deb.debian.org/debian bookworm/main amd64 libxcb1 amd64 1.15-1 [144 kB]
+
+2025-11-09T18:19:07.698794839Z [inf]  Get:64 http://deb.debian.org/debian bookworm/main amd64 libx11-data all 2:1.8.4-2+deb12u2 [292 kB]
+
+2025-11-09T18:19:07.700695886Z [inf]  Get:65 http://deb.debian.org/debian bookworm/main amd64 libx11-6 amd64 2:1.8.4-2+deb12u2 [760 kB]
+
+2025-11-09T18:19:07.705546473Z [inf]  Get:66 http://deb.debian.org/debian bookworm/main amd64 libxext6 amd64 2:1.3.4-1+b1 [52.9 kB]
+
+2025-11-09T18:19:07.706646019Z [inf]  Get:67 http://deb.debian.org/debian bookworm/main amd64 libxi6 amd64 2:1.8-1+b1 [84.2 kB]
+
+2025-11-09T18:19:07.707270717Z [inf]  Get:68 http://deb.debian.org/debian bookworm/main amd64 libatspi2.0-0 amd64 2.46.0-5 [75.4 kB]
+
+2025-11-09T18:19:07.707977667Z [inf]  Get:69 http://deb.debian.org/debian bookworm/main amd64 x11-common all 1:7.7+23 [252 kB]
+
+2025-11-09T18:19:07.725125239Z [inf]  Get:70 http://deb.debian.org/debian bookworm/main amd64 libxtst6 amd64 2:1.2.3-1.1 [28.0 kB]
+
+2025-11-09T18:19:07.725428594Z [inf]  Get:71 http://deb.debian.org/debian bookworm/main amd64 dbus-user-session amd64 1.14.10-1~deb12u1 [78.1 kB]
+
+2025-11-09T18:19:07.726195968Z [inf]  Get:72 http://deb.debian.org/debian bookworm/main amd64 libdconf1 amd64 0.40.0-4 [40.9 kB]
+
+2025-11-09T18:19:07.726589037Z [inf]  Get:73 http://deb.debian.org/debian bookworm/main amd64 dconf-service amd64 0.40.0-4 [31.6 kB]
+
+2025-11-09T18:19:07.727053493Z [inf]  Get:74 http://deb.debian.org/debian bookworm/main amd64 dconf-gsettings-backend amd64 0.40.0-4 [27.8 kB]
+
+2025-11-09T18:19:07.727597695Z [inf]  Get:75 http://deb.debian.org/debian bookworm/main amd64 gsettings-desktop-schemas all 43.0-1 [643 kB]
+
+2025-11-09T18:19:07.733366829Z [inf]  Get:76 http://deb.debian.org/debian bookworm/main amd64 at-spi2-core amd64 2.46.0-5 [57.3 kB]
+
+2025-11-09T18:19:07.733786141Z [inf]  Get:77 http://deb.debian.org/debian bookworm/main amd64 libisl23 amd64 0.25-1.1 [683 kB]
+
+2025-11-09T18:19:07.752661979Z [inf]  Get:78 http://deb.debian.org/debian bookworm/main amd64 libmpfr6 amd64 4.2.0-1 [701 kB]
+
+2025-11-09T18:19:07.757842217Z [inf]  Get:79 http://deb.debian.org/debian bookworm/main amd64 libmpc3 amd64 1.3.1-1 [51.5 kB]
+
+2025-11-09T18:19:07.758232488Z [inf]  Get:80 http://deb.debian.org/debian bookworm/main amd64 cpp-12 amd64 12.2.0-14+deb12u1 [9768 kB]
+
+2025-11-09T18:19:07.830050629Z [inf]  Get:81 http://deb.debian.org/debian bookworm/main amd64 cpp amd64 4:12.2.0-3 [6836 B]
+Get:82 http://deb.debian.org/debian bookworm/main amd64 libassuan0 amd64 2.5.5-5 [48.5 kB]
+
+2025-11-09T18:19:07.830373425Z [inf]  Get:83 http://deb.debian.org/debian bookworm/main amd64 libreadline8 amd64 8.2-1.3 [166 kB]
+
+2025-11-09T18:19:07.831481115Z [inf]  Get:84 http://deb.debian.org/debian bookworm/main amd64 gpgconf amd64 2.2.40-1.1+deb12u1 [564 kB]
+
+2025-11-09T18:19:07.835134394Z [inf]  Get:85 http://deb.debian.org/debian bookworm/main amd64 libksba8 amd64 1.6.3-2 [128 kB]
+
+2025-11-09T18:19:07.836098263Z [inf]  Get:86 http://deb.debian.org/debian bookworm/main amd64 libsasl2-modules-db amd64 2.1.28+dfsg-10 [20.3 kB]
+
+2025-11-09T18:19:07.836386796Z [inf]  Get:87 http://deb.debian.org/debian bookworm/main amd64 libsasl2-2 amd64 2.1.28+dfsg-10 [59.7 kB]
+
+2025-11-09T18:19:07.836865656Z [inf]  Get:88 http://deb.debian.org/debian bookworm/main amd64 libldap-2.5-0 amd64 2.5.13+dfsg-5 [183 kB]
+
+2025-11-09T18:19:07.838524657Z [inf]  Get:89 http://deb.debian.org/debian bookworm/main amd64 libnpth0 amd64 1.6-3 [19.0 kB]
+
+2025-11-09T18:19:07.838822652Z [inf]  Get:90 http://deb.debian.org/debian bookworm/main amd64 dirmngr amd64 2.2.40-1.1+deb12u1 [792 kB]
+
+2025-11-09T18:19:07.844090717Z [inf]  Get:91 http://deb.debian.org/debian bookworm/main amd64 libbrotli1 amd64 1.0.9-2+b6 [275 kB]
+
+2025-11-09T18:19:07.845818392Z [inf]  Get:92 http://deb.debian.org/debian bookworm/main amd64 libfreetype6 amd64 2.12.1+dfsg-5+deb12u4 [398 kB]
+
+2025-11-09T18:19:07.848419383Z [inf]  Get:93 http://deb.debian.org/debian bookworm/main amd64 fonts-liberation all 1:1.07.4-11 [828 kB]
+
+2025-11-09T18:19:07.853533459Z [inf]  Get:94 http://deb.debian.org/debian bookworm/main amd64 fontconfig-config amd64 2.14.1-4 [315 kB]
+
+2025-11-09T18:19:07.855523875Z [inf]  Get:95 http://deb.debian.org/debian bookworm/main amd64 libfontconfig1 amd64 2.14.1-4 [386 kB]
+
+2025-11-09T18:19:07.858103059Z [inf]  Get:96 http://deb.debian.org/debian bookworm/main amd64 fontconfig amd64 2.14.1-4 [449 kB]
+
+2025-11-09T18:19:07.86097773Z [inf]  Get:97 http://deb.debian.org/debian bookworm/main amd64 gnupg-l10n all 2.2.40-1.1+deb12u1 [1093 kB]
+
+2025-11-09T18:19:07.8682218Z [inf]  Get:98 http://deb.debian.org/debian bookworm/main amd64 gnupg-utils amd64 2.2.40-1.1+deb12u1 [927 kB]
+
+2025-11-09T18:19:07.874134601Z [inf]  Get:99 http://deb.debian.org/debian bookworm/main amd64 libsqlite3-0 amd64 3.40.1-2+deb12u2 [839 kB]
+
+2025-11-09T18:19:07.879210879Z [inf]  Get:100 http://deb.debian.org/debian bookworm/main amd64 gpg amd64 2.2.40-1.1+deb12u1 [949 kB]
+
+2025-11-09T18:19:07.885373114Z [inf]  Get:101 http://deb.debian.org/debian bookworm/main amd64 pinentry-curses amd64 1.2.1-1 [77.4 kB]
+
+2025-11-09T18:19:07.886010056Z [inf]  Get:102 http://deb.debian.org/debian bookworm/main amd64 gpg-agent amd64 2.2.40-1.1+deb12u1 [694 kB]
+
+2025-11-09T18:19:07.890581303Z [inf]  Get:103 http://deb.debian.org/debian bookworm/main amd64 gpg-wks-client amd64 2.2.40-1.1+deb12u1 [540 kB]
+
+2025-11-09T18:19:07.893942324Z [inf]  Get:104 http://deb.debian.org/debian bookworm/main amd64 gpg-wks-server amd64 2.2.40-1.1+deb12u1 [531 kB]
+
+2025-11-09T18:19:07.896872546Z [inf]  Get:105 http://deb.debian.org/debian bookworm/main amd64 gpgsm amd64 2.2.40-1.1+deb12u1 [671 kB]
+
+2025-11-09T18:19:07.900841639Z [inf]  Get:106 http://deb.debian.org/debian bookworm/main amd64 gnupg all 2.2.40-1.1+deb12u1 [846 kB]
+
+2025-11-09T18:19:07.90568417Z [inf]  Get:107 http://deb.debian.org/debian bookworm/main amd64 libatk1.0-0 amd64 2.46.0-5 [49.6 kB]
+
+2025-11-09T18:19:07.905966742Z [inf]  Get:108 http://deb.debian.org/debian bookworm/main amd64 libatk-bridge2.0-0 amd64 2.46.0-5 [64.6 kB]
+
+2025-11-09T18:19:07.906576288Z [inf]  Get:109 http://deb.debian.org/debian bookworm/main amd64 libauthen-sasl-perl all 2.1600-3 [43.9 kB]
+
+2025-11-09T18:19:07.906902198Z [inf]  Get:110 http://deb.debian.org/debian bookworm/main amd64 libavahi-common-data amd64 0.8-10+deb12u1 [107 kB]
+
+2025-11-09T18:19:07.911148893Z [inf]  Get:111 http://deb.debian.org/debian bookworm/main amd64 libavahi-common3 amd64 0.8-10+deb12u1 [42.1 kB]
+
+2025-11-09T18:19:07.911684573Z [inf]  Get:112 http://deb.debian.org/debian bookworm/main amd64 libavahi-client3 amd64 0.8-10+deb12u1 [45.8 kB]
+
+2025-11-09T18:19:07.912053118Z [inf]  Get:113 http://deb.debian.org/debian bookworm/main amd64 libpixman-1-0 amd64 0.42.2-1 [546 kB]
+
+2025-11-09T18:19:07.915232529Z [inf]  Get:114 http://deb.debian.org/debian bookworm/main amd64 libxcb-render0 amd64 1.15-1 [115 kB]
+
+2025-11-09T18:19:07.91603708Z [inf]  Get:115 http://deb.debian.org/debian bookworm/main amd64 libxcb-shm0 amd64 1.15-1 [105 kB]
+
+2025-11-09T18:19:07.916869478Z [inf]  Get:116 http://deb.debian.org/debian bookworm/main amd64 libxrender1 amd64 1:0.9.10-1.1 [33.2 kB]
+
+2025-11-09T18:19:07.917256181Z [inf]  Get:117 http://deb.debian.org/debian bookworm/main amd64 libcairo2 amd64 1.16.0-7 [575 kB]
+
+2025-11-09T18:19:07.921162379Z [inf]  Get:118 http://deb.debian.org/debian bookworm/main amd64 libcairo-gobject2 amd64 1.16.0-7 [112 kB]
+
+2025-11-09T18:19:07.921956414Z [inf]  Get:119 http://deb.debian.org/debian bookworm/main amd64 liblcms2-2 amd64 2.14-2 [154 kB]
+
+2025-11-09T18:19:07.922960925Z [inf]  Get:120 http://deb.debian.org/debian bookworm/main amd64 libcolord2 amd64 1.4.6-2.2 [137 kB]
+
+2025-11-09T18:19:07.923812144Z [inf]  Get:121 http://deb.debian.org/debian bookworm/main amd64 libkrb5support0 amd64 1.20.1-2+deb12u4 [33.2 kB]
+
+2025-11-09T18:19:07.924174258Z [inf]  Get:122 http://deb.debian.org/debian bookworm/main amd64 libk5crypto3 amd64 1.20.1-2+deb12u4 [79.8 kB]
+
+2025-11-09T18:19:07.924831899Z [inf]  Get:123 http://deb.debian.org/debian bookworm/main amd64 libkeyutils1 amd64 1.6.3-2 [8808 B]
+
+2025-11-09T18:19:07.925025822Z [inf]  Get:124 http://deb.debian.org/debian bookworm/main amd64 libkrb5-3 amd64 1.20.1-2+deb12u4 [334 kB]
+
+2025-11-09T18:19:07.927494848Z [inf]  Get:125 http://deb.debian.org/debian bookworm/main amd64 libgssapi-krb5-2 amd64 1.20.1-2+deb12u4 [135 kB]
+
+2025-11-09T18:19:07.928317121Z [inf]  Get:126 http://deb.debian.org/debian-security bookworm-security/main amd64 libcups2 amd64 2.4.2-3+deb12u9 [245 kB]
+
+2025-11-09T18:19:07.92967419Z [inf]  Get:127 http://deb.debian.org/debian bookworm/main amd64 libepoxy0 amd64 1.5.10-1 [189 kB]
+
+2025-11-09T18:19:07.930783356Z [inf]  Get:128 http://deb.debian.org/debian bookworm/main amd64 libfribidi0 amd64 1.0.8-2.1 [65.0 kB]
+
+2025-11-09T18:19:07.931508715Z [inf]  Get:129 http://deb.debian.org/debian bookworm/main amd64 libgraphite2-3 amd64 1.3.14-1 [81.2 kB]
+
+2025-11-09T18:19:07.938132096Z [inf]  Get:130 http://deb.debian.org/debian bookworm/main amd64 libharfbuzz0b amd64 6.0.0+dfsg-3 [1945 kB]
+
+2025-11-09T18:19:07.962326577Z [inf]  Get:131 http://deb.debian.org/debian bookworm/main amd64 libthai-data all 0.1.29-1 [176 kB]
+
+2025-11-09T18:19:07.963557836Z [inf]  Get:132 http://deb.debian.org/debian bookworm/main amd64 libdatrie1 amd64 0.2.13-2+b1 [43.3 kB]
+
+2025-11-09T18:19:07.963902008Z [inf]  Get:133 http://deb.debian.org/debian bookworm/main amd64 libthai0 amd64 0.1.29-1 [57.5 kB]
+
+2025-11-09T18:19:07.964383944Z [inf]  Get:134 http://deb.debian.org/debian bookworm/main amd64 libpango-1.0-0 amd64 1.50.12+ds-1 [212 kB]
+
+2025-11-09T18:19:07.965661549Z [inf]  Get:135 http://deb.debian.org/debian bookworm/main amd64 libpangoft2-1.0-0 amd64 1.50.12+ds-1 [47.4 kB]
+
+2025-11-09T18:19:07.965994824Z [inf]  Get:136 http://deb.debian.org/debian bookworm/main amd64 libpangocairo-1.0-0 amd64 1.50.12+ds-1 [34.2 kB]
+
+2025-11-09T18:19:07.966384968Z [inf]  Get:137 http://deb.debian.org/debian bookworm/main amd64 libwayland-client0 amd64 1.21.0-1 [28.3 kB]
+
+2025-11-09T18:19:07.966556204Z [inf]  Get:138 http://deb.debian.org/debian bookworm/main amd64 libwayland-cursor0 amd64 1.21.0-1 [14.4 kB]
+
+2025-11-09T18:19:07.96673755Z [inf]  Get:139 http://deb.debian.org/debian bookworm/main amd64 libwayland-egl1 amd64 1.21.0-1 [8640 B]
+
+2025-11-09T18:19:07.966923181Z [inf]  Get:140 http://deb.debian.org/debian bookworm/main amd64 libxcomposite1 amd64 1:0.4.5-1 [16.6 kB]
+
+2025-11-09T18:19:07.96714634Z [inf]  Get:141 http://deb.debian.org/debian bookworm/main amd64 libxfixes3 amd64 1:6.0.0-2 [22.7 kB]
+
+2025-11-09T18:19:07.967441264Z [inf]  Get:142 http://deb.debian.org/debian bookworm/main amd64 libxcursor1 amd64 1:1.2.1-1 [40.9 kB]
+
+2025-11-09T18:19:07.967748468Z [inf]  Get:143 http://deb.debian.org/debian bookworm/main amd64 libxdamage1 amd64 1:1.1.6-1 [15.1 kB]
+
+2025-11-09T18:19:07.968164857Z [inf]  Get:144 http://deb.debian.org/debian bookworm/main amd64 libxinerama1 amd64 2:1.1.4-3 [17.8 kB]
+
+2025-11-09T18:19:07.96877627Z [inf]  Get:145 http://deb.debian.org/debian bookworm/main amd64 xkb-data all 2.35.1-1 [764 kB]
+
+2025-11-09T18:19:07.974113528Z [inf]  Get:146 http://deb.debian.org/debian bookworm/main amd64 libxkbcommon0 amd64 1.5.0-1 [106 kB]
+
+2025-11-09T18:19:07.974972995Z [inf]  Get:147 http://deb.debian.org/debian bookworm/main amd64 libxrandr2 amd64 2:1.5.2-2+b1 [39.2 kB]
+
+2025-11-09T18:19:07.975293243Z [inf]  Get:148 http://deb.debian.org/debian bookworm/main amd64 libgtk-3-common all 3.24.38-2~deb12u3 [3895 kB]
+
+2025-11-09T18:19:07.998448925Z [inf]  Get:149 http://deb.debian.org/debian bookworm/main amd64 libgtk-3-0 amd64 3.24.38-2~deb12u3 [2847 kB]
+
+2025-11-09T18:19:08.013560596Z [inf]  Get:150 http://deb.debian.org/debian bookworm/main amd64 libayatana-ido3-0.4-0 amd64 0.9.3-1 [57.6 kB]
+
+2025-11-09T18:19:08.013914258Z [inf]  Get:151 http://deb.debian.org/debian bookworm/main amd64 libayatana-indicator3-7 amd64 0.9.3-1 [32.8 kB]
+
+2025-11-09T18:19:08.014236282Z [inf]  Get:152 http://deb.debian.org/debian bookworm/main amd64 libdbusmenu-glib4 amd64 18.10.20180917~bzr492+repack1-3 [42.1 kB]
+
+2025-11-09T18:19:08.014608747Z [inf]  Get:153 http://deb.debian.org/debian bookworm/main amd64 libdbusmenu-gtk3-4 amd64 18.10.20180917~bzr492+repack1-3 [29.0 kB]
+
+2025-11-09T18:19:08.014919354Z [inf]  Get:154 http://deb.debian.org/debian bookworm/main amd64 libayatana-appindicator3-1 amd64 0.5.92-1 [24.5 kB]
+
+2025-11-09T18:19:08.0151545Z [inf]  Get:155 http://deb.debian.org/debian bookworm/main amd64 libclone-perl amd64 0.46-1 [13.7 kB]
+
+2025-11-09T18:19:08.015302489Z [inf]  Get:156 http://deb.debian.org/debian bookworm/main amd64 libdata-dump-perl all 1.25-1 [28.4 kB]
+
+2025-11-09T18:19:08.015549059Z [inf]  Get:157 http://deb.debian.org/debian bookworm/main amd64 libdrm-common all 2.4.114-1 [7112 B]
+
+2025-11-09T18:19:08.015734272Z [inf]  Get:158 http://deb.debian.org/debian bookworm/main amd64 libdrm2 amd64 2.4.114-1+b1 [37.5 kB]
+
+2025-11-09T18:19:08.017837055Z [inf]  Get:159 http://deb.debian.org/debian bookworm/main amd64 libdrm-amdgpu1 amd64 2.4.114-1+b1 [20.9 kB]
+
+2025-11-09T18:19:08.018716022Z [inf]  Get:160 http://deb.debian.org/debian bookworm/main amd64 libpciaccess0 amd64 0.17-2 [51.4 kB]
+
+2025-11-09T18:19:08.019524101Z [inf]  Get:161 http://deb.debian.org/debian bookworm/main amd64 libdrm-intel1 amd64 2.4.114-1+b1 [64.0 kB]
+
+2025-11-09T18:19:08.021033555Z [inf]  Get:162 http://deb.debian.org/debian bookworm/main amd64 libdrm-nouveau2 amd64 2.4.114-1+b1 [19.1 kB]
+
+2025-11-09T18:19:08.021938043Z [inf]  Get:163 http://deb.debian.org/debian bookworm/main amd64 libdrm-radeon1 amd64 2.4.114-1+b1 [21.8 kB]
+
+2025-11-09T18:19:08.022330201Z [inf]  Get:164 http://deb.debian.org/debian bookworm/main amd64 libedit2 amd64 3.1-20221030-2 [93.0 kB]
+
+2025-11-09T18:19:08.023197892Z [inf]  Get:165 http://deb.debian.org/debian bookworm/main amd64 libwayland-server0 amd64 1.21.0-1 [35.9 kB]
+
+2025-11-09T18:19:08.024710521Z [inf]  Get:166 http://deb.debian.org/debian bookworm/main amd64 libgbm1 amd64 22.3.6-1+deb12u1 [38.0 kB]
+
+2025-11-09T18:19:08.025484443Z [inf]  Get:167 http://deb.debian.org/debian bookworm/main amd64 libglapi-mesa amd64 22.3.6-1+deb12u1 [35.7 kB]
+
+2025-11-09T18:19:08.026008456Z [inf]  Get:168 http://deb.debian.org/debian bookworm/main amd64 libx11-xcb1 amd64 2:1.8.4-2+deb12u2 [192 kB]
+
+2025-11-09T18:19:08.027276045Z [inf]  Get:169 http://deb.debian.org/debian bookworm/main amd64 libxcb-dri2-0 amd64 1.15-1 [107 kB]
+
+2025-11-09T18:19:08.048304402Z [inf]  Get:170 http://deb.debian.org/debian bookworm/main amd64 libxcb-dri3-0 amd64 1.15-1 [107 kB]
+
+2025-11-09T18:19:08.049382856Z [inf]  Get:171 http://deb.debian.org/debian bookworm/main amd64 libxcb-present0 amd64 1.15-1 [105 kB]
+
+2025-11-09T18:19:08.050733981Z [inf]  Get:172 http://deb.debian.org/debian bookworm/main amd64 libxcb-randr0 amd64 1.15-1 [117 kB]
+
+2025-11-09T18:19:08.052242894Z [inf]  Get:173 http://deb.debian.org/debian bookworm/main amd64 libxcb-sync1 amd64 1.15-1 [109 kB]
+
+2025-11-09T18:19:08.053265491Z [inf]  Get:174 http://deb.debian.org/debian bookworm/main amd64 libxcb-xfixes0 amd64 1.15-1 [109 kB]
+
+2025-11-09T18:19:08.054216652Z [inf]  Get:175 http://deb.debian.org/debian bookworm/main amd64 libxshmfence1 amd64 1.3-1 [8820 B]
+
+2025-11-09T18:19:08.054577603Z [inf]  Get:176 http://deb.debian.org/debian bookworm/main amd64 libegl-mesa0 amd64 22.3.6-1+deb12u1 [114 kB]
+
+2025-11-09T18:19:08.055790685Z [inf]  Get:177 http://deb.debian.org/debian bookworm/main amd64 libelf1 amd64 0.188-2.1 [174 kB]
+
+2025-11-09T18:19:08.057149206Z [inf]  Get:178 http://deb.debian.org/debian bookworm/main amd64 libencode-locale-perl all 1.05-3 [12.9 kB]
+
+2025-11-09T18:19:08.05769366Z [inf]  Get:179 http://deb.debian.org/debian bookworm/main amd64 libipc-system-simple-perl all 1.30-2 [26.8 kB]
+
+2025-11-09T18:19:08.058691421Z [inf]  Get:180 http://deb.debian.org/debian bookworm/main amd64 libfile-basedir-perl all 0.09-2 [15.1 kB]
+
+2025-11-09T18:19:08.059052819Z [inf]  Get:181 http://deb.debian.org/debian bookworm/main amd64 libregexp-ipv6-perl all 0.03-3 [5212 B]
+
+2025-11-09T18:19:08.059244867Z [inf]  Get:182 http://deb.debian.org/debian bookworm/main amd64 liburi-perl all 5.17-1 [90.4 kB]
+
+2025-11-09T18:19:08.060115443Z [inf]  Get:183 http://deb.debian.org/debian bookworm/main amd64 libfile-desktopentry-perl all 0.22-3 [17.6 kB]
+
+2025-11-09T18:19:08.060820607Z [inf]  Get:184 http://deb.debian.org/debian bookworm/main amd64 libtimedate-perl all 2.3300-2 [39.3 kB]
+
+2025-11-09T18:19:08.061270929Z [inf]  Get:185 http://deb.debian.org/debian bookworm/main amd64 libhttp-date-perl all 6.05-2 [10.5 kB]
+
+2025-11-09T18:19:08.061568231Z [inf]  Get:186 http://deb.debian.org/debian bookworm/main amd64 libfile-listing-perl all 6.15-1 [12.6 kB]
+
+2025-11-09T18:19:08.063650218Z [inf]  Get:187 http://deb.debian.org/debian bookworm/main amd64 libfile-mimeinfo-perl all 0.33-1 [48.3 kB]
+
+2025-11-09T18:19:08.06411548Z [inf]  Get:188 http://deb.debian.org/debian bookworm/main amd64 libfont-afm-perl all 1.20-4 [13.1 kB]
+
+2025-11-09T18:19:08.064424574Z [inf]  Get:189 http://deb.debian.org/debian bookworm/main amd64 libfontenc1 amd64 1:1.1.4-1 [24.3 kB]
+
+2025-11-09T18:19:08.064812704Z [inf]  Get:190 http://deb.debian.org/debian bookworm/main amd64 libgdk-pixbuf-xlib-2.0-0 amd64 2.40.2-2 [47.9 kB]
+
+2025-11-09T18:19:08.065786733Z [inf]  Get:191 http://deb.debian.org/debian bookworm/main amd64 libgdk-pixbuf2.0-0 amd64 2.40.2-2 [14.1 kB]
+
+2025-11-09T18:19:08.066588639Z [inf]  Get:192 http://deb.debian.org/debian bookworm/main amd64 libgdk-pixbuf2.0-bin amd64 2.42.10+dfsg-1+deb12u2 [17.8 kB]
+
+2025-11-09T18:19:08.067495106Z [inf]  Get:193 http://deb.debian.org/debian bookworm/main amd64 libglvnd0 amd64 1.6.0-1 [51.8 kB]
+
+2025-11-09T18:19:08.068593571Z [inf]  Get:194 http://deb.debian.org/debian bookworm/main amd64 libxcb-glx0 amd64 1.15-1 [122 kB]
+
+2025-11-09T18:19:08.069669808Z [inf]  Get:195 http://deb.debian.org/debian bookworm/main amd64 libxxf86vm1 amd64 1:1.1.4-1+b2 [20.8 kB]
+
+2025-11-09T18:19:08.070289273Z [inf]  Get:196 http://deb.debian.org/debian bookworm/main amd64 libz3-4 amd64 4.8.12-3.1 [7216 kB]
+
+2025-11-09T18:19:08.116666905Z [inf]  Get:197 http://deb.debian.org/debian bookworm/main amd64 libllvm15 amd64 1:15.0.6-4+b1 [23.1 MB]
+
+2025-11-09T18:19:08.254593672Z [inf]  Get:198 http://deb.debian.org/debian bookworm/main amd64 libsensors-config all 1:3.6.0-7.1 [14.3 kB]
+
+2025-11-09T18:19:08.25471873Z [inf]  Get:199 http://deb.debian.org/debian bookworm/main amd64 libsensors5 amd64 1:3.6.0-7.1 [34.2 kB]
+
+2025-11-09T18:19:08.255072085Z [inf]  Get:200 http://deb.debian.org/debian bookworm/main amd64 libgl1-mesa-dri amd64 22.3.6-1+deb12u1 [7239 kB]
+
+2025-11-09T18:19:08.296975296Z [inf]  Get:201 http://deb.debian.org/debian bookworm/main amd64 libglx-mesa0 amd64 22.3.6-1+deb12u1 [147 kB]
+
+2025-11-09T18:19:08.298042055Z [inf]  Get:202 http://deb.debian.org/debian bookworm/main amd64 libglx0 amd64 1.6.0-1 [34.4 kB]
+
+2025-11-09T18:19:08.298467816Z [inf]  Get:203 http://deb.debian.org/debian bookworm/main amd64 libgl1 amd64 1.6.0-1 [88.4 kB]
+
+2025-11-09T18:19:08.298983098Z [inf]  Get:204 http://deb.debian.org/debian bookworm/main amd64 libgles2 amd64 1.6.0-1 [16.8 kB]
+
+2025-11-09T18:19:08.299219908Z [inf]  Get:205 http://deb.debian.org/debian bookworm/main amd64 libglib2.0-data all 2.74.6-2+deb12u7 [1209 kB]
+
+2025-11-09T18:19:08.306133193Z [inf]  Get:206 http://deb.debian.org/debian bookworm/main amd64 libgpm2 amd64 1.20.7-10+b1 [14.2 kB]
+
+2025-11-09T18:19:08.306240987Z [inf]  Get:207 http://deb.debian.org/debian bookworm/main amd64 libgtk-3-bin amd64 3.24.38-2~deb12u3 [82.7 kB]
+
+2025-11-09T18:19:08.306911786Z [inf]  Get:208 http://deb.debian.org/debian bookworm/main amd64 libhtml-tagset-perl all 3.20-6 [11.7 kB]
+
+2025-11-09T18:19:08.307004105Z [inf]  Get:209 http://deb.debian.org/debian bookworm/main amd64 libhtml-parser-perl amd64 3.81-1 [101 kB]
+
+2025-11-09T18:19:08.307645145Z [inf]  Get:210 http://deb.debian.org/debian bookworm/main amd64 libio-html-perl all 1.004-3 [16.2 kB]
+
+2025-11-09T18:19:08.307843512Z [inf]  Get:211 http://deb.debian.org/debian bookworm/main amd64 liblwp-mediatypes-perl all 6.04-2 [20.2 kB]
+
+2025-11-09T18:19:08.308185498Z [inf]  Get:212 http://deb.debian.org/debian bookworm/main amd64 libhttp-message-perl all 6.44-1 [81.7 kB]
+
+2025-11-09T18:19:08.308871491Z [inf]  Get:213 http://deb.debian.org/debian bookworm/main amd64 libhtml-form-perl all 6.11-1 [33.1 kB]
+
+2025-11-09T18:19:08.309178921Z [inf]  Get:214 http://deb.debian.org/debian bookworm/main amd64 libhtml-tree-perl all 5.07-3 [211 kB]
+
+2025-11-09T18:19:08.310515967Z [inf]  Get:215 http://deb.debian.org/debian bookworm/main amd64 libhtml-format-perl all 2.16-2 [38.8 kB]
+
+2025-11-09T18:19:08.31078039Z [inf]  Get:216 http://deb.debian.org/debian bookworm/main amd64 libhttp-cookies-perl all 6.10-1 [19.6 kB]
+
+2025-11-09T18:19:08.311029375Z [inf]  Get:217 http://deb.debian.org/debian bookworm/main amd64 libhttp-daemon-perl all 6.16-1 [23.5 kB]
+
+2025-11-09T18:19:08.31126606Z [inf]  Get:218 http://deb.debian.org/debian bookworm/main amd64 libhttp-negotiate-perl all 6.01-2 [13.1 kB]
+
+2025-11-09T18:19:08.311535372Z [inf]  Get:219 http://deb.debian.org/debian bookworm/main amd64 libice6 amd64 2:1.0.10-1 [58.5 kB]
+
+2025-11-09T18:19:08.311990592Z [inf]  Get:220 http://deb.debian.org/debian bookworm/main amd64 perl-openssl-defaults amd64 7+b1 [7924 B]
+
+2025-11-09T18:19:08.312854465Z [inf]  Get:221 http://deb.debian.org/debian bookworm/main amd64 libnet-ssleay-perl amd64 1.92-2+b1 [317 kB]
+
+2025-11-09T18:19:08.315028882Z [inf]  Get:222 http://deb.debian.org/debian bookworm/main amd64 libio-socket-ssl-perl all 2.081-2 [219 kB]
+
+2025-11-09T18:19:08.316517061Z [inf]  Get:223 http://deb.debian.org/debian bookworm/main amd64 libio-stringy-perl all 2.111-3 [56.5 kB]
+
+2025-11-09T18:19:08.316979054Z [inf]  Get:224 http://deb.debian.org/debian bookworm/main amd64 libldap-common all 2.5.13+dfsg-5 [29.3 kB]
+
+2025-11-09T18:19:08.317329674Z [inf]  Get:225 http://deb.debian.org/debian bookworm/main amd64 libnet-http-perl all 6.22-1 [25.3 kB]
+
+2025-11-09T18:19:08.317815741Z [inf]  Get:226 http://deb.debian.org/debian bookworm/main amd64 libtry-tiny-perl all 0.31-2 [22.6 kB]
+
+2025-11-09T18:19:08.318645666Z [inf]  Get:227 http://deb.debian.org/debian bookworm/main amd64 libwww-robotrules-perl all 6.02-1 [12.9 kB]
+
+2025-11-09T18:19:08.319457791Z [inf]  Get:228 http://deb.debian.org/debian bookworm/main amd64 libwww-perl all 6.68-1 [186 kB]
+
+2025-11-09T18:19:08.320870027Z [inf]  Get:229 http://deb.debian.org/debian bookworm/main amd64 liblwp-protocol-https-perl all 6.10-1 [12.2 kB]
+
+2025-11-09T18:19:08.321137943Z [inf]  Get:230 http://deb.debian.org/debian bookworm/main amd64 libnet-smtp-ssl-perl all 1.04-2 [6548 B]
+
+2025-11-09T18:19:08.321376577Z [inf]  Get:231 http://deb.debian.org/debian bookworm/main amd64 libmailtools-perl all 2.21-2 [95.6 kB]
+
+2025-11-09T18:19:08.321999147Z [inf]  Get:232 http://deb.debian.org/debian bookworm/main amd64 libxml-parser-perl amd64 2.46-4 [201 kB]
+
+2025-11-09T18:19:08.323402338Z [inf]  Get:233 http://deb.debian.org/debian bookworm/main amd64 libxml-twig-perl all 1:3.52-2 [181 kB]
+
+2025-11-09T18:19:08.324660823Z [inf]  Get:234 http://deb.debian.org/debian bookworm/main amd64 libnet-dbus-perl amd64 1.2.0-2 [177 kB]
+
+2025-11-09T18:19:08.325942012Z [inf]  Get:235 http://deb.debian.org/debian bookworm/main amd64 libnspr4 amd64 2:4.35-1 [113 kB]
+
+2025-11-09T18:19:08.32694888Z [inf]  Get:236 http://deb.debian.org/debian bookworm/main amd64 libnss3 amd64 2:3.87.1-1+deb12u1 [1331 kB]
+
+2025-11-09T18:19:08.335675111Z [inf]  Get:237 http://deb.debian.org/debian bookworm/main amd64 librsvg2-2 amd64 2.54.7+dfsg-1~deb12u1 [2620 kB]
+
+2025-11-09T18:19:08.350222149Z [inf]  Get:238 http://deb.debian.org/debian bookworm/main amd64 librsvg2-common amd64 2.54.7+dfsg-1~deb12u1 [21.4 kB]
+
+2025-11-09T18:19:08.350319764Z [inf]  Get:239 http://deb.debian.org/debian bookworm/main amd64 libsasl2-modules amd64 2.1.28+dfsg-10 [66.6 kB]
+
+2025-11-09T18:19:08.35090435Z [inf]  Get:240 http://deb.debian.org/debian bookworm/main amd64 libsm6 amd64 2:1.2.3-1 [35.1 kB]
+
+2025-11-09T18:19:08.351232905Z [inf]  Get:241 http://deb.debian.org/debian bookworm/main amd64 libtext-iconv-perl amd64 1.7-8 [14.5 kB]
+
+2025-11-09T18:19:08.351349687Z [inf]  Get:242 http://deb.debian.org/debian bookworm/main amd64 libtie-ixhash-perl all 1.23-4 [11.7 kB]
+
+2025-11-09T18:19:08.351603206Z [inf]  Get:243 http://deb.debian.org/debian bookworm/main amd64 libx11-protocol-perl all 0.56-9 [120 kB]
+
+2025-11-09T18:19:08.352276806Z [inf]  Get:244 http://deb.debian.org/debian bookworm/main amd64 libxt6 amd64 1:1.2.1-1.1 [186 kB]
+
+2025-11-09T18:19:08.353469592Z [inf]  Get:245 http://deb.debian.org/debian bookworm/main amd64 libxmu6 amd64 2:1.1.3-3 [60.1 kB]
+
+2025-11-09T18:19:08.354034879Z [inf]  Get:246 http://deb.debian.org/debian bookworm/main amd64 libxpm4 amd64 1:3.5.12-1.1+deb12u1 [48.6 kB]
+
+2025-11-09T18:19:08.354404721Z [inf]  Get:247 http://deb.debian.org/debian bookworm/main amd64 libxaw7 amd64 2:1.0.14-1 [201 kB]
+
+2025-11-09T18:19:08.355908164Z [inf]  Get:248 http://deb.debian.org/debian bookworm/main amd64 libxcb-shape0 amd64 1.15-1 [106 kB]
+
+2025-11-09T18:19:08.35667745Z [inf]  Get:249 http://deb.debian.org/debian bookworm/main amd64 libxft2 amd64 2.3.6-1 [61.8 kB]
+
+2025-11-09T18:19:08.357173832Z [inf]  Get:250 http://deb.debian.org/debian bookworm/main amd64 libxkbfile1 amd64 1:1.1.0-1 [75.2 kB]
+
+2025-11-09T18:19:08.357940096Z [inf]  Get:251 http://deb.debian.org/debian bookworm/main amd64 libxml-xpathengine-perl all 0.14-2 [33.5 kB]
+
+2025-11-09T18:19:08.358411804Z [inf]  Get:252 http://deb.debian.org/debian bookworm/main amd64 libxmuu1 amd64 2:1.1.3-3 [23.9 kB]
+
+2025-11-09T18:19:08.359088374Z [inf]  Get:253 http://deb.debian.org/debian bookworm/main amd64 libxss1 amd64 1:1.2.3-1 [17.8 kB]
+
+2025-11-09T18:19:08.359828759Z [inf]  Get:254 http://deb.debian.org/debian bookworm/main amd64 libxv1 amd64 2:1.0.11-1.1 [24.8 kB]
+
+2025-11-09T18:19:08.360757088Z [inf]  Get:255 http://deb.debian.org/debian bookworm/main amd64 libxxf86dga1 amd64 2:1.1.5-1 [22.1 kB]
+
+2025-11-09T18:19:08.361969469Z [inf]  Get:256 http://deb.debian.org/debian bookworm/main amd64 psmisc amd64 23.6-1 [259 kB]
+
+2025-11-09T18:19:08.363647414Z [inf]  Get:257 http://deb.debian.org/debian bookworm/main amd64 publicsuffix all 20230209.2326-1 [126 kB]
+
+2025-11-09T18:19:08.364548076Z [inf]  Get:258 http://deb.debian.org/debian bookworm/main amd64 x11-utils amd64 7.7+5 [202 kB]
+
+2025-11-09T18:19:08.365966301Z [inf]  Get:259 http://deb.debian.org/debian bookworm/main amd64 x11-xserver-utils amd64 7.7+9+b1 [169 kB]
+
+2025-11-09T18:19:08.367181124Z [inf]  Get:260 http://deb.debian.org/debian bookworm/main amd64 xdg-user-dirs amd64 0.18-1 [54.4 kB]
+
+2025-11-09T18:19:08.368141965Z [inf]  Get:261 http://deb.debian.org/debian bookworm/main amd64 xdg-utils all 1.1.3-4.1 [75.5 kB]
+
+2025-11-09T18:19:08.368785551Z [inf]  Get:262 http://deb.debian.org/debian bookworm/main amd64 libegl1 amd64 1.6.0-1 [33.7 kB]
+
+2025-11-09T18:19:08.369837396Z [inf]  Get:263 http://deb.debian.org/debian bookworm/main amd64 zutty amd64 0.14.0.20230218+dfsg1-1 [177 kB]
+
+2025-11-09T18:19:08.481101942Z [inf]  debconf: delaying package configuration, since apt-utils is not installed
+
+2025-11-09T18:19:08.501187936Z [inf]  Fetched 129 MB in 1s (135 MB/s)
+
+2025-11-09T18:19:08.514666216Z [inf]  Selecting previously unselected package libssl3:amd64.
+(Reading database ... 
+2025-11-09T18:19:08.515351786Z [inf]  (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%
+2025-11-09T18:19:08.516722954Z [inf]  (Reading database ... 75%
+2025-11-09T18:19:08.517093524Z [inf]  (Reading database ... 80%
+2025-11-09T18:19:08.517396462Z [inf]  (Reading database ... 85%
+2025-11-09T18:19:08.517567178Z [inf]  (Reading database ... 90%
+2025-11-09T18:19:08.517758585Z [inf]  (Reading database ... 95%
+2025-11-09T18:19:08.518595591Z [inf]  (Reading database ... 100%(Reading database ... 6095 files and directories currently installed.)
+
+2025-11-09T18:19:08.519085377Z [inf]  Preparing to unpack .../00-libssl3_3.0.17-1~deb12u3_amd64.deb ...
+
+2025-11-09T18:19:08.521050643Z [inf]  Unpacking libssl3:amd64 (3.0.17-1~deb12u3) ...
+
+2025-11-09T18:19:08.651087882Z [inf]  Selecting previously unselected package libargon2-1:amd64.
+
+2025-11-09T18:19:08.652132913Z [inf]  Preparing to unpack .../01-libargon2-1_0~20171227-0.3+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:08.653273474Z [inf]  Unpacking libargon2-1:amd64 (0~20171227-0.3+deb12u1) ...
+
+2025-11-09T18:19:08.668355449Z [inf]  Selecting previously unselected package dmsetup.
+
+2025-11-09T18:19:08.669339192Z [inf]  Preparing to unpack .../02-dmsetup_2%3a1.02.185-2_amd64.deb ...
+
+2025-11-09T18:19:08.670412947Z [inf]  Unpacking dmsetup (2:1.02.185-2) ...
+
+2025-11-09T18:19:08.691369245Z [inf]  Selecting previously unselected package libdevmapper1.02.1:amd64.
+
+2025-11-09T18:19:08.692381404Z [inf]  Preparing to unpack .../03-libdevmapper1.02.1_2%3a1.02.185-2_amd64.deb ...
+
+2025-11-09T18:19:08.693734872Z [inf]  Unpacking libdevmapper1.02.1:amd64 (2:1.02.185-2) ...
+
+2025-11-09T18:19:08.717395352Z [inf]  Selecting previously unselected package libjson-c5:amd64.
+
+2025-11-09T18:19:08.718540111Z [inf]  Preparing to unpack .../04-libjson-c5_0.16-2_amd64.deb ...
+
+2025-11-09T18:19:08.719738052Z [inf]  Unpacking libjson-c5:amd64 (0.16-2) ...
+
+2025-11-09T18:19:08.736902975Z [inf]  Selecting previously unselected package libcryptsetup12:amd64.
+
+2025-11-09T18:19:08.73800472Z [inf]  Preparing to unpack .../05-libcryptsetup12_2%3a2.6.1-4~deb12u2_amd64.deb ...
+
+2025-11-09T18:19:08.739287753Z [inf]  Unpacking libcryptsetup12:amd64 (2:2.6.1-4~deb12u2) ...
+
+2025-11-09T18:19:08.76884908Z [inf]  Selecting previously unselected package libfdisk1:amd64.
+
+2025-11-09T18:19:08.770101543Z [inf]  Preparing to unpack .../06-libfdisk1_2.38.1-5+deb12u3_amd64.deb ...
+
+2025-11-09T18:19:08.771215154Z [inf]  Unpacking libfdisk1:amd64 (2.38.1-5+deb12u3) ...
+
+2025-11-09T18:19:08.796914727Z [inf]  Selecting previously unselected package libkmod2:amd64.
+
+2025-11-09T18:19:08.797890279Z [inf]  Preparing to unpack .../07-libkmod2_30+20221128-1_amd64.deb ...
+
+2025-11-09T18:19:08.798940608Z [inf]  Unpacking libkmod2:amd64 (30+20221128-1) ...
+
+2025-11-09T18:19:08.816457322Z [inf]  Selecting previously unselected package libapparmor1:amd64.
+
+2025-11-09T18:19:08.817576886Z [inf]  Preparing to unpack .../08-libapparmor1_3.0.8-3_amd64.deb ...
+
+2025-11-09T18:19:08.818890738Z [inf]  Unpacking libapparmor1:amd64 (3.0.8-3) ...
+
+2025-11-09T18:19:08.836789267Z [inf]  Selecting previously unselected package libip4tc2:amd64.
+
+2025-11-09T18:19:08.837926893Z [inf]  Preparing to unpack .../09-libip4tc2_1.8.9-2_amd64.deb ...
+
+2025-11-09T18:19:08.839181374Z [inf]  Unpacking libip4tc2:amd64 (1.8.9-2) ...
+
+2025-11-09T18:19:08.854930067Z [inf]  Selecting previously unselected package libsystemd-shared:amd64.
+
+2025-11-09T18:19:08.855895275Z [inf]  Preparing to unpack .../10-libsystemd-shared_252.39-1~deb12u1_amd64.deb ...
+
+2025-11-09T18:19:08.857138061Z [inf]  Unpacking libsystemd-shared:amd64 (252.39-1~deb12u1) ...
+
+2025-11-09T18:19:08.985650079Z [inf]  Setting up libssl3:amd64 (3.0.17-1~deb12u3) ...
+
+2025-11-09T18:19:09.003281878Z [inf]  Selecting previously unselected package systemd.
+(Reading database ... 
+2025-11-09T18:19:09.003753202Z [inf]  (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%
+2025-11-09T18:19:09.00505325Z [inf]  (Reading database ... 75%
+2025-11-09T18:19:09.005393149Z [inf]  (Reading database ... 80%
+2025-11-09T18:19:09.005621468Z [inf]  (Reading database ... 85%
+2025-11-09T18:19:09.005774156Z [inf]  (Reading database ... 90%
+2025-11-09T18:19:09.00594874Z [inf]  (Reading database ... 95%
+2025-11-09T18:19:09.006687725Z [inf]  (Reading database ... 100%(Reading database ... 6181 files and directories currently installed.)
+
+2025-11-09T18:19:09.007094162Z [inf]  Preparing to unpack .../systemd_252.39-1~deb12u1_amd64.deb ...
+
+2025-11-09T18:19:09.021857864Z [inf]  Unpacking systemd (252.39-1~deb12u1) ...
+
+2025-11-09T18:19:09.232079561Z [inf]  Setting up libargon2-1:amd64 (0~20171227-0.3+deb12u1) ...
+
+2025-11-09T18:19:09.235007221Z [inf]  Setting up libjson-c5:amd64 (0.16-2) ...
+
+2025-11-09T18:19:09.237874914Z [inf]  Setting up libfdisk1:amd64 (2.38.1-5+deb12u3) ...
+
+2025-11-09T18:19:09.241064204Z [inf]  Setting up libkmod2:amd64 (30+20221128-1) ...
+
+2025-11-09T18:19:09.244258515Z [inf]  Setting up libapparmor1:amd64 (3.0.8-3) ...
+
+2025-11-09T18:19:09.248685761Z [inf]  Setting up libip4tc2:amd64 (1.8.9-2) ...
+
+2025-11-09T18:19:09.252028816Z [inf]  Setting up libsystemd-shared:amd64 (252.39-1~deb12u1) ...
+
+2025-11-09T18:19:09.255919118Z [inf]  Setting up libdevmapper1.02.1:amd64 (2:1.02.185-2) ...
+
+2025-11-09T18:19:09.259355457Z [inf]  Setting up libcryptsetup12:amd64 (2:2.6.1-4~deb12u2) ...
+
+2025-11-09T18:19:09.262635793Z [inf]  Setting up systemd (252.39-1~deb12u1) ...
+
+2025-11-09T18:19:09.276421194Z [inf]  Created symlink /etc/systemd/system/getty.target.wants/getty@tty1.service → /lib/systemd/system/getty@.service.
+
+2025-11-09T18:19:09.279502904Z [inf]  Created symlink /etc/systemd/system/multi-user.target.wants/remote-fs.target → /lib/systemd/system/remote-fs.target.
+
+2025-11-09T18:19:09.28457889Z [inf]  Created symlink /etc/systemd/system/sysinit.target.wants/systemd-pstore.service → /lib/systemd/system/systemd-pstore.service.
+
+2025-11-09T18:19:09.288223982Z [inf]  Initializing machine ID from random generator.
+
+2025-11-09T18:19:09.30595965Z [inf]  Creating group 'systemd-journal' with GID 999.
+Creating group 'systemd-network' with GID 998.
+
+2025-11-09T18:19:09.305970095Z [inf]  Creating user 'systemd-network' (systemd Network Management) with UID 998 and GID 998.
+
+2025-11-09T18:19:09.33522374Z [inf]  Setting up dmsetup (2:1.02.185-2) ...
+
+2025-11-09T18:19:09.361638157Z [inf]  Selecting previously unselected package systemd-sysv.
+(Reading database ... 
+2025-11-09T18:19:09.362131639Z [inf]  (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%
+2025-11-09T18:19:09.363420431Z [inf]  (Reading database ... 75%
+2025-11-09T18:19:09.363736995Z [inf]  (Reading database ... 80%
+2025-11-09T18:19:09.363967637Z [inf]  (Reading database ... 85%
+2025-11-09T18:19:09.364287441Z [inf]  (Reading database ... 90%
+2025-11-09T18:19:09.364437123Z [inf]  (Reading database ... 95%
+2025-11-09T18:19:09.3651225Z [inf]  (Reading database ... 100%(Reading database ... 7030 files and directories currently installed.)
+
+2025-11-09T18:19:09.365561236Z [inf]  Preparing to unpack .../000-systemd-sysv_252.39-1~deb12u1_amd64.deb ...
+
+2025-11-09T18:19:09.366817655Z [inf]  Unpacking systemd-sysv (252.39-1~deb12u1) ...
+
+2025-11-09T18:19:09.384847883Z [inf]  Selecting previously unselected package libdbus-1-3:amd64.
+
+2025-11-09T18:19:09.38590834Z [inf]  Preparing to unpack .../001-libdbus-1-3_1.14.10-1~deb12u1_amd64.deb ...
+
+2025-11-09T18:19:09.387120071Z [inf]  Unpacking libdbus-1-3:amd64 (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:09.413038126Z [inf]  Selecting previously unselected package dbus-bin.
+
+2025-11-09T18:19:09.414018475Z [inf]  Preparing to unpack .../002-dbus-bin_1.14.10-1~deb12u1_amd64.deb ...
+
+2025-11-09T18:19:09.415194444Z [inf]  Unpacking dbus-bin (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:09.435624176Z [inf]  Selecting previously unselected package dbus-session-bus-common.
+
+2025-11-09T18:19:09.436671856Z [inf]  Preparing to unpack .../003-dbus-session-bus-common_1.14.10-1~deb12u1_all.deb ...
+
+2025-11-09T18:19:09.437990634Z [inf]  Unpacking dbus-session-bus-common (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:09.457968417Z [inf]  Selecting previously unselected package libexpat1:amd64.
+
+2025-11-09T18:19:09.459150884Z [inf]  Preparing to unpack .../004-libexpat1_2.5.0-1+deb12u2_amd64.deb ...
+
+2025-11-09T18:19:09.460481586Z [inf]  Unpacking libexpat1:amd64 (2.5.0-1+deb12u2) ...
+
+2025-11-09T18:19:09.482561766Z [inf]  Selecting previously unselected package dbus-daemon.
+
+2025-11-09T18:19:09.483674552Z [inf]  Preparing to unpack .../005-dbus-daemon_1.14.10-1~deb12u1_amd64.deb ...
+
+2025-11-09T18:19:09.484936243Z [inf]  Unpacking dbus-daemon (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:09.511289419Z [inf]  Selecting previously unselected package dbus-system-bus-common.
+
+2025-11-09T18:19:09.512588259Z [inf]  Preparing to unpack .../006-dbus-system-bus-common_1.14.10-1~deb12u1_all.deb ...
+
+2025-11-09T18:19:09.513708081Z [inf]  Unpacking dbus-system-bus-common (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:09.534775113Z [inf]  Selecting previously unselected package dbus.
+
+2025-11-09T18:19:09.535784432Z [inf]  Preparing to unpack .../007-dbus_1.14.10-1~deb12u1_amd64.deb ...
+
+2025-11-09T18:19:09.538011123Z [inf]  Unpacking dbus (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:09.560040271Z [inf]  Selecting previously unselected package perl-modules-5.36.
+
+2025-11-09T18:19:09.560947647Z [inf]  Preparing to unpack .../008-perl-modules-5.36_5.36.0-7+deb12u3_all.deb ...
+
+2025-11-09T18:19:09.562018907Z [inf]  Unpacking perl-modules-5.36 (5.36.0-7+deb12u3) ...
+
+2025-11-09T18:19:09.799299383Z [inf]  Selecting previously unselected package libgdbm6:amd64.
+
+2025-11-09T18:19:09.800487112Z [inf]  Preparing to unpack .../009-libgdbm6_1.23-3_amd64.deb ...
+
+2025-11-09T18:19:09.802045927Z [inf]  Unpacking libgdbm6:amd64 (1.23-3) ...
+
+2025-11-09T18:19:09.821466609Z [inf]  Selecting previously unselected package libgdbm-compat4:amd64.
+
+2025-11-09T18:19:09.822587914Z [inf]  Preparing to unpack .../010-libgdbm-compat4_1.23-3_amd64.deb ...
+
+2025-11-09T18:19:09.823856621Z [inf]  Unpacking libgdbm-compat4:amd64 (1.23-3) ...
+
+2025-11-09T18:19:09.842084836Z [inf]  Selecting previously unselected package libperl5.36:amd64.
+
+2025-11-09T18:19:09.843268855Z [inf]  Preparing to unpack .../011-libperl5.36_5.36.0-7+deb12u3_amd64.deb ...
+
+2025-11-09T18:19:09.844425156Z [inf]  Unpacking libperl5.36:amd64 (5.36.0-7+deb12u3) ...
+
+2025-11-09T18:19:10.144312891Z [inf]  Selecting previously unselected package perl.
+
+2025-11-09T18:19:10.14558221Z [inf]  Preparing to unpack .../012-perl_5.36.0-7+deb12u3_amd64.deb ...
+
+2025-11-09T18:19:10.151041648Z [inf]  Unpacking perl (5.36.0-7+deb12u3) ...
+
+2025-11-09T18:19:10.182925249Z [inf]  Selecting previously unselected package netbase.
+
+2025-11-09T18:19:10.18416143Z [inf]  Preparing to unpack .../013-netbase_6.4_all.deb ...
+
+2025-11-09T18:19:10.185568865Z [inf]  Unpacking netbase (6.4) ...
+
+2025-11-09T18:19:10.201063182Z [inf]  Selecting previously unselected package libncursesw6:amd64.
+
+2025-11-09T18:19:10.202067432Z [inf]  Preparing to unpack .../014-libncursesw6_6.4-4_amd64.deb ...
+
+2025-11-09T18:19:10.203226245Z [inf]  Unpacking libncursesw6:amd64 (6.4-4) ...
+
+2025-11-09T18:19:10.226352128Z [inf]  Selecting previously unselected package libproc2-0:amd64.
+
+2025-11-09T18:19:10.227377008Z [inf]  Preparing to unpack .../015-libproc2-0_2%3a4.0.2-3_amd64.deb ...
+
+2025-11-09T18:19:10.228460823Z [inf]  Unpacking libproc2-0:amd64 (2:4.0.2-3) ...
+
+2025-11-09T18:19:10.247006774Z [inf]  Selecting previously unselected package procps.
+
+2025-11-09T18:19:10.247998456Z [inf]  Preparing to unpack .../016-procps_2%3a4.0.2-3_amd64.deb ...
+
+2025-11-09T18:19:10.256589701Z [inf]  Unpacking procps (2:4.0.2-3) ...
+
+2025-11-09T18:19:10.318032472Z [inf]  Selecting previously unselected package readline-common.
+
+2025-11-09T18:19:10.319068582Z [inf]  Preparing to unpack .../017-readline-common_8.2-1.3_all.deb ...
+
+2025-11-09T18:19:10.320136196Z [inf]  Unpacking readline-common (8.2-1.3) ...
+
+2025-11-09T18:19:10.338414581Z [inf]  Selecting previously unselected package openssl.
+
+2025-11-09T18:19:10.339638964Z [inf]  Preparing to unpack .../018-openssl_3.0.17-1~deb12u3_amd64.deb ...
+
+2025-11-09T18:19:10.340760282Z [inf]  Unpacking openssl (3.0.17-1~deb12u3) ...
+
+2025-11-09T18:19:10.445246117Z [inf]  Selecting previously unselected package ca-certificates.
+
+2025-11-09T18:19:10.446352119Z [inf]  Preparing to unpack .../019-ca-certificates_20230311+deb12u1_all.deb ...
+
+2025-11-09T18:19:10.447494589Z [inf]  Unpacking ca-certificates (20230311+deb12u1) ...
+
+2025-11-09T18:19:10.475250151Z [inf]  Selecting previously unselected package krb5-locales.
+
+2025-11-09T18:19:10.476500261Z [inf]  Preparing to unpack .../020-krb5-locales_1.20.1-2+deb12u4_all.deb ...
+
+2025-11-09T18:19:10.477598768Z [inf]  Unpacking krb5-locales (1.20.1-2+deb12u4) ...
+
+2025-11-09T18:19:10.496703427Z [inf]  Selecting previously unselected package libnss-systemd:amd64.
+
+2025-11-09T18:19:10.498040076Z [inf]  Preparing to unpack .../021-libnss-systemd_252.39-1~deb12u1_amd64.deb ...
+
+2025-11-09T18:19:10.500760776Z [inf]  Unpacking libnss-systemd:amd64 (252.39-1~deb12u1) ...
+
+2025-11-09T18:19:10.526039069Z [inf]  Selecting previously unselected package libpam-systemd:amd64.
+
+2025-11-09T18:19:10.52745296Z [inf]  Preparing to unpack .../022-libpam-systemd_252.39-1~deb12u1_amd64.deb ...
+
+2025-11-09T18:19:10.52849373Z [inf]  Unpacking libpam-systemd:amd64 (252.39-1~deb12u1) ...
+
+2025-11-09T18:19:10.558171799Z [inf]  Selecting previously unselected package systemd-timesyncd.
+
+2025-11-09T18:19:10.559384563Z [inf]  Preparing to unpack .../023-systemd-timesyncd_252.39-1~deb12u1_amd64.deb ...
+
+2025-11-09T18:19:10.560410294Z [inf]  Unpacking systemd-timesyncd (252.39-1~deb12u1) ...
+
+2025-11-09T18:19:10.57810859Z [inf]  Selecting previously unselected package libpsl5:amd64.
+
+2025-11-09T18:19:10.579410762Z [inf]  Preparing to unpack .../024-libpsl5_0.21.2-1_amd64.deb ...
+
+2025-11-09T18:19:10.58032702Z [inf]  Unpacking libpsl5:amd64 (0.21.2-1) ...
+
+2025-11-09T18:19:10.596362257Z [inf]  Selecting previously unselected package wget.
+
+2025-11-09T18:19:10.597574305Z [inf]  Preparing to unpack .../025-wget_1.21.3-1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:10.598601467Z [inf]  Unpacking wget (1.21.3-1+deb12u1) ...
+
+2025-11-09T18:19:10.665113015Z [inf]  Selecting previously unselected package hicolor-icon-theme.
+
+2025-11-09T18:19:10.66620358Z [inf]  Preparing to unpack .../026-hicolor-icon-theme_0.17-2_all.deb ...
+
+2025-11-09T18:19:10.667449146Z [inf]  Unpacking hicolor-icon-theme (0.17-2) ...
+
+2025-11-09T18:19:10.704640431Z [inf]  Selecting previously unselected package libgdk-pixbuf2.0-common.
+
+2025-11-09T18:19:10.70574034Z [inf]  Preparing to unpack .../027-libgdk-pixbuf2.0-common_2.42.10+dfsg-1+deb12u2_all.deb ...
+
+2025-11-09T18:19:10.706923676Z [inf]  Unpacking libgdk-pixbuf2.0-common (2.42.10+dfsg-1+deb12u2) ...
+
+2025-11-09T18:19:10.747181865Z [inf]  Selecting previously unselected package libglib2.0-0:amd64.
+
+2025-11-09T18:19:10.74866799Z [inf]  Preparing to unpack .../028-libglib2.0-0_2.74.6-2+deb12u7_amd64.deb ...
+
+2025-11-09T18:19:10.749886446Z [inf]  Unpacking libglib2.0-0:amd64 (2.74.6-2+deb12u7) ...
+
+2025-11-09T18:19:10.849325702Z [inf]  Selecting previously unselected package libicu72:amd64.
+
+2025-11-09T18:19:10.850537254Z [inf]  Preparing to unpack .../029-libicu72_72.1-3+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:10.851583376Z [inf]  Unpacking libicu72:amd64 (72.1-3+deb12u1) ...
+
+2025-11-09T18:19:11.335676747Z [inf]  Selecting previously unselected package libxml2:amd64.
+
+2025-11-09T18:19:11.336861077Z [inf]  Preparing to unpack .../030-libxml2_2.9.14+dfsg-1.3~deb12u4_amd64.deb ...
+
+2025-11-09T18:19:11.33801252Z [inf]  Unpacking libxml2:amd64 (2.9.14+dfsg-1.3~deb12u4) ...
+
+2025-11-09T18:19:11.3971702Z [inf]  Selecting previously unselected package shared-mime-info.
+
+2025-11-09T18:19:11.398497835Z [inf]  Preparing to unpack .../031-shared-mime-info_2.2-1_amd64.deb ...
+
+2025-11-09T18:19:11.399680987Z [inf]  Unpacking shared-mime-info (2.2-1) ...
+
+2025-11-09T18:19:11.463594536Z [inf]  Selecting previously unselected package libjpeg62-turbo:amd64.
+
+2025-11-09T18:19:11.465459067Z [inf]  Preparing to unpack .../032-libjpeg62-turbo_1%3a2.1.5-2_amd64.deb ...
+
+2025-11-09T18:19:11.466592489Z [inf]  Unpacking libjpeg62-turbo:amd64 (1:2.1.5-2) ...
+
+2025-11-09T18:19:11.492269506Z [inf]  Selecting previously unselected package libpng16-16:amd64.
+
+2025-11-09T18:19:11.493564854Z [inf]  Preparing to unpack .../033-libpng16-16_1.6.39-2_amd64.deb ...
+
+2025-11-09T18:19:11.495109975Z [inf]  Unpacking libpng16-16:amd64 (1.6.39-2) ...
+
+2025-11-09T18:19:11.524811668Z [inf]  Selecting previously unselected package libdeflate0:amd64.
+
+2025-11-09T18:19:11.525979895Z [inf]  Preparing to unpack .../034-libdeflate0_1.14-1_amd64.deb ...
+
+2025-11-09T18:19:11.527256569Z [inf]  Unpacking libdeflate0:amd64 (1.14-1) ...
+
+2025-11-09T18:19:11.547090422Z [inf]  Selecting previously unselected package libjbig0:amd64.
+
+2025-11-09T18:19:11.548188619Z [inf]  Preparing to unpack .../035-libjbig0_2.1-6.1_amd64.deb ...
+
+2025-11-09T18:19:11.549542164Z [inf]  Unpacking libjbig0:amd64 (2.1-6.1) ...
+
+2025-11-09T18:19:11.567137884Z [inf]  Selecting previously unselected package liblerc4:amd64.
+
+2025-11-09T18:19:11.568618464Z [inf]  Preparing to unpack .../036-liblerc4_4.0.0+ds-2_amd64.deb ...
+
+2025-11-09T18:19:11.569770653Z [inf]  Unpacking liblerc4:amd64 (4.0.0+ds-2) ...
+
+2025-11-09T18:19:11.596386033Z [inf]  Selecting previously unselected package libwebp7:amd64.
+
+2025-11-09T18:19:11.597979011Z [inf]  Preparing to unpack .../037-libwebp7_1.2.4-0.2+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:11.599309797Z [inf]  Unpacking libwebp7:amd64 (1.2.4-0.2+deb12u1) ...
+
+2025-11-09T18:19:11.631943005Z [inf]  Selecting previously unselected package libtiff6:amd64.
+
+2025-11-09T18:19:11.632546601Z [inf]  Preparing to unpack .../038-libtiff6_4.5.0-6+deb12u3_amd64.deb ...
+
+2025-11-09T18:19:11.633662983Z [inf]  Unpacking libtiff6:amd64 (4.5.0-6+deb12u3) ...
+
+2025-11-09T18:19:11.662524871Z [inf]  Selecting previously unselected package libgdk-pixbuf-2.0-0:amd64.
+
+2025-11-09T18:19:11.66361903Z [inf]  Preparing to unpack .../039-libgdk-pixbuf-2.0-0_2.42.10+dfsg-1+deb12u2_amd64.deb ...
+
+2025-11-09T18:19:11.664783566Z [inf]  Unpacking libgdk-pixbuf-2.0-0:amd64 (2.42.10+dfsg-1+deb12u2) ...
+
+2025-11-09T18:19:11.689814988Z [inf]  Selecting previously unselected package gtk-update-icon-cache.
+
+2025-11-09T18:19:11.690942529Z [inf]  Preparing to unpack .../040-gtk-update-icon-cache_3.24.38-2~deb12u3_amd64.deb ...
+
+2025-11-09T18:19:11.692266703Z [inf]  Unpacking gtk-update-icon-cache (3.24.38-2~deb12u3) ...
+
+2025-11-09T18:19:11.717233397Z [inf]  Selecting previously unselected package adwaita-icon-theme.
+
+2025-11-09T18:19:11.718409544Z [inf]  Preparing to unpack .../041-adwaita-icon-theme_43-1_all.deb ...
+
+2025-11-09T18:19:11.719500372Z [inf]  Unpacking adwaita-icon-theme (43-1) ...
+
+2025-11-09T18:19:12.292091521Z [inf]  Selecting previously unselected package alsa-topology-conf.
+
+2025-11-09T18:19:12.294824315Z [inf]  Preparing to unpack .../042-alsa-topology-conf_1.2.5.1-2_all.deb ...
+
+2025-11-09T18:19:12.296406441Z [inf]  Unpacking alsa-topology-conf (1.2.5.1-2) ...
+
+2025-11-09T18:19:12.366283471Z [inf]  Selecting previously unselected package libasound2-data.
+
+2025-11-09T18:19:12.367865822Z [inf]  Preparing to unpack .../043-libasound2-data_1.2.8-1_all.deb ...
+
+2025-11-09T18:19:12.369132598Z [inf]  Unpacking libasound2-data (1.2.8-1) ...
+
+2025-11-09T18:19:12.397231286Z [inf]  Selecting previously unselected package libasound2:amd64.
+
+2025-11-09T18:19:12.3987724Z [inf]  Preparing to unpack .../044-libasound2_1.2.8-1+b1_amd64.deb ...
+
+2025-11-09T18:19:12.400505556Z [inf]  Unpacking libasound2:amd64 (1.2.8-1+b1) ...
+
+2025-11-09T18:19:12.44081731Z [inf]  Selecting previously unselected package alsa-ucm-conf.
+
+2025-11-09T18:19:12.442563821Z [inf]  Preparing to unpack .../045-alsa-ucm-conf_1.2.8-1_all.deb ...
+
+2025-11-09T18:19:12.444241636Z [inf]  Unpacking alsa-ucm-conf (1.2.8-1) ...
+
+2025-11-09T18:19:12.512369601Z [inf]  Selecting previously unselected package at-spi2-common.
+
+2025-11-09T18:19:12.514309334Z [inf]  Preparing to unpack .../046-at-spi2-common_2.46.0-5_all.deb ...
+
+2025-11-09T18:19:12.516247344Z [inf]  Unpacking at-spi2-common (2.46.0-5) ...
+
+2025-11-09T18:19:12.553417511Z [inf]  Selecting previously unselected package libxau6:amd64.
+
+2025-11-09T18:19:12.555232007Z [inf]  Preparing to unpack .../047-libxau6_1%3a1.0.9-1_amd64.deb ...
+
+2025-11-09T18:19:12.556782899Z [inf]  Unpacking libxau6:amd64 (1:1.0.9-1) ...
+
+2025-11-09T18:19:12.575291898Z [inf]  Selecting previously unselected package libbsd0:amd64.
+
+2025-11-09T18:19:12.57710093Z [inf]  Preparing to unpack .../048-libbsd0_0.11.7-2_amd64.deb ...
+
+2025-11-09T18:19:12.57826577Z [inf]  Unpacking libbsd0:amd64 (0.11.7-2) ...
+
+2025-11-09T18:19:12.599081924Z [inf]  Selecting previously unselected package libxdmcp6:amd64.
+
+2025-11-09T18:19:12.600768483Z [inf]  Preparing to unpack .../049-libxdmcp6_1%3a1.1.2-3_amd64.deb ...
+
+2025-11-09T18:19:12.601832406Z [inf]  Unpacking libxdmcp6:amd64 (1:1.1.2-3) ...
+
+2025-11-09T18:19:12.618107666Z [inf]  Selecting previously unselected package libxcb1:amd64.
+
+2025-11-09T18:19:12.619778087Z [inf]  Preparing to unpack .../050-libxcb1_1.15-1_amd64.deb ...
+
+2025-11-09T18:19:12.621098001Z [inf]  Unpacking libxcb1:amd64 (1.15-1) ...
+
+2025-11-09T18:19:12.642320327Z [inf]  Selecting previously unselected package libx11-data.
+
+2025-11-09T18:19:12.644502087Z [inf]  Preparing to unpack .../051-libx11-data_2%3a1.8.4-2+deb12u2_all.deb ...
+
+2025-11-09T18:19:12.646256114Z [inf]  Unpacking libx11-data (2:1.8.4-2+deb12u2) ...
+
+2025-11-09T18:19:12.69206429Z [inf]  Selecting previously unselected package libx11-6:amd64.
+
+2025-11-09T18:19:12.693655254Z [inf]  Preparing to unpack .../052-libx11-6_2%3a1.8.4-2+deb12u2_amd64.deb ...
+
+2025-11-09T18:19:12.695415189Z [inf]  Unpacking libx11-6:amd64 (2:1.8.4-2+deb12u2) ...
+
+2025-11-09T18:19:12.759903968Z [inf]  Selecting previously unselected package libxext6:amd64.
+
+2025-11-09T18:19:12.761424893Z [inf]  Preparing to unpack .../053-libxext6_2%3a1.3.4-1+b1_amd64.deb ...
+
+2025-11-09T18:19:12.763249304Z [inf]  Unpacking libxext6:amd64 (2:1.3.4-1+b1) ...
+
+2025-11-09T18:19:12.785622177Z [inf]  Selecting previously unselected package libxi6:amd64.
+
+2025-11-09T18:19:12.787377678Z [inf]  Preparing to unpack .../054-libxi6_2%3a1.8-1+b1_amd64.deb ...
+
+2025-11-09T18:19:12.788982825Z [inf]  Unpacking libxi6:amd64 (2:1.8-1+b1) ...
+
+2025-11-09T18:19:12.815232577Z [inf]  Selecting previously unselected package libatspi2.0-0:amd64.
+
+2025-11-09T18:19:12.816996878Z [inf]  Preparing to unpack .../055-libatspi2.0-0_2.46.0-5_amd64.deb ...
+
+2025-11-09T18:19:12.818518936Z [inf]  Unpacking libatspi2.0-0:amd64 (2.46.0-5) ...
+
+2025-11-09T18:19:12.842362056Z [inf]  Selecting previously unselected package x11-common.
+
+2025-11-09T18:19:12.844007653Z [inf]  Preparing to unpack .../056-x11-common_1%3a7.7+23_all.deb ...
+
+2025-11-09T18:19:12.845614376Z [inf]  Unpacking x11-common (1:7.7+23) ...
+
+2025-11-09T18:19:12.871606674Z [inf]  Selecting previously unselected package libxtst6:amd64.
+
+2025-11-09T18:19:12.873510891Z [inf]  Preparing to unpack .../057-libxtst6_2%3a1.2.3-1.1_amd64.deb ...
+
+2025-11-09T18:19:12.87489937Z [inf]  Unpacking libxtst6:amd64 (2:1.2.3-1.1) ...
+
+2025-11-09T18:19:12.892778215Z [inf]  Selecting previously unselected package dbus-user-session.
+
+2025-11-09T18:19:12.894659994Z [inf]  Preparing to unpack .../058-dbus-user-session_1.14.10-1~deb12u1_amd64.deb ...
+
+2025-11-09T18:19:12.896763178Z [inf]  Unpacking dbus-user-session (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:12.916440117Z [inf]  Selecting previously unselected package libdconf1:amd64.
+
+2025-11-09T18:19:12.918106256Z [inf]  Preparing to unpack .../059-libdconf1_0.40.0-4_amd64.deb ...
+
+2025-11-09T18:19:12.91918608Z [inf]  Unpacking libdconf1:amd64 (0.40.0-4) ...
+
+2025-11-09T18:19:12.93570622Z [inf]  Selecting previously unselected package dconf-service.
+
+2025-11-09T18:19:12.937379007Z [inf]  Preparing to unpack .../060-dconf-service_0.40.0-4_amd64.deb ...
+
+2025-11-09T18:19:12.938532453Z [inf]  Unpacking dconf-service (0.40.0-4) ...
+
+2025-11-09T18:19:12.95436451Z [inf]  Selecting previously unselected package dconf-gsettings-backend:amd64.
+
+2025-11-09T18:19:12.95595696Z [inf]  Preparing to unpack .../061-dconf-gsettings-backend_0.40.0-4_amd64.deb ...
+
+2025-11-09T18:19:12.957479536Z [inf]  Unpacking dconf-gsettings-backend:amd64 (0.40.0-4) ...
+
+2025-11-09T18:19:12.97265843Z [inf]  Selecting previously unselected package gsettings-desktop-schemas.
+
+2025-11-09T18:19:12.974344741Z [inf]  Preparing to unpack .../062-gsettings-desktop-schemas_43.0-1_all.deb ...
+
+2025-11-09T18:19:12.975631083Z [inf]  Unpacking gsettings-desktop-schemas (43.0-1) ...
+
+2025-11-09T18:19:13.03400164Z [inf]  Selecting previously unselected package at-spi2-core.
+
+2025-11-09T18:19:13.035770498Z [inf]  Preparing to unpack .../063-at-spi2-core_2.46.0-5_amd64.deb ...
+
+2025-11-09T18:19:13.036754917Z [inf]  Unpacking at-spi2-core (2.46.0-5) ...
+
+2025-11-09T18:19:13.057741725Z [inf]  Selecting previously unselected package libisl23:amd64.
+
+2025-11-09T18:19:13.058961117Z [inf]  Preparing to unpack .../064-libisl23_0.25-1.1_amd64.deb ...
+
+2025-11-09T18:19:13.060204433Z [inf]  Unpacking libisl23:amd64 (0.25-1.1) ...
+
+2025-11-09T18:19:13.122855967Z [inf]  Selecting previously unselected package libmpfr6:amd64.
+
+2025-11-09T18:19:13.124697618Z [inf]  Preparing to unpack .../065-libmpfr6_4.2.0-1_amd64.deb ...
+
+2025-11-09T18:19:13.126046301Z [inf]  Unpacking libmpfr6:amd64 (4.2.0-1) ...
+
+2025-11-09T18:19:13.168347685Z [inf]  Selecting previously unselected package libmpc3:amd64.
+
+2025-11-09T18:19:13.170191176Z [inf]  Preparing to unpack .../066-libmpc3_1.3.1-1_amd64.deb ...
+
+2025-11-09T18:19:13.171240255Z [inf]  Unpacking libmpc3:amd64 (1.3.1-1) ...
+
+2025-11-09T18:19:13.187927847Z [inf]  Selecting previously unselected package cpp-12.
+
+2025-11-09T18:19:13.189666558Z [inf]  Preparing to unpack .../067-cpp-12_12.2.0-14+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:13.190731556Z [inf]  Unpacking cpp-12 (12.2.0-14+deb12u1) ...
+
+2025-11-09T18:19:13.734560736Z [inf]  Selecting previously unselected package cpp.
+
+2025-11-09T18:19:13.736255651Z [inf]  Preparing to unpack .../068-cpp_4%3a12.2.0-3_amd64.deb ...
+
+2025-11-09T18:19:13.737411286Z [inf]  Unpacking cpp (4:12.2.0-3) ...
+
+2025-11-09T18:19:13.7528899Z [inf]  Selecting previously unselected package libassuan0:amd64.
+
+2025-11-09T18:19:13.754780636Z [inf]  Preparing to unpack .../069-libassuan0_2.5.5-5_amd64.deb ...
+
+2025-11-09T18:19:13.755853523Z [inf]  Unpacking libassuan0:amd64 (2.5.5-5) ...
+
+2025-11-09T18:19:13.773178849Z [inf]  Selecting previously unselected package libreadline8:amd64.
+
+2025-11-09T18:19:13.774758053Z [inf]  Preparing to unpack .../070-libreadline8_8.2-1.3_amd64.deb ...
+
+2025-11-09T18:19:13.775857383Z [inf]  Unpacking libreadline8:amd64 (8.2-1.3) ...
+
+2025-11-09T18:19:13.799428925Z [inf]  Selecting previously unselected package gpgconf.
+
+2025-11-09T18:19:13.80106782Z [inf]  Preparing to unpack .../071-gpgconf_2.2.40-1.1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:13.802256465Z [inf]  Unpacking gpgconf (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:13.832321474Z [inf]  Selecting previously unselected package libksba8:amd64.
+
+2025-11-09T18:19:13.83443678Z [inf]  Preparing to unpack .../072-libksba8_1.6.3-2_amd64.deb ...
+
+2025-11-09T18:19:13.835604581Z [inf]  Unpacking libksba8:amd64 (1.6.3-2) ...
+
+2025-11-09T18:19:13.859970803Z [inf]  Selecting previously unselected package libsasl2-modules-db:amd64.
+
+2025-11-09T18:19:13.861660504Z [inf]  Preparing to unpack .../073-libsasl2-modules-db_2.1.28+dfsg-10_amd64.deb ...
+
+2025-11-09T18:19:13.862794641Z [inf]  Unpacking libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+
+2025-11-09T18:19:13.879693291Z [inf]  Selecting previously unselected package libsasl2-2:amd64.
+
+2025-11-09T18:19:13.881315835Z [inf]  Preparing to unpack .../074-libsasl2-2_2.1.28+dfsg-10_amd64.deb ...
+
+2025-11-09T18:19:13.882623208Z [inf]  Unpacking libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+
+2025-11-09T18:19:13.903567059Z [inf]  Selecting previously unselected package libldap-2.5-0:amd64.
+
+2025-11-09T18:19:13.905086823Z [inf]  Preparing to unpack .../075-libldap-2.5-0_2.5.13+dfsg-5_amd64.deb ...
+
+2025-11-09T18:19:13.907033312Z [inf]  Unpacking libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+
+2025-11-09T18:19:13.938110638Z [inf]  Selecting previously unselected package libnpth0:amd64.
+
+2025-11-09T18:19:13.939772913Z [inf]  Preparing to unpack .../076-libnpth0_1.6-3_amd64.deb ...
+
+2025-11-09T18:19:13.941380429Z [inf]  Unpacking libnpth0:amd64 (1.6-3) ...
+
+2025-11-09T18:19:13.960933962Z [inf]  Selecting previously unselected package dirmngr.
+
+2025-11-09T18:19:13.96260337Z [inf]  Preparing to unpack .../077-dirmngr_2.2.40-1.1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:13.973620775Z [inf]  Unpacking dirmngr (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:14.020115357Z [inf]  Selecting previously unselected package libbrotli1:amd64.
+
+2025-11-09T18:19:14.021900346Z [inf]  Preparing to unpack .../078-libbrotli1_1.0.9-2+b6_amd64.deb ...
+
+2025-11-09T18:19:14.023263477Z [inf]  Unpacking libbrotli1:amd64 (1.0.9-2+b6) ...
+
+2025-11-09T18:19:14.057545838Z [inf]  Selecting previously unselected package libfreetype6:amd64.
+
+2025-11-09T18:19:14.059252976Z [inf]  Preparing to unpack .../079-libfreetype6_2.12.1+dfsg-5+deb12u4_amd64.deb ...
+
+2025-11-09T18:19:14.060618173Z [inf]  Unpacking libfreetype6:amd64 (2.12.1+dfsg-5+deb12u4) ...
+
+2025-11-09T18:19:14.099442511Z [inf]  Selecting previously unselected package fonts-liberation.
+
+2025-11-09T18:19:14.10103647Z [inf]  Preparing to unpack .../080-fonts-liberation_1%3a1.07.4-11_all.deb ...
+
+2025-11-09T18:19:14.102484Z [inf]  Unpacking fonts-liberation (1:1.07.4-11) ...
+
+2025-11-09T18:19:14.172829422Z [inf]  Selecting previously unselected package fontconfig-config.
+
+2025-11-09T18:19:14.174867342Z [inf]  Preparing to unpack .../081-fontconfig-config_2.14.1-4_amd64.deb ...
+
+2025-11-09T18:19:14.261836821Z [inf]  Unpacking fontconfig-config (2.14.1-4) ...
+
+2025-11-09T18:19:14.289626436Z [inf]  Selecting previously unselected package libfontconfig1:amd64.
+
+2025-11-09T18:19:14.291421223Z [inf]  Preparing to unpack .../082-libfontconfig1_2.14.1-4_amd64.deb ...
+
+2025-11-09T18:19:14.292946235Z [inf]  Unpacking libfontconfig1:amd64 (2.14.1-4) ...
+
+2025-11-09T18:19:14.319844942Z [inf]  Selecting previously unselected package fontconfig.
+
+2025-11-09T18:19:14.322292569Z [inf]  Preparing to unpack .../083-fontconfig_2.14.1-4_amd64.deb ...
+
+2025-11-09T18:19:14.32405838Z [inf]  Unpacking fontconfig (2.14.1-4) ...
+
+2025-11-09T18:19:14.361591909Z [inf]  Selecting previously unselected package gnupg-l10n.
+
+2025-11-09T18:19:14.363330613Z [inf]  Preparing to unpack .../084-gnupg-l10n_2.2.40-1.1+deb12u1_all.deb ...
+
+2025-11-09T18:19:14.364777174Z [inf]  Unpacking gnupg-l10n (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:14.431158848Z [inf]  Selecting previously unselected package gnupg-utils.
+
+2025-11-09T18:19:14.432907881Z [inf]  Preparing to unpack .../085-gnupg-utils_2.2.40-1.1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:14.434420953Z [inf]  Unpacking gnupg-utils (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:14.492403546Z [inf]  Selecting previously unselected package libsqlite3-0:amd64.
+
+2025-11-09T18:19:14.494156602Z [inf]  Preparing to unpack .../086-libsqlite3-0_3.40.1-2+deb12u2_amd64.deb ...
+
+2025-11-09T18:19:14.495627996Z [inf]  Unpacking libsqlite3-0:amd64 (3.40.1-2+deb12u2) ...
+
+2025-11-09T18:19:14.551284138Z [inf]  Selecting previously unselected package gpg.
+
+2025-11-09T18:19:14.553123826Z [inf]  Preparing to unpack .../087-gpg_2.2.40-1.1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:14.554734087Z [inf]  Unpacking gpg (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:14.611254375Z [inf]  Selecting previously unselected package pinentry-curses.
+
+2025-11-09T18:19:14.613008035Z [inf]  Preparing to unpack .../088-pinentry-curses_1.2.1-1_amd64.deb ...
+
+2025-11-09T18:19:14.614540774Z [inf]  Unpacking pinentry-curses (1.2.1-1) ...
+
+2025-11-09T18:19:14.637049779Z [inf]  Selecting previously unselected package gpg-agent.
+
+2025-11-09T18:19:14.638867335Z [inf]  Preparing to unpack .../089-gpg-agent_2.2.40-1.1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:14.64044811Z [inf]  Unpacking gpg-agent (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:14.677883508Z [inf]  Selecting previously unselected package gpg-wks-client.
+
+2025-11-09T18:19:14.68036096Z [inf]  Preparing to unpack .../090-gpg-wks-client_2.2.40-1.1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:14.681952727Z [inf]  Unpacking gpg-wks-client (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:14.708973749Z [inf]  Selecting previously unselected package gpg-wks-server.
+
+2025-11-09T18:19:14.711072535Z [inf]  Preparing to unpack .../091-gpg-wks-server_2.2.40-1.1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:14.712491662Z [inf]  Unpacking gpg-wks-server (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:14.737770441Z [inf]  Selecting previously unselected package gpgsm.
+
+2025-11-09T18:19:14.739617877Z [inf]  Preparing to unpack .../092-gpgsm_2.2.40-1.1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:14.740691102Z [inf]  Unpacking gpgsm (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:14.791845811Z [inf]  Selecting previously unselected package gnupg.
+
+2025-11-09T18:19:14.794201541Z [inf]  Preparing to unpack .../093-gnupg_2.2.40-1.1+deb12u1_all.deb ...
+
+2025-11-09T18:19:14.799403103Z [inf]  Unpacking gnupg (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:14.983078322Z [inf]  Selecting previously unselected package libatk1.0-0:amd64.
+
+2025-11-09T18:19:14.985113046Z [inf]  Preparing to unpack .../094-libatk1.0-0_2.46.0-5_amd64.deb ...
+
+2025-11-09T18:19:14.987898039Z [inf]  Unpacking libatk1.0-0:amd64 (2.46.0-5) ...
+
+2025-11-09T18:19:15.02152994Z [inf]  Selecting previously unselected package libatk-bridge2.0-0:amd64.
+
+2025-11-09T18:19:15.023411777Z [inf]  Preparing to unpack .../095-libatk-bridge2.0-0_2.46.0-5_amd64.deb ...
+
+2025-11-09T18:19:15.029875306Z [inf]  Unpacking libatk-bridge2.0-0:amd64 (2.46.0-5) ...
+
+2025-11-09T18:19:15.066730793Z [inf]  Selecting previously unselected package libauthen-sasl-perl.
+
+2025-11-09T18:19:15.068514698Z [inf]  Preparing to unpack .../096-libauthen-sasl-perl_2.1600-3_all.deb ...
+
+2025-11-09T18:19:15.069881393Z [inf]  Unpacking libauthen-sasl-perl (2.1600-3) ...
+
+2025-11-09T18:19:15.087202642Z [inf]  Selecting previously unselected package libavahi-common-data:amd64.
+
+2025-11-09T18:19:15.088941444Z [inf]  Preparing to unpack .../097-libavahi-common-data_0.8-10+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:15.090134372Z [inf]  Unpacking libavahi-common-data:amd64 (0.8-10+deb12u1) ...
+
+2025-11-09T18:19:15.122404995Z [inf]  Selecting previously unselected package libavahi-common3:amd64.
+
+2025-11-09T18:19:15.124269452Z [inf]  Preparing to unpack .../098-libavahi-common3_0.8-10+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:15.126294232Z [inf]  Unpacking libavahi-common3:amd64 (0.8-10+deb12u1) ...
+
+2025-11-09T18:19:15.155670402Z [inf]  Selecting previously unselected package libavahi-client3:amd64.
+
+2025-11-09T18:19:15.157622203Z [inf]  Preparing to unpack .../099-libavahi-client3_0.8-10+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:15.160594746Z [inf]  Unpacking libavahi-client3:amd64 (0.8-10+deb12u1) ...
+
+2025-11-09T18:19:15.178693027Z [inf]  Selecting previously unselected package libpixman-1-0:amd64.
+
+2025-11-09T18:19:15.180374552Z [inf]  Preparing to unpack .../100-libpixman-1-0_0.42.2-1_amd64.deb ...
+
+2025-11-09T18:19:15.181540692Z [inf]  Unpacking libpixman-1-0:amd64 (0.42.2-1) ...
+
+2025-11-09T18:19:15.216950105Z [inf]  Selecting previously unselected package libxcb-render0:amd64.
+
+2025-11-09T18:19:15.219059937Z [inf]  Preparing to unpack .../101-libxcb-render0_1.15-1_amd64.deb ...
+
+2025-11-09T18:19:15.220290001Z [inf]  Unpacking libxcb-render0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:15.240457086Z [inf]  Selecting previously unselected package libxcb-shm0:amd64.
+
+2025-11-09T18:19:15.242128987Z [inf]  Preparing to unpack .../102-libxcb-shm0_1.15-1_amd64.deb ...
+
+2025-11-09T18:19:15.243470715Z [inf]  Unpacking libxcb-shm0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:15.265723798Z [inf]  Selecting previously unselected package libxrender1:amd64.
+
+2025-11-09T18:19:15.267390086Z [inf]  Preparing to unpack .../103-libxrender1_1%3a0.9.10-1.1_amd64.deb ...
+
+2025-11-09T18:19:15.268773613Z [inf]  Unpacking libxrender1:amd64 (1:0.9.10-1.1) ...
+
+2025-11-09T18:19:15.28521512Z [inf]  Selecting previously unselected package libcairo2:amd64.
+
+2025-11-09T18:19:15.286925512Z [inf]  Preparing to unpack .../104-libcairo2_1.16.0-7_amd64.deb ...
+
+2025-11-09T18:19:15.288249348Z [inf]  Unpacking libcairo2:amd64 (1.16.0-7) ...
+
+2025-11-09T18:19:15.343536208Z [inf]  Selecting previously unselected package libcairo-gobject2:amd64.
+
+2025-11-09T18:19:15.345509878Z [inf]  Preparing to unpack .../105-libcairo-gobject2_1.16.0-7_amd64.deb ...
+
+2025-11-09T18:19:15.347011336Z [inf]  Unpacking libcairo-gobject2:amd64 (1.16.0-7) ...
+
+2025-11-09T18:19:15.3693589Z [inf]  Selecting previously unselected package liblcms2-2:amd64.
+
+2025-11-09T18:19:15.371747221Z [inf]  Preparing to unpack .../106-liblcms2-2_2.14-2_amd64.deb ...
+
+2025-11-09T18:19:15.373095932Z [inf]  Unpacking liblcms2-2:amd64 (2.14-2) ...
+
+2025-11-09T18:19:15.400659424Z [inf]  Selecting previously unselected package libcolord2:amd64.
+
+2025-11-09T18:19:15.402545959Z [inf]  Preparing to unpack .../107-libcolord2_1.4.6-2.2_amd64.deb ...
+
+2025-11-09T18:19:15.403667529Z [inf]  Unpacking libcolord2:amd64 (1.4.6-2.2) ...
+
+2025-11-09T18:19:15.428606435Z [inf]  Selecting previously unselected package libkrb5support0:amd64.
+
+2025-11-09T18:19:15.43021495Z [inf]  Preparing to unpack .../108-libkrb5support0_1.20.1-2+deb12u4_amd64.deb ...
+
+2025-11-09T18:19:15.431245505Z [inf]  Unpacking libkrb5support0:amd64 (1.20.1-2+deb12u4) ...
+
+2025-11-09T18:19:15.44843403Z [inf]  Selecting previously unselected package libk5crypto3:amd64.
+
+2025-11-09T18:19:15.450031925Z [inf]  Preparing to unpack .../109-libk5crypto3_1.20.1-2+deb12u4_amd64.deb ...
+
+2025-11-09T18:19:15.451164294Z [inf]  Unpacking libk5crypto3:amd64 (1.20.1-2+deb12u4) ...
+
+2025-11-09T18:19:15.471273077Z [inf]  Selecting previously unselected package libkeyutils1:amd64.
+
+2025-11-09T18:19:15.473196928Z [inf]  Preparing to unpack .../110-libkeyutils1_1.6.3-2_amd64.deb ...
+
+2025-11-09T18:19:15.474277211Z [inf]  Unpacking libkeyutils1:amd64 (1.6.3-2) ...
+
+2025-11-09T18:19:15.489942768Z [inf]  Selecting previously unselected package libkrb5-3:amd64.
+
+2025-11-09T18:19:15.491726322Z [inf]  Preparing to unpack .../111-libkrb5-3_1.20.1-2+deb12u4_amd64.deb ...
+
+2025-11-09T18:19:15.492812295Z [inf]  Unpacking libkrb5-3:amd64 (1.20.1-2+deb12u4) ...
+
+2025-11-09T18:19:15.531607316Z [inf]  Selecting previously unselected package libgssapi-krb5-2:amd64.
+
+2025-11-09T18:19:15.533819795Z [inf]  Preparing to unpack .../112-libgssapi-krb5-2_1.20.1-2+deb12u4_amd64.deb ...
+
+2025-11-09T18:19:15.535078713Z [inf]  Unpacking libgssapi-krb5-2:amd64 (1.20.1-2+deb12u4) ...
+
+2025-11-09T18:19:15.559717822Z [inf]  Selecting previously unselected package libcups2:amd64.
+
+2025-11-09T18:19:15.561792922Z [inf]  Preparing to unpack .../113-libcups2_2.4.2-3+deb12u9_amd64.deb ...
+
+2025-11-09T18:19:15.563165725Z [inf]  Unpacking libcups2:amd64 (2.4.2-3+deb12u9) ...
+
+2025-11-09T18:19:15.597201463Z [inf]  Selecting previously unselected package libepoxy0:amd64.
+
+2025-11-09T18:19:15.599034045Z [inf]  Preparing to unpack .../114-libepoxy0_1.5.10-1_amd64.deb ...
+
+2025-11-09T18:19:15.600245093Z [inf]  Unpacking libepoxy0:amd64 (1.5.10-1) ...
+
+2025-11-09T18:19:15.629100949Z [inf]  Selecting previously unselected package libfribidi0:amd64.
+
+2025-11-09T18:19:15.630672141Z [inf]  Preparing to unpack .../115-libfribidi0_1.0.8-2.1_amd64.deb ...
+
+2025-11-09T18:19:15.63188694Z [inf]  Unpacking libfribidi0:amd64 (1.0.8-2.1) ...
+
+2025-11-09T18:19:15.650318102Z [inf]  Selecting previously unselected package libgraphite2-3:amd64.
+
+2025-11-09T18:19:15.652009863Z [inf]  Preparing to unpack .../116-libgraphite2-3_1.3.14-1_amd64.deb ...
+
+2025-11-09T18:19:15.653089031Z [inf]  Unpacking libgraphite2-3:amd64 (1.3.14-1) ...
+
+2025-11-09T18:19:15.674501026Z [inf]  Selecting previously unselected package libharfbuzz0b:amd64.
+
+2025-11-09T18:19:15.676189833Z [inf]  Preparing to unpack .../117-libharfbuzz0b_6.0.0+dfsg-3_amd64.deb ...
+
+2025-11-09T18:19:15.677441807Z [inf]  Unpacking libharfbuzz0b:amd64 (6.0.0+dfsg-3) ...
+
+2025-11-09T18:19:15.728851676Z [inf]  Selecting previously unselected package libthai-data.
+
+2025-11-09T18:19:15.730698634Z [inf]  Preparing to unpack .../118-libthai-data_0.1.29-1_all.deb ...
+
+2025-11-09T18:19:15.731925096Z [inf]  Unpacking libthai-data (0.1.29-1) ...
+
+2025-11-09T18:19:15.761227648Z [inf]  Selecting previously unselected package libdatrie1:amd64.
+
+2025-11-09T18:19:15.762885207Z [inf]  Preparing to unpack .../119-libdatrie1_0.2.13-2+b1_amd64.deb ...
+
+2025-11-09T18:19:15.76393303Z [inf]  Unpacking libdatrie1:amd64 (0.2.13-2+b1) ...
+
+2025-11-09T18:19:15.781427687Z [inf]  Selecting previously unselected package libthai0:amd64.
+
+2025-11-09T18:19:15.783090511Z [inf]  Preparing to unpack .../120-libthai0_0.1.29-1_amd64.deb ...
+
+2025-11-09T18:19:15.784200034Z [inf]  Unpacking libthai0:amd64 (0.1.29-1) ...
+
+2025-11-09T18:19:15.803904142Z [inf]  Selecting previously unselected package libpango-1.0-0:amd64.
+
+2025-11-09T18:19:15.805688207Z [inf]  Preparing to unpack .../121-libpango-1.0-0_1.50.12+ds-1_amd64.deb ...
+
+2025-11-09T18:19:15.807058668Z [inf]  Unpacking libpango-1.0-0:amd64 (1.50.12+ds-1) ...
+
+2025-11-09T18:19:15.835594805Z [inf]  Selecting previously unselected package libpangoft2-1.0-0:amd64.
+
+2025-11-09T18:19:15.837150951Z [inf]  Preparing to unpack .../122-libpangoft2-1.0-0_1.50.12+ds-1_amd64.deb ...
+
+2025-11-09T18:19:15.838113939Z [inf]  Unpacking libpangoft2-1.0-0:amd64 (1.50.12+ds-1) ...
+
+2025-11-09T18:19:15.853832649Z [inf]  Selecting previously unselected package libpangocairo-1.0-0:amd64.
+
+2025-11-09T18:19:15.855327978Z [inf]  Preparing to unpack .../123-libpangocairo-1.0-0_1.50.12+ds-1_amd64.deb ...
+
+2025-11-09T18:19:15.856502233Z [inf]  Unpacking libpangocairo-1.0-0:amd64 (1.50.12+ds-1) ...
+
+2025-11-09T18:19:15.871521869Z [inf]  Selecting previously unselected package libwayland-client0:amd64.
+
+2025-11-09T18:19:15.872954153Z [inf]  Preparing to unpack .../124-libwayland-client0_1.21.0-1_amd64.deb ...
+
+2025-11-09T18:19:15.873895354Z [inf]  Unpacking libwayland-client0:amd64 (1.21.0-1) ...
+
+2025-11-09T18:19:15.888669929Z [inf]  Selecting previously unselected package libwayland-cursor0:amd64.
+
+2025-11-09T18:19:15.890035637Z [inf]  Preparing to unpack .../125-libwayland-cursor0_1.21.0-1_amd64.deb ...
+
+2025-11-09T18:19:15.891092737Z [inf]  Unpacking libwayland-cursor0:amd64 (1.21.0-1) ...
+
+2025-11-09T18:19:15.905060948Z [inf]  Selecting previously unselected package libwayland-egl1:amd64.
+
+2025-11-09T18:19:15.906488118Z [inf]  Preparing to unpack .../126-libwayland-egl1_1.21.0-1_amd64.deb ...
+
+2025-11-09T18:19:15.907533515Z [inf]  Unpacking libwayland-egl1:amd64 (1.21.0-1) ...
+
+2025-11-09T18:19:15.923046248Z [inf]  Selecting previously unselected package libxcomposite1:amd64.
+
+2025-11-09T18:19:15.925797013Z [inf]  Preparing to unpack .../127-libxcomposite1_1%3a0.4.5-1_amd64.deb ...
+
+2025-11-09T18:19:15.927214162Z [inf]  Unpacking libxcomposite1:amd64 (1:0.4.5-1) ...
+
+2025-11-09T18:19:15.943313811Z [inf]  Selecting previously unselected package libxfixes3:amd64.
+
+2025-11-09T18:19:15.945363347Z [inf]  Preparing to unpack .../128-libxfixes3_1%3a6.0.0-2_amd64.deb ...
+
+2025-11-09T18:19:15.946583495Z [inf]  Unpacking libxfixes3:amd64 (1:6.0.0-2) ...
+
+2025-11-09T18:19:15.962547594Z [inf]  Selecting previously unselected package libxcursor1:amd64.
+
+2025-11-09T18:19:15.963852964Z [inf]  Preparing to unpack .../129-libxcursor1_1%3a1.2.1-1_amd64.deb ...
+
+2025-11-09T18:19:15.965037653Z [inf]  Unpacking libxcursor1:amd64 (1:1.2.1-1) ...
+
+2025-11-09T18:19:15.98093958Z [inf]  Selecting previously unselected package libxdamage1:amd64.
+
+2025-11-09T18:19:15.982476352Z [inf]  Preparing to unpack .../130-libxdamage1_1%3a1.1.6-1_amd64.deb ...
+
+2025-11-09T18:19:15.98361094Z [inf]  Unpacking libxdamage1:amd64 (1:1.1.6-1) ...
+
+2025-11-09T18:19:15.999296513Z [inf]  Selecting previously unselected package libxinerama1:amd64.
+
+2025-11-09T18:19:16.000922939Z [inf]  Preparing to unpack .../131-libxinerama1_2%3a1.1.4-3_amd64.deb ...
+
+2025-11-09T18:19:16.002200849Z [inf]  Unpacking libxinerama1:amd64 (2:1.1.4-3) ...
+
+2025-11-09T18:19:16.016821428Z [inf]  Selecting previously unselected package xkb-data.
+
+2025-11-09T18:19:16.018413723Z [inf]  Preparing to unpack .../132-xkb-data_2.35.1-1_all.deb ...
+
+2025-11-09T18:19:16.019599162Z [inf]  Unpacking xkb-data (2.35.1-1) ...
+
+2025-11-09T18:19:16.095680731Z [inf]  Selecting previously unselected package libxkbcommon0:amd64.
+
+2025-11-09T18:19:16.097391122Z [inf]  Preparing to unpack .../133-libxkbcommon0_1.5.0-1_amd64.deb ...
+
+2025-11-09T18:19:16.098559767Z [inf]  Unpacking libxkbcommon0:amd64 (1.5.0-1) ...
+
+2025-11-09T18:19:16.120799526Z [inf]  Selecting previously unselected package libxrandr2:amd64.
+
+2025-11-09T18:19:16.122512358Z [inf]  Preparing to unpack .../134-libxrandr2_2%3a1.5.2-2+b1_amd64.deb ...
+
+2025-11-09T18:19:16.123680385Z [inf]  Unpacking libxrandr2:amd64 (2:1.5.2-2+b1) ...
+
+2025-11-09T18:19:16.141020757Z [inf]  Selecting previously unselected package libgtk-3-common.
+
+2025-11-09T18:19:16.14305101Z [inf]  Preparing to unpack .../135-libgtk-3-common_3.24.38-2~deb12u3_all.deb ...
+
+2025-11-09T18:19:16.144330965Z [inf]  Unpacking libgtk-3-common (3.24.38-2~deb12u3) ...
+
+2025-11-09T18:19:16.4407874Z [inf]  Selecting previously unselected package libgtk-3-0:amd64.
+
+2025-11-09T18:19:16.44275253Z [inf]  Preparing to unpack .../136-libgtk-3-0_3.24.38-2~deb12u3_amd64.deb ...
+
+2025-11-09T18:19:16.44401966Z [inf]  Unpacking libgtk-3-0:amd64 (3.24.38-2~deb12u3) ...
+
+2025-11-09T18:19:16.639061651Z [inf]  Selecting previously unselected package libayatana-ido3-0.4-0:amd64.
+
+2025-11-09T18:19:16.641045958Z [inf]  Preparing to unpack .../137-libayatana-ido3-0.4-0_0.9.3-1_amd64.deb ...
+
+2025-11-09T18:19:16.642283448Z [inf]  Unpacking libayatana-ido3-0.4-0:amd64 (0.9.3-1) ...
+
+2025-11-09T18:19:16.664112961Z [inf]  Selecting previously unselected package libayatana-indicator3-7:amd64.
+
+2025-11-09T18:19:16.666390376Z [inf]  Preparing to unpack .../138-libayatana-indicator3-7_0.9.3-1_amd64.deb ...
+
+2025-11-09T18:19:16.667658497Z [inf]  Unpacking libayatana-indicator3-7:amd64 (0.9.3-1) ...
+
+2025-11-09T18:19:16.685901111Z [inf]  Selecting previously unselected package libdbusmenu-glib4:amd64.
+
+2025-11-09T18:19:16.68820656Z [inf]  Preparing to unpack .../139-libdbusmenu-glib4_18.10.20180917~bzr492+repack1-3_amd64.deb ...
+
+2025-11-09T18:19:16.689491409Z [inf]  Unpacking libdbusmenu-glib4:amd64 (18.10.20180917~bzr492+repack1-3) ...
+
+2025-11-09T18:19:16.707067994Z [inf]  Selecting previously unselected package libdbusmenu-gtk3-4:amd64.
+
+2025-11-09T18:19:16.708862464Z [inf]  Preparing to unpack .../140-libdbusmenu-gtk3-4_18.10.20180917~bzr492+repack1-3_amd64.deb ...
+
+2025-11-09T18:19:16.71001171Z [inf]  Unpacking libdbusmenu-gtk3-4:amd64 (18.10.20180917~bzr492+repack1-3) ...
+
+2025-11-09T18:19:16.726442085Z [inf]  Selecting previously unselected package libayatana-appindicator3-1.
+
+2025-11-09T18:19:16.728137727Z [inf]  Preparing to unpack .../141-libayatana-appindicator3-1_0.5.92-1_amd64.deb ...
+
+2025-11-09T18:19:16.729234842Z [inf]  Unpacking libayatana-appindicator3-1 (0.5.92-1) ...
+
+2025-11-09T18:19:16.742800627Z [inf]  Selecting previously unselected package libclone-perl:amd64.
+
+2025-11-09T18:19:16.744332973Z [inf]  Preparing to unpack .../142-libclone-perl_0.46-1_amd64.deb ...
+
+2025-11-09T18:19:16.745355158Z [inf]  Unpacking libclone-perl:amd64 (0.46-1) ...
+
+2025-11-09T18:19:16.758053466Z [inf]  Selecting previously unselected package libdata-dump-perl.
+
+2025-11-09T18:19:16.75952032Z [inf]  Preparing to unpack .../143-libdata-dump-perl_1.25-1_all.deb ...
+
+2025-11-09T18:19:16.760621348Z [inf]  Unpacking libdata-dump-perl (1.25-1) ...
+
+2025-11-09T18:19:16.776939136Z [inf]  Selecting previously unselected package libdrm-common.
+
+2025-11-09T18:19:16.77869202Z [inf]  Preparing to unpack .../144-libdrm-common_2.4.114-1_all.deb ...
+
+2025-11-09T18:19:16.779928374Z [inf]  Unpacking libdrm-common (2.4.114-1) ...
+
+2025-11-09T18:19:16.797142496Z [inf]  Selecting previously unselected package libdrm2:amd64.
+
+2025-11-09T18:19:16.799003654Z [inf]  Preparing to unpack .../145-libdrm2_2.4.114-1+b1_amd64.deb ...
+
+2025-11-09T18:19:16.800231834Z [inf]  Unpacking libdrm2:amd64 (2.4.114-1+b1) ...
+
+2025-11-09T18:19:16.818723806Z [inf]  Selecting previously unselected package libdrm-amdgpu1:amd64.
+
+2025-11-09T18:19:16.821097062Z [inf]  Preparing to unpack .../146-libdrm-amdgpu1_2.4.114-1+b1_amd64.deb ...
+
+2025-11-09T18:19:16.822560708Z [inf]  Unpacking libdrm-amdgpu1:amd64 (2.4.114-1+b1) ...
+
+2025-11-09T18:19:16.839244921Z [inf]  Selecting previously unselected package libpciaccess0:amd64.
+
+2025-11-09T18:19:16.840944762Z [inf]  Preparing to unpack .../147-libpciaccess0_0.17-2_amd64.deb ...
+
+2025-11-09T18:19:16.842155182Z [inf]  Unpacking libpciaccess0:amd64 (0.17-2) ...
+
+2025-11-09T18:19:16.861914156Z [inf]  Selecting previously unselected package libdrm-intel1:amd64.
+
+2025-11-09T18:19:16.863840731Z [inf]  Preparing to unpack .../148-libdrm-intel1_2.4.114-1+b1_amd64.deb ...
+
+2025-11-09T18:19:16.865296733Z [inf]  Unpacking libdrm-intel1:amd64 (2.4.114-1+b1) ...
+
+2025-11-09T18:19:16.886361615Z [inf]  Selecting previously unselected package libdrm-nouveau2:amd64.
+
+2025-11-09T18:19:16.888482828Z [inf]  Preparing to unpack .../149-libdrm-nouveau2_2.4.114-1+b1_amd64.deb ...
+
+2025-11-09T18:19:16.889929686Z [inf]  Unpacking libdrm-nouveau2:amd64 (2.4.114-1+b1) ...
+
+2025-11-09T18:19:16.907904438Z [inf]  Selecting previously unselected package libdrm-radeon1:amd64.
+
+2025-11-09T18:19:16.909783742Z [inf]  Preparing to unpack .../150-libdrm-radeon1_2.4.114-1+b1_amd64.deb ...
+
+2025-11-09T18:19:16.911024051Z [inf]  Unpacking libdrm-radeon1:amd64 (2.4.114-1+b1) ...
+
+2025-11-09T18:19:16.927554303Z [inf]  Selecting previously unselected package libedit2:amd64.
+
+2025-11-09T18:19:16.929773507Z [inf]  Preparing to unpack .../151-libedit2_3.1-20221030-2_amd64.deb ...
+
+2025-11-09T18:19:16.930995733Z [inf]  Unpacking libedit2:amd64 (3.1-20221030-2) ...
+
+2025-11-09T18:19:16.952506555Z [inf]  Selecting previously unselected package libwayland-server0:amd64.
+
+2025-11-09T18:19:16.954366097Z [inf]  Preparing to unpack .../152-libwayland-server0_1.21.0-1_amd64.deb ...
+
+2025-11-09T18:19:16.955676607Z [inf]  Unpacking libwayland-server0:amd64 (1.21.0-1) ...
+
+2025-11-09T18:19:16.972125819Z [inf]  Selecting previously unselected package libgbm1:amd64.
+
+2025-11-09T18:19:16.973843745Z [inf]  Preparing to unpack .../153-libgbm1_22.3.6-1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:16.97486811Z [inf]  Unpacking libgbm1:amd64 (22.3.6-1+deb12u1) ...
+
+2025-11-09T18:19:16.992147902Z [inf]  Selecting previously unselected package libglapi-mesa:amd64.
+
+2025-11-09T18:19:16.994223593Z [inf]  Preparing to unpack .../154-libglapi-mesa_22.3.6-1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:16.995532786Z [inf]  Unpacking libglapi-mesa:amd64 (22.3.6-1+deb12u1) ...
+
+2025-11-09T18:19:17.01372139Z [inf]  Selecting previously unselected package libx11-xcb1:amd64.
+
+2025-11-09T18:19:17.01533593Z [inf]  Preparing to unpack .../155-libx11-xcb1_2%3a1.8.4-2+deb12u2_amd64.deb ...
+
+2025-11-09T18:19:17.016482426Z [inf]  Unpacking libx11-xcb1:amd64 (2:1.8.4-2+deb12u2) ...
+
+2025-11-09T18:19:17.036711007Z [inf]  Selecting previously unselected package libxcb-dri2-0:amd64.
+
+2025-11-09T18:19:17.038831987Z [inf]  Preparing to unpack .../156-libxcb-dri2-0_1.15-1_amd64.deb ...
+
+2025-11-09T18:19:17.040207537Z [inf]  Unpacking libxcb-dri2-0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:17.061966343Z [inf]  Selecting previously unselected package libxcb-dri3-0:amd64.
+
+2025-11-09T18:19:17.063473793Z [inf]  Preparing to unpack .../157-libxcb-dri3-0_1.15-1_amd64.deb ...
+
+2025-11-09T18:19:17.064935432Z [inf]  Unpacking libxcb-dri3-0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:17.085941245Z [inf]  Selecting previously unselected package libxcb-present0:amd64.
+
+2025-11-09T18:19:17.087380289Z [inf]  Preparing to unpack .../158-libxcb-present0_1.15-1_amd64.deb ...
+
+2025-11-09T18:19:17.088492068Z [inf]  Unpacking libxcb-present0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:17.109498377Z [inf]  Selecting previously unselected package libxcb-randr0:amd64.
+
+2025-11-09T18:19:17.110988443Z [inf]  Preparing to unpack .../159-libxcb-randr0_1.15-1_amd64.deb ...
+
+2025-11-09T18:19:17.112074944Z [inf]  Unpacking libxcb-randr0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:17.1340034Z [inf]  Selecting previously unselected package libxcb-sync1:amd64.
+
+2025-11-09T18:19:17.135594934Z [inf]  Preparing to unpack .../160-libxcb-sync1_1.15-1_amd64.deb ...
+
+2025-11-09T18:19:17.136801994Z [inf]  Unpacking libxcb-sync1:amd64 (1.15-1) ...
+
+2025-11-09T18:19:17.161219635Z [inf]  Selecting previously unselected package libxcb-xfixes0:amd64.
+
+2025-11-09T18:19:17.163159535Z [inf]  Preparing to unpack .../161-libxcb-xfixes0_1.15-1_amd64.deb ...
+
+2025-11-09T18:19:17.164462254Z [inf]  Unpacking libxcb-xfixes0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:17.185711943Z [inf]  Selecting previously unselected package libxshmfence1:amd64.
+
+2025-11-09T18:19:17.187333606Z [inf]  Preparing to unpack .../162-libxshmfence1_1.3-1_amd64.deb ...
+
+2025-11-09T18:19:17.188696862Z [inf]  Unpacking libxshmfence1:amd64 (1.3-1) ...
+
+2025-11-09T18:19:17.204615913Z [inf]  Selecting previously unselected package libegl-mesa0:amd64.
+
+2025-11-09T18:19:17.206374502Z [inf]  Preparing to unpack .../163-libegl-mesa0_22.3.6-1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:17.207687834Z [inf]  Unpacking libegl-mesa0:amd64 (22.3.6-1+deb12u1) ...
+
+2025-11-09T18:19:17.234526179Z [inf]  Selecting previously unselected package libelf1:amd64.
+
+2025-11-09T18:19:17.236911165Z [inf]  Preparing to unpack .../164-libelf1_0.188-2.1_amd64.deb ...
+
+2025-11-09T18:19:17.238195635Z [inf]  Unpacking libelf1:amd64 (0.188-2.1) ...
+
+2025-11-09T18:19:17.269361257Z [inf]  Selecting previously unselected package libencode-locale-perl.
+
+2025-11-09T18:19:17.271439361Z [inf]  Preparing to unpack .../165-libencode-locale-perl_1.05-3_all.deb ...
+
+2025-11-09T18:19:17.272867614Z [inf]  Unpacking libencode-locale-perl (1.05-3) ...
+
+2025-11-09T18:19:17.289859847Z [inf]  Selecting previously unselected package libipc-system-simple-perl.
+
+2025-11-09T18:19:17.291815808Z [inf]  Preparing to unpack .../166-libipc-system-simple-perl_1.30-2_all.deb ...
+
+2025-11-09T18:19:17.293133626Z [inf]  Unpacking libipc-system-simple-perl (1.30-2) ...
+
+2025-11-09T18:19:17.309869127Z [inf]  Selecting previously unselected package libfile-basedir-perl.
+
+2025-11-09T18:19:17.311789242Z [inf]  Preparing to unpack .../167-libfile-basedir-perl_0.09-2_all.deb ...
+
+2025-11-09T18:19:17.320443392Z [inf]  Unpacking libfile-basedir-perl (0.09-2) ...
+
+2025-11-09T18:19:17.334521795Z [inf]  Selecting previously unselected package libregexp-ipv6-perl.
+
+2025-11-09T18:19:17.336248009Z [inf]  Preparing to unpack .../168-libregexp-ipv6-perl_0.03-3_all.deb ...
+
+2025-11-09T18:19:17.337724757Z [inf]  Unpacking libregexp-ipv6-perl (0.03-3) ...
+
+2025-11-09T18:19:17.352444447Z [inf]  Selecting previously unselected package liburi-perl.
+
+2025-11-09T18:19:17.354574477Z [inf]  Preparing to unpack .../169-liburi-perl_5.17-1_all.deb ...
+
+2025-11-09T18:19:17.355930955Z [inf]  Unpacking liburi-perl (5.17-1) ...
+
+2025-11-09T18:19:17.380542894Z [inf]  Selecting previously unselected package libfile-desktopentry-perl.
+
+2025-11-09T18:19:17.382838971Z [inf]  Preparing to unpack .../170-libfile-desktopentry-perl_0.22-3_all.deb ...
+
+2025-11-09T18:19:17.384375253Z [inf]  Unpacking libfile-desktopentry-perl (0.22-3) ...
+
+2025-11-09T18:19:17.400050976Z [inf]  Selecting previously unselected package libtimedate-perl.
+
+2025-11-09T18:19:17.401994326Z [inf]  Preparing to unpack .../171-libtimedate-perl_2.3300-2_all.deb ...
+
+2025-11-09T18:19:17.403131588Z [inf]  Unpacking libtimedate-perl (2.3300-2) ...
+
+2025-11-09T18:19:17.425149026Z [inf]  Selecting previously unselected package libhttp-date-perl.
+
+2025-11-09T18:19:17.427248799Z [inf]  Preparing to unpack .../172-libhttp-date-perl_6.05-2_all.deb ...
+
+2025-11-09T18:19:17.428596791Z [inf]  Unpacking libhttp-date-perl (6.05-2) ...
+
+2025-11-09T18:19:17.443375641Z [inf]  Selecting previously unselected package libfile-listing-perl.
+
+2025-11-09T18:19:17.445289853Z [inf]  Preparing to unpack .../173-libfile-listing-perl_6.15-1_all.deb ...
+
+2025-11-09T18:19:17.446655182Z [inf]  Unpacking libfile-listing-perl (6.15-1) ...
+
+2025-11-09T18:19:17.460366521Z [inf]  Selecting previously unselected package libfile-mimeinfo-perl.
+
+2025-11-09T18:19:17.462049858Z [inf]  Preparing to unpack .../174-libfile-mimeinfo-perl_0.33-1_all.deb ...
+
+2025-11-09T18:19:17.463237163Z [inf]  Unpacking libfile-mimeinfo-perl (0.33-1) ...
+
+2025-11-09T18:19:17.479413223Z [inf]  Selecting previously unselected package libfont-afm-perl.
+
+2025-11-09T18:19:17.480878111Z [inf]  Preparing to unpack .../175-libfont-afm-perl_1.20-4_all.deb ...
+
+2025-11-09T18:19:17.482373472Z [inf]  Unpacking libfont-afm-perl (1.20-4) ...
+
+2025-11-09T18:19:17.498317628Z [inf]  Selecting previously unselected package libfontenc1:amd64.
+
+2025-11-09T18:19:17.499764782Z [inf]  Preparing to unpack .../176-libfontenc1_1%3a1.1.4-1_amd64.deb ...
+
+2025-11-09T18:19:17.50116214Z [inf]  Unpacking libfontenc1:amd64 (1:1.1.4-1) ...
+
+2025-11-09T18:19:17.518600337Z [inf]  Selecting previously unselected package libgdk-pixbuf-xlib-2.0-0:amd64.
+
+2025-11-09T18:19:17.520697357Z [inf]  Preparing to unpack .../177-libgdk-pixbuf-xlib-2.0-0_2.40.2-2_amd64.deb ...
+
+2025-11-09T18:19:17.522063767Z [inf]  Unpacking libgdk-pixbuf-xlib-2.0-0:amd64 (2.40.2-2) ...
+
+2025-11-09T18:19:17.539917517Z [inf]  Selecting previously unselected package libgdk-pixbuf2.0-0:amd64.
+
+2025-11-09T18:19:17.541657Z [inf]  Preparing to unpack .../178-libgdk-pixbuf2.0-0_2.40.2-2_amd64.deb ...
+
+2025-11-09T18:19:17.542876845Z [inf]  Unpacking libgdk-pixbuf2.0-0:amd64 (2.40.2-2) ...
+
+2025-11-09T18:19:17.55740351Z [inf]  Selecting previously unselected package libgdk-pixbuf2.0-bin.
+
+2025-11-09T18:19:17.559005166Z [inf]  Preparing to unpack .../179-libgdk-pixbuf2.0-bin_2.42.10+dfsg-1+deb12u2_amd64.deb ...
+
+2025-11-09T18:19:17.560193643Z [inf]  Unpacking libgdk-pixbuf2.0-bin (2.42.10+dfsg-1+deb12u2) ...
+
+2025-11-09T18:19:17.577353904Z [inf]  Selecting previously unselected package libglvnd0:amd64.
+
+2025-11-09T18:19:17.579045299Z [inf]  Preparing to unpack .../180-libglvnd0_1.6.0-1_amd64.deb ...
+
+2025-11-09T18:19:17.580367436Z [inf]  Unpacking libglvnd0:amd64 (1.6.0-1) ...
+
+2025-11-09T18:19:17.601363394Z [inf]  Selecting previously unselected package libxcb-glx0:amd64.
+
+2025-11-09T18:19:17.602986422Z [inf]  Preparing to unpack .../181-libxcb-glx0_1.15-1_amd64.deb ...
+
+2025-11-09T18:19:17.604131187Z [inf]  Unpacking libxcb-glx0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:17.626595423Z [inf]  Selecting previously unselected package libxxf86vm1:amd64.
+
+2025-11-09T18:19:17.628155445Z [inf]  Preparing to unpack .../182-libxxf86vm1_1%3a1.1.4-1+b2_amd64.deb ...
+
+2025-11-09T18:19:17.629149603Z [inf]  Unpacking libxxf86vm1:amd64 (1:1.1.4-1+b2) ...
+
+2025-11-09T18:19:17.644332444Z [inf]  Selecting previously unselected package libz3-4:amd64.
+
+2025-11-09T18:19:17.646399835Z [inf]  Preparing to unpack .../183-libz3-4_4.8.12-3.1_amd64.deb ...
+
+2025-11-09T18:19:17.647601123Z [inf]  Unpacking libz3-4:amd64 (4.8.12-3.1) ...
+
+2025-11-09T18:19:18.152567611Z [inf]  Selecting previously unselected package libllvm15:amd64.
+
+2025-11-09T18:19:18.154939551Z [inf]  Preparing to unpack .../184-libllvm15_1%3a15.0.6-4+b1_amd64.deb ...
+
+2025-11-09T18:19:18.156447416Z [inf]  Unpacking libllvm15:amd64 (1:15.0.6-4+b1) ...
+
+2025-11-09T18:19:18.877500664Z [inf]  Selecting previously unselected package libsensors-config.
+
+2025-11-09T18:19:18.87913152Z [inf]  Preparing to unpack .../185-libsensors-config_1%3a3.6.0-7.1_all.deb ...
+
+2025-11-09T18:19:18.880360488Z [inf]  Unpacking libsensors-config (1:3.6.0-7.1) ...
+
+2025-11-09T18:19:18.895371043Z [inf]  Selecting previously unselected package libsensors5:amd64.
+
+2025-11-09T18:19:18.896975146Z [inf]  Preparing to unpack .../186-libsensors5_1%3a3.6.0-7.1_amd64.deb ...
+
+2025-11-09T18:19:18.900525774Z [inf]  Unpacking libsensors5:amd64 (1:3.6.0-7.1) ...
+
+2025-11-09T18:19:18.917188955Z [inf]  Selecting previously unselected package libgl1-mesa-dri:amd64.
+
+2025-11-09T18:19:18.918798935Z [inf]  Preparing to unpack .../187-libgl1-mesa-dri_22.3.6-1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:18.923896853Z [inf]  Unpacking libgl1-mesa-dri:amd64 (22.3.6-1+deb12u1) ...
+
+2025-11-09T18:19:19.386585276Z [inf]  Selecting previously unselected package libglx-mesa0:amd64.
+
+2025-11-09T18:19:19.388403228Z [inf]  Preparing to unpack .../188-libglx-mesa0_22.3.6-1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:19.389648627Z [inf]  Unpacking libglx-mesa0:amd64 (22.3.6-1+deb12u1) ...
+
+2025-11-09T18:19:19.415548414Z [inf]  Selecting previously unselected package libglx0:amd64.
+
+2025-11-09T18:19:19.417160235Z [inf]  Preparing to unpack .../189-libglx0_1.6.0-1_amd64.deb ...
+
+2025-11-09T18:19:19.41846407Z [inf]  Unpacking libglx0:amd64 (1.6.0-1) ...
+
+2025-11-09T18:19:19.438261231Z [inf]  Selecting previously unselected package libgl1:amd64.
+
+2025-11-09T18:19:19.439890423Z [inf]  Preparing to unpack .../190-libgl1_1.6.0-1_amd64.deb ...
+
+2025-11-09T18:19:19.441183074Z [inf]  Unpacking libgl1:amd64 (1.6.0-1) ...
+
+2025-11-09T18:19:19.464491355Z [inf]  Selecting previously unselected package libgles2:amd64.
+
+2025-11-09T18:19:19.466353666Z [inf]  Preparing to unpack .../191-libgles2_1.6.0-1_amd64.deb ...
+
+2025-11-09T18:19:19.467502951Z [inf]  Unpacking libgles2:amd64 (1.6.0-1) ...
+
+2025-11-09T18:19:19.482707975Z [inf]  Selecting previously unselected package libglib2.0-data.
+
+2025-11-09T18:19:19.48434661Z [inf]  Preparing to unpack .../192-libglib2.0-data_2.74.6-2+deb12u7_all.deb ...
+
+2025-11-09T18:19:19.485496546Z [inf]  Unpacking libglib2.0-data (2.74.6-2+deb12u7) ...
+
+2025-11-09T18:19:19.589461859Z [inf]  Selecting previously unselected package libgpm2:amd64.
+
+2025-11-09T18:19:19.591980246Z [inf]  Preparing to unpack .../193-libgpm2_1.20.7-10+b1_amd64.deb ...
+
+2025-11-09T18:19:19.593389942Z [inf]  Unpacking libgpm2:amd64 (1.20.7-10+b1) ...
+
+2025-11-09T18:19:19.611875628Z [inf]  Selecting previously unselected package libgtk-3-bin.
+
+2025-11-09T18:19:19.613840835Z [inf]  Preparing to unpack .../194-libgtk-3-bin_3.24.38-2~deb12u3_amd64.deb ...
+
+2025-11-09T18:19:19.615310694Z [inf]  Unpacking libgtk-3-bin (3.24.38-2~deb12u3) ...
+
+2025-11-09T18:19:19.636244442Z [inf]  Selecting previously unselected package libhtml-tagset-perl.
+
+2025-11-09T18:19:19.638218915Z [inf]  Preparing to unpack .../195-libhtml-tagset-perl_3.20-6_all.deb ...
+
+2025-11-09T18:19:19.639471046Z [inf]  Unpacking libhtml-tagset-perl (3.20-6) ...
+
+2025-11-09T18:19:19.654760757Z [inf]  Selecting previously unselected package libhtml-parser-perl:amd64.
+
+2025-11-09T18:19:19.657196356Z [inf]  Preparing to unpack .../196-libhtml-parser-perl_3.81-1_amd64.deb ...
+
+2025-11-09T18:19:19.658483089Z [inf]  Unpacking libhtml-parser-perl:amd64 (3.81-1) ...
+
+2025-11-09T18:19:19.68016539Z [inf]  Selecting previously unselected package libio-html-perl.
+
+2025-11-09T18:19:19.68246312Z [inf]  Preparing to unpack .../197-libio-html-perl_1.004-3_all.deb ...
+
+2025-11-09T18:19:19.683746971Z [inf]  Unpacking libio-html-perl (1.004-3) ...
+
+2025-11-09T18:19:19.699060628Z [inf]  Selecting previously unselected package liblwp-mediatypes-perl.
+
+2025-11-09T18:19:19.700726036Z [inf]  Preparing to unpack .../198-liblwp-mediatypes-perl_6.04-2_all.deb ...
+
+2025-11-09T18:19:19.701869572Z [inf]  Unpacking liblwp-mediatypes-perl (6.04-2) ...
+
+2025-11-09T18:19:19.717416533Z [inf]  Selecting previously unselected package libhttp-message-perl.
+
+2025-11-09T18:19:19.719062182Z [inf]  Preparing to unpack .../199-libhttp-message-perl_6.44-1_all.deb ...
+
+2025-11-09T18:19:19.720199708Z [inf]  Unpacking libhttp-message-perl (6.44-1) ...
+
+2025-11-09T18:19:19.740458833Z [inf]  Selecting previously unselected package libhtml-form-perl.
+
+2025-11-09T18:19:19.743260213Z [inf]  Preparing to unpack .../200-libhtml-form-perl_6.11-1_all.deb ...
+
+2025-11-09T18:19:19.744600165Z [inf]  Unpacking libhtml-form-perl (6.11-1) ...
+
+2025-11-09T18:19:19.761204524Z [inf]  Selecting previously unselected package libhtml-tree-perl.
+
+2025-11-09T18:19:19.762836514Z [inf]  Preparing to unpack .../201-libhtml-tree-perl_5.07-3_all.deb ...
+
+2025-11-09T18:19:19.763969774Z [inf]  Unpacking libhtml-tree-perl (5.07-3) ...
+
+2025-11-09T18:19:19.790417617Z [inf]  Selecting previously unselected package libhtml-format-perl.
+
+2025-11-09T18:19:19.792072035Z [inf]  Preparing to unpack .../202-libhtml-format-perl_2.16-2_all.deb ...
+
+2025-11-09T18:19:19.793230451Z [inf]  Unpacking libhtml-format-perl (2.16-2) ...
+
+2025-11-09T18:19:19.809388741Z [inf]  Selecting previously unselected package libhttp-cookies-perl.
+
+2025-11-09T18:19:19.811072113Z [inf]  Preparing to unpack .../203-libhttp-cookies-perl_6.10-1_all.deb ...
+
+2025-11-09T18:19:19.812183898Z [inf]  Unpacking libhttp-cookies-perl (6.10-1) ...
+
+2025-11-09T18:19:19.826389828Z [inf]  Selecting previously unselected package libhttp-daemon-perl.
+
+2025-11-09T18:19:19.828044612Z [inf]  Preparing to unpack .../204-libhttp-daemon-perl_6.16-1_all.deb ...
+
+2025-11-09T18:19:19.829037506Z [inf]  Unpacking libhttp-daemon-perl (6.16-1) ...
+
+2025-11-09T18:19:19.843084272Z [inf]  Selecting previously unselected package libhttp-negotiate-perl.
+
+2025-11-09T18:19:19.844550367Z [inf]  Preparing to unpack .../205-libhttp-negotiate-perl_6.01-2_all.deb ...
+
+2025-11-09T18:19:19.845754713Z [inf]  Unpacking libhttp-negotiate-perl (6.01-2) ...
+
+2025-11-09T18:19:19.860583536Z [inf]  Selecting previously unselected package libice6:amd64.
+
+2025-11-09T18:19:19.862098294Z [inf]  Preparing to unpack .../206-libice6_2%3a1.0.10-1_amd64.deb ...
+
+2025-11-09T18:19:19.863175173Z [inf]  Unpacking libice6:amd64 (2:1.0.10-1) ...
+
+2025-11-09T18:19:19.881552173Z [inf]  Selecting previously unselected package perl-openssl-defaults:amd64.
+
+2025-11-09T18:19:19.883213908Z [inf]  Preparing to unpack .../207-perl-openssl-defaults_7+b1_amd64.deb ...
+
+2025-11-09T18:19:19.884390826Z [inf]  Unpacking perl-openssl-defaults:amd64 (7+b1) ...
+
+2025-11-09T18:19:19.89895636Z [inf]  Selecting previously unselected package libnet-ssleay-perl:amd64.
+
+2025-11-09T18:19:19.900534389Z [inf]  Preparing to unpack .../208-libnet-ssleay-perl_1.92-2+b1_amd64.deb ...
+
+2025-11-09T18:19:19.901737455Z [inf]  Unpacking libnet-ssleay-perl:amd64 (1.92-2+b1) ...
+
+2025-11-09T18:19:19.935541288Z [inf]  Selecting previously unselected package libio-socket-ssl-perl.
+
+2025-11-09T18:19:19.937254224Z [inf]  Preparing to unpack .../209-libio-socket-ssl-perl_2.081-2_all.deb ...
+
+2025-11-09T18:19:19.938644019Z [inf]  Unpacking libio-socket-ssl-perl (2.081-2) ...
+
+2025-11-09T18:19:19.967538592Z [inf]  Selecting previously unselected package libio-stringy-perl.
+
+2025-11-09T18:19:19.969747923Z [inf]  Preparing to unpack .../210-libio-stringy-perl_2.111-3_all.deb ...
+
+2025-11-09T18:19:19.970950168Z [inf]  Unpacking libio-stringy-perl (2.111-3) ...
+
+2025-11-09T18:19:19.989580036Z [inf]  Selecting previously unselected package libldap-common.
+
+2025-11-09T18:19:19.991459682Z [inf]  Preparing to unpack .../211-libldap-common_2.5.13+dfsg-5_all.deb ...
+
+2025-11-09T18:19:19.992692323Z [inf]  Unpacking libldap-common (2.5.13+dfsg-5) ...
+
+2025-11-09T18:19:20.00964811Z [inf]  Selecting previously unselected package libnet-http-perl.
+
+2025-11-09T18:19:20.011322228Z [inf]  Preparing to unpack .../212-libnet-http-perl_6.22-1_all.deb ...
+
+2025-11-09T18:19:20.012634388Z [inf]  Unpacking libnet-http-perl (6.22-1) ...
+
+2025-11-09T18:19:20.028953669Z [inf]  Selecting previously unselected package libtry-tiny-perl.
+
+2025-11-09T18:19:20.03058523Z [inf]  Preparing to unpack .../213-libtry-tiny-perl_0.31-2_all.deb ...
+
+2025-11-09T18:19:20.031749092Z [inf]  Unpacking libtry-tiny-perl (0.31-2) ...
+
+2025-11-09T18:19:20.0476895Z [inf]  Selecting previously unselected package libwww-robotrules-perl.
+
+2025-11-09T18:19:20.049505083Z [inf]  Preparing to unpack .../214-libwww-robotrules-perl_6.02-1_all.deb ...
+
+2025-11-09T18:19:20.050591432Z [inf]  Unpacking libwww-robotrules-perl (6.02-1) ...
+
+2025-11-09T18:19:20.066453698Z [inf]  Selecting previously unselected package libwww-perl.
+
+2025-11-09T18:19:20.068322838Z [inf]  Preparing to unpack .../215-libwww-perl_6.68-1_all.deb ...
+
+2025-11-09T18:19:20.069908356Z [inf]  Unpacking libwww-perl (6.68-1) ...
+
+2025-11-09T18:19:20.096374507Z [inf]  Selecting previously unselected package liblwp-protocol-https-perl.
+
+2025-11-09T18:19:20.098082265Z [inf]  Preparing to unpack .../216-liblwp-protocol-https-perl_6.10-1_all.deb ...
+
+2025-11-09T18:19:20.09931449Z [inf]  Unpacking liblwp-protocol-https-perl (6.10-1) ...
+
+2025-11-09T18:19:20.113831548Z [inf]  Selecting previously unselected package libnet-smtp-ssl-perl.
+
+2025-11-09T18:19:20.115451036Z [inf]  Preparing to unpack .../217-libnet-smtp-ssl-perl_1.04-2_all.deb ...
+
+2025-11-09T18:19:20.11656308Z [inf]  Unpacking libnet-smtp-ssl-perl (1.04-2) ...
+
+2025-11-09T18:19:20.130440057Z [inf]  Selecting previously unselected package libmailtools-perl.
+
+2025-11-09T18:19:20.13273164Z [inf]  Preparing to unpack .../218-libmailtools-perl_2.21-2_all.deb ...
+
+2025-11-09T18:19:20.133831234Z [inf]  Unpacking libmailtools-perl (2.21-2) ...
+
+2025-11-09T18:19:20.154887241Z [inf]  Selecting previously unselected package libxml-parser-perl.
+
+2025-11-09T18:19:20.156681673Z [inf]  Preparing to unpack .../219-libxml-parser-perl_2.46-4_amd64.deb ...
+
+2025-11-09T18:19:20.157749525Z [inf]  Unpacking libxml-parser-perl (2.46-4) ...
+
+2025-11-09T18:19:20.183337555Z [inf]  Selecting previously unselected package libxml-twig-perl.
+
+2025-11-09T18:19:20.185039899Z [inf]  Preparing to unpack .../220-libxml-twig-perl_1%3a3.52-2_all.deb ...
+
+2025-11-09T18:19:20.18616773Z [inf]  Unpacking libxml-twig-perl (1:3.52-2) ...
+
+2025-11-09T18:19:20.211524908Z [inf]  Selecting previously unselected package libnet-dbus-perl.
+
+2025-11-09T18:19:20.213297672Z [inf]  Preparing to unpack .../221-libnet-dbus-perl_1.2.0-2_amd64.deb ...
+
+2025-11-09T18:19:20.214344379Z [inf]  Unpacking libnet-dbus-perl (1.2.0-2) ...
+
+2025-11-09T18:19:20.241586456Z [inf]  Selecting previously unselected package libnspr4:amd64.
+
+2025-11-09T18:19:20.243914852Z [inf]  Preparing to unpack .../222-libnspr4_2%3a4.35-1_amd64.deb ...
+
+2025-11-09T18:19:20.245211851Z [inf]  Unpacking libnspr4:amd64 (2:4.35-1) ...
+
+2025-11-09T18:19:20.271302564Z [inf]  Selecting previously unselected package libnss3:amd64.
+
+2025-11-09T18:19:20.273159503Z [inf]  Preparing to unpack .../223-libnss3_2%3a3.87.1-1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:20.274264634Z [inf]  Unpacking libnss3:amd64 (2:3.87.1-1+deb12u1) ...
+
+2025-11-09T18:19:20.386253275Z [inf]  Selecting previously unselected package librsvg2-2:amd64.
+
+2025-11-09T18:19:20.388002789Z [inf]  Preparing to unpack .../224-librsvg2-2_2.54.7+dfsg-1~deb12u1_amd64.deb ...
+
+2025-11-09T18:19:20.389194326Z [inf]  Unpacking librsvg2-2:amd64 (2.54.7+dfsg-1~deb12u1) ...
+
+2025-11-09T18:19:20.589355624Z [inf]  Selecting previously unselected package librsvg2-common:amd64.
+
+2025-11-09T18:19:20.591811613Z [inf]  Preparing to unpack .../225-librsvg2-common_2.54.7+dfsg-1~deb12u1_amd64.deb ...
+
+2025-11-09T18:19:20.59307222Z [inf]  Unpacking librsvg2-common:amd64 (2.54.7+dfsg-1~deb12u1) ...
+
+2025-11-09T18:19:20.610772057Z [inf]  Selecting previously unselected package libsasl2-modules:amd64.
+
+2025-11-09T18:19:20.613532541Z [inf]  Preparing to unpack .../226-libsasl2-modules_2.1.28+dfsg-10_amd64.deb ...
+
+2025-11-09T18:19:20.618757771Z [inf]  Unpacking libsasl2-modules:amd64 (2.1.28+dfsg-10) ...
+
+2025-11-09T18:19:20.638546486Z [inf]  Selecting previously unselected package libsm6:amd64.
+
+2025-11-09T18:19:20.640352553Z [inf]  Preparing to unpack .../227-libsm6_2%3a1.2.3-1_amd64.deb ...
+
+2025-11-09T18:19:20.641616327Z [inf]  Unpacking libsm6:amd64 (2:1.2.3-1) ...
+
+2025-11-09T18:19:20.65828534Z [inf]  Selecting previously unselected package libtext-iconv-perl:amd64.
+
+2025-11-09T18:19:20.660023292Z [inf]  Preparing to unpack .../228-libtext-iconv-perl_1.7-8_amd64.deb ...
+
+2025-11-09T18:19:20.661048102Z [inf]  Unpacking libtext-iconv-perl:amd64 (1.7-8) ...
+
+2025-11-09T18:19:20.674704467Z [inf]  Selecting previously unselected package libtie-ixhash-perl.
+
+2025-11-09T18:19:20.676314543Z [inf]  Preparing to unpack .../229-libtie-ixhash-perl_1.23-4_all.deb ...
+
+2025-11-09T18:19:20.677398755Z [inf]  Unpacking libtie-ixhash-perl (1.23-4) ...
+
+2025-11-09T18:19:20.69510754Z [inf]  Selecting previously unselected package libx11-protocol-perl.
+
+2025-11-09T18:19:20.697120975Z [inf]  Preparing to unpack .../230-libx11-protocol-perl_0.56-9_all.deb ...
+
+2025-11-09T18:19:20.698314169Z [inf]  Unpacking libx11-protocol-perl (0.56-9) ...
+
+2025-11-09T18:19:20.721026969Z [inf]  Selecting previously unselected package libxt6:amd64.
+
+2025-11-09T18:19:20.722901088Z [inf]  Preparing to unpack .../231-libxt6_1%3a1.2.1-1.1_amd64.deb ...
+
+2025-11-09T18:19:20.723999624Z [inf]  Unpacking libxt6:amd64 (1:1.2.1-1.1) ...
+
+2025-11-09T18:19:20.751920529Z [inf]  Selecting previously unselected package libxmu6:amd64.
+
+2025-11-09T18:19:20.753955724Z [inf]  Preparing to unpack .../232-libxmu6_2%3a1.1.3-3_amd64.deb ...
+
+2025-11-09T18:19:20.755300808Z [inf]  Unpacking libxmu6:amd64 (2:1.1.3-3) ...
+
+2025-11-09T18:19:20.775520352Z [inf]  Selecting previously unselected package libxpm4:amd64.
+
+2025-11-09T18:19:20.777424723Z [inf]  Preparing to unpack .../233-libxpm4_1%3a3.5.12-1.1+deb12u1_amd64.deb ...
+
+2025-11-09T18:19:20.778870553Z [inf]  Unpacking libxpm4:amd64 (1:3.5.12-1.1+deb12u1) ...
+
+2025-11-09T18:19:20.799227286Z [inf]  Selecting previously unselected package libxaw7:amd64.
+
+2025-11-09T18:19:20.800941577Z [inf]  Preparing to unpack .../234-libxaw7_2%3a1.0.14-1_amd64.deb ...
+
+2025-11-09T18:19:20.802839647Z [inf]  Unpacking libxaw7:amd64 (2:1.0.14-1) ...
+
+2025-11-09T18:19:20.832742722Z [inf]  Selecting previously unselected package libxcb-shape0:amd64.
+
+2025-11-09T18:19:20.835016114Z [inf]  Preparing to unpack .../235-libxcb-shape0_1.15-1_amd64.deb ...
+
+2025-11-09T18:19:20.836257832Z [inf]  Unpacking libxcb-shape0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:20.858914408Z [inf]  Selecting previously unselected package libxft2:amd64.
+
+2025-11-09T18:19:20.860818652Z [inf]  Preparing to unpack .../236-libxft2_2.3.6-1_amd64.deb ...
+
+2025-11-09T18:19:20.862631517Z [inf]  Unpacking libxft2:amd64 (2.3.6-1) ...
+
+2025-11-09T18:19:20.883219076Z [inf]  Selecting previously unselected package libxkbfile1:amd64.
+
+2025-11-09T18:19:20.885151238Z [inf]  Preparing to unpack .../237-libxkbfile1_1%3a1.1.0-1_amd64.deb ...
+
+2025-11-09T18:19:20.886777829Z [inf]  Unpacking libxkbfile1:amd64 (1:1.1.0-1) ...
+
+2025-11-09T18:19:20.905629372Z [inf]  Selecting previously unselected package libxml-xpathengine-perl.
+
+2025-11-09T18:19:20.907546576Z [inf]  Preparing to unpack .../238-libxml-xpathengine-perl_0.14-2_all.deb ...
+
+2025-11-09T18:19:20.908667293Z [inf]  Unpacking libxml-xpathengine-perl (0.14-2) ...
+
+2025-11-09T18:19:20.926336833Z [inf]  Selecting previously unselected package libxmuu1:amd64.
+
+2025-11-09T18:19:20.92816239Z [inf]  Preparing to unpack .../239-libxmuu1_2%3a1.1.3-3_amd64.deb ...
+
+2025-11-09T18:19:20.929403053Z [inf]  Unpacking libxmuu1:amd64 (2:1.1.3-3) ...
+
+2025-11-09T18:19:20.947571785Z [inf]  Selecting previously unselected package libxss1:amd64.
+
+2025-11-09T18:19:20.949449219Z [inf]  Preparing to unpack .../240-libxss1_1%3a1.2.3-1_amd64.deb ...
+
+2025-11-09T18:19:20.951222137Z [inf]  Unpacking libxss1:amd64 (1:1.2.3-1) ...
+
+2025-11-09T18:19:20.970981261Z [inf]  Selecting previously unselected package libxv1:amd64.
+
+2025-11-09T18:19:20.972874764Z [inf]  Preparing to unpack .../241-libxv1_2%3a1.0.11-1.1_amd64.deb ...
+
+2025-11-09T18:19:20.974169623Z [inf]  Unpacking libxv1:amd64 (2:1.0.11-1.1) ...
+
+2025-11-09T18:19:20.991378975Z [inf]  Selecting previously unselected package libxxf86dga1:amd64.
+
+2025-11-09T18:19:20.993093975Z [inf]  Preparing to unpack .../242-libxxf86dga1_2%3a1.1.5-1_amd64.deb ...
+
+2025-11-09T18:19:20.99418802Z [inf]  Unpacking libxxf86dga1:amd64 (2:1.1.5-1) ...
+
+2025-11-09T18:19:21.010374491Z [inf]  Selecting previously unselected package psmisc.
+
+2025-11-09T18:19:21.012144645Z [inf]  Preparing to unpack .../243-psmisc_23.6-1_amd64.deb ...
+
+2025-11-09T18:19:21.013145457Z [inf]  Unpacking psmisc (23.6-1) ...
+
+2025-11-09T18:19:21.044890063Z [inf]  Selecting previously unselected package publicsuffix.
+
+2025-11-09T18:19:21.046890139Z [inf]  Preparing to unpack .../244-publicsuffix_20230209.2326-1_all.deb ...
+
+2025-11-09T18:19:21.047969617Z [inf]  Unpacking publicsuffix (20230209.2326-1) ...
+
+2025-11-09T18:19:21.072345377Z [inf]  Selecting previously unselected package x11-utils.
+
+2025-11-09T18:19:21.074264375Z [inf]  Preparing to unpack .../245-x11-utils_7.7+5_amd64.deb ...
+
+2025-11-09T18:19:21.075341892Z [inf]  Unpacking x11-utils (7.7+5) ...
+
+2025-11-09T18:19:21.104978322Z [inf]  Selecting previously unselected package x11-xserver-utils.
+
+2025-11-09T18:19:21.106877607Z [inf]  Preparing to unpack .../246-x11-xserver-utils_7.7+9+b1_amd64.deb ...
+
+2025-11-09T18:19:21.107926385Z [inf]  Unpacking x11-xserver-utils (7.7+9+b1) ...
+
+2025-11-09T18:19:21.134122285Z [inf]  Selecting previously unselected package xdg-user-dirs.
+
+2025-11-09T18:19:21.135985468Z [inf]  Preparing to unpack .../247-xdg-user-dirs_0.18-1_amd64.deb ...
+
+2025-11-09T18:19:21.139585965Z [inf]  Unpacking xdg-user-dirs (0.18-1) ...
+
+2025-11-09T18:19:21.159993489Z [inf]  Selecting previously unselected package xdg-utils.
+
+2025-11-09T18:19:21.161881331Z [inf]  Preparing to unpack .../248-xdg-utils_1.1.3-4.1_all.deb ...
+
+2025-11-09T18:19:21.162833708Z [inf]  Unpacking xdg-utils (1.1.3-4.1) ...
+
+2025-11-09T18:19:21.181571363Z [inf]  Selecting previously unselected package libegl1:amd64.
+
+2025-11-09T18:19:21.183368927Z [inf]  Preparing to unpack .../249-libegl1_1.6.0-1_amd64.deb ...
+
+2025-11-09T18:19:21.184382379Z [inf]  Unpacking libegl1:amd64 (1.6.0-1) ...
+
+2025-11-09T18:19:21.20273638Z [inf]  Selecting previously unselected package zutty.
+
+2025-11-09T18:19:21.204657967Z [inf]  Preparing to unpack .../250-zutty_0.14.0.20230218+dfsg1-1_amd64.deb ...
+
+2025-11-09T18:19:21.205768Z [inf]  Unpacking zutty (0.14.0.20230218+dfsg1-1) ...
+
+2025-11-09T18:19:21.245394143Z [inf]  Setting up libksba8:amd64 (1.6.3-2) ...
+
+2025-11-09T18:19:21.248600169Z [inf]  Setting up libexpat1:amd64 (2.5.0-1+deb12u2) ...
+
+2025-11-09T18:19:21.251526713Z [inf]  Setting up libtext-iconv-perl:amd64 (1.7-8) ...
+
+2025-11-09T18:19:21.254438837Z [inf]  Setting up libgraphite2-3:amd64 (1.3.14-1) ...
+
+2025-11-09T18:19:21.257280298Z [inf]  Setting up liblcms2-2:amd64 (2.14-2) ...
+
+2025-11-09T18:19:21.260392475Z [inf]  Setting up libpixman-1-0:amd64 (0.42.2-1) ...
+
+2025-11-09T18:19:21.26321865Z [inf]  Setting up libwayland-server0:amd64 (1.21.0-1) ...
+
+2025-11-09T18:19:21.266198021Z [inf]  Setting up libpciaccess0:amd64 (0.17-2) ...
+
+2025-11-09T18:19:21.268770134Z [inf]  Setting up systemd-sysv (252.39-1~deb12u1) ...
+
+2025-11-09T18:19:21.273020809Z [inf]  Setting up libxau6:amd64 (1:1.0.9-1) ...
+
+2025-11-09T18:19:21.275721886Z [inf]  Setting up libkeyutils1:amd64 (1.6.3-2) ...
+
+2025-11-09T18:19:21.27864735Z [inf]  Setting up libpsl5:amd64 (0.21.2-1) ...
+
+2025-11-09T18:19:21.281579224Z [inf]  Setting up libgpm2:amd64 (1.20.7-10+b1) ...
+
+2025-11-09T18:19:21.284312014Z [inf]  Setting up libicu72:amd64 (72.1-3+deb12u1) ...
+
+2025-11-09T18:19:21.287026008Z [inf]  Setting up liblerc4:amd64 (4.0.0+ds-2) ...
+
+2025-11-09T18:19:21.289711368Z [inf]  Setting up wget (1.21.3-1+deb12u1) ...
+
+2025-11-09T18:19:21.29328159Z [inf]  Setting up hicolor-icon-theme (0.17-2) ...
+
+2025-11-09T18:19:21.305416101Z [inf]  Setting up libdatrie1:amd64 (0.2.13-2+b1) ...
+
+2025-11-09T18:19:21.308092982Z [inf]  Setting up xdg-user-dirs (0.18-1) ...
+
+2025-11-09T18:19:21.316460077Z [inf]  Setting up psmisc (23.6-1) ...
+
+2025-11-09T18:19:21.320927393Z [inf]  Setting up libglib2.0-0:amd64 (2.74.6-2+deb12u7) ...
+
+2025-11-09T18:19:21.334775018Z [inf]  Setting up libglvnd0:amd64 (1.6.0-1) ...
+
+2025-11-09T18:19:21.338852957Z [inf]  Setting up libdbusmenu-glib4:amd64 (18.10.20180917~bzr492+repack1-3) ...
+
+2025-11-09T18:19:21.341951073Z [inf]  Setting up libbrotli1:amd64 (1.0.9-2+b6) ...
+
+2025-11-09T18:19:21.345010772Z [inf]  Setting up libsqlite3-0:amd64 (3.40.1-2+deb12u2) ...
+
+2025-11-09T18:19:21.348054614Z [inf]  Setting up libsasl2-modules:amd64 (2.1.28+dfsg-10) ...
+
+2025-11-09T18:19:21.355456559Z [inf]  Setting up libgdk-pixbuf2.0-common (2.42.10+dfsg-1+deb12u2) ...
+
+2025-11-09T18:19:21.358445228Z [inf]  Setting up x11-common (1:7.7+23) ...
+
+2025-11-09T18:19:21.431555898Z [inf]  debconf: unable to initialize frontend: Dialog
+debconf: (TERM is not set, so the dialog frontend is not usable.)
+debconf: falling back to frontend: Readline
+
+2025-11-09T18:19:21.43853734Z [inf]  debconf: unable to initialize frontend: Readline
+debconf: (This frontend requires a controlling tty.)
+debconf: falling back to frontend: Teletype
+
+2025-11-09T18:19:21.454491405Z [inf]  invoke-rc.d: could not determine current runlevel
+
+2025-11-09T18:19:21.457406518Z [inf]  invoke-rc.d: policy-rc.d denied execution of restart.
+
+2025-11-09T18:19:21.462142794Z [inf]  Setting up libsensors-config (1:3.6.0-7.1) ...
+
+2025-11-09T18:19:21.468018452Z [inf]  Setting up libdeflate0:amd64 (1.14-1) ...
+
+2025-11-09T18:19:21.471251421Z [inf]  Setting up perl-openssl-defaults:amd64 (7+b1) ...
+
+2025-11-09T18:19:21.474876321Z [inf]  Setting up libnss-systemd:amd64 (252.39-1~deb12u1) ...
+
+2025-11-09T18:19:21.484799245Z [inf]  Setting up xkb-data (2.35.1-1) ...
+
+2025-11-09T18:19:21.487643621Z [inf]  Setting up libnpth0:amd64 (1.6-3) ...
+
+2025-11-09T18:19:21.49070525Z [inf]  Setting up krb5-locales (1.20.1-2+deb12u4) ...
+
+2025-11-09T18:19:21.493737842Z [inf]  Setting up libassuan0:amd64 (2.5.5-5) ...
+
+2025-11-09T18:19:21.496862185Z [inf]  Setting up libldap-common (2.5.13+dfsg-5) ...
+
+2025-11-09T18:19:21.500263857Z [inf]  Setting up libjbig0:amd64 (2.1-6.1) ...
+
+2025-11-09T18:19:21.502984955Z [inf]  Setting up libcolord2:amd64 (1.4.6-2.2) ...
+
+2025-11-09T18:19:21.505606263Z [inf]  Setting up libkrb5support0:amd64 (1.20.1-2+deb12u4) ...
+
+2025-11-09T18:19:21.508220128Z [inf]  Setting up libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+
+2025-11-09T18:19:21.510938622Z [inf]  Setting up libdconf1:amd64 (0.40.0-4) ...
+
+2025-11-09T18:19:21.513782412Z [inf]  Setting up libasound2-data (1.2.8-1) ...
+
+2025-11-09T18:19:21.516855484Z [inf]  Setting up libfontenc1:amd64 (1:1.1.4-1) ...
+
+2025-11-09T18:19:21.519981Z [inf]  Setting up perl-modules-5.36 (5.36.0-7+deb12u3) ...
+
+2025-11-09T18:19:21.52278641Z [inf]  Setting up libz3-4:amd64 (4.8.12-3.1) ...
+
+2025-11-09T18:19:21.525477596Z [inf]  Setting up libglib2.0-data (2.74.6-2+deb12u7) ...
+
+2025-11-09T18:19:21.528210413Z [inf]  Setting up libgles2:amd64 (1.6.0-1) ...
+
+2025-11-09T18:19:21.531098209Z [inf]  Setting up libjpeg62-turbo:amd64 (1:2.1.5-2) ...
+
+2025-11-09T18:19:21.534018615Z [inf]  Setting up libx11-data (2:1.8.4-2+deb12u2) ...
+
+2025-11-09T18:19:21.537006406Z [inf]  Setting up libepoxy0:amd64 (1.5.10-1) ...
+
+2025-11-09T18:19:21.539826617Z [inf]  Setting up libmpfr6:amd64 (4.2.0-1) ...
+
+2025-11-09T18:19:21.542748844Z [inf]  Setting up libnspr4:amd64 (2:4.35-1) ...
+
+2025-11-09T18:19:21.545738567Z [inf]  Setting up gnupg-l10n (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:21.549193392Z [inf]  Setting up libavahi-common-data:amd64 (0.8-10+deb12u1) ...
+
+2025-11-09T18:19:21.552266585Z [inf]  Setting up libdbus-1-3:amd64 (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:21.555379474Z [inf]  Setting up libfribidi0:amd64 (1.0.8-2.1) ...
+
+2025-11-09T18:19:21.558461724Z [inf]  Setting up libproc2-0:amd64 (2:4.0.2-3) ...
+
+2025-11-09T18:19:21.561373886Z [inf]  Setting up libpng16-16:amd64 (1.6.39-2) ...
+
+2025-11-09T18:19:21.564684154Z [inf]  Setting up libmpc3:amd64 (1.3.1-1) ...
+
+2025-11-09T18:19:21.567610879Z [inf]  Setting up systemd-timesyncd (252.39-1~deb12u1) ...
+
+2025-11-09T18:19:21.577110963Z [inf]  Creating group 'systemd-timesync' with GID 997.
+
+2025-11-09T18:19:21.577251064Z [inf]  Creating user 'systemd-timesync' (systemd Time Synchronization) with UID 997 and GID 997.
+
+2025-11-09T18:19:21.691603048Z [inf]  Created symlink /etc/systemd/system/dbus-org.freedesktop.timesync1.service → /lib/systemd/system/systemd-timesyncd.service.
+Created symlink /etc/systemd/system/sysinit.target.wants/systemd-timesyncd.service → /lib/systemd/system/systemd-timesyncd.service.
+
+2025-11-09T18:19:21.695501874Z [inf]  Setting up libsensors5:amd64 (1:3.6.0-7.1) ...
+
+2025-11-09T18:19:21.698605109Z [inf]  Setting up libncursesw6:amd64 (6.4-4) ...
+
+2025-11-09T18:19:21.701380362Z [inf]  Setting up libk5crypto3:amd64 (1.20.1-2+deb12u4) ...
+
+2025-11-09T18:19:21.703990846Z [inf]  Setting up libglapi-mesa:amd64 (22.3.6-1+deb12u1) ...
+
+2025-11-09T18:19:21.706571051Z [inf]  Setting up libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+
+2025-11-09T18:19:21.70924918Z [inf]  Setting up libwebp7:amd64 (1.2.4-0.2+deb12u1) ...
+
+2025-11-09T18:19:21.711880599Z [inf]  Setting up alsa-topology-conf (1.2.5.1-2) ...
+
+2025-11-09T18:19:21.714646106Z [inf]  Setting up libxshmfence1:amd64 (1.3-1) ...
+
+2025-11-09T18:19:21.717582094Z [inf]  Setting up at-spi2-common (2.46.0-5) ...
+
+2025-11-09T18:19:21.720218855Z [inf]  Setting up libtiff6:amd64 (4.5.0-6+deb12u3) ...
+
+2025-11-09T18:19:21.722802886Z [inf]  Setting up dbus-session-bus-common (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:21.725472348Z [inf]  Setting up procps (2:4.0.2-3) ...
+
+2025-11-09T18:19:21.745700288Z [inf]  Setting up libasound2:amd64 (1.2.8-1+b1) ...
+
+2025-11-09T18:19:21.748404459Z [inf]  Setting up fonts-liberation (1:1.07.4-11) ...
+
+2025-11-09T18:19:21.756644284Z [inf]  Setting up libthai-data (0.1.29-1) ...
+
+2025-11-09T18:19:21.759251823Z [inf]  Setting up netbase (6.4) ...
+
+2025-11-09T18:19:21.767131022Z [inf]  Setting up libatk1.0-0:amd64 (2.46.0-5) ...
+
+2025-11-09T18:19:21.769674513Z [inf]  Setting up libkrb5-3:amd64 (1.20.1-2+deb12u4) ...
+
+2025-11-09T18:19:21.772066007Z [inf]  Setting up libwayland-egl1:amd64 (1.21.0-1) ...
+
+2025-11-09T18:19:21.774640865Z [inf]  Setting up dbus-system-bus-common (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:21.818275171Z [inf]  Setting up libisl23:amd64 (0.25-1.1) ...
+
+2025-11-09T18:19:21.820810449Z [inf]  Setting up openssl (3.0.17-1~deb12u3) ...
+
+2025-11-09T18:19:21.825097923Z [inf]  Setting up libbsd0:amd64 (0.11.7-2) ...
+
+2025-11-09T18:19:21.827799854Z [inf]  Setting up libdrm-common (2.4.114-1) ...
+
+2025-11-09T18:19:21.830526465Z [inf]  Setting up libelf1:amd64 (0.188-2.1) ...
+
+2025-11-09T18:19:21.833123594Z [inf]  Setting up readline-common (8.2-1.3) ...
+
+2025-11-09T18:19:21.837993151Z [inf]  Setting up publicsuffix (20230209.2326-1) ...
+
+2025-11-09T18:19:21.840846846Z [inf]  Setting up libxml2:amd64 (2.9.14+dfsg-1.3~deb12u4) ...
+
+2025-11-09T18:19:21.843610567Z [inf]  Setting up xdg-utils (1.1.3-4.1) ...
+
+2025-11-09T18:19:21.847304606Z [inf]  update-alternatives: using /usr/bin/xdg-open to provide /usr/bin/open (open) in auto mode
+
+2025-11-09T18:19:21.847414285Z [inf]  update-alternatives: warning: skip creation of /usr/share/man/man1/open.1.gz because associated file /usr/share/man/man1/xdg-open.1.gz (of link group open) doesn't exist
+
+2025-11-09T18:19:21.84926526Z [inf]  Setting up dbus-bin (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:21.851870079Z [inf]  Setting up libgdbm6:amd64 (1.23-3) ...
+
+2025-11-09T18:19:21.855000582Z [inf]  Setting up libxkbcommon0:amd64 (1.5.0-1) ...
+
+2025-11-09T18:19:21.85759224Z [inf]  Setting up libwayland-client0:amd64 (1.21.0-1) ...
+
+2025-11-09T18:19:21.860028335Z [inf]  Setting up pinentry-curses (1.2.1-1) ...
+
+2025-11-09T18:19:21.865252183Z [inf]  Setting up libice6:amd64 (2:1.0.10-1) ...
+
+2025-11-09T18:19:21.867856445Z [inf]  Setting up libxdmcp6:amd64 (1:1.1.2-3) ...
+
+2025-11-09T18:19:21.870496731Z [inf]  Setting up cpp-12 (12.2.0-14+deb12u1) ...
+
+2025-11-09T18:19:21.873166484Z [inf]  Setting up libxcb1:amd64 (1.15-1) ...
+
+2025-11-09T18:19:21.875918529Z [inf]  Setting up libxcb-xfixes0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:21.878500277Z [inf]  Setting up alsa-ucm-conf (1.2.8-1) ...
+
+2025-11-09T18:19:21.881233938Z [inf]  Setting up libxcb-render0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:21.884002513Z [inf]  Setting up fontconfig-config (2.14.1-4) ...
+
+2025-11-09T18:19:21.942551004Z [inf]  debconf: unable to initialize frontend: Dialog
+debconf: (TERM is not set, so the dialog frontend is not usable.)
+debconf: falling back to frontend: Readline
+
+2025-11-09T18:19:21.947741121Z [inf]  debconf: unable to initialize frontend: Readline
+debconf: (This frontend requires a controlling tty.)
+debconf: falling back to frontend: Teletype
+
+2025-11-09T18:19:22.057301561Z [inf]  Setting up libxcb-glx0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:22.060727825Z [inf]  Setting up libedit2:amd64 (3.1-20221030-2) ...
+
+2025-11-09T18:19:22.063420806Z [inf]  Setting up libreadline8:amd64 (8.2-1.3) ...
+
+2025-11-09T18:19:22.066215788Z [inf]  Setting up libxcb-shape0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:22.068883031Z [inf]  Setting up libavahi-common3:amd64 (0.8-10+deb12u1) ...
+
+2025-11-09T18:19:22.07165092Z [inf]  Setting up libnss3:amd64 (2:3.87.1-1+deb12u1) ...
+
+2025-11-09T18:19:22.074376825Z [inf]  Setting up libxcb-shm0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:22.077398008Z [inf]  Setting up dbus-daemon (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:22.088117098Z [inf]  Setting up libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+
+2025-11-09T18:19:22.091079834Z [inf]  Setting up libxcb-present0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:22.09388505Z [inf]  Setting up libthai0:amd64 (0.1.29-1) ...
+
+2025-11-09T18:19:22.096950872Z [inf]  Setting up ca-certificates (20230311+deb12u1) ...
+
+2025-11-09T18:19:22.158003112Z [inf]  debconf: unable to initialize frontend: Dialog
+debconf: (TERM is not set, so the dialog frontend is not usable.)
+debconf: falling back to frontend: Readline
+
+2025-11-09T18:19:22.163640966Z [inf]  debconf: unable to initialize frontend: Readline
+debconf: (This frontend requires a controlling tty.)
+debconf: falling back to frontend: Teletype
+
+2025-11-09T18:19:22.52235456Z [inf]  Updating certificates in /etc/ssl/certs...
+
+2025-11-09T18:19:22.995940357Z [inf]  142 added, 0 removed; done.
+
+2025-11-09T18:19:23.018584258Z [inf]  Setting up libfreetype6:amd64 (2.12.1+dfsg-5+deb12u4) ...
+
+2025-11-09T18:19:23.021643526Z [inf]  Setting up libxcb-sync1:amd64 (1.15-1) ...
+
+2025-11-09T18:19:23.024815915Z [inf]  Setting up dbus (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:23.044421112Z [inf]  invoke-rc.d: could not determine current runlevel
+
+2025-11-09T18:19:23.047387365Z [inf]  invoke-rc.d: policy-rc.d denied execution of start.
+
+2025-11-09T18:19:23.049191516Z [inf]  Setting up shared-mime-info (2.2-1) ...
+
+2025-11-09T18:19:23.697005087Z [inf]  Setting up libgssapi-krb5-2:amd64 (1.20.1-2+deb12u4) ...
+
+2025-11-09T18:19:23.701634985Z [inf]  Setting up libgdbm-compat4:amd64 (1.23-3) ...
+
+2025-11-09T18:19:23.705009288Z [inf]  Setting up libxcb-dri2-0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:23.707914878Z [inf]  Setting up libdrm2:amd64 (2.4.114-1+b1) ...
+
+2025-11-09T18:19:23.710973987Z [inf]  Setting up libwayland-cursor0:amd64 (1.21.0-1) ...
+
+2025-11-09T18:19:23.714516483Z [inf]  Setting up libxcb-randr0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:23.717311565Z [inf]  Setting up cpp (4:12.2.0-3) ...
+
+2025-11-09T18:19:23.722882146Z [inf]  Setting up libllvm15:amd64 (1:15.0.6-4+b1) ...
+
+2025-11-09T18:19:23.725792953Z [inf]  Setting up gpgconf (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:23.728769176Z [inf]  Setting up libpam-systemd:amd64 (252.39-1~deb12u1) ...
+
+2025-11-09T18:19:23.796804734Z [inf]  debconf: unable to initialize frontend: Dialog
+debconf: (TERM is not set, so the dialog frontend is not usable.)
+debconf: falling back to frontend: Readline
+
+2025-11-09T18:19:23.802899489Z [inf]  debconf: unable to initialize frontend: Readline
+debconf: (This frontend requires a controlling tty.)
+debconf: falling back to frontend: Teletype
+
+2025-11-09T18:19:23.849125963Z [inf]  Setting up libx11-6:amd64 (2:1.8.4-2+deb12u2) ...
+
+2025-11-09T18:19:23.851819769Z [inf]  Setting up libharfbuzz0b:amd64 (6.0.0+dfsg-3) ...
+
+2025-11-09T18:19:23.85419514Z [inf]  Setting up libgdk-pixbuf-2.0-0:amd64 (2.42.10+dfsg-1+deb12u2) ...
+
+2025-11-09T18:19:23.872358603Z [inf]  Setting up libfontconfig1:amd64 (2.14.1-4) ...
+
+2025-11-09T18:19:23.87496502Z [inf]  Setting up libxkbfile1:amd64 (1:1.1.0-1) ...
+
+2025-11-09T18:19:23.877531438Z [inf]  Setting up libxcomposite1:amd64 (1:0.4.5-1) ...
+
+2025-11-09T18:19:23.880194291Z [inf]  Setting up libsm6:amd64 (2:1.2.3-1) ...
+
+2025-11-09T18:19:23.882845134Z [inf]  Setting up libavahi-client3:amd64 (0.8-10+deb12u1) ...
+
+2025-11-09T18:19:23.885527194Z [inf]  Setting up libperl5.36:amd64 (5.36.0-7+deb12u3) ...
+
+2025-11-09T18:19:23.888380634Z [inf]  Setting up libxmuu1:amd64 (2:1.1.3-3) ...
+
+2025-11-09T18:19:23.891394696Z [inf]  Setting up gpg (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:23.894373371Z [inf]  Setting up gnupg-utils (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:23.897606045Z [inf]  Setting up libdrm-amdgpu1:amd64 (2.4.114-1+b1) ...
+
+2025-11-09T18:19:23.900724665Z [inf]  Setting up libxcb-dri3-0:amd64 (1.15-1) ...
+
+2025-11-09T18:19:23.903740509Z [inf]  Setting up gtk-update-icon-cache (3.24.38-2~deb12u3) ...
+
+2025-11-09T18:19:23.906943334Z [inf]  Setting up libx11-xcb1:amd64 (2:1.8.4-2+deb12u2) ...
+
+2025-11-09T18:19:23.909984821Z [inf]  Setting up fontconfig (2.14.1-4) ...
+
+2025-11-09T18:19:23.913736989Z [inf]  Regenerating fonts cache... 
+2025-11-09T18:19:25.923507392Z [inf]  done.
+
+2025-11-09T18:19:25.929351845Z [inf]  Setting up libdrm-nouveau2:amd64 (2.4.114-1+b1) ...
+
+2025-11-09T18:19:25.932119914Z [inf]  Setting up libxdamage1:amd64 (1:1.1.6-1) ...
+
+2025-11-09T18:19:25.935061569Z [inf]  Setting up gpg-agent (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:26.034227181Z [inf]  Created symlink /etc/systemd/user/sockets.target.wants/gpg-agent-browser.socket → /usr/lib/systemd/user/gpg-agent-browser.socket.
+
+2025-11-09T18:19:26.128653633Z [inf]  Created symlink /etc/systemd/user/sockets.target.wants/gpg-agent-extra.socket → /usr/lib/systemd/user/gpg-agent-extra.socket.
+
+2025-11-09T18:19:26.222026583Z [inf]  Created symlink /etc/systemd/user/sockets.target.wants/gpg-agent-ssh.socket → /usr/lib/systemd/user/gpg-agent-ssh.socket.
+
+2025-11-09T18:19:26.314591574Z [inf]  Created symlink /etc/systemd/user/sockets.target.wants/gpg-agent.socket → /usr/lib/systemd/user/gpg-agent.socket.
+
+2025-11-09T18:19:26.319002051Z [inf]  Setting up libgdk-pixbuf-xlib-2.0-0:amd64 (2.40.2-2) ...
+
+2025-11-09T18:19:26.322001958Z [inf]  Setting up libxpm4:amd64 (1:3.5.12-1.1+deb12u1) ...
+
+2025-11-09T18:19:26.324886863Z [inf]  Setting up libxrender1:amd64 (1:0.9.10-1.1) ...
+
+2025-11-09T18:19:26.328001023Z [inf]  Setting up libgbm1:amd64 (22.3.6-1+deb12u1) ...
+
+2025-11-09T18:19:26.33073413Z [inf]  Setting up libdrm-radeon1:amd64 (2.4.114-1+b1) ...
+
+2025-11-09T18:19:26.333772296Z [inf]  Setting up gpgsm (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:26.344932176Z [inf]  Setting up libpango-1.0-0:amd64 (1.50.12+ds-1) ...
+
+2025-11-09T18:19:26.348061239Z [inf]  Setting up libdrm-intel1:amd64 (2.4.114-1+b1) ...
+
+2025-11-09T18:19:26.351300836Z [inf]  Setting up libgl1-mesa-dri:amd64 (22.3.6-1+deb12u1) ...
+
+2025-11-09T18:19:26.358211281Z [inf]  Setting up libxext6:amd64 (2:1.3.4-1+b1) ...
+
+2025-11-09T18:19:26.361039331Z [inf]  Setting up libcairo2:amd64 (1.16.0-7) ...
+
+2025-11-09T18:19:26.364092644Z [inf]  Setting up libxxf86vm1:amd64 (1:1.1.4-1+b2) ...
+
+2025-11-09T18:19:26.367030327Z [inf]  Setting up dirmngr (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:26.466199455Z [inf]  Created symlink /etc/systemd/user/sockets.target.wants/dirmngr.socket → /usr/lib/systemd/user/dirmngr.socket.
+
+2025-11-09T18:19:26.47866978Z [inf]  Setting up dbus-user-session (1.14.10-1~deb12u1) ...
+
+2025-11-09T18:19:26.482504821Z [inf]  Setting up perl (5.36.0-7+deb12u3) ...
+
+2025-11-09T18:19:26.491418906Z [inf]  Setting up libegl-mesa0:amd64 (22.3.6-1+deb12u1) ...
+
+2025-11-09T18:19:26.494290981Z [inf]  Setting up adwaita-icon-theme (43-1) ...
+
+2025-11-09T18:19:26.526474761Z [inf]  update-alternatives: using /usr/share/icons/Adwaita/cursor.theme to provide /usr/share/icons/default/index.theme (x-cursor-theme) in auto mode
+
+2025-11-09T18:19:26.528502386Z [inf]  Setting up libdata-dump-perl (1.25-1) ...
+
+2025-11-09T18:19:26.531686691Z [inf]  Setting up libxfixes3:amd64 (1:6.0.0-2) ...
+
+2025-11-09T18:19:26.534750879Z [inf]  Setting up libipc-system-simple-perl (1.30-2) ...
+
+2025-11-09T18:19:26.537509821Z [inf]  Setting up libxml-xpathengine-perl (0.14-2) ...
+
+2025-11-09T18:19:26.54060218Z [inf]  Setting up libgdk-pixbuf2.0-0:amd64 (2.40.2-2) ...
+
+2025-11-09T18:19:26.543801811Z [inf]  Setting up libxinerama1:amd64 (2:1.1.4-3) ...
+
+2025-11-09T18:19:26.546924772Z [inf]  Setting up libxv1:amd64 (2:1.0.11-1.1) ...
+
+2025-11-09T18:19:26.549934385Z [inf]  Setting up libio-html-perl (1.004-3) ...
+
+2025-11-09T18:19:26.553087964Z [inf]  Setting up libxrandr2:amd64 (2:1.5.2-2+b1) ...
+
+2025-11-09T18:19:26.556124512Z [inf]  Setting up libxt6:amd64 (1:1.2.1-1.1) ...
+
+2025-11-09T18:19:26.559108319Z [inf]  Setting up libtimedate-perl (2.3300-2) ...
+
+2025-11-09T18:19:26.562302588Z [inf]  Setting up libregexp-ipv6-perl (0.03-3) ...
+
+2025-11-09T18:19:26.565351813Z [inf]  Setting up gpg-wks-server (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:26.568699308Z [inf]  Setting up libcups2:amd64 (2.4.2-3+deb12u9) ...
+
+2025-11-09T18:19:26.571552738Z [inf]  Setting up libgdk-pixbuf2.0-bin (2.42.10+dfsg-1+deb12u2) ...
+
+2025-11-09T18:19:26.574615323Z [inf]  Setting up libegl1:amd64 (1.6.0-1) ...
+
+2025-11-09T18:19:26.577651946Z [inf]  Setting up libcairo-gobject2:amd64 (1.16.0-7) ...
+
+2025-11-09T18:19:26.580723585Z [inf]  Setting up libxss1:amd64 (1:1.2.3-1) ...
+
+2025-11-09T18:19:26.584046393Z [inf]  Setting up libpangoft2-1.0-0:amd64 (1.50.12+ds-1) ...
+
+2025-11-09T18:19:26.587060418Z [inf]  Setting up liburi-perl (5.17-1) ...
+
+2025-11-09T18:19:26.58991695Z [inf]  Setting up libx11-protocol-perl (0.56-9) ...
+
+2025-11-09T18:19:26.592711398Z [inf]  Setting up libpangocairo-1.0-0:amd64 (1.50.12+ds-1) ...
+
+2025-11-09T18:19:26.595624618Z [inf]  Setting up libnet-ssleay-perl:amd64 (1.92-2+b1) ...
+
+2025-11-09T18:19:26.598582218Z [inf]  Setting up libhttp-date-perl (6.05-2) ...
+
+2025-11-09T18:19:26.60148036Z [inf]  Setting up libxft2:amd64 (2.3.6-1) ...
+
+2025-11-09T18:19:26.604218644Z [inf]  Setting up libdbusmenu-gtk3-4:amd64 (18.10.20180917~bzr492+repack1-3) ...
+
+2025-11-09T18:19:26.606896095Z [inf]  Setting up libxmu6:amd64 (2:1.1.3-3) ...
+
+2025-11-09T18:19:26.609644915Z [inf]  Setting up libfile-basedir-perl (0.09-2) ...
+
+2025-11-09T18:19:26.612263441Z [inf]  Setting up libtie-ixhash-perl (1.23-4) ...
+
+2025-11-09T18:19:26.615151979Z [inf]  Setting up libglx-mesa0:amd64 (22.3.6-1+deb12u1) ...
+
+2025-11-09T18:19:26.618100712Z [inf]  Setting up libfile-listing-perl (6.15-1) ...
+
+2025-11-09T18:19:26.621322306Z [inf]  Setting up libxi6:amd64 (2:1.8-1+b1) ...
+
+2025-11-09T18:19:26.624262905Z [inf]  Setting up gpg-wks-client (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:26.627198401Z [inf]  Setting up libglx0:amd64 (1.6.0-1) ...
+
+2025-11-09T18:19:26.630119994Z [inf]  Setting up libfont-afm-perl (1.20-4) ...
+
+2025-11-09T18:19:26.632975593Z [inf]  Setting up libclone-perl:amd64 (0.46-1) ...
+
+2025-11-09T18:19:26.635512751Z [inf]  Setting up libio-stringy-perl (2.111-3) ...
+
+2025-11-09T18:19:26.638200274Z [inf]  Setting up libxtst6:amd64 (2:1.2.3-1.1) ...
+
+2025-11-09T18:19:26.640937716Z [inf]  Setting up libhtml-tagset-perl (3.20-6) ...
+
+2025-11-09T18:19:26.643612478Z [inf]  Setting up libauthen-sasl-perl (2.1600-3) ...
+
+2025-11-09T18:19:26.6463513Z [inf]  Setting up libxcursor1:amd64 (1:1.2.1-1) ...
+
+2025-11-09T18:19:26.64961679Z [inf]  Setting up liblwp-mediatypes-perl (6.04-2) ...
+
+2025-11-09T18:19:26.652208954Z [inf]  Setting up libtry-tiny-perl (0.31-2) ...
+
+2025-11-09T18:19:26.654806125Z [inf]  Setting up libxxf86dga1:amd64 (2:1.1.5-1) ...
+
+2025-11-09T18:19:26.657678364Z [inf]  Setting up libnet-http-perl (6.22-1) ...
+
+2025-11-09T18:19:26.660892354Z [inf]  Setting up libencode-locale-perl (1.05-3) ...
+
+2025-11-09T18:19:26.664189875Z [inf]  Setting up dconf-service (0.40.0-4) ...
+
+2025-11-09T18:19:26.667081791Z [inf]  Setting up libxaw7:amd64 (2:1.0.14-1) ...
+
+2025-11-09T18:19:26.670097441Z [inf]  Setting up libatspi2.0-0:amd64 (2.46.0-5) ...
+
+2025-11-09T18:19:26.672828048Z [inf]  Setting up x11-xserver-utils (7.7+9+b1) ...
+
+2025-11-09T18:19:26.678264561Z [inf]  Setting up librsvg2-2:amd64 (2.54.7+dfsg-1~deb12u1) ...
+
+2025-11-09T18:19:26.681158377Z [inf]  Setting up libatk-bridge2.0-0:amd64 (2.46.0-5) ...
+
+2025-11-09T18:19:26.684122974Z [inf]  Setting up libgl1:amd64 (1.6.0-1) ...
+
+2025-11-09T18:19:26.686943354Z [inf]  Setting up librsvg2-common:amd64 (2.54.7+dfsg-1~deb12u1) ...
+
+2025-11-09T18:19:26.693035633Z [inf]  Setting up libfile-desktopentry-perl (0.22-3) ...
+
+2025-11-09T18:19:26.69587258Z [inf]  Setting up libwww-robotrules-perl (6.02-1) ...
+
+2025-11-09T18:19:26.698925813Z [inf]  Setting up zutty (0.14.0.20230218+dfsg1-1) ...
+
+2025-11-09T18:19:26.702778794Z [inf]  update-alternatives: using /usr/bin/zutty to provide /usr/bin/x-terminal-emulator (x-terminal-emulator) in auto mode
+
+2025-11-09T18:19:26.70282024Z [inf]  update-alternatives: warning: skip creation of /usr/share/man/man1/x-terminal-emulator.1.gz because associated file /usr/share/man/man1/zutty.1.gz (of link group x-terminal-emulator) doesn't exist
+
+2025-11-09T18:19:26.704882707Z [inf]  Setting up libhtml-parser-perl:amd64 (3.81-1) ...
+
+2025-11-09T18:19:26.707930814Z [inf]  Setting up gnupg (2.2.40-1.1+deb12u1) ...
+
+2025-11-09T18:19:26.711098836Z [inf]  Setting up x11-utils (7.7+5) ...
+
+2025-11-09T18:19:26.723848758Z [inf]  Setting up libio-socket-ssl-perl (2.081-2) ...
+
+2025-11-09T18:19:26.726672471Z [inf]  Setting up libhttp-message-perl (6.44-1) ...
+
+2025-11-09T18:19:26.729470746Z [inf]  Setting up libhtml-form-perl (6.11-1) ...
+
+2025-11-09T18:19:26.732375573Z [inf]  Setting up libfile-mimeinfo-perl (0.33-1) ...
+
+2025-11-09T18:19:26.735227528Z [inf]  Setting up libhttp-negotiate-perl (6.01-2) ...
+
+2025-11-09T18:19:26.738001749Z [inf]  Setting up dconf-gsettings-backend:amd64 (0.40.0-4) ...
+
+2025-11-09T18:19:26.740747562Z [inf]  Setting up libhttp-cookies-perl (6.10-1) ...
+
+2025-11-09T18:19:26.743438858Z [inf]  Setting up libhtml-tree-perl (5.07-3) ...
+
+2025-11-09T18:19:26.746498639Z [inf]  Setting up libhtml-format-perl (2.16-2) ...
+
+2025-11-09T18:19:26.75546637Z [inf]  Setting up libnet-smtp-ssl-perl (1.04-2) ...
+
+2025-11-09T18:19:26.758492932Z [inf]  Setting up libmailtools-perl (2.21-2) ...
+
+2025-11-09T18:19:26.761550793Z [inf]  Setting up libhttp-daemon-perl (6.16-1) ...
+
+2025-11-09T18:19:26.76444856Z [inf]  Setting up libgtk-3-common (3.24.38-2~deb12u3) ...
+
+2025-11-09T18:19:26.768359144Z [inf]  Setting up gsettings-desktop-schemas (43.0-1) ...
+
+2025-11-09T18:19:26.771567859Z [inf]  Setting up libgtk-3-0:amd64 (3.24.38-2~deb12u3) ...
+
+2025-11-09T18:19:26.787283414Z [inf]  Setting up libgtk-3-bin (3.24.38-2~deb12u3) ...
+
+2025-11-09T18:19:26.79015913Z [inf]  Setting up libayatana-ido3-0.4-0:amd64 (0.9.3-1) ...
+
+2025-11-09T18:19:26.793098309Z [inf]  Setting up at-spi2-core (2.46.0-5) ...
+
+2025-11-09T18:19:26.799778109Z [inf]  Setting up libayatana-indicator3-7:amd64 (0.9.3-1) ...
+
+2025-11-09T18:19:26.802614044Z [inf]  Setting up libayatana-appindicator3-1 (0.5.92-1) ...
+
+2025-11-09T18:19:26.805968113Z [inf]  Setting up liblwp-protocol-https-perl (6.10-1) ...
+
+2025-11-09T18:19:26.808713651Z [inf]  Setting up libwww-perl (6.68-1) ...
+
+2025-11-09T18:19:26.81164474Z [inf]  Setting up libxml-parser-perl (2.46-4) ...
+
+2025-11-09T18:19:26.814569468Z [inf]  Setting up libxml-twig-perl (1:3.52-2) ...
+
+2025-11-09T18:19:26.81755835Z [inf]  Setting up libnet-dbus-perl (1.2.0-2) ...
+
+2025-11-09T18:19:26.820499765Z [inf]  Processing triggers for libc-bin (2.36-9+deb12u13) ...
+
+2025-11-09T18:19:26.833448351Z [inf]  Processing triggers for ca-certificates (20230311+deb12u1) ...
+
+2025-11-09T18:19:26.837283031Z [inf]  Updating certificates in /etc/ssl/certs...
+
+2025-11-09T18:19:27.208560345Z [inf]  0 added, 0 removed; done.
+Running hooks in /etc/ca-certificates/update.d...
+
+2025-11-09T18:19:27.209494117Z [inf]  done.
+
+2025-11-09T18:19:27.215367703Z [inf]  Processing triggers for libgdk-pixbuf-2.0-0:amd64 (2.42.10+dfsg-1+deb12u2) ...
+
+2025-11-09T18:19:28.038013659Z [inf]  [builder 2/7] RUN apt-get update && apt-get install -y     wget     gnupg     ca-certificates     fonts-liberation     libappindicator3-1     libasound2     libatk-bridge2.0-0     libatk1.0-0     libcups2     libdbus-1-3     libgdk-pixbuf2.0-0     libnspr4     libnss3     libx11-xcb1     libxcomposite1     libxdamage1     libxrandr2     xdg-utils     libgbm1     libpango-1.0-0     libcairo2     libxss1     && rm -rf /var/lib/apt/lists/*
+2025-11-09T18:19:28.038731198Z [inf]  [builder 3/7] WORKDIR /app
+2025-11-09T18:19:28.133990326Z [inf]  [builder 3/7] WORKDIR /app
+2025-11-09T18:19:28.134951047Z [inf]  [builder 4/7] COPY package*.json ./
+2025-11-09T18:19:28.148447011Z [inf]  [builder 4/7] COPY package*.json ./
+2025-11-09T18:19:28.149610946Z [inf]  [builder 5/7] RUN npm install
+2025-11-09T18:19:28.149633639Z [inf]  [stage-1 5/7] RUN npm install --omit=dev
+2025-11-09T18:19:34.99719196Z [inf]  npm warn deprecated puppeteer@22.15.0: < 24.15.0 is no longer supported
+
+2025-11-09T18:19:35.096743828Z [inf]  npm warn deprecated puppeteer@22.15.0: < 24.15.0 is no longer supported
+
+2025-11-09T18:19:48.262954329Z [inf]  
+added 189 packages, and audited 190 packages in 20s
+
+24 packages are looking for funding
+
+2025-11-09T18:19:48.262971509Z [inf]    run `npm fund` for details
+
+2025-11-09T18:19:48.263773986Z [inf]  
+found 0 vulnerabilities
+
+2025-11-09T18:19:48.264734633Z [inf]  npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.6.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.2
+npm notice To update run: npm install -g npm@11.6.2
+npm notice
+
+2025-11-09T18:19:48.323714243Z [inf]  
+added 189 packages, and audited 190 packages in 20s
+
+2025-11-09T18:19:48.323739285Z [inf]  
+24 packages are looking for funding
+  run `npm fund` for details
+
+2025-11-09T18:19:48.324585474Z [inf]  
+found 0 vulnerabilities
+
+2025-11-09T18:19:48.325590069Z [inf]  npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.6.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.2
+npm notice To update run: npm install -g npm@11.6.2
+npm notice
+
+2025-11-09T18:19:48.455414930Z [inf]  [builder 5/7] RUN npm install
+2025-11-09T18:19:48.456415368Z [inf]  [stage-1 5/7] RUN npm install --omit=dev
+2025-11-09T18:19:48.457578849Z [inf]  [builder 6/7] COPY . .
+2025-11-09T18:19:48.513400729Z [inf]  [builder 6/7] COPY . .
+2025-11-09T18:19:48.514497743Z [inf]  [builder 7/7] RUN npm run build
+2025-11-09T18:19:48.681932821Z [inf]  npm error Missing script: "build"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+
+2025-11-09T18:19:48.683389358Z [inf]  npm error A complete log of this run can be found in: /root/.npm/_logs/2025-11-09T18_19_48_631Z-debug-0.log
+
+2025-11-09T18:19:48.866858854Z [err]  [builder 7/7] RUN npm run build
+2025-11-09T18:19:48.890239728Z [err]  Dockerfile:42
+2025-11-09T18:19:48.890269817Z [err]  -------------------
+2025-11-09T18:19:48.890274878Z [err]  40 |
+2025-11-09T18:19:48.890278495Z [err]  41 |     # Build application
+2025-11-09T18:19:48.890283538Z [err]  42 | >>> RUN npm run build
+2025-11-09T18:19:48.890286760Z [err]  43 |
+2025-11-09T18:19:48.890291071Z [err]  44 |     # Production stage
+2025-11-09T18:19:48.890294396Z [err]  -------------------
+2025-11-09T18:19:48.890298072Z [err]  ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
