@@ -43,6 +43,7 @@ app.post('/scrape-playlist', async (req, res) => {
         success: true,
         tracks: result.tracks,
         totalCaptured: result.totalCaptured,
+        totalTracks: result.totalTracks,
         curator: result.curator,
         followers: result.followers,
         method: 'network-capture-headless'
@@ -102,6 +103,9 @@ async function scrapePlaylistHeadless(playlistUrl: string) {
     
     const allItems: any[] = [];
     const capturedTracks = new Set<string>();
+    let totalTracks: number | null = null;
+    let curator: string | null = null;
+    let followers: number | null = null;
     
     // Intercept network responses
     page.on("response", async (res) => {
@@ -116,28 +120,50 @@ async function scrapePlaylistHeadless(playlistUrl: string) {
         const json = await res.json();
         
         // Check for GraphQL pathfinder API
-        if (url.includes('pathfinder') && json?.data?.playlistV2?.content?.items) {
-          const graphqlItems = json.data.playlistV2.content.items;
-          console.log(`[Headless Scraper] ✅ Found ${graphqlItems.length} tracks in GraphQL response`);
+        if (url.includes('pathfinder') && json?.data?.playlistV2) {
+          const playlistData = json.data.playlistV2;
           
-          for (const item of graphqlItems) {
-            if (!item?.itemV2?.data) continue;
-            const trackData = item.itemV2.data;
-            const trackId = trackData.uri?.split(':').pop();
+          // Capture curator name
+          if (playlistData.ownerV2?.data?.name) {
+            curator = playlistData.ownerV2.data.name;
+            console.log(`[Headless Scraper] Curator: ${curator}`);
+          }
+          
+          // Capture followers count
+          if (playlistData.followers !== undefined) {
+            followers = playlistData.followers;
+            console.log(`[Headless Scraper] Followers: ${followers}`);
+          }
+          
+          if (playlistData.content?.items) {
+            const graphqlItems = playlistData.content.items;
+            console.log(`[Headless Scraper] ✅ Found ${graphqlItems.length} tracks in GraphQL response`);
             
-            if (trackId && !capturedTracks.has(trackId)) {
-              capturedTracks.add(trackId);
-              allItems.push({
-                trackId,
-                isrc: null,
-                name: trackData.name || '',
-                artists: trackData.artists?.items?.map((a: any) => a.profile?.name).filter(Boolean) || [],
-                album: trackData.albumOfTrack?.name || null,
-                addedAt: new Date(item.addedAt?.isoString || Date.now()),
-                popularity: null,
-                durationMs: trackData.trackDuration?.totalMilliseconds || null,
-                spotifyUrl: `https://open.spotify.com/track/${trackId}`,
-              });
+            // Capture total track count from GraphQL response
+            if (playlistData.content.totalCount !== undefined) {
+              totalTracks = playlistData.content.totalCount;
+              console.log(`[Headless Scraper] Total tracks in playlist: ${totalTracks}`);
+            }
+          
+            for (const item of graphqlItems) {
+              if (!item?.itemV2?.data) continue;
+              const trackData = item.itemV2.data;
+              const trackId = trackData.uri?.split(':').pop();
+              
+              if (trackId && !capturedTracks.has(trackId)) {
+                capturedTracks.add(trackId);
+                allItems.push({
+                  trackId,
+                  isrc: null,
+                  name: trackData.name || '',
+                  artists: trackData.artists?.items?.map((a: any) => a.profile?.name).filter(Boolean) || [],
+                  album: trackData.albumOfTrack?.name || null,
+                  addedAt: new Date(item.addedAt?.isoString || Date.now()),
+                  popularity: null,
+                  durationMs: trackData.trackDuration?.totalMilliseconds || null,
+                  spotifyUrl: `https://open.spotify.com/track/${trackId}`,
+                });
+              }
             }
           }
         }
@@ -155,13 +181,15 @@ async function scrapePlaylistHeadless(playlistUrl: string) {
     await browser.close();
     
     console.log(`[Headless Scraper] Captured ${allItems.length} tracks`);
+    console.log(`[Headless Scraper] Metadata: curator="${curator}", followers=${followers}, totalTracks=${totalTracks}`);
     
     return {
       success: allItems.length > 0,
       tracks: allItems,
       totalCaptured: allItems.length,
-      curator: null,
-      followers: null,
+      totalTracks: totalTracks,
+      curator: curator,
+      followers: followers,
     };
   } catch (error: any) {
     if (browser) await browser.close();
