@@ -978,6 +978,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   console.log(`✅ Scraper API success: ${scraperData.tracks.length} tracks`);
                   fetchMethod = scraperData.method || 'microservice-scraper';
                   capturedTracks = scraperData.tracks;
+                  
+                  // Update playlist metadata if totalTracks is available
+                  if (scraperData.totalTracks !== undefined && scraperData.totalTracks !== null) {
+                    await storage.updateTrackedPlaylistMetadata(playlist.id, {
+                      totalTracks: scraperData.totalTracks
+                    });
+                    console.log(`Updated playlist totalTracks: ${scraperData.totalTracks}`);
+                  }
                 } else {
                   console.warn(`Scraper API returned 0 tracks for ${playlist.name}`);
                 }

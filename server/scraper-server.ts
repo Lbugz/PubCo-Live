@@ -43,6 +43,7 @@ app.post('/scrape-playlist', async (req, res) => {
         success: true,
         tracks: result.tracks,
         totalCaptured: result.totalCaptured,
+        totalTracks: result.totalTracks,
         curator: result.curator,
         followers: result.followers,
         method: 'network-capture-headless'
@@ -102,6 +103,7 @@ async function scrapePlaylistHeadless(playlistUrl: string) {
     
     const allItems: any[] = [];
     const capturedTracks = new Set<string>();
+    let totalTracks: number | null = null;
     
     // Intercept network responses
     page.on("response", async (res) => {
@@ -119,6 +121,12 @@ async function scrapePlaylistHeadless(playlistUrl: string) {
         if (url.includes('pathfinder') && json?.data?.playlistV2?.content?.items) {
           const graphqlItems = json.data.playlistV2.content.items;
           console.log(`[Headless Scraper] ✅ Found ${graphqlItems.length} tracks in GraphQL response`);
+          
+          // Capture total track count from GraphQL response
+          if (json.data.playlistV2.content.totalCount !== undefined) {
+            totalTracks = json.data.playlistV2.content.totalCount;
+            console.log(`[Headless Scraper] Total tracks in playlist: ${totalTracks}`);
+          }
           
           for (const item of graphqlItems) {
             if (!item?.itemV2?.data) continue;
@@ -160,6 +168,7 @@ async function scrapePlaylistHeadless(playlistUrl: string) {
       success: allItems.length > 0,
       tracks: allItems,
       totalCaptured: allItems.length,
+      totalTracks: totalTracks,
       curator: null,
       followers: null,
     };
