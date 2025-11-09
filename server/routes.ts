@@ -957,6 +957,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`Local network capture successful: ${networkTrackCount} tracks`);
                 fetchMethod = 'network-capture';
                 capturedTracks = networkResult.tracks ?? [];
+                
+                // Update playlist metadata (curator, followers) if available
+                if (networkResult.curator || networkResult.followers !== null) {
+                  await storage.updateTrackedPlaylistMetadata(playlist.id, {
+                    curator: networkResult.curator || null,
+                    followers: networkResult.followers !== undefined ? networkResult.followers : null,
+                    totalTracks: networkTrackCount
+                  });
+                  console.log(`Updated playlist metadata: curator="${networkResult.curator}", followers=${networkResult.followers}`);
+                }
               } else {
                 const networkErrorDetails = networkResult.error ? ` Error: ${networkResult.error}.` : '';
                 console.log(`Local network capture insufficient (${networkTrackCount} tracks).${networkErrorDetails} Trying DOM fallback...`);
@@ -1195,6 +1205,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (scrapedTracks.length > 0) {
         await storage.insertTracks(scrapedTracks);
         console.log(`Successfully saved ${scrapedTracks.length} scraped tracks`);
+      }
+      
+      // Update playlist metadata if curator/followers available
+      if (result.curator || result.followers !== null) {
+        const existingPlaylist = await storage.getTrackedPlaylistBySpotifyId(playlistId);
+        if (existingPlaylist) {
+          await storage.updateTrackedPlaylistMetadata(existingPlaylist.id, {
+            curator: result.curator || null,
+            followers: result.followers !== undefined ? result.followers : null,
+            totalTracks: scrapedTracks.length
+          });
+          console.log(`Updated playlist metadata: curator="${result.curator}", followers=${result.followers}`);
+        }
       }
       
       res.json({

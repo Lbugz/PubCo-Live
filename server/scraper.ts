@@ -6,6 +6,32 @@ import { execSync } from "child_process";
 
 const COOKIES_FILE = path.join(process.cwd(), "spotify_cookies.json");
 
+function parseFollowerCount(followerText: string): number | null {
+  if (!followerText) return null;
+  
+  // Remove "followers" word and trim
+  const cleaned = followerText.replace(/followers?/i, '').trim();
+  
+  // Match number with optional suffix (K, M, B)
+  const match = cleaned.match(/^([0-9,.]*)\s*([KMB])?$/i);
+  if (!match) return null;
+  
+  const numberPart = match[1].replace(/,/g, '');
+  const suffix = match[2]?.toUpperCase();
+  
+  let value = parseFloat(numberPart);
+  if (isNaN(value)) return null;
+  
+  // Apply multiplier based on suffix
+  switch (suffix) {
+    case 'K': value *= 1e3; break;
+    case 'M': value *= 1e6; break;
+    case 'B': value *= 1e9; break;
+  }
+  
+  return Math.floor(value);
+}
+
 async function handleCookieConsent(page: Page): Promise<void> {
   try {
     console.log("[Consent] Checking for cookie consent banner...");
@@ -62,6 +88,8 @@ export interface ScrapeResult {
   success: boolean;
   playlistName?: string;
   tracks?: ScrapedTrack[];
+  curator?: string | null;
+  followers?: number | null;
   error?: string;
 }
 
@@ -172,13 +200,35 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
     
     await new Promise(resolve => setTimeout(resolve, 3000));
     
-    let playlistName = "Unknown Playlist";
-    try {
-      playlistName = await page.$eval('h1[data-encore-id="type"]', (el) => el.textContent?.trim() || "Unknown Playlist");
-      console.log("Found playlist name:", playlistName);
-    } catch (error) {
-      console.warn("Could not extract playlist name, using default");
-    }
+    // Extract playlist metadata (name, curator, followers) in one call
+    const metadata = await page.evaluate(() => {
+      // Extract playlist name
+      const nameElement = document.querySelector('h1[data-encore-id="type"]');
+      const name = nameElement?.textContent?.trim() || "Unknown Playlist";
+      
+      // Extract curator with fallback selectors
+      const curatorElement = document.querySelector('[data-testid="entityHeaderSubtitle"] a')
+                            || document.querySelector('[data-testid="entityHeaderSubtitle"] span')
+                            || document.querySelector('div[data-testid="entity-subtitle"]');
+      const curator = curatorElement?.textContent?.trim() || null;
+      
+      // Extract follower count with fallback selectors
+      const followerElement = document.querySelector('button[data-testid="followers-count"]')
+                              || document.querySelector('[data-testid="entity-subtitle-more-button"]')
+                              || document.querySelector('[aria-label*="followers"]');
+      const followerText = followerElement?.textContent?.trim() || null;
+      
+      return { name, curator, followerText };
+    });
+    
+    const playlistName = metadata.name;
+    const curator = metadata.curator || null;
+    const followers = metadata.followerText ? parseFollowerCount(metadata.followerText) : null;
+    
+    console.log(`Playlist metadata: name="${playlistName}", curator="${curator}", followers=${followers}`);
+    
+    if (!metadata.curator) console.warn("⚠️ Could not extract curator");
+    if (!metadata.followerText) console.warn("⚠️ Could not extract follower count");
     
     console.log("Waiting for track rows to load...");
     await page.waitForSelector('[data-testid="tracklist-row"]', { timeout: 30000 });
@@ -197,6 +247,8 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
       success: true,
       playlistName,
       tracks,
+      curator,
+      followers,
     };
     
   } catch (error: any) {

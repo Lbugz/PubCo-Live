@@ -3,6 +3,28 @@ import puppeteer from "puppeteer";
 // Helper function to wait
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+function parseFollowerCount(followerText: string): number | null {
+  if (!followerText) return null;
+  
+  const cleaned = followerText.replace(/followers?/i, '').trim();
+  const match = cleaned.match(/^([0-9,.]*)\s*([KMB])?$/i);
+  if (!match) return null;
+  
+  const numberPart = match[1].replace(/,/g, '');
+  const suffix = match[2]?.toUpperCase();
+  
+  let value = parseFloat(numberPart);
+  if (isNaN(value)) return null;
+  
+  switch (suffix) {
+    case 'K': value *= 1e3; break;
+    case 'M': value *= 1e6; break;
+    case 'B': value *= 1e9; break;
+  }
+  
+  return Math.floor(value);
+}
+
 export interface NetworkCaptureTrack {
   trackId: string;
   isrc: string | null;
@@ -19,6 +41,8 @@ export interface NetworkCaptureResult {
   success: boolean;
   tracks: NetworkCaptureTrack[];
   totalCaptured: number;
+  curator?: string | null;
+  followers?: number | null;
   error?: string;
 }
 
@@ -231,6 +255,33 @@ export async function fetchEditorialTracksViaNetwork(
     // Wait for any late requests
     await wait(2000);
     
+    // Extract playlist metadata (curator, followers)
+    let curator: string | null = null;
+    let followers: number | null = null;
+    
+    try {
+      const metadata = await page.evaluate(() => {
+        const curatorElement = document.querySelector('[data-testid="entityHeaderSubtitle"] a')
+                              || document.querySelector('[data-testid="entityHeaderSubtitle"] span')
+                              || document.querySelector('div[data-testid="entity-subtitle"]');
+        const curator = curatorElement?.textContent?.trim() || null;
+        
+        const followerElement = document.querySelector('button[data-testid="followers-count"]')
+                                || document.querySelector('[data-testid="entity-subtitle-more-button"]')
+                                || document.querySelector('[aria-label*="followers"]');
+        const followerText = followerElement?.textContent?.trim() || null;
+        
+        return { curator, followerText };
+      });
+      
+      curator = metadata.curator;
+      followers = metadata.followerText ? parseFollowerCount(metadata.followerText) : null;
+      
+      console.log(`[Network Capture] Metadata: curator="${curator}", followers=${followers}`);
+    } catch (err) {
+      console.warn('[Network Capture] Failed to extract metadata:', err);
+    }
+    
     // Save cookies for future use with microservice
     try {
       const cookies = await page.cookies();
@@ -272,6 +323,8 @@ export async function fetchEditorialTracksViaNetwork(
       success: true,
       tracks,
       totalCaptured: tracks.length,
+      curator,
+      followers,
     };
   } catch (error: any) {
     console.error(`[Network Capture] Error:`, error.message);
