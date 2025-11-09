@@ -77,9 +77,13 @@ export async function fetchEditorialTracksViaNetwork(
         
         const json = await res.json();
         
+        // DEBUG: Log ALL JSON responses to see what Spotify is returning
+        console.log(`[Network Capture] JSON from: ${url.substring(0, 120)}`);
+        console.log(`[Network Capture] JSON keys: ${Object.keys(json).join(', ')}`);
+        
         // Log all Spotify JSON responses to understand their structure
         if (json?.items || json?.tracks || json?.content) {
-          console.log(`[Network Capture] Found JSON response from: ${url.substring(0, 100)}...`);
+          console.log(`[Network Capture] ✅ Found items/tracks/content array!`);
         }
         
         // Check for various response formats Spotify might use

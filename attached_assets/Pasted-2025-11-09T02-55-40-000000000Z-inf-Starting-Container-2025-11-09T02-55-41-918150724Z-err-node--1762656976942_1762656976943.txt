@@ -1,0 +1,199 @@
+2025-11-09T02:55:40.000000000Z [inf]  Starting Container
+2025-11-09T02:55:41.918150724Z [err]  node:internal/modules/cjs/loader:1386
+2025-11-09T02:55:41.918155930Z [err]    throw err;
+2025-11-09T02:55:41.918159914Z [err]    ^
+2025-11-09T02:55:41.918164233Z [err]  
+2025-11-09T02:55:41.918168300Z [err]  Error: Cannot find module '/app/server.js'
+2025-11-09T02:55:41.918176293Z [err]      at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+2025-11-09T02:55:41.918180122Z [err]      at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+2025-11-09T02:55:41.918184022Z [err]      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+2025-11-09T02:55:41.918188269Z [err]      at Function._load (node:internal/modules/cjs/loader:1192:37)
+2025-11-09T02:55:41.918195549Z [err]      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+2025-11-09T02:55:41.918199896Z [err]      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+2025-11-09T02:55:41.918204710Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+2025-11-09T02:55:41.918208936Z [err]      at node:internal/main/run_main_module:36:49 {
+2025-11-09T02:55:41.918213491Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T02:55:41.918217760Z [err]    requireStack: []
+2025-11-09T02:55:41.918221779Z [err]  }
+2025-11-09T02:55:41.918225773Z [err]  
+2025-11-09T02:55:41.918230031Z [err]  Node.js v22.21.1
+2025-11-09T02:55:42.887114942Z [err]  
+2025-11-09T02:55:42.887124418Z [err]  Node.js v22.21.1
+2025-11-09T02:55:42.887201348Z [err]  node:internal/modules/cjs/loader:1386
+2025-11-09T02:55:42.887210311Z [err]    throw err;
+2025-11-09T02:55:42.887235134Z [err]    ^
+2025-11-09T02:55:42.887243933Z [err]  
+2025-11-09T02:55:42.887251830Z [err]  Error: Cannot find module '/app/server.js'
+2025-11-09T02:55:42.887258900Z [err]      at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+2025-11-09T02:55:42.887275088Z [err]      at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+2025-11-09T02:55:42.887282555Z [err]      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+2025-11-09T02:55:42.887288851Z [err]      at Function._load (node:internal/modules/cjs/loader:1192:37)
+2025-11-09T02:55:42.887299874Z [err]      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+2025-11-09T02:55:42.887307369Z [err]      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+2025-11-09T02:55:42.887315219Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+2025-11-09T02:55:42.887322374Z [err]      at node:internal/main/run_main_module:36:49 {
+2025-11-09T02:55:42.887329931Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T02:55:42.887337358Z [err]    requireStack: []
+2025-11-09T02:55:42.887344536Z [err]  }
+2025-11-09T02:55:43.989123671Z [err]  node:internal/modules/cjs/loader:1386
+2025-11-09T02:55:43.989130678Z [err]    throw err;
+2025-11-09T02:55:43.989136829Z [err]    ^
+2025-11-09T02:55:43.989145229Z [err]  
+2025-11-09T02:55:43.989151481Z [err]  Error: Cannot find module '/app/server.js'
+2025-11-09T02:55:43.989157848Z [err]      at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+2025-11-09T02:55:43.989165124Z [err]      at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+2025-11-09T02:55:43.989171860Z [err]      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+2025-11-09T02:55:43.989183404Z [err]      at Function._load (node:internal/modules/cjs/loader:1192:37)
+2025-11-09T02:55:43.989189486Z [err]      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+2025-11-09T02:55:43.989195760Z [err]      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+2025-11-09T02:55:43.989202617Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+2025-11-09T02:55:43.989211907Z [err]      at node:internal/main/run_main_module:36:49 {
+2025-11-09T02:55:43.989219920Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T02:55:43.989227078Z [err]    requireStack: []
+2025-11-09T02:55:43.989236868Z [err]  }
+2025-11-09T02:55:43.989242803Z [err]  
+2025-11-09T02:55:43.989250286Z [err]  Node.js v22.21.1
+2025-11-09T02:55:45.089112662Z [err]  node:internal/modules/cjs/loader:1386
+2025-11-09T02:55:45.089120703Z [err]    throw err;
+2025-11-09T02:55:45.089129393Z [err]    ^
+2025-11-09T02:55:45.089138769Z [err]  
+2025-11-09T02:55:45.089146717Z [err]  Error: Cannot find module '/app/server.js'
+2025-11-09T02:55:45.089156144Z [err]      at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+2025-11-09T02:55:45.089166329Z [err]      at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+2025-11-09T02:55:45.089174430Z [err]      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+2025-11-09T02:55:45.089182463Z [err]      at Function._load (node:internal/modules/cjs/loader:1192:37)
+2025-11-09T02:55:45.089193227Z [err]      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+2025-11-09T02:55:45.089201245Z [err]      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+2025-11-09T02:55:45.089209489Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+2025-11-09T02:55:45.089217767Z [err]      at node:internal/main/run_main_module:36:49 {
+2025-11-09T02:55:45.089226018Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T02:55:45.089236093Z [err]    requireStack: []
+2025-11-09T02:55:45.089244725Z [err]  }
+2025-11-09T02:55:45.089253243Z [err]  
+2025-11-09T02:55:45.089261698Z [err]  Node.js v22.21.1
+2025-11-09T02:55:46.939710610Z [err]  }
+2025-11-09T02:55:46.939721968Z [err]  
+2025-11-09T02:55:46.939729282Z [err]  Node.js v22.21.1
+2025-11-09T02:55:46.939755466Z [err]  node:internal/modules/cjs/loader:1386
+2025-11-09T02:55:46.939761632Z [err]    throw err;
+2025-11-09T02:55:46.939771592Z [err]    ^
+2025-11-09T02:55:46.939778830Z [err]  
+2025-11-09T02:55:46.939801411Z [err]  Error: Cannot find module '/app/server.js'
+2025-11-09T02:55:46.939809290Z [err]      at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+2025-11-09T02:55:46.939813837Z [err]      at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+2025-11-09T02:55:46.939818679Z [err]      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+2025-11-09T02:55:46.939824185Z [err]      at Function._load (node:internal/modules/cjs/loader:1192:37)
+2025-11-09T02:55:46.939829012Z [err]      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+2025-11-09T02:55:46.939835885Z [err]      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+2025-11-09T02:55:46.939840984Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+2025-11-09T02:55:46.939957820Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T02:55:46.939967395Z [err]    requireStack: []
+2025-11-09T02:55:46.940065300Z [err]      at node:internal/main/run_main_module:36:49 {
+2025-11-09T02:55:48.969711346Z [err]  node:internal/modules/cjs/loader:1386
+2025-11-09T02:55:48.969717605Z [err]    throw err;
+2025-11-09T02:55:48.969723589Z [err]    ^
+2025-11-09T02:55:48.969729794Z [err]  
+2025-11-09T02:55:48.969735754Z [err]  Error: Cannot find module '/app/server.js'
+2025-11-09T02:55:48.969742541Z [err]      at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+2025-11-09T02:55:48.969748860Z [err]      at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+2025-11-09T02:55:48.969754970Z [err]      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+2025-11-09T02:55:48.969761272Z [err]      at Function._load (node:internal/modules/cjs/loader:1192:37)
+2025-11-09T02:55:48.969767819Z [err]      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+2025-11-09T02:55:48.969779107Z [err]      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+2025-11-09T02:55:48.969789290Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+2025-11-09T02:55:48.969795242Z [err]      at node:internal/main/run_main_module:36:49 {
+2025-11-09T02:55:48.969801778Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T02:55:48.969808128Z [err]    requireStack: []
+2025-11-09T02:55:48.969815276Z [err]  }
+2025-11-09T02:55:48.969821535Z [err]  
+2025-11-09T02:55:48.969829828Z [err]  Node.js v22.21.1
+2025-11-09T02:55:49.947919684Z [err]  node:internal/modules/cjs/loader:1386
+2025-11-09T02:55:49.947933456Z [err]    throw err;
+2025-11-09T02:55:49.947940402Z [err]    ^
+2025-11-09T02:55:49.947947049Z [err]  
+2025-11-09T02:55:49.947953704Z [err]  Error: Cannot find module '/app/server.js'
+2025-11-09T02:55:49.947959734Z [err]      at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+2025-11-09T02:55:49.947967387Z [err]      at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+2025-11-09T02:55:49.947974365Z [err]      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+2025-11-09T02:55:49.947995143Z [err]      at Function._load (node:internal/modules/cjs/loader:1192:37)
+2025-11-09T02:55:49.948001716Z [err]      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+2025-11-09T02:55:49.948007190Z [err]      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+2025-11-09T02:55:49.948062984Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+2025-11-09T02:55:49.948070075Z [err]      at node:internal/main/run_main_module:36:49 {
+2025-11-09T02:55:49.948076587Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T02:55:49.948081693Z [err]    requireStack: []
+2025-11-09T02:55:49.948093606Z [err]  }
+2025-11-09T02:55:49.948098556Z [err]  
+2025-11-09T02:55:49.948105479Z [err]  Node.js v22.21.1
+2025-11-09T02:55:51.018280143Z [err]  Node.js v22.21.1
+2025-11-09T02:55:51.018318755Z [err]  node:internal/modules/cjs/loader:1386
+2025-11-09T02:55:51.018325959Z [err]    throw err;
+2025-11-09T02:55:51.018333822Z [err]    ^
+2025-11-09T02:55:51.018344254Z [err]  
+2025-11-09T02:55:51.018350780Z [err]  Error: Cannot find module '/app/server.js'
+2025-11-09T02:55:51.018356604Z [err]      at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+2025-11-09T02:55:51.018363454Z [err]      at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+2025-11-09T02:55:51.018371532Z [err]      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+2025-11-09T02:55:51.018377661Z [err]      at Function._load (node:internal/modules/cjs/loader:1192:37)
+2025-11-09T02:55:51.018397137Z [err]      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+2025-11-09T02:55:51.018403569Z [err]      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+2025-11-09T02:55:51.018413858Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+2025-11-09T02:55:51.018420038Z [err]      at node:internal/main/run_main_module:36:49 {
+2025-11-09T02:55:51.018425833Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T02:55:51.018432283Z [err]    requireStack: []
+2025-11-09T02:55:51.018439303Z [err]  }
+2025-11-09T02:55:51.018445393Z [err]  
+2025-11-09T02:55:52.923281920Z [err]  }
+2025-11-09T02:55:52.923298081Z [err]  
+2025-11-09T02:55:52.923310426Z [err]  Node.js v22.21.1
+2025-11-09T02:55:52.923435546Z [err]  node:internal/modules/cjs/loader:1386
+2025-11-09T02:55:52.923444181Z [err]    throw err;
+2025-11-09T02:55:52.923452742Z [err]    ^
+2025-11-09T02:55:52.923462055Z [err]  
+2025-11-09T02:55:52.923471330Z [err]  Error: Cannot find module '/app/server.js'
+2025-11-09T02:55:52.923482528Z [err]      at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+2025-11-09T02:55:52.923491895Z [err]      at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+2025-11-09T02:55:52.923501066Z [err]      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+2025-11-09T02:55:52.923511580Z [err]      at Function._load (node:internal/modules/cjs/loader:1192:37)
+2025-11-09T02:55:52.923520494Z [err]      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+2025-11-09T02:55:52.923527717Z [err]      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+2025-11-09T02:55:52.923658592Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+2025-11-09T02:55:52.923667323Z [err]      at node:internal/main/run_main_module:36:49 {
+2025-11-09T02:55:52.923675595Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T02:55:52.923683460Z [err]    requireStack: []
+2025-11-09T02:55:54.044739565Z [err]  node:internal/modules/cjs/loader:1386
+2025-11-09T02:55:54.044754580Z [err]    throw err;
+2025-11-09T02:55:54.044765325Z [err]    ^
+2025-11-09T02:55:54.044775719Z [err]  
+2025-11-09T02:55:54.044784238Z [err]  Error: Cannot find module '/app/server.js'
+2025-11-09T02:55:54.044793718Z [err]      at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+2025-11-09T02:55:54.044801633Z [err]      at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+2025-11-09T02:55:54.044811137Z [err]      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+2025-11-09T02:55:54.044818989Z [err]      at Function._load (node:internal/modules/cjs/loader:1192:37)
+2025-11-09T02:55:54.044828814Z [err]      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+2025-11-09T02:55:54.044837717Z [err]      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+2025-11-09T02:55:54.044850826Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+2025-11-09T02:55:54.044859134Z [err]      at node:internal/main/run_main_module:36:49 {
+2025-11-09T02:55:54.044866500Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T02:55:54.044875290Z [err]    requireStack: []
+2025-11-09T02:55:54.044883411Z [err]  }
+2025-11-09T02:55:54.044891886Z [err]  
+2025-11-09T02:55:54.044900986Z [err]  Node.js v22.21.1
+2025-11-09T02:55:56.023431871Z [err]  node:internal/modules/cjs/loader:1386
+2025-11-09T02:55:56.023439319Z [err]    throw err;
+2025-11-09T02:55:56.023448942Z [err]    ^
+2025-11-09T02:55:56.023456597Z [err]  
+2025-11-09T02:55:56.023488847Z [err]  Error: Cannot find module '/app/server.js'
+2025-11-09T02:55:56.023496352Z [err]      at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+2025-11-09T02:55:56.023506230Z [err]      at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+2025-11-09T02:55:56.023516239Z [err]      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+2025-11-09T02:55:56.023523932Z [err]      at Function._load (node:internal/modules/cjs/loader:1192:37)
+2025-11-09T02:55:56.023530861Z [err]      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+2025-11-09T02:55:56.023539655Z [err]      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+2025-11-09T02:55:56.023560967Z [err]      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+2025-11-09T02:55:56.023568098Z [err]      at node:internal/main/run_main_module:36:49 {
+2025-11-09T02:55:56.023575130Z [err]    code: 'MODULE_NOT_FOUND',
+2025-11-09T02:55:56.023582272Z [err]    requireStack: []
+2025-11-09T02:55:56.023589147Z [err]  }
+2025-11-09T02:55:56.023596294Z [err]  
+2025-11-09T02:55:56.023603419Z [err]  Node.js v22.21.1
