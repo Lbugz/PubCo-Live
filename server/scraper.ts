@@ -528,6 +528,60 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
       const publishers: string[] = [];
       const allCredits: Array<{ name: string; role: string }> = [];
       
+      // Helper function to intelligently split names
+      // First tries comma separation, then falls back to capital letter splitting if needed
+      function smartSplitNames(text: string): string[] {
+        if (!text || text.trim().length === 0) return [];
+        
+        // First attempt: split by commas
+        const commaSplit = text.split(',').map(n => n.trim()).filter(Boolean);
+        
+        // If we got multiple names from comma split, we're done
+        if (commaSplit.length > 1) {
+          return commaSplit;
+        }
+        
+        // If only one "name" after comma split, check if it's actually multiple names concatenated
+        const singleName = commaSplit[0] || text.trim();
+        
+        // Count uppercase letters that follow lowercase letters (indicates new name)
+        const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
+        
+        // If we have 2+ capital transitions, likely multiple names run together
+        if (capitalTransitions >= 2) {
+          // Split by detecting uppercase letter after lowercase letter
+          // "Gustav NystromIman Conta" -> ["Gustav Nystrom", "Iman Conta"]
+          const names: string[] = [];
+          let currentName = '';
+          
+          for (let i = 0; i < singleName.length; i++) {
+            const char = singleName[i];
+            const prevChar = i > 0 ? singleName[i - 1] : '';
+            
+            // New name starts when we hit uppercase after lowercase
+            if (i > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
+              // Save current name and start new one
+              if (currentName.trim().length > 0) {
+                names.push(currentName.trim());
+              }
+              currentName = char;
+            } else {
+              currentName += char;
+            }
+          }
+          
+          // Don't forget the last name
+          if (currentName.trim().length > 0) {
+            names.push(currentName.trim());
+          }
+          
+          return names.filter(n => n.length > 1); // Filter out single-letter artifacts
+        }
+        
+        // Otherwise, return as single name
+        return [singleName];
+      }
+      
       // Get all text nodes in the modal to parse credit structure
       const allText = document.body.innerText;
       const lines = allText.split('\n').map(l => l.trim()).filter(Boolean);
@@ -543,18 +597,18 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         
         // Check for role labels
         if (line.toLowerCase().includes('written by') || line.toLowerCase().includes('songwriter')) {
-          // Next line(s) should contain writer names - split by commas
+          // Next line(s) should contain writer names - use smart splitting
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            const names = nextLine.split(',').map(n => n.trim()).filter(Boolean);
+            const names = smartSplitNames(nextLine);
             writers.push(...names);
             names.forEach(name => allCredits.push({ name, role: 'Writer' }));
           }
         }
         
         if (line.toLowerCase().includes('produced by') || line.toLowerCase().includes('producer')) {
-          // Next line(s) should contain producer names - split by commas
+          // Next line(s) should contain producer names - use smart splitting
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            const names = nextLine.split(',').map(n => n.trim()).filter(Boolean);
+            const names = smartSplitNames(nextLine);
             producers.push(...names);
             names.forEach(name => allCredits.push({ name, role: 'Producer' }));
           }
@@ -562,7 +616,7 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         
         if (line.toLowerCase().includes('composer')) {
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            const names = nextLine.split(',').map(n => n.trim()).filter(Boolean);
+            const names = smartSplitNames(nextLine);
             composers.push(...names);
             names.forEach(name => allCredits.push({ name, role: 'Composer' }));
           }
@@ -580,7 +634,7 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         // Look for actual publishers (different from labels)
         if (line.toLowerCase().includes('publisher') && !line.toLowerCase().startsWith('source:')) {
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            const names = nextLine.split(',').map(n => n.trim()).filter(Boolean);
+            const names = smartSplitNames(nextLine);
             publishers.push(...names);
             names.forEach(name => allCredits.push({ name, role: 'Publisher' }));
           }
@@ -602,8 +656,8 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
           
           const nameText = nameEl?.textContent?.trim();
           if (nameText && nameText.length > 1 && nameText.length < 500 && !nameText.toLowerCase().includes(' by')) {
-            // Split by commas to handle multiple names
-            const names = nameText.split(',').map(n => n.trim()).filter(Boolean);
+            // Use smart splitting to handle both comma-separated and concatenated names
+            const names = smartSplitNames(nameText);
             names.forEach(name => {
               if (!writers.includes(name)) {
                 writers.push(name);
@@ -621,8 +675,8 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
           
           const nameText = nameEl?.textContent?.trim();
           if (nameText && nameText.length > 1 && nameText.length < 500 && !nameText.toLowerCase().includes(' by')) {
-            // Split by commas to handle multiple names
-            const names = nameText.split(',').map(n => n.trim()).filter(Boolean);
+            // Use smart splitting to handle both comma-separated and concatenated names
+            const names = smartSplitNames(nameText);
             names.forEach(name => {
               if (!producers.includes(name)) {
                 producers.push(name);
