@@ -501,12 +501,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ 
           success: true, 
           enrichedCount: 0,
+          totalProcessed: 0,
+          skippedNoIsrc: 0,
           message: "No tracks need MusicBrainz enrichment"
         });
       }
 
       let enrichedCount = 0;
       let spotifyEnrichedCount = 0;
+      let skippedNoIsrc = 0;
       
       for (const track of unenrichedTracks) {
         // Step 1: If track has no ISRC (scraped), try Spotify search first
@@ -556,6 +559,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch (error) {
             console.error(`Error enriching track ${track.id}:`, error);
           }
+        } else {
+          // Track has no ISRC after trying Spotify search
+          skippedNoIsrc++;
         }
       }
       
@@ -563,6 +569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true, 
         enrichedCount,
         spotifyEnrichedCount,
+        skippedNoIsrc,
         totalProcessed: unenrichedTracks.length,
         message: spotifyEnrichedCount > 0 
           ? `Found ${spotifyEnrichedCount} ISRC codes via Spotify, enriched ${enrichedCount} tracks with MusicBrainz`

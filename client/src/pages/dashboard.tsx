@@ -211,9 +211,25 @@ export default function Dashboard() {
       return await response.json();
     },
     onSuccess: (data: any) => {
+      // Show specific message based on what happened
+      let description = '';
+      if (data.skippedNoIsrc > 0 && data.enrichedCount === 0) {
+        // All tracks were skipped due to missing ISRC
+        description = `Skipped ${data.skippedNoIsrc} track${data.skippedNoIsrc > 1 ? 's' : ''} - missing ISRC code required for MusicBrainz lookup`;
+      } else if (data.skippedNoIsrc > 0) {
+        // Some tracks enriched, some skipped
+        description = `Enriched ${data.enrichedCount} of ${data.totalProcessed} tracks (${data.skippedNoIsrc} skipped - missing ISRC)`;
+      } else if (data.totalProcessed === 0) {
+        // No tracks to process
+        description = "No tracks need MusicBrainz enrichment";
+      } else {
+        // Normal success
+        description = `Enriched ${data.enrichedCount} of ${data.totalProcessed} tracks with publisher/songwriter data`;
+      }
+      
       toast({
         title: "MusicBrainz Enrichment Complete!",
-        description: `Enriched ${data.enrichedCount} of ${data.totalProcessed} tracks with publisher/songwriter data`,
+        description,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
     },
