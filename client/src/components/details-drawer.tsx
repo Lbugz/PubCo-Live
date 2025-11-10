@@ -21,6 +21,8 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { TrackTagPopover } from "@/components/track-tag-popover";
 import { TrackContactDialog } from "@/components/track-contact-dialog";
+import { PublisherStatusBadge } from "./publisher-status-badge";
+import { SongwriterDisplay } from "./songwriter-display";
 import { cn } from "@/lib/utils";
 
 interface DetailsDrawerProps {
@@ -88,6 +90,10 @@ export function DetailsDrawer({
               >
                 {getScoreLabel(track.unsignedScore)} Score: {track.unsignedScore}
               </Badge>
+
+              {track.publisherStatus && (
+                <PublisherStatusBadge status={track.publisherStatus} showIcon />
+              )}
 
               {track.isrc ? (
                 <Badge

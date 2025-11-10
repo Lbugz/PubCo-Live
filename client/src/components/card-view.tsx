@@ -6,6 +6,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TrackActionsDropdown } from "./track-actions-dropdown";
 import { SongwriterDisplay } from "./songwriter-display";
+import { PublisherStatusBadge } from "./publisher-status-badge";
 
 interface CardViewProps {
   tracks: PlaylistSnapshot[];
@@ -170,6 +171,12 @@ export function CardView({
               )}
               <div>
                 <span className="text-muted-foreground">Songwriter:</span>{" "}
+                {track.publisherStatus && (
+                  <>
+                    <PublisherStatusBadge status={track.publisherStatus} className="mr-1" />
+                    {" "}
+                  </>
+                )}
                 <SongwriterDisplay
                   songwriters={track.songwriter}
                   className="font-medium inline-flex"

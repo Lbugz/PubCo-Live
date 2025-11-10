@@ -6,6 +6,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TrackActionsDropdown } from "./track-actions-dropdown";
+import { PublisherStatusBadge } from "./publisher-status-badge";
+import { SongwriterDisplay } from "./songwriter-display";
 
 interface KanbanViewProps {
   tracks: PlaylistSnapshot[];
@@ -64,10 +66,13 @@ export function KanbanView({
           </div>
 
         {/* Score Badge */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="text-xs">
             Score: {track.unsignedScore}
           </Badge>
+          {track.publisherStatus && (
+            <PublisherStatusBadge status={track.publisherStatus} />
+          )}
           {track.isrc ? (
             <Badge
               variant="outline"
@@ -93,6 +98,16 @@ export function KanbanView({
           {track.label && (
             <div>
               <span className="text-muted-foreground">Label:</span> {track.label}
+            </div>
+          )}
+          {track.songwriter && (
+            <div>
+              <span className="text-muted-foreground">Songwriter:</span>{" "}
+              <SongwriterDisplay
+                songwriters={track.songwriter}
+                className="inline-flex"
+                testId={`text-songwriter-${track.id}`}
+              />
             </div>
           )}
         </div>
