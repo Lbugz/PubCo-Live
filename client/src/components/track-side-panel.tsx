@@ -13,6 +13,8 @@ import { Database, Sparkles, Tag as TagIcon, UserPlus, ExternalLink, X, Clock, M
 import { formatDistanceToNow } from "date-fns";
 import { TrackTagPopover } from "@/components/track-tag-popover";
 import { TrackContactDialog } from "@/components/track-contact-dialog";
+import { PublisherStatusBadge } from "./publisher-status-badge";
+import { SongwriterDisplay } from "./songwriter-display";
 
 interface TrackSidePanelProps {
   track: PlaylistSnapshot | null;
@@ -82,6 +84,9 @@ export function TrackSidePanel({ track, open, onClose, onEnrich }: TrackSidePane
                 <Badge variant={getScoreBadgeVariant(track.unsignedScore)} className="whitespace-nowrap">
                   {getScoreLabel(track.unsignedScore)} {track.unsignedScore}
                 </Badge>
+                {track.publisherStatus && (
+                  <PublisherStatusBadge status={track.publisherStatus} />
+                )}
                 {!track.isrc && (
                   <Badge variant="outline" className="text-xs">No ISRC</Badge>
                 )}
