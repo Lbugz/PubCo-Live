@@ -17,8 +17,7 @@ interface TrackTableProps {
   selectedTrackIds?: Set<string>;
   onToggleSelection?: (trackId: string) => void;
   onToggleSelectAll?: () => void;
-  onEnrichMB?: (trackId: string) => void;
-  onEnrichCredits?: (trackId: string) => void;
+  onEnrich?: (trackId: string) => void;
   onRowClick?: (track: PlaylistSnapshot) => void;
 }
 
@@ -68,8 +67,7 @@ export function TrackTable({
   selectedTrackIds = new Set(), 
   onToggleSelection, 
   onToggleSelectAll,
-  onEnrichMB, 
-  onEnrichCredits, 
+  onEnrich, 
   onRowClick 
 }: TrackTableProps) {
   const allSelected = tracks.length > 0 && tracks.every(track => selectedTrackIds.has(track.id));
@@ -232,8 +230,7 @@ export function TrackTable({
               <div className="col-span-1 lg:col-span-1 flex justify-start lg:justify-end gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                 <TrackActionsDropdown
                   track={track}
-                  onEnrichMB={onEnrichMB}
-                  onEnrichCredits={onEnrichCredits}
+                  onEnrich={onEnrich}
                 />
               </div>
             </div>

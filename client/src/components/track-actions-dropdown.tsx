@@ -15,11 +15,10 @@ import { type PlaylistSnapshot } from "@shared/schema";
 
 interface TrackActionsDropdownProps {
   track: PlaylistSnapshot;
-  onEnrichMB?: (trackId: string) => void;
-  onEnrichCredits?: (trackId: string) => void;
+  onEnrich?: (trackId: string) => void;
 }
 
-export function TrackActionsDropdown({ track, onEnrichMB, onEnrichCredits }: TrackActionsDropdownProps) {
+export function TrackActionsDropdown({ track, onEnrich }: TrackActionsDropdownProps) {
   const [tagOpen, setTagOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [aiInsightsOpen, setAIInsightsOpen] = useState(false);
@@ -41,32 +40,18 @@ export function TrackActionsDropdown({ track, onEnrichMB, onEnrichCredits }: Tra
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          {canEnrich && (onEnrichMB || onEnrichCredits) && (
+          {canEnrich && onEnrich && (
             <>
-              {onEnrichMB && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    onEnrichMB(track.id);
-                    setDropdownOpen(false);
-                  }}
-                  data-testid={`menu-enrich-mb-${track.id}`}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Enrich (MusicBrainz)
-                </DropdownMenuItem>
-              )}
-              {onEnrichCredits && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    onEnrichCredits(track.id);
-                    setDropdownOpen(false);
-                  }}
-                  data-testid={`menu-enrich-credits-${track.id}`}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Enrich (Spotify Credits)
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem
+                onClick={() => {
+                  onEnrich(track.id);
+                  setDropdownOpen(false);
+                }}
+                data-testid={`menu-enrich-${track.id}`}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Enrich Data
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>
           )}

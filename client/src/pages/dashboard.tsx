@@ -205,64 +205,28 @@ export default function Dashboard() {
     },
   });
 
-  const enrichMetadataMutation = useMutation({
-    mutationFn: async ({ mode = 'all', trackId, playlistName, limit = 50 }: { mode?: string; trackId?: string; playlistName?: string; limit?: number }) => {
-      const response = await apiRequest("POST", "/api/enrich-metadata", { mode, trackId, playlistName, limit });
-      return await response.json();
-    },
-    onSuccess: (data: any) => {
-      // Show specific message based on what happened
-      let description = '';
-      if (data.skippedNoIsrc > 0 && data.enrichedCount === 0) {
-        // All tracks were skipped due to missing ISRC
-        description = `Skipped ${data.skippedNoIsrc} track${data.skippedNoIsrc > 1 ? 's' : ''} - missing ISRC code required for MusicBrainz lookup`;
-      } else if (data.skippedNoIsrc > 0) {
-        // Some tracks enriched, some skipped
-        description = `Enriched ${data.enrichedCount} of ${data.totalProcessed} tracks (${data.skippedNoIsrc} skipped - missing ISRC)`;
-      } else if (data.totalProcessed === 0) {
-        // No tracks to process
-        description = "No tracks need MusicBrainz enrichment";
-      } else {
-        // Normal success
-        description = `Enriched ${data.enrichedCount} of ${data.totalProcessed} tracks with publisher/songwriter data`;
-      }
-      
-      toast({
-        title: "MusicBrainz Enrichment Complete!",
-        description,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to enrich metadata",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const enrichCreditsMutation = useMutation({
-    mutationFn: async ({ mode = 'all', trackId, playlistName, limit = 10 }: { mode?: string; trackId?: string; playlistName?: string; limit?: number }) => {
-      console.log("Starting credits enrichment mutation...", { mode, trackId, playlistName });
-      const response = await apiRequest("POST", "/api/enrich-credits", { mode, trackId, playlistName, limit });
+  const enrichMutation = useMutation({
+    mutationFn: async ({ trackId }: { trackId: string }) => {
+      console.log("Starting unified enrichment for track:", trackId);
+      const response = await apiRequest("POST", `/api/enrich-track/${trackId}`, {});
       const data = await response.json();
-      console.log("Credits enrichment response:", data);
+      console.log("Unified enrichment response:", data);
       return data;
     },
     onSuccess: (data: any) => {
-      console.log("Credits enrichment success:", data);
+      console.log("Unified enrichment success:", data);
+      const successfulTiers = data.tierResults?.filter((t: any) => t.success).length || 0;
       toast({
-        title: "Spotify Credits Enrichment Complete!",
-        description: `Enriched ${data.enrichedCount} of ${data.totalProcessed} tracks (${data.failedCount} failed)`,
+        title: "Track Enrichment Complete!",
+        description: data.summary || `Completed ${successfulTiers} enrichment tiers`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
     },
     onError: (error: any) => {
-      console.error("Credits enrichment error:", error);
+      console.error("Unified enrichment error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to enrich credits",
+        description: error.message || "Failed to enrich track",
         variant: "destructive",
       });
     },
@@ -355,35 +319,20 @@ export default function Dashboard() {
     setTagManagerOpen(true);
   };
 
-  const handleBulkEnrichMB = useCallback((mode: "selected" | "filtered") => {
+  const handleBulkEnrich = useCallback((mode: "selected" | "filtered") => {
     const trackIds = mode === "selected" 
       ? Array.from(selectedTrackIds)
       : filteredTracks.map(t => t.id);
     
     trackIds.forEach(trackId => {
-      enrichMetadataMutation.mutate({ mode: 'track', trackId });
+      enrichMutation.mutate({ trackId });
     });
     
     toast({
       title: "Enriching tracks",
-      description: `Started MusicBrainz enrichment for ${trackIds.length} ${mode === "selected" ? "selected" : "filtered"} tracks`,
+      description: `Started unified enrichment for ${trackIds.length} ${mode === "selected" ? "selected" : "filtered"} tracks`,
     });
-  }, [selectedTrackIds, filteredTracks, enrichMetadataMutation, toast]);
-
-  const handleBulkEnrichCredits = useCallback((mode: "selected" | "filtered") => {
-    const trackIds = mode === "selected" 
-      ? Array.from(selectedTrackIds)
-      : filteredTracks.map(t => t.id);
-    
-    trackIds.forEach(trackId => {
-      enrichCreditsMutation.mutate({ mode: 'track', trackId });
-    });
-    
-    toast({
-      title: "Enriching tracks",
-      description: `Started Spotify credits enrichment for ${trackIds.length} ${mode === "selected" ? "selected" : "filtered"} tracks`,
-    });
-  }, [selectedTrackIds, filteredTracks, enrichCreditsMutation, toast]);
+  }, [selectedTrackIds, filteredTracks, enrichMutation, toast]);
 
   const handleBulkExport = useCallback(async (mode: "selected" | "filtered") => {
     try {
@@ -502,89 +451,9 @@ export default function Dashboard() {
     </DropdownMenu>
   ), [fetchPlaylistsMutation.isPending, trackedPlaylists]);
 
-  const enrichMBButton = useMemo(() => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="default"
-          className="gap-2"
-          disabled={enrichMetadataMutation.isPending || !tracks || tracks.length === 0}
-          data-testid="button-enrich-musicbrainz"
-        >
-          <Sparkles className={`h-4 w-4 ${enrichMetadataMutation.isPending ? "animate-pulse" : ""}`} />
-          <span className="hidden md:inline">
-            {enrichMetadataMutation.isPending ? "Enriching..." : "Enrich (MB)"}
-          </span>
-          {!enrichMetadataMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
-        <DropdownMenuLabel>MusicBrainz Enrich Options</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => enrichMetadataMutation.mutate({ mode: 'all' })} data-testid="menu-enrich-mb-all">
-          Enrich All Unenriched Tracks
-        </DropdownMenuItem>
-        {playlists && playlists.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Enrich by Playlist</DropdownMenuLabel>
-            {playlists.map((playlist) => (
-              <DropdownMenuItem 
-                key={playlist} 
-                onClick={() => enrichMetadataMutation.mutate({ mode: 'playlist', playlistName: playlist })}
-                data-testid={`menu-enrich-mb-playlist-${playlist}`}
-              >
-                {playlist}
-              </DropdownMenuItem>
-            ))}
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  ), [enrichMetadataMutation.isPending, tracks, playlists]);
-
-  const enrichCreditsButton = useMemo(() => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="default"
-          className="gap-2"
-          disabled={enrichCreditsMutation.isPending || !tracks || tracks.length === 0}
-          data-testid="button-enrich-credits"
-        >
-          <FileText className={`h-4 w-4 ${enrichCreditsMutation.isPending ? "animate-pulse" : ""}`} />
-          <span className="hidden md:inline">
-            {enrichCreditsMutation.isPending ? "Scraping..." : "Enrich (Credits)"}
-          </span>
-          {!enrichCreditsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
-        <DropdownMenuLabel>Spotify Credits Enrich Options</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => enrichCreditsMutation.mutate({ mode: 'all' })} data-testid="menu-enrich-credits-all">
-          Enrich All Unenriched Tracks
-        </DropdownMenuItem>
-        {playlists && playlists.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Enrich by Playlist</DropdownMenuLabel>
-            {playlists.map((playlist) => (
-              <DropdownMenuItem 
-                key={playlist} 
-                onClick={() => enrichCreditsMutation.mutate({ mode: 'playlist', playlistName: playlist })}
-                data-testid={`menu-enrich-credits-playlist-${playlist}`}
-              >
-                {playlist}
-              </DropdownMenuItem>
-            ))}
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  ), [enrichCreditsMutation.isPending, tracks, playlists]);
+  const handleEnrichTrack = useCallback((trackId: string) => {
+    enrichMutation.mutate({ trackId });
+  }, [enrichMutation]);
 
   const enrichArtistsButton = useMemo(() => (
     <Button
@@ -665,8 +534,6 @@ export default function Dashboard() {
             mediumPotential={mediumPotentialCount}
             avgScore={parseFloat(avgScore)}
             fetchDataButton={fetchDataButton}
-            enrichMBButton={enrichMBButton}
-            enrichCreditsButton={enrichCreditsButton}
             enrichArtistsButton={enrichArtistsButton}
             exportButton={exportButton}
             playlistManagerButton={<PlaylistManager open={playlistManagerOpen} onOpenChange={setPlaylistManagerOpen} />}
@@ -737,13 +604,11 @@ export default function Dashboard() {
           <BulkActionsToolbar
             selectedCount={selectedTrackIds.size}
             totalFilteredCount={filteredTracks.length}
-            onEnrichMB={handleBulkEnrichMB}
-            onEnrichCredits={handleBulkEnrichCredits}
+            onEnrich={handleBulkEnrich}
             onExport={handleBulkExport}
             onTag={handleBulkTag}
             onClearSelection={clearSelection}
-            isEnrichingMB={enrichMetadataMutation.isPending}
-            isEnrichingCredits={enrichCreditsMutation.isPending}
+            isEnriching={enrichMutation.isPending}
           />
 
           {/* View Content */}
@@ -754,8 +619,7 @@ export default function Dashboard() {
               selectedTrackIds={selectedTrackIds}
               onToggleSelection={toggleTrackSelection}
               onToggleSelectAll={toggleSelectAll}
-              onEnrichMB={(trackId) => enrichMetadataMutation.mutate({ mode: 'track', trackId })}
-              onEnrichCredits={(trackId) => enrichCreditsMutation.mutate({ mode: 'track', trackId })}
+              onEnrich={handleEnrichTrack}
               onRowClick={(track) => {
                 setSelectedTrack(track);
                 setDrawerOpen(true);
@@ -774,8 +638,7 @@ export default function Dashboard() {
                 setSelectedTrack(track);
                 setDrawerOpen(true);
               }}
-              onEnrichMB={(trackId) => enrichMetadataMutation.mutate({ mode: 'track', trackId })}
-              onEnrichCredits={(trackId) => enrichCreditsMutation.mutate({ mode: 'track', trackId })}
+              onEnrich={handleEnrichTrack}
             />
           )}
 
@@ -790,8 +653,7 @@ export default function Dashboard() {
                 setSelectedTrack(track);
                 setDrawerOpen(true);
               }}
-              onEnrichMB={(trackId) => enrichMetadataMutation.mutate({ mode: 'track', trackId })}
-              onEnrichCredits={(trackId) => enrichCreditsMutation.mutate({ mode: 'track', trackId })}
+              onEnrich={handleEnrichTrack}
             />
           )}
         </div>
@@ -801,12 +663,7 @@ export default function Dashboard() {
         track={selectedTrack}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        onEnrichMB={(trackId) => {
-          enrichMetadataMutation.mutate({ mode: 'track', trackId });
-        }}
-        onEnrichCredits={(trackId) => {
-          enrichCreditsMutation.mutate({ mode: 'track', trackId });
-        }}
+        onEnrich={handleEnrichTrack}
       />
     </div>
   );

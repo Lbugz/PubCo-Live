@@ -14,8 +14,7 @@ interface CardViewProps {
   onToggleSelection?: (trackId: string) => void;
   onToggleSelectAll?: () => void;
   onTrackClick?: (track: PlaylistSnapshot) => void;
-  onEnrichMB?: (trackId: string) => void;
-  onEnrichCredits?: (trackId: string) => void;
+  onEnrich?: (trackId: string) => void;
 }
 
 export function CardView({
@@ -25,8 +24,7 @@ export function CardView({
   onToggleSelection,
   onToggleSelectAll,
   onTrackClick,
-  onEnrichMB,
-  onEnrichCredits,
+  onEnrich,
 }: CardViewProps) {
   const getScoreBadgeVariant = (score: number) => {
     if (score >= 7) return "high";
@@ -184,8 +182,7 @@ export function CardView({
             <div className="flex justify-end pt-2 border-t" onClick={(e) => e.stopPropagation()}>
               <TrackActionsDropdown
                 track={track}
-                onEnrichMB={onEnrichMB}
-                onEnrichCredits={onEnrichCredits}
+                onEnrich={onEnrich}
               />
             </div>
           </div>

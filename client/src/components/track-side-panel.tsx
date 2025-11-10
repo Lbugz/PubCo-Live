@@ -18,11 +18,10 @@ interface TrackSidePanelProps {
   track: PlaylistSnapshot | null;
   open: boolean;
   onClose: () => void;
-  onEnrichMB: (trackId: string) => void;
-  onEnrichCredits: (trackId: string) => void;
+  onEnrich: (trackId: string) => void;
 }
 
-export function TrackSidePanel({ track, open, onClose, onEnrichMB, onEnrichCredits }: TrackSidePanelProps) {
+export function TrackSidePanel({ track, open, onClose, onEnrich }: TrackSidePanelProps) {
   const { toast } = useToast();
 
   const { data: activity, isLoading: activityLoading } = useQuery<ActivityHistory[]>({
@@ -137,21 +136,11 @@ export function TrackSidePanel({ track, open, onClose, onEnrichMB, onEnrichCredi
                   <Button
                     variant="outline"
                     className="w-full justify-start gap-2"
-                    onClick={() => onEnrichMB(track.id)}
-                    data-testid="action-enrich-mb"
+                    onClick={() => onEnrich(track.id)}
+                    data-testid="action-enrich"
                   >
-                    <Database className="h-4 w-4" />
-                    Enrich Data (MusicBrainz)
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2"
-                    onClick={() => onEnrichCredits(track.id)}
-                    data-testid="action-enrich-credits"
-                  >
-                    <Music className="h-4 w-4" />
-                    Enrich Data (Spotify Credits)
+                    <Sparkles className="h-4 w-4" />
+                    Enrich Data
                   </Button>
                   
                   <Button

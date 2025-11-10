@@ -833,6 +833,213 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Unified enrichment endpoint: Spotify Credits → MLC → MusicBrainz
+  app.post("/api/enrich-track/:id", async (req, res) => {
+    try {
+      const { id: trackId } = req.params;
+      
+      // Fetch track
+      const track = await storage.getTrackById(trackId);
+      if (!track) {
+        return res.status(404).json({ error: "Track not found" });
+      }
+
+      console.log(`[Unified Enrichment] Starting for: ${track.trackName} by ${track.artistName}`);
+
+      const tierResults: any[] = [];
+      let enrichmentTier = track.enrichmentTier || "none";
+      const updates: any = {};
+
+      // TIER 1: Spotify Credits Scraping
+      try {
+        console.log(`[Tier 1: Spotify Credits] Scraping...`);
+        const creditsResult = await scrapeTrackCredits(track.spotifyUrl);
+        
+        if (creditsResult.success && creditsResult.credits) {
+          const { writers, composers, labels, publishers } = creditsResult.credits;
+          const songwriters = [...writers, ...composers].filter(Boolean);
+          const songwriterString = songwriters.length > 0 ? songwriters.join(", ") : undefined;
+          const publisherString = publishers.length > 0 ? publishers.join(", ") : undefined;
+          const labelString = labels.length > 0 ? labels.join(", ") : undefined;
+          
+          updates.songwriter = songwriterString;
+          updates.publisher = publisherString;
+          updates.label = labelString;
+          enrichmentTier = "spotify-credits";
+          
+          tierResults.push({
+            tier: "spotify-credits",
+            success: true,
+            message: `Found ${songwriters.length} songwriters, ${publishers.length} publishers`,
+            data: { songwriters, publishers, labels }
+          });
+          console.log(`✅ [Tier 1] Success: ${songwriters.length} songwriters found`);
+        } else {
+          tierResults.push({
+            tier: "spotify-credits",
+            success: false,
+            message: creditsResult.error || "Failed to scrape credits",
+            data: null
+          });
+          console.warn(`⚠️ [Tier 1] Failed: ${creditsResult.error}`);
+        }
+      } catch (error: any) {
+        console.error(`[Tier 1] Error:`, error);
+        tierResults.push({
+          tier: "spotify-credits",
+          success: false,
+          message: error.message || "Unexpected error during credits scraping",
+          data: null
+        });
+      }
+
+      // TIER 2: MLC API Lookup (only if we have ISRC)
+      if (track.isrc) {
+        try {
+          console.log(`[Tier 2: MLC] Looking up publisher status...`);
+          const { enrichTrackWithMLC } = await import('./mlc.js');
+          
+          const mlcEnrichment = await enrichTrackWithMLC(track.isrc);
+          
+          if (mlcEnrichment) {
+            updates.publisherStatus = mlcEnrichment.publisherStatus;
+            updates.collectionShare = mlcEnrichment.collectionShare;
+            updates.ipiNumber = mlcEnrichment.ipiNumber;
+            updates.iswc = mlcEnrichment.iswc;
+            updates.mlcSongCode = mlcEnrichment.mlcSongCode;
+            
+            tierResults.push({
+              tier: "mlc",
+              success: true,
+              message: `Publisher status: ${mlcEnrichment.publisherStatus}`,
+              data: { 
+                publisherStatus: mlcEnrichment.publisherStatus, 
+                publisherName: mlcEnrichment.publisherName,
+                writers: mlcEnrichment.writers 
+              }
+            });
+            console.log(`✅ [Tier 2] Success: ${mlcEnrichment.publisherStatus}`);
+          } else {
+            tierResults.push({
+              tier: "mlc",
+              success: false,
+              message: "No MLC matches found",
+              data: null
+            });
+            console.log(`⚠️ [Tier 2] No matches found`);
+          }
+        } catch (error: any) {
+          console.error(`[Tier 2] Error:`, error);
+          tierResults.push({
+            tier: "mlc",
+            success: false,
+            message: error.message || "MLC lookup failed",
+            data: null
+          });
+        }
+      } else {
+        tierResults.push({
+          tier: "mlc",
+          success: false,
+          message: "Skipped - no ISRC available",
+          data: null
+        });
+      }
+
+      // TIER 3: MusicBrainz (social links fallback)
+      if (updates.songwriter) {
+        try {
+          console.log(`[Tier 3: MusicBrainz] Enriching social links...`);
+          const { searchArtistByName, getArtistExternalLinks } = await import('./musicbrainz.js');
+          
+          const songwriterNames = updates.songwriter.split(',').map((s: string) => s.trim());
+          let linksFound = 0;
+          
+          for (const songwriterName of songwriterNames.slice(0, 3)) {
+            try {
+              const artistResult = await searchArtistByName(songwriterName);
+              if (artistResult && artistResult.id) {
+                const links = await getArtistExternalLinks(artistResult.id);
+                const artist = await storage.createOrUpdateArtist({
+                  name: songwriterName,
+                  musicbrainzId: artistResult.id,
+                  instagram: links.instagram,
+                  twitter: links.twitter,
+                  facebook: links.facebook,
+                  bandcamp: links.bandcamp,
+                  linkedin: links.linkedin,
+                  youtube: links.youtube,
+                  discogs: links.discogs,
+                  website: links.website,
+                });
+                await storage.linkArtistToTrack(artist.id, track.id);
+                
+                if (Object.keys(links).some(k => links[k as keyof typeof links])) {
+                  linksFound++;
+                }
+              }
+            } catch (error) {
+              console.error(`Error getting links for ${songwriterName}:`, error);
+            }
+          }
+          
+          tierResults.push({
+            tier: "musicbrainz",
+            success: linksFound > 0,
+            message: `Found social links for ${linksFound}/${songwriterNames.length} songwriters`,
+            data: { linksFound, totalSongwriters: songwriterNames.length }
+          });
+          console.log(`✅ [Tier 3] Success: ${linksFound} songwriters with social links`);
+        } catch (error: any) {
+          console.error(`[Tier 3] Error:`, error);
+          tierResults.push({
+            tier: "musicbrainz",
+            success: false,
+            message: error.message || "MusicBrainz enrichment failed",
+            data: null
+          });
+        }
+      } else {
+        tierResults.push({
+          tier: "musicbrainz",
+          success: false,
+          message: "Skipped - no songwriters available",
+          data: null
+        });
+      }
+
+      // Update track with all collected data
+      updates.enrichedAt = new Date();
+      updates.enrichmentTier = enrichmentTier;
+      await storage.updateTrackMetadata(track.id, updates);
+
+      // Broadcast real-time update
+      broadcastEnrichmentUpdate({
+        type: 'track_enriched',
+        trackId: track.id,
+        trackName: track.trackName,
+        artistName: track.artistName,
+      });
+
+      const successfulTiers = tierResults.filter(t => t.success).length;
+      const enrichmentStatus = successfulTiers > 0 ? "success" : "partial";
+
+      res.json({
+        success: true,
+        trackId: track.id,
+        enrichmentStatus,
+        enrichmentTier,
+        tierResults,
+        summary: `Completed ${successfulTiers}/${tierResults.length} tiers successfully`
+      });
+      
+      console.log(`[Unified Enrichment] Complete: ${successfulTiers}/${tierResults.length} tiers successful`);
+    } catch (error: any) {
+      console.error("Error in unified enrichment:", error);
+      res.status(500).json({ error: error.message || "Failed to enrich track" });
+    }
+  });
+
   // Railway-backed track enrichment endpoint
   app.post("/api/playlists/:playlistId/enrich-tracks", async (req, res) => {
     const enrichingTrackIds: string[] = [];

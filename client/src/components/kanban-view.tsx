@@ -14,8 +14,7 @@ interface KanbanViewProps {
   onToggleSelection?: (trackId: string) => void;
   onToggleSelectAll?: () => void;
   onTrackClick?: (track: PlaylistSnapshot) => void;
-  onEnrichMB?: (trackId: string) => void;
-  onEnrichCredits?: (trackId: string) => void;
+  onEnrich?: (trackId: string) => void;
 }
 
 export function KanbanView({
@@ -25,8 +24,7 @@ export function KanbanView({
   onToggleSelection,
   onToggleSelectAll,
   onTrackClick,
-  onEnrichMB,
-  onEnrichCredits,
+  onEnrich,
 }: KanbanViewProps) {
   // Group tracks by score category
   const highPotentialTracks = tracks.filter((t) => t.unsignedScore >= 7);
@@ -103,8 +101,7 @@ export function KanbanView({
         <div className="flex justify-end pt-2 border-t" onClick={(e) => e.stopPropagation()}>
           <TrackActionsDropdown
             track={track}
-            onEnrichMB={onEnrichMB}
-            onEnrichCredits={onEnrichCredits}
+            onEnrich={onEnrich}
           />
         </div>
       </div>

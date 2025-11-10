@@ -17,25 +17,21 @@ export type BulkActionMode = "selected" | "filtered";
 interface BulkActionsToolbarProps {
   selectedCount: number;
   totalFilteredCount: number;
-  onEnrichMB: (mode: BulkActionMode) => void;
-  onEnrichCredits: (mode: BulkActionMode) => void;
+  onEnrich: (mode: BulkActionMode) => void;
   onExport: (mode: BulkActionMode) => void;
   onTag: (mode: BulkActionMode) => void;
   onClearSelection: () => void;
-  isEnrichingMB?: boolean;
-  isEnrichingCredits?: boolean;
+  isEnriching?: boolean;
 }
 
 export function BulkActionsToolbar({
   selectedCount,
   totalFilteredCount,
-  onEnrichMB,
-  onEnrichCredits,
+  onEnrich,
   onExport,
   onTag,
   onClearSelection,
-  isEnrichingMB = false,
-  isEnrichingCredits = false,
+  isEnriching = false,
 }: BulkActionsToolbarProps) {
   if (selectedCount === 0) return null;
 
@@ -58,70 +54,35 @@ export function BulkActionsToolbar({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Enrich (MB) Dropdown */}
+          {/* Unified Enrich Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
                 size="sm"
                 className="gap-2"
-                disabled={isEnrichingMB}
-                data-testid="button-bulk-enrich-mb"
+                disabled={isEnriching}
+                data-testid="button-bulk-enrich"
               >
-                <Sparkles className={cn("h-4 w-4", isEnrichingMB && "animate-pulse")} />
+                <Sparkles className={cn("h-4 w-4", isEnriching && "animate-pulse")} />
                 <span className="hidden sm:inline">
-                  {isEnrichingMB ? "Enriching..." : "Enrich (MB)"}
+                  {isEnriching ? "Enriching..." : "Enrich Data"}
                 </span>
-                {!isEnrichingMB && <ChevronDown className="h-3 w-3 ml-1" />}
+                {!isEnriching && <ChevronDown className="h-3 w-3 ml-1" />}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuLabel>MusicBrainz Enrichment</DropdownMenuLabel>
+              <DropdownMenuLabel>Enrich Track Data</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                onClick={() => onEnrichMB("selected")}
-                data-testid="menu-enrich-mb-selected"
+                onClick={() => onEnrich("selected")}
+                data-testid="menu-enrich-selected"
               >
                 Apply to Selected ({selectedCount} tracks)
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={() => onEnrichMB("filtered")}
-                data-testid="menu-enrich-mb-filtered"
-              >
-                Apply to All Filtered ({totalFilteredCount} tracks)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Enrich Credits Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                disabled={isEnrichingCredits}
-                data-testid="button-bulk-enrich-credits"
-              >
-                <FileText className={cn("h-4 w-4", isEnrichingCredits && "animate-pulse")} />
-                <span className="hidden sm:inline">
-                  {isEnrichingCredits ? "Scraping..." : "Enrich (Credits)"}
-                </span>
-                {!isEnrichingCredits && <ChevronDown className="h-3 w-3 ml-1" />}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuLabel>Spotify Credits Scraping</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => onEnrichCredits("selected")}
-                data-testid="menu-enrich-credits-selected"
-              >
-                Apply to Selected ({selectedCount} tracks)
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => onEnrichCredits("filtered")}
-                data-testid="menu-enrich-credits-filtered"
+                onClick={() => onEnrich("filtered")}
+                data-testid="menu-enrich-filtered"
               >
                 Apply to All Filtered ({totalFilteredCount} tracks)
               </DropdownMenuItem>

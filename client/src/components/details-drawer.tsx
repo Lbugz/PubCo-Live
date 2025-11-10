@@ -27,16 +27,14 @@ interface DetailsDrawerProps {
   track: PlaylistSnapshot | null;
   open: boolean;
   onClose: () => void;
-  onEnrichMB: (trackId: string) => void;
-  onEnrichCredits: (trackId: string) => void;
+  onEnrich: (trackId: string) => void;
 }
 
 export function DetailsDrawer({
   track,
   open,
   onClose,
-  onEnrichMB,
-  onEnrichCredits,
+  onEnrich,
 }: DetailsDrawerProps) {
   const { data: activity, isLoading: activityLoading } = useQuery<ActivityHistory[]>({
     queryKey: ["/api/tracks", track?.id, "activity"],
@@ -178,29 +176,15 @@ export function DetailsDrawer({
               <div>
                 <h3 className="text-sm font-semibold font-heading mb-3">Quick Actions</h3>
                 <div className="space-y-2">
-                  {!track.publisher && (
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start gap-2"
-                      onClick={() => onEnrichMB(track.id)}
-                      data-testid="action-enrich-mb"
-                    >
-                      <Database className="h-4 w-4" />
-                      Enrich Data (MusicBrainz)
-                    </Button>
-                  )}
-
-                  {!track.songwriter && (
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start gap-2"
-                      onClick={() => onEnrichCredits(track.id)}
-                      data-testid="action-enrich-credits"
-                    >
-                      <Music className="h-4 w-4" />
-                      Enrich Data (Spotify Credits)
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2"
+                    onClick={() => onEnrich(track.id)}
+                    data-testid="action-enrich"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Enrich Data
+                  </Button>
 
                   <TrackTagPopover trackId={track.id} asChild>
                     <Button
