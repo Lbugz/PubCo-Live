@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown, Music2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useWebSocket } from "@/hooks/use-websocket";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UnifiedControlPanel } from "@/components/unified-control-panel";
@@ -42,6 +43,21 @@ export default function Dashboard() {
   const [playlistManagerOpen, setPlaylistManagerOpen] = useState(false);
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const { toast } = useToast();
+
+  // WebSocket connection for real-time updates
+  useWebSocket({
+    onTrackEnriched: (data) => {
+      console.log('Track enriched via WebSocket:', data);
+      // Invalidate tracks query to trigger refetch
+      queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
+      
+      // Show toast notification
+      toast({
+        title: "Track Enriched!",
+        description: `${data.trackName} by ${data.artistName}`,
+      });
+    },
+  });
 
   const toggleFilter = (filter: string) => {
     setActiveFilters(prev => {
