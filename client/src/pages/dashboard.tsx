@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown, Music2 } from "lucide-react";
+import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown, Music2, Users } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -263,6 +263,27 @@ export default function Dashboard() {
       toast({
         title: "Error",
         description: error.message || "Failed to enrich credits",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const enrichArtistsMutation = useMutation({
+    mutationFn: async ({ limit = 50 }: { limit?: number }) => {
+      const response = await apiRequest("POST", "/api/enrich-artists", { limit });
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Artist Enrichment Complete!",
+        description: data.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to enrich artists",
         variant: "destructive",
       });
     },
@@ -565,6 +586,22 @@ export default function Dashboard() {
     </DropdownMenu>
   ), [enrichCreditsMutation.isPending, tracks, playlists]);
 
+  const enrichArtistsButton = useMemo(() => (
+    <Button
+      onClick={() => enrichArtistsMutation.mutate({ limit: 50 })}
+      variant="outline"
+      size="default"
+      className="gap-2"
+      disabled={enrichArtistsMutation.isPending || !tracks || tracks.length === 0}
+      data-testid="button-enrich-artists"
+    >
+      <Users className={`h-4 w-4 ${enrichArtistsMutation.isPending ? "animate-pulse" : ""}`} />
+      <span className="hidden md:inline">
+        {enrichArtistsMutation.isPending ? "Enriching Artists..." : "Enrich Artists"}
+      </span>
+    </Button>
+  ), [enrichArtistsMutation.isPending, tracks]);
+
   const exportButton = useMemo(() => (
     <Button
       onClick={handleExport}
@@ -630,6 +667,7 @@ export default function Dashboard() {
             fetchDataButton={fetchDataButton}
             enrichMBButton={enrichMBButton}
             enrichCreditsButton={enrichCreditsButton}
+            enrichArtistsButton={enrichArtistsButton}
             exportButton={exportButton}
             playlistManagerButton={<PlaylistManager open={playlistManagerOpen} onOpenChange={setPlaylistManagerOpen} />}
             tagManagerButton={<TagManager open={tagManagerOpen} onOpenChange={setTagManagerOpen} />}

@@ -52,6 +52,7 @@ interface UnifiedControlPanelProps {
   fetchDataButton?: ReactNode;
   enrichMBButton?: ReactNode;
   enrichCreditsButton?: ReactNode;
+  enrichArtistsButton?: ReactNode;
   exportButton?: ReactNode;
   playlistManagerButton?: ReactNode;
   tagManagerButton?: ReactNode;
@@ -106,6 +107,7 @@ export function UnifiedControlPanel({
   fetchDataButton,
   enrichMBButton,
   enrichCreditsButton,
+  enrichArtistsButton,
   exportButton,
   playlistManagerButton,
   tagManagerButton,
@@ -153,6 +155,7 @@ export function UnifiedControlPanel({
           <div className="flex gap-2">
             {enrichMBButton}
             {enrichCreditsButton}
+            {enrichArtistsButton}
           </div>
 
           {/* More Actions Dropdown */}
