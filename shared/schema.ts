@@ -20,6 +20,7 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   songwriter: text("songwriter"),
   enrichedAt: timestamp("enriched_at"),
   enrichmentStatus: text("enrichment_status").default("pending"),
+  enrichmentTier: text("enrichment_tier"),
   instagram: text("instagram"),
   twitter: text("twitter"),
   tiktok: text("tiktok"),
@@ -107,6 +108,41 @@ export const insertActivityHistorySchema = createInsertSchema(activityHistory).o
 
 export type InsertActivityHistory = z.infer<typeof insertActivityHistorySchema>;
 export type ActivityHistory = typeof activityHistory.$inferSelect;
+
+export const artists = pgTable("artists", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  musicbrainzId: text("musicbrainz_id").unique(),
+  name: text("name").notNull(),
+  instagram: text("instagram"),
+  twitter: text("twitter"),
+  facebook: text("facebook"),
+  bandcamp: text("bandcamp"),
+  linkedin: text("linkedin"),
+  youtube: text("youtube"),
+  discogs: text("discogs"),
+  website: text("website"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const artistSongwriters = pgTable("artist_songwriters", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  artistId: varchar("artist_id").notNull().references(() => artists.id, { onDelete: "cascade" }),
+  trackId: varchar("track_id").notNull().references(() => playlistSnapshots.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  uniqueArtistTrack: sql`UNIQUE (${table.artistId}, ${table.trackId})`,
+}));
+
+export const insertArtistSchema = createInsertSchema(artists).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertArtist = z.infer<typeof insertArtistSchema>;
+export type Artist = typeof artists.$inferSelect;
+export type ArtistSongwriter = typeof artistSongwriters.$inferSelect;
 
 export const playlists = [
   {

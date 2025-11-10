@@ -1,4 +1,4 @@
-import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory } from "@shared/schema";
+import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, artists, artistSongwriters, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory, type Artist, type InsertArtist } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, inArray, and } from "drizzle-orm";
 
@@ -30,6 +30,11 @@ export interface IStorage {
   updateTrackContact(id: string, contact: { instagram?: string; twitter?: string; tiktok?: string; email?: string; contactNotes?: string }): Promise<void>;
   logActivity(activity: InsertActivityHistory): Promise<void>;
   getTrackActivity(trackId: string): Promise<ActivityHistory[]>;
+  createOrUpdateArtist(artist: InsertArtist & { musicbrainzId?: string }): Promise<Artist>;
+  linkArtistToTrack(artistId: string, trackId: string): Promise<void>;
+  getArtistsByTrackId(trackId: string): Promise<Artist[]>;
+  getTracksNeedingArtistEnrichment(limit?: number): Promise<PlaylistSnapshot[]>;
+  updateArtistLinks(artistId: string, links: { instagram?: string; twitter?: string; facebook?: string; bandcamp?: string; linkedin?: string; youtube?: string; discogs?: string; website?: string }): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -117,7 +122,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(playlistSnapshots).where(eq(playlistSnapshots.week, week));
   }
 
-  async updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; songwriter?: string; enrichedAt?: Date; enrichmentStatus?: string }): Promise<void> {
+  async updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; songwriter?: string; enrichedAt?: Date; enrichmentStatus?: string; enrichmentTier?: string }): Promise<void> {
     await db.update(playlistSnapshots)
       .set(metadata)
       .where(eq(playlistSnapshots.id, id));
@@ -290,6 +295,68 @@ export class DatabaseStorage implements IStorage {
       .from(activityHistory)
       .where(eq(activityHistory.trackId, trackId))
       .orderBy(desc(activityHistory.createdAt));
+  }
+
+  async createOrUpdateArtist(artist: InsertArtist & { musicbrainzId?: string }): Promise<Artist> {
+    if (artist.musicbrainzId) {
+      const [existing] = await db.select()
+        .from(artists)
+        .where(eq(artists.musicbrainzId, artist.musicbrainzId))
+        .limit(1);
+      
+      if (existing) {
+        const [updated] = await db.update(artists)
+          .set({ ...artist, updatedAt: new Date() })
+          .where(eq(artists.id, existing.id))
+          .returning();
+        return updated;
+      }
+    }
+    
+    const [newArtist] = await db.insert(artists).values(artist).returning();
+    return newArtist;
+  }
+
+  async linkArtistToTrack(artistId: string, trackId: string): Promise<void> {
+    try {
+      await db.insert(artistSongwriters).values({ artistId, trackId });
+    } catch (error) {
+      console.log(`Artist ${artistId} already linked to track ${trackId}`);
+    }
+  }
+
+  async getArtistsByTrackId(trackId: string): Promise<Artist[]> {
+    const result = await db
+      .select({ artist: artists })
+      .from(artistSongwriters)
+      .innerJoin(artists, eq(artistSongwriters.artistId, artists.id))
+      .where(eq(artistSongwriters.trackId, trackId));
+    
+    return result.map(r => r.artist);
+  }
+
+  async getTracksNeedingArtistEnrichment(limit: number = 50): Promise<PlaylistSnapshot[]> {
+    const tracksWithSongwriters = await db.select()
+      .from(playlistSnapshots)
+      .where(sql`${playlistSnapshots.songwriter} IS NOT NULL AND ${playlistSnapshots.songwriter} != ''`)
+      .limit(limit);
+    
+    const tracksNeedingEnrichment: PlaylistSnapshot[] = [];
+    
+    for (const track of tracksWithSongwriters) {
+      const linkedArtists = await this.getArtistsByTrackId(track.id);
+      if (linkedArtists.length === 0) {
+        tracksNeedingEnrichment.push(track);
+      }
+    }
+    
+    return tracksNeedingEnrichment.slice(0, limit);
+  }
+
+  async updateArtistLinks(artistId: string, links: { instagram?: string; twitter?: string; facebook?: string; bandcamp?: string; linkedin?: string; youtube?: string; discogs?: string; website?: string }): Promise<void> {
+    await db.update(artists)
+      .set({ ...links, updatedAt: new Date() })
+      .where(eq(artists.id, artistId));
   }
 }
 

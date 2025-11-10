@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getUncachableSpotifyClient, getAuthUrl, exchangeCodeForToken, isAuthenticated, searchTrackByNameAndArtist } from "./spotify";
 import { calculateUnsignedScore } from "./scoring";
-import { searchByISRC } from "./musicbrainz";
+import { searchByISRC, searchRecordingByName, searchArtistByName, getArtistExternalLinks } from "./musicbrainz";
 import { generateAIInsights } from "./ai-insights";
 import { playlists, type InsertPlaylistSnapshot, type PlaylistSnapshot, insertTagSchema, insertTrackedPlaylistSchema } from "@shared/schema";
 import { scrapeSpotifyPlaylist, scrapeTrackCredits } from "./scraper";
@@ -510,74 +510,230 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let enrichedCount = 0;
       let spotifyEnrichedCount = 0;
       let skippedNoIsrc = 0;
+      let nameBasedCount = 0;
+      let artistLinksCount = 0;
       
       for (const track of unenrichedTracks) {
-        // Step 1: If track has no ISRC (scraped), try Spotify search first
-        if (!track.isrc && isAuthenticated()) {
-          try {
-            console.log(`Track ${track.id} has no ISRC, searching Spotify...`);
-            const spotifyData = await searchTrackByNameAndArtist(track.trackName, track.artistName);
-            
-            if (spotifyData && spotifyData.isrc) {
-              await storage.updateTrackMetadata(track.id, {
-                isrc: spotifyData.isrc,
-                label: spotifyData.label || track.label || undefined,
-                spotifyUrl: spotifyData.spotifyUrl || track.spotifyUrl,
-              });
-              console.log(`✅ Found ISRC via Spotify: ${spotifyData.isrc}`);
-              spotifyEnrichedCount++;
-              
-              // Now use that ISRC to get publisher/songwriter from MusicBrainz
-              track.isrc = spotifyData.isrc;
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, 500));
-          } catch (error) {
-            console.error(`Error searching Spotify for track ${track.id}:`, error);
-          }
-        }
-        
-        // Step 2: If we now have an ISRC, get publisher/songwriter from MusicBrainz
+        let enrichmentTier = "none";
+        let trackMetadata: any = {};
+
+        // TIER 1: Direct ISRC → MusicBrainz
         if (track.isrc) {
           try {
+            console.log(`[Tier 1] Using existing ISRC: ${track.isrc}`);
             const metadata = await searchByISRC(track.isrc);
             
             if (metadata.publisher || metadata.songwriter) {
-              await storage.updateTrackMetadata(track.id, {
+              trackMetadata = {
                 publisher: metadata.publisher,
                 songwriter: metadata.songwriter,
                 enrichedAt: new Date(),
-              });
+                enrichmentTier: "isrc",
+              };
               enrichedCount++;
+              enrichmentTier = "isrc";
             } else {
-              await storage.updateTrackMetadata(track.id, {
-                enrichedAt: new Date(),
-              });
+              trackMetadata.enrichedAt = new Date();
             }
             
             await new Promise(resolve => setTimeout(resolve, 1000));
           } catch (error) {
             console.error(`Error enriching track ${track.id}:`, error);
           }
-        } else {
-          // Track has no ISRC after trying Spotify search
+        }
+        // TIER 2: Spotify Search → ISRC → MusicBrainz
+        else if (isAuthenticated()) {
+          try {
+            console.log(`[Tier 2] No ISRC, searching Spotify: ${track.trackName} by ${track.artistName}`);
+            const spotifyData = await searchTrackByNameAndArtist(track.trackName, track.artistName);
+            
+            if (spotifyData && spotifyData.isrc) {
+              trackMetadata.isrc = spotifyData.isrc;
+              trackMetadata.label = spotifyData.label || track.label || undefined;
+              trackMetadata.spotifyUrl = spotifyData.spotifyUrl || track.spotifyUrl;
+              
+              console.log(`✅ Found ISRC via Spotify: ${spotifyData.isrc}`);
+              spotifyEnrichedCount++;
+              
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+              const metadata = await searchByISRC(spotifyData.isrc);
+              
+              if (metadata.publisher || metadata.songwriter) {
+                trackMetadata.publisher = metadata.publisher;
+                trackMetadata.songwriter = metadata.songwriter;
+                trackMetadata.enrichedAt = new Date();
+                trackMetadata.enrichmentTier = "spotify-isrc";
+                enrichedCount++;
+                enrichmentTier = "spotify-isrc";
+              }
+              
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          } catch (error) {
+            console.error(`Error searching Spotify for track ${track.id}:`, error);
+          }
+        }
+        
+        // TIER 3: Name-Based MusicBrainz Fallback (score ≥ 90)
+        if (enrichmentTier === "none") {
+          try {
+            console.log(`[Tier 3] Trying name-based search: ${track.trackName} by ${track.artistName}`);
+            const metadata = await searchRecordingByName(track.trackName, track.artistName, 90);
+            
+            if (metadata.songwriter) {
+              trackMetadata.songwriter = metadata.songwriter;
+              trackMetadata.enrichedAt = new Date();
+              trackMetadata.enrichmentTier = "name-based";
+              enrichedCount++;
+              nameBasedCount++;
+              enrichmentTier = "name-based";
+              console.log(`✅ Name-based match (score ${metadata.matchScore})`);
+            } else if (metadata.matchScore && metadata.matchScore < 90) {
+              console.log(`❌ Match score ${metadata.matchScore} below threshold 90`);
+              skippedNoIsrc++;
+            } else {
+              skippedNoIsrc++;
+            }
+          } catch (error) {
+            console.error(`Error in name-based search for track ${track.id}:`, error);
+            skippedNoIsrc++;
+          }
+        }
+        
+        if (!trackMetadata.enrichedAt && enrichmentTier === "none") {
           skippedNoIsrc++;
+        }
+        
+        if (Object.keys(trackMetadata).length > 0) {
+          await storage.updateTrackMetadata(track.id, trackMetadata);
+        }
+        
+        // Artist Link Extraction (if we got songwriters)
+        if (trackMetadata.songwriter) {
+          try {
+            const songwriters = trackMetadata.songwriter.split(',').map((s: string) => s.trim());
+            
+            for (const songwriterName of songwriters) {
+              if (!songwriterName) continue;
+              
+              const artistResult = await searchArtistByName(songwriterName);
+              
+              if (artistResult && artistResult.score >= 90) {
+                const links = await getArtistExternalLinks(artistResult.id);
+                
+                const artist = await storage.createOrUpdateArtist({
+                  name: songwriterName,
+                  musicbrainzId: artistResult.id,
+                  ...links,
+                });
+                
+                await storage.linkArtistToTrack(artist.id, track.id);
+                
+                if (Object.keys(links).length > 0) {
+                  artistLinksCount++;
+                  console.log(`✅ Found ${Object.keys(links).length} social links for ${songwriterName}`);
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`Error extracting artist links:`, error);
+          }
         }
       }
       
+      let message = `Enriched ${enrichedCount} tracks`;
+      if (nameBasedCount > 0) {
+        message += ` (${nameBasedCount} via name-based fallback)`;
+      }
+      if (spotifyEnrichedCount > 0) {
+        message += `, found ${spotifyEnrichedCount} ISRCs via Spotify`;
+      }
+      if (artistLinksCount > 0) {
+        message += `, extracted ${artistLinksCount} artist social profiles`;
+      }
+
       res.json({ 
         success: true, 
         enrichedCount,
         spotifyEnrichedCount,
+        nameBasedCount,
+        artistLinksCount,
         skippedNoIsrc,
         totalProcessed: unenrichedTracks.length,
-        message: spotifyEnrichedCount > 0 
-          ? `Found ${spotifyEnrichedCount} ISRC codes via Spotify, enriched ${enrichedCount} tracks with MusicBrainz`
-          : `Enriched ${enrichedCount} tracks with MusicBrainz`
+        message
       });
     } catch (error) {
       console.error("Error enriching metadata:", error);
       res.status(500).json({ error: "Failed to enrich metadata" });
+    }
+  });
+
+  app.post("/api/enrich-artists", async (req, res) => {
+    try {
+      const { limit = 50 } = req.body;
+      
+      const tracksNeedingArtists = await storage.getTracksNeedingArtistEnrichment(limit);
+      
+      if (tracksNeedingArtists.length === 0) {
+        return res.json({
+          success: true,
+          artistsCreated: 0,
+          linksFound: 0,
+          totalProcessed: 0,
+          message: "No tracks need artist enrichment"
+        });
+      }
+
+      console.log(`Starting artist enrichment for ${tracksNeedingArtists.length} tracks...`);
+      
+      let artistsCreated = 0;
+      let linksFound = 0;
+      
+      for (const track of tracksNeedingArtists) {
+        if (!track.songwriter) continue;
+        
+        try {
+          const songwriters = track.songwriter.split(',').map(s => s.trim());
+          
+          for (const songwriterName of songwriters) {
+            if (!songwriterName) continue;
+            
+            const artistResult = await searchArtistByName(songwriterName);
+            
+            if (artistResult && artistResult.score >= 90) {
+              const links = await getArtistExternalLinks(artistResult.id);
+              
+              const artist = await storage.createOrUpdateArtist({
+                name: songwriterName,
+                musicbrainzId: artistResult.id,
+                ...links,
+              });
+              
+              await storage.linkArtistToTrack(artist.id, track.id);
+              artistsCreated++;
+              
+              if (Object.keys(links).length > 0) {
+                linksFound++;
+                console.log(`✅ Found ${Object.keys(links).length} social links for ${songwriterName}`);
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error enriching artists for track ${track.id}:`, error);
+        }
+      }
+      
+      res.json({
+        success: true,
+        artistsCreated,
+        linksFound,
+        totalProcessed: tracksNeedingArtists.length,
+        message: `Created ${artistsCreated} artist records, found ${linksFound} with social links`
+      });
+    } catch (error) {
+      console.error("Error enriching artists:", error);
+      res.status(500).json({ error: "Failed to enrich artists" });
     }
   });
 
