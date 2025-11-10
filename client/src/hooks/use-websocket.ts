@@ -24,6 +24,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
 
+  // Store callbacks in refs to avoid recreating connect function
+  const callbacksRef = useRef(options);
+  
+  // Update callback refs when they change
+  useEffect(() => {
+    callbacksRef.current = options;
+  }, [options]);
+
   const connect = useCallback(() => {
     // Don't reconnect if already connected or max attempts reached
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -41,8 +49,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       ws.onopen = () => {
         console.log('WebSocket connected');
         reconnectAttemptsRef.current = 0; // Reset attempts on successful connection
-        if (options.onConnected) {
-          options.onConnected();
+        if (callbacksRef.current.onConnected) {
+          callbacksRef.current.onConnected();
         }
       };
 
@@ -56,18 +64,18 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
               // Connection confirmation
               break;
             case 'track_enriched':
-              if (options.onTrackEnriched) {
-                options.onTrackEnriched(data);
+              if (callbacksRef.current.onTrackEnriched) {
+                callbacksRef.current.onTrackEnriched(data);
               }
               break;
             case 'batch_complete':
-              if (options.onBatchComplete) {
-                options.onBatchComplete(data);
+              if (callbacksRef.current.onBatchComplete) {
+                callbacksRef.current.onBatchComplete(data);
               }
               break;
             case 'enrichment_progress':
-              if (options.onEnrichmentProgress) {
-                options.onEnrichmentProgress(data);
+              if (callbacksRef.current.onEnrichmentProgress) {
+                callbacksRef.current.onEnrichmentProgress(data);
               }
               break;
           }
@@ -100,7 +108,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     } catch (error) {
       console.error('Error creating WebSocket:', error);
     }
-  }, [options]);
+  }, []); // Empty deps - connect function is stable
 
   useEffect(() => {
     connect();
