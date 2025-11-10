@@ -37,7 +37,7 @@ The frontend is a single-page React application built with a modular component a
 - **Contact Discovery**: Stores and manages artist contact information (Instagram, Twitter, TikTok, email, notes).
 - **AI Lead Prioritization**: Integrates GPT-4o-mini for generating insights, outreach strategies, and scoring rationale.
 - **Custom Playlist Tracking**: Supports adding, managing, and bulk importing Spotify playlists via URL/ID, including automatic metadata fetching and duplicate prevention.
-- **Spotify Credits Scraping**: Employs Puppeteer to scrape songwriter, composer, producer, and publisher credits directly from Spotify track pages, complementing MusicBrainz enrichment.
+- **Spotify Credits Scraping**: Employs Puppeteer to scrape songwriter, composer, producer, and publisher credits directly from Spotify track pages, complementing MusicBrainz enrichment. **Smart Name Splitting (November 2025)**: Implements intelligent name parsing that handles both comma-separated names and concatenated names without delimiters. Uses capital letter transition detection (lowercase→uppercase) to split run-together names like "Gustav NystromIman Conta Hulten" into individually identifiable songwriters for CRM enrichment requirements.
 - **Advanced Editorial Playlist Capture**: Two-tier approach for editorial playlists inaccessible via API:
   - **Network Capture (Primary)**: Intercepts JSON responses from Spotify's web player API using Puppeteer's `page.on('response')` to capture all playlist tracks without DOM limitations.
   - **DOM Harvester (Fallback)**: Uses `MutationObserver` to track virtualized row swaps and harvest track data during scrolling if network capture yields insufficient results.
