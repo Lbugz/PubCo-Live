@@ -42,6 +42,7 @@ export default function Dashboard() {
   const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set());
   const [playlistManagerOpen, setPlaylistManagerOpen] = useState(false);
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
+  const [recentEnrichments, setRecentEnrichments] = useState<Array<{ trackName: string; artistName: string; timestamp: number }>>([]);
   const { toast } = useToast();
 
   // WebSocket connection for real-time updates
@@ -51,6 +52,12 @@ export default function Dashboard() {
       // Invalidate tracks query to trigger refetch
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
       
+      // Add to recent enrichments
+      setRecentEnrichments(prev => [
+        { trackName: data.trackName || '', artistName: data.artistName || '', timestamp: Date.now() },
+        ...prev.slice(0, 4) // Keep last 5 enrichments
+      ]);
+      
       // Show toast notification
       toast({
         title: "Track Enriched!",
@@ -58,6 +65,20 @@ export default function Dashboard() {
       });
     },
   });
+
+  // Auto-clear enrichment notifications after 10 seconds
+  useEffect(() => {
+    if (recentEnrichments.length === 0) return;
+    
+    const timer = setInterval(() => {
+      const now = Date.now();
+      setRecentEnrichments(prev => 
+        prev.filter(item => now - item.timestamp < 10000)
+      );
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [recentEnrichments.length]);
 
   const toggleFilter = (filter: string) => {
     setActiveFilters(prev => {
@@ -553,6 +574,35 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Live Enrichment Indicator */}
+      {recentEnrichments.length > 0 && (
+        <div className="fixed bottom-4 right-4 z-50 space-y-2 max-w-sm">
+          {recentEnrichments.map((enrichment, idx) => (
+            <div
+              key={enrichment.timestamp}
+              className="bg-card border border-border rounded-md p-3 shadow-lg animate-in slide-in-from-right"
+              style={{
+                animationDelay: `${idx * 50}ms`,
+              }}
+            >
+              <div className="flex items-start gap-2">
+                <div className="flex-shrink-0">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {enrichment.trackName}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {enrichment.artistName}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6 fade-in">
           {/* Unified Control Panel */}
