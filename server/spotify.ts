@@ -137,8 +137,20 @@ export async function searchTrackByNameAndArtist(trackName: string, artistName: 
     }
     
     const track = results.tracks.items[0];
-    const isrc = track.external_ids?.isrc || null;
+    let isrc = track.external_ids?.isrc || null;
     const label = track.album?.label || null;
+    
+    // If search result doesn't include ISRC, fetch full track details
+    if (!isrc) {
+      console.log(`Search result missing ISRC, fetching full track details for ID: ${track.id}`);
+      try {
+        const fullTrack = await spotify.tracks.get(track.id);
+        isrc = fullTrack.external_ids?.isrc || null;
+        console.log(`Retrieved ISRC from full track: ${isrc || "N/A"}`);
+      } catch (error) {
+        console.error(`Error fetching full track details:`, error);
+      }
+    }
     
     console.log(`Found track: ${track.name} - ISRC: ${isrc || "N/A"}, Label: ${label || "N/A"}`);
     
