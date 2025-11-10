@@ -521,66 +521,12 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
     // Extract credits information
     console.log("Extracting credits data...");
     const credits = await page.evaluate(() => {
-      const writers: string[] = [];
-      const composers: string[] = [];
-      const producers: string[] = [];
-      const labels: string[] = [];
-      const publishers: string[] = [];
-      const allCredits: Array<{ name: string; role: string }> = [];
-      
-      // Helper function to intelligently split names
-      // First tries comma separation, then falls back to capital letter splitting if needed
-      function smartSplitNames(text: string): string[] {
-        if (!text || text.trim().length === 0) return [];
-        
-        // First attempt: split by commas
-        const commaSplit = text.split(',').map(n => n.trim()).filter(Boolean);
-        
-        // If we got multiple names from comma split, we're done
-        if (commaSplit.length > 1) {
-          return commaSplit;
-        }
-        
-        // If only one "name" after comma split, check if it's actually multiple names concatenated
-        const singleName = commaSplit[0] || text.trim();
-        
-        // Count uppercase letters that follow lowercase letters (indicates new name)
-        const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
-        
-        // If we have 2+ capital transitions, likely multiple names run together
-        if (capitalTransitions >= 2) {
-          // Split by detecting uppercase letter after lowercase letter
-          // "Gustav NystromIman Conta" -> ["Gustav Nystrom", "Iman Conta"]
-          const names: string[] = [];
-          let currentName = '';
-          
-          for (let i = 0; i < singleName.length; i++) {
-            const char = singleName[i];
-            const prevChar = i > 0 ? singleName[i - 1] : '';
-            
-            // New name starts when we hit uppercase after lowercase
-            if (i > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
-              // Save current name and start new one
-              if (currentName.trim().length > 0) {
-                names.push(currentName.trim());
-              }
-              currentName = char;
-            } else {
-              currentName += char;
-            }
-          }
-          
-          // Don't forget the last name
-          if (currentName.trim().length > 0) {
-            names.push(currentName.trim());
-          }
-          
-          return names.filter(n => n.length > 1); // Filter out single-letter artifacts
-        }
-        
-        // Otherwise, return as single name
-        return [singleName];
-      }
+      const writers = [];
+      const composers = [];
+      const producers = [];
+      const labels = [];
+      const publishers = [];
+      const allCredits = [];
       
       // Get all text nodes in the modal to parse credit structure
       const allText = document.body.innerText;
@@ -597,28 +543,97 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         
         // Check for role labels
         if (line.toLowerCase().includes('written by') || line.toLowerCase().includes('songwriter')) {
-          // Next line(s) should contain writer names - use smart splitting
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            const names = smartSplitNames(nextLine);
-            writers.push(...names);
-            names.forEach(name => allCredits.push({ name, role: 'Writer' }));
+            // Smart split: try commas first, then capital letters as fallback
+            let names = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
+            
+            // If only one name after comma split, check if it's concatenated names
+            if (names.length === 1) {
+              const singleName = names[0];
+              const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
+              
+              // If 2+ transitions, split by capital letters
+              if (capitalTransitions >= 2) {
+                const splitNames = [];
+                let currentName = '';
+                for (let j = 0; j < singleName.length; j++) {
+                  const char = singleName[j];
+                  const prevChar = j > 0 ? singleName[j - 1] : '';
+                  if (j > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
+                    if (currentName.trim().length > 0) splitNames.push(currentName.trim());
+                    currentName = char;
+                  } else {
+                    currentName += char;
+                  }
+                }
+                if (currentName.trim().length > 0) splitNames.push(currentName.trim());
+                names = splitNames.filter(function(n) { return n.length > 1; });
+              }
+            }
+            
+            writers.push.apply(writers, names);
+            names.forEach(function(name) { allCredits.push({ name: name, role: 'Writer' }); });
           }
         }
         
         if (line.toLowerCase().includes('produced by') || line.toLowerCase().includes('producer')) {
-          // Next line(s) should contain producer names - use smart splitting
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            const names = smartSplitNames(nextLine);
-            producers.push(...names);
-            names.forEach(name => allCredits.push({ name, role: 'Producer' }));
+            // Smart split: try commas first, then capital letters as fallback
+            let names = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
+            
+            if (names.length === 1) {
+              const singleName = names[0];
+              const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
+              if (capitalTransitions >= 2) {
+                const splitNames = [];
+                let currentName = '';
+                for (let j = 0; j < singleName.length; j++) {
+                  const char = singleName[j];
+                  const prevChar = j > 0 ? singleName[j - 1] : '';
+                  if (j > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
+                    if (currentName.trim().length > 0) splitNames.push(currentName.trim());
+                    currentName = char;
+                  } else {
+                    currentName += char;
+                  }
+                }
+                if (currentName.trim().length > 0) splitNames.push(currentName.trim());
+                names = splitNames.filter(function(n) { return n.length > 1; });
+              }
+            }
+            
+            producers.push.apply(producers, names);
+            names.forEach(function(name) { allCredits.push({ name: name, role: 'Producer' }); });
           }
         }
         
         if (line.toLowerCase().includes('composer')) {
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            const names = smartSplitNames(nextLine);
-            composers.push(...names);
-            names.forEach(name => allCredits.push({ name, role: 'Composer' }));
+            let names = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
+            
+            if (names.length === 1) {
+              const singleName = names[0];
+              const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
+              if (capitalTransitions >= 2) {
+                const splitNames = [];
+                let currentName = '';
+                for (let j = 0; j < singleName.length; j++) {
+                  const char = singleName[j];
+                  const prevChar = j > 0 ? singleName[j - 1] : '';
+                  if (j > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
+                    if (currentName.trim().length > 0) splitNames.push(currentName.trim());
+                    currentName = char;
+                  } else {
+                    currentName += char;
+                  }
+                }
+                if (currentName.trim().length > 0) splitNames.push(currentName.trim());
+                names = splitNames.filter(function(n) { return n.length > 1; });
+              }
+            }
+            
+            composers.push.apply(composers, names);
+            names.forEach(function(name) { allCredits.push({ name: name, role: 'Composer' }); });
           }
         }
         
@@ -634,34 +649,76 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         // Look for actual publishers (different from labels)
         if (line.toLowerCase().includes('publisher') && !line.toLowerCase().startsWith('source:')) {
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            const names = smartSplitNames(nextLine);
-            publishers.push(...names);
-            names.forEach(name => allCredits.push({ name, role: 'Publisher' }));
+            let names = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
+            
+            if (names.length === 1) {
+              const singleName = names[0];
+              const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
+              if (capitalTransitions >= 2) {
+                const splitNames = [];
+                let currentName = '';
+                for (let j = 0; j < singleName.length; j++) {
+                  const char = singleName[j];
+                  const prevChar = j > 0 ? singleName[j - 1] : '';
+                  if (j > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
+                    if (currentName.trim().length > 0) splitNames.push(currentName.trim());
+                    currentName = char;
+                  } else {
+                    currentName += char;
+                  }
+                }
+                if (currentName.trim().length > 0) splitNames.push(currentName.trim());
+                names = splitNames.filter(function(n) { return n.length > 1; });
+              }
+            }
+            
+            publishers.push.apply(publishers, names);
+            names.forEach(function(name) { allCredits.push({ name: name, role: 'Publisher' }); });
           }
         }
       }
       
       // Alternative: Look for structured divs with adjacent text
       const allElements = document.querySelectorAll('div, span, p');
-      allElements.forEach((el) => {
-        const text = el.textContent?.trim().toLowerCase() || '';
+      allElements.forEach(function(el) {
+        const text = (el.textContent || '').trim().toLowerCase();
         
         // Find role label elements
         if (text === 'written by' || text === 'songwriter' || text === 'writer') {
-          // Get next sibling or parent's next sibling for the name
           let nameEl = el.nextElementSibling;
           if (!nameEl && el.parentElement) {
             nameEl = el.parentElement.nextElementSibling;
           }
           
-          const nameText = nameEl?.textContent?.trim();
+          const nameText = nameEl ? (nameEl.textContent || '').trim() : '';
           if (nameText && nameText.length > 1 && nameText.length < 500 && !nameText.toLowerCase().includes(' by')) {
-            // Use smart splitting to handle both comma-separated and concatenated names
-            const names = smartSplitNames(nameText);
-            names.forEach(name => {
-              if (!writers.includes(name)) {
+            let names = nameText.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
+            
+            if (names.length === 1) {
+              const singleName = names[0];
+              const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
+              if (capitalTransitions >= 2) {
+                const splitNames = [];
+                let currentName = '';
+                for (let j = 0; j < singleName.length; j++) {
+                  const char = singleName[j];
+                  const prevChar = j > 0 ? singleName[j - 1] : '';
+                  if (j > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
+                    if (currentName.trim().length > 0) splitNames.push(currentName.trim());
+                    currentName = char;
+                  } else {
+                    currentName += char;
+                  }
+                }
+                if (currentName.trim().length > 0) splitNames.push(currentName.trim());
+                names = splitNames.filter(function(n) { return n.length > 1; });
+              }
+            }
+            
+            names.forEach(function(name) {
+              if (writers.indexOf(name) === -1) {
                 writers.push(name);
-                allCredits.push({ name, role: 'Writer' });
+                allCredits.push({ name: name, role: 'Writer' });
               }
             });
           }
@@ -673,14 +730,35 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
             nameEl = el.parentElement.nextElementSibling;
           }
           
-          const nameText = nameEl?.textContent?.trim();
+          const nameText = nameEl ? (nameEl.textContent || '').trim() : '';
           if (nameText && nameText.length > 1 && nameText.length < 500 && !nameText.toLowerCase().includes(' by')) {
-            // Use smart splitting to handle both comma-separated and concatenated names
-            const names = smartSplitNames(nameText);
-            names.forEach(name => {
-              if (!producers.includes(name)) {
+            let names = nameText.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
+            
+            if (names.length === 1) {
+              const singleName = names[0];
+              const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
+              if (capitalTransitions >= 2) {
+                const splitNames = [];
+                let currentName = '';
+                for (let j = 0; j < singleName.length; j++) {
+                  const char = singleName[j];
+                  const prevChar = j > 0 ? singleName[j - 1] : '';
+                  if (j > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
+                    if (currentName.trim().length > 0) splitNames.push(currentName.trim());
+                    currentName = char;
+                  } else {
+                    currentName += char;
+                  }
+                }
+                if (currentName.trim().length > 0) splitNames.push(currentName.trim());
+                names = splitNames.filter(function(n) { return n.length > 1; });
+              }
+            }
+            
+            names.forEach(function(name) {
+              if (producers.indexOf(name) === -1) {
                 producers.push(name);
-                allCredits.push({ name, role: 'Producer' });
+                allCredits.push({ name: name, role: 'Producer' });
               }
             });
           }
