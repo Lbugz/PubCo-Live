@@ -543,25 +543,28 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         
         // Check for role labels
         if (line.toLowerCase().includes('written by') || line.toLowerCase().includes('songwriter')) {
-          // Next line(s) should contain writer names
+          // Next line(s) should contain writer names - split by commas
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            writers.push(nextLine);
-            allCredits.push({ name: nextLine, role: 'Writer' });
+            const names = nextLine.split(',').map(n => n.trim()).filter(Boolean);
+            writers.push(...names);
+            names.forEach(name => allCredits.push({ name, role: 'Writer' }));
           }
         }
         
         if (line.toLowerCase().includes('produced by') || line.toLowerCase().includes('producer')) {
-          // Next line(s) should contain producer names
+          // Next line(s) should contain producer names - split by commas
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            producers.push(nextLine);
-            allCredits.push({ name: nextLine, role: 'Producer' });
+            const names = nextLine.split(',').map(n => n.trim()).filter(Boolean);
+            producers.push(...names);
+            names.forEach(name => allCredits.push({ name, role: 'Producer' }));
           }
         }
         
         if (line.toLowerCase().includes('composer')) {
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            composers.push(nextLine);
-            allCredits.push({ name: nextLine, role: 'Composer' });
+            const names = nextLine.split(',').map(n => n.trim()).filter(Boolean);
+            composers.push(...names);
+            names.forEach(name => allCredits.push({ name, role: 'Composer' }));
           }
         }
         
@@ -577,8 +580,9 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         // Look for actual publishers (different from labels)
         if (line.toLowerCase().includes('publisher') && !line.toLowerCase().startsWith('source:')) {
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            publishers.push(nextLine);
-            allCredits.push({ name: nextLine, role: 'Publisher' });
+            const names = nextLine.split(',').map(n => n.trim()).filter(Boolean);
+            publishers.push(...names);
+            names.forEach(name => allCredits.push({ name, role: 'Publisher' }));
           }
         }
       }
@@ -596,12 +600,16 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
             nameEl = el.parentElement.nextElementSibling;
           }
           
-          const name = nameEl?.textContent?.trim();
-          if (name && name.length > 1 && name.length < 100 && !name.toLowerCase().includes(' by')) {
-            if (!writers.includes(name)) {
-              writers.push(name);
-              allCredits.push({ name, role: 'Writer' });
-            }
+          const nameText = nameEl?.textContent?.trim();
+          if (nameText && nameText.length > 1 && nameText.length < 500 && !nameText.toLowerCase().includes(' by')) {
+            // Split by commas to handle multiple names
+            const names = nameText.split(',').map(n => n.trim()).filter(Boolean);
+            names.forEach(name => {
+              if (!writers.includes(name)) {
+                writers.push(name);
+                allCredits.push({ name, role: 'Writer' });
+              }
+            });
           }
         }
         
@@ -611,12 +619,16 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
             nameEl = el.parentElement.nextElementSibling;
           }
           
-          const name = nameEl?.textContent?.trim();
-          if (name && name.length > 1 && name.length < 100 && !name.toLowerCase().includes(' by')) {
-            if (!producers.includes(name)) {
-              producers.push(name);
-              allCredits.push({ name, role: 'Producer' });
-            }
+          const nameText = nameEl?.textContent?.trim();
+          if (nameText && nameText.length > 1 && nameText.length < 500 && !nameText.toLowerCase().includes(' by')) {
+            // Split by commas to handle multiple names
+            const names = nameText.split(',').map(n => n.trim()).filter(Boolean);
+            names.forEach(name => {
+              if (!producers.includes(name)) {
+                producers.push(name);
+                allCredits.push({ name, role: 'Producer' });
+              }
+            });
           }
         }
       });
