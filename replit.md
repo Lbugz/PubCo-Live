@@ -31,7 +31,13 @@ The frontend is a single-page React application built with a modular component a
 ### Technical Implementations
 - **Data Fetching**: Utilizes TanStack Query for efficient data fetching.
 - **Scoring Algorithm**: A proprietary algorithm ranks tracks based on criteria such as Fresh Finds appearance, independent label status, and missing publisher/writer data.
-- **MusicBrainz Integration**: Enriches tracks with songwriter data via ISRC → Recording → Work chain.
+- **3-Tier MusicBrainz Enrichment Pipeline (November 2025)**: Comprehensive enrichment system with automatic fallback:
+  - **Tier 1 (ISRC-based)**: Direct ISRC → Recording → Work chain lookup (fastest, most accurate)
+  - **Tier 2 (Spotify → ISRC)**: For tracks missing ISRCs, searches Spotify API by track name + artist to recover ISRC, then queries MusicBrainz
+  - **Tier 3 (Name-based fallback)**: When no ISRC available, uses MusicBrainz recording search with 90+ confidence threshold to minimize false matches
+  - **Artist Social Link Extraction**: Automatically discovers and stores songwriter social profiles (Instagram, Twitter, Facebook, Bandcamp, LinkedIn, YouTube, Discogs, Website) via MusicBrainz artist URL relationships
+  - **Artist Normalization**: Separate `artists` table with unique MusicBrainz IDs prevents duplicate profiles; `artist_songwriters` junction enables many-to-many track-artist relationships for proper CRM integration
+  - **Backfill Endpoint**: `/api/enrich-artists` processes existing enriched tracks to populate artist records and social links retrospectively
 - **Lead Tagging System**: Allows creation of custom, color-coded tags for tracks and filtering.
 - **Batch Week Comparison**: Enables comparison of track progression across multiple weeks with trend indicators.
 - **Contact Discovery**: Stores and manages artist contact information (Instagram, Twitter, TikTok, email, notes).
@@ -45,10 +51,12 @@ The frontend is a single-page React application built with a modular component a
 
 ### System Design Choices
 - **Database Schema**:
-    - `PlaylistSnapshot`: Stores track-level data, including enriched metadata, scores, and contact info.
+    - `PlaylistSnapshot`: Stores track-level data, including enriched metadata, scores, contact info, and enrichmentTier field (isrc, spotify-isrc, name-based, or artist_links)
     - `TrackedPlaylists`: Manages user-selected Spotify playlists for tracking.
     - `Tags`: Defines custom tags for categorizing tracks.
     - `TrackTags`: Links tracks to tags.
+    - `Artists` (November 2025): Normalized songwriter/composer table with unique MusicBrainz IDs and social link fields (Instagram, Twitter, Facebook, Bandcamp, LinkedIn, YouTube, Discogs, Website)
+    - `ArtistSongwriters` (November 2025): Many-to-many junction table linking tracks to artist records, enabling proper CRM relationships and "all tracks by artist" queries
 - **Backend API**: Provides RESTful endpoints for data retrieval, management, and enrichment.
 - **Spotify Integration**: Uses the Spotify API for playlist and track data, including a custom scraping solution for detailed credits.
 
