@@ -9,6 +9,7 @@ import { playlists, type InsertPlaylistSnapshot, type PlaylistSnapshot, insertTa
 import { scrapeSpotifyPlaylist, scrapeTrackCredits } from "./scraper";
 import { fetchEditorialTracksViaNetwork } from "./scrapers/spotifyEditorialNetwork";
 import { harvestVirtualizedRows } from "./scrapers/spotifyEditorialDom";
+import { broadcastEnrichmentUpdate } from "./websocket";
 
 // Helper function to fetch all tracks from a playlist with pagination
 async function fetchAllPlaylistTracks(spotify: any, playlistId: string): Promise<any[]> {
@@ -635,6 +636,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             console.log(`✅ Enriched: ${track.trackName} - ${songwriters.length} songwriters, ${labels.length} labels, ${publishers.length} publishers`);
             enrichedCount++;
+            
+            // Broadcast real-time update
+            broadcastEnrichmentUpdate({
+              type: 'track_enriched',
+              trackId: track.id,
+              trackName: track.trackName,
+              artistName: track.artistName,
+            });
           } else {
             console.warn(`⚠️ Failed to scrape credits for ${track.trackName}: ${creditsResult.error}`);
             failedCount++;
