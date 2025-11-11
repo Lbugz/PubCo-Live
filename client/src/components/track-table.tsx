@@ -185,7 +185,6 @@ export function TrackTable({
                     </Badge>
                   )}
                 </div>
-                <TrackTags trackId={track.id} />
               </div>
               
               <div className="col-span-1 lg:col-span-1">
