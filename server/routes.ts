@@ -1467,6 +1467,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
               
               const label = track.album?.label || null;
+              const albumArt = track.album?.images?.[1]?.url || track.album?.images?.[0]?.url || null;
               
               const score = calculateUnsignedScore({
                 playlistName: playlist.name,
@@ -1482,6 +1483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 trackName: track.name,
                 artistName: track.artists.map((a: any) => a.name).join(", "),
                 spotifyUrl: track.external_urls.spotify,
+                albumArt: albumArt,
                 isrc: track.external_ids?.isrc || null,
                 label: label,
                 unsignedScore: score,
@@ -1638,6 +1640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 trackName: capturedTrack.name,
                 artistName: artistName,
                 spotifyUrl: trackUrl,
+                albumArt: capturedTrack.albumArt || null,
                 isrc: capturedTrack.isrc || null,
                 label: null,
                 unsignedScore: score,

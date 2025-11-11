@@ -2,7 +2,7 @@ import { type PlaylistSnapshot } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Music } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TrackActionsDropdown } from "./track-actions-dropdown";
 import { SongwriterDisplay } from "./songwriter-display";
@@ -79,6 +79,21 @@ export function CardView({
             data-testid={`card-track-${track.id}`}
           >
             <div className="space-y-4">
+              {/* Album Art */}
+              {track.albumArt ? (
+                <img 
+                  src={track.albumArt} 
+                  alt={`${track.trackName} album art`}
+                  className="w-full aspect-square rounded-md object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <div className="w-full aspect-square rounded-md bg-muted flex items-center justify-center">
+                  <Music className="w-16 h-16 text-muted-foreground" />
+                </div>
+              )}
+            
               {/* Checkbox + Header with Score Badge */}
               <div className="flex items-start justify-between gap-2">
                 {/* Checkbox */}

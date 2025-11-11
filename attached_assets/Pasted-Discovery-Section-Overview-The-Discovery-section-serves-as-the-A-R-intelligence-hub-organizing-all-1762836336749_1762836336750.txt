@@ -1,0 +1,54 @@
+Discovery Section Overview
+
+The Discovery section serves as the A&R intelligence hub, organizing all tracked playlists and tracks into two subsections: Playlists View and Tracks View.  Each view provides its own dashboard, filtering tools, and a details drawer for deeper insights.
+
+⸻
+
+Playlists View
+
+Interface Structure
+	•	Metric Cards – Four horizontal cards summarise total playlists, number of recent fetches, the top playlist by track count, and average followers.  The cards use simple icons and succinct labels.
+	•	Header Controls – A Fetch Data dropdown triggers data pulls from various sources, while an Add Playlist button opens a dialog for adding a new playlist.  The buttons are aligned to the right for clear visibility.
+	•	Filters – Search bar and Source dropdown filter by playlist name, curator or genre.  A Clear Filters button appears when filters are active.
+	•	View Modes – Users can toggle between Table and Card layouts.  The table is the default and supports sorting by any column.
+	•	Playlist Table – Columns show Name, Source, Tracks, Curator, Followers, Last Updated, Status, and Actions.  Editorial playlists are marked with badges, and status is colour-coded (active/paused/error).
+	•	Details Drawer – Clicking a playlist opens a right‑hand drawer with metadata: track count, tracks-in-database count, followers, last fetch count, source, last fetched date, curator, last updated date, fetch method, and playlist ID; action buttons include View Tracks, Fetch Data, Refresh Metadata and Open in Spotify.
+
+Feedback & Opportunities
+	•	Rich preview – Add playlist artwork and curator avatars to the list, making each entry visually distinctive.  A small preview (cover art + track count) could be shown in card view.
+	•	Dynamic analytics – Augment the details drawer with visual charts showing follower growth, track score distribution or addition trends.  Highlight top contributors (songwriters or artists) within the playlist.
+	•	Grouping & sorting – Allow grouping playlists by source (editorial vs. user‑curated), status or genre; provide multi‑column sort and persistent column reorder to support different workflows.
+	•	Quick batch operations – Enable selecting multiple playlists and performing actions such as bulk fetch or export; surface these operations via a sticky bulk‑action toolbar similar to the tracks view.
+
+⸻
+
+Tracks View
+
+Interface Structure
+	•	Metric Cards – Four cards display the total number of tracks, the count of high‑potential tracks (score 7–10), medium‑potential tracks (score 4–6) and the average unsigned score.
+	•	Header Actions – An Enrich Data button enriches artist data for selected tracks; it switches to a loading state when processing.
+	•	Filters – The filter panel contains dropdowns for Week, Playlist and Tag, a search bar for track/artist/label names, and advanced filters (ISRC, Credits Data, Publisher Info, Songwriter Info, Score range slider) hidden in a popover.  A Clear All Filters button appears when filters are in use.
+	•	View Modes – Switches between Table, Card and Kanban layouts.  The table view is default and shows all metadata in a compact row; card view emphasises visual album art on mobile; Kanban groups tracks by unsigned score ranges.
+	•	Bulk Selection & Actions – Each row has a checkbox; selecting tracks activates a sticky toolbar offering Enrich, Tag, Export and Clear operations with options to apply to selected or all filtered tracks.
+	•	Track Table – Columns include Track (with artist), Score, Label, Credits (publisher & songwriter badges), and Actions with menu options: Enrich MB, Enrich Credits, AI Insights, Tag, Contact, and Open in Spotify.
+	•	Details Drawer – Clicking a track opens a drawer with a header (score, “No ISRC” indicator, API badge), metadata grid (playlist, label, songwriter, added date) and quick actions for Enrich Data, Add Tags, Contact Artist, and Open in Spotify.  An enrichment status section indicates which enrichment tiers have been completed; an activity timeline appears when actions are logged.
+
+Feedback & Opportunities
+	•	Songwriter prominence – Since songwriters are a major focus, the details drawer should dedicate a prominent section to songwriters: list each songwriter with their role (lyricist, composer), display their avatar (if available) and provide links to their other tracks or profile; include a summary of songwriter contributions across all tracked playlists.
+	•	Visual hierarchy – The current drawer begins with a high‑score badge but quickly drops into plain text.  Introduce a large album‑art thumbnail, track title and artist summary at the top; then show the score with a radial progress graphic, followed by a clearly labelled “Songwriters” panel.
+	•	Interactive previews – Include an embedded audio preview in the drawer or row hover; allow users to play a 15‑second clip without leaving the dashboard.
+	•	Data density vs. clarity – Break up the metadata grid into logical groupings: identify label/publisher/publisher status in one section, songwriter credits in another, and track‑added date and ISRC in a third.  Use icons and subtle separators to avoid visual overload.
+	•	Insights at a glance – Add micro‑charts showing track performance trends (score evolution, playlist additions) and a bar indicating enrichment progress (e.g., Tier 1, Tier 2).
+	•	Action discoverability – The quick‑action buttons could be accompanied by explanatory tooltips or icons; group less common actions under a “More” dropdown to avoid clutter.
+
+⸻
+
+Overall Assessment
+
+The Discovery section’s current implementation establishes a strong foundation: a dark, professional theme; responsive layouts; clear metric cards; and accessible filter and action panels.  Both the Playlists and Tracks views offer table and card modes to accommodate different contexts.  However, to truly fulfil its role as an A&R hub and emphasize songwriters, the UI can evolve by:
+	•	Rich, contextual visuals such as cover art, avatars and dynamic charts;
+	•	Enhanced navigation through grouping, sorting and cross‑section metrics;
+	•	Dedicated songwriter panels in track details with links to other works;
+	•	More intuitive actions via a refined hierarchy of buttons and toolbars.
+
+Implementing these enhancements will align the Discovery section more closely with its purpose—helping users manage large catalogs of playlists and tracks while spotlighting the creators behind the music.

@@ -31,6 +31,7 @@ export interface NetworkCaptureTrack {
   name: string;
   artists: string[];
   album: string | null;
+  albumArt: string | null;
   addedAt: Date;
   popularity: number | null;
   durationMs: number | null;
@@ -309,6 +310,7 @@ export async function fetchEditorialTracksViaNetwork(
           name: track.name,
           artists: (track.artists || []).map((a: any) => a.name).filter(Boolean),
           album: track.album?.name || null,
+          albumArt: track.album?.images?.[1]?.url || track.album?.images?.[0]?.url || null,
           addedAt: item.added_at ? new Date(item.added_at) : new Date(),
           popularity: track.popularity || null,
           durationMs: track.duration_ms || null,

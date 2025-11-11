@@ -11,6 +11,7 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   trackName: text("track_name").notNull(),
   artistName: text("artist_name").notNull(),
   spotifyUrl: text("spotify_url").notNull(),
+  albumArt: text("album_art"),
   isrc: text("isrc"),
   label: text("label"),
   unsignedScore: integer("unsigned_score").notNull().default(0),

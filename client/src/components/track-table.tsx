@@ -152,38 +152,57 @@ export function TrackTable({
                     />
                   )}
                 </div>
-              <div className="col-span-1 lg:col-span-1">
-                <div className="font-medium" data-testid={`text-track-name-${track.id}`}>{track.trackName}</div>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {track.isrc ? (
-                    <Badge 
-                      variant="outline" 
-                      className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 text-xs"
-                      data-testid={`badge-has-isrc-${track.id}`}
-                    >
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                      ISRC
-                    </Badge>
-                  ) : (
-                    <Badge 
-                      variant="outline" 
-                      className="bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20 text-xs"
-                      data-testid={`badge-no-isrc-${track.id}`}
-                    >
-                      <XCircle className="w-3 h-3 mr-1" />
-                      No ISRC
-                    </Badge>
-                  )}
-                  {track.dataSource === "scraped" && (
-                    <Badge 
-                      variant="outline" 
-                      className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-xs"
-                      data-testid={`badge-source-scraped-${track.id}`}
-                    >
-                      <Cloud className="w-3 h-3 mr-1" />
-                      Scraped
-                    </Badge>
-                  )}
+              <div className="col-span-1 lg:col-span-1 flex items-center gap-3">
+                {/* Album Art */}
+                {track.albumArt ? (
+                  <img 
+                    src={track.albumArt} 
+                    alt={`${track.trackName} album art`}
+                    className="w-10 h-10 rounded object-cover flex-shrink-0"
+                    loading="lazy"
+                    decoding="async"
+                    width="40"
+                    height="40"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                    <Music className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                )}
+                
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium truncate" data-testid={`text-track-name-${track.id}`}>{track.trackName}</div>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {track.isrc ? (
+                      <Badge 
+                        variant="outline" 
+                        className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 text-xs"
+                        data-testid={`badge-has-isrc-${track.id}`}
+                      >
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        ISRC
+                      </Badge>
+                    ) : (
+                      <Badge 
+                        variant="outline" 
+                        className="bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20 text-xs"
+                        data-testid={`badge-no-isrc-${track.id}`}
+                      >
+                        <XCircle className="w-3 h-3 mr-1" />
+                        No ISRC
+                      </Badge>
+                    )}
+                    {track.dataSource === "scraped" && (
+                      <Badge 
+                        variant="outline" 
+                        className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-xs"
+                        data-testid={`badge-source-scraped-${track.id}`}
+                      >
+                        <Cloud className="w-3 h-3 mr-1" />
+                        Scraped
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
               
