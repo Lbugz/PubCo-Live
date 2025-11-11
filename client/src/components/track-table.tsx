@@ -115,7 +115,7 @@ export function TrackTable({
         <div>Track</div>
         <div>Artist</div>
         <div>Playlist</div>
-        <div>Label / Publisher</div>
+        <div>Publisher</div>
         <div>Songwriter</div>
         <div>Score</div>
         <div className="text-right">Actions</div>
@@ -219,11 +219,11 @@ export function TrackTable({
               </div>
               
               <div className="col-span-1 lg:col-span-1">
-                <div className="text-sm space-y-1" data-testid={`text-label-${track.id}`}>
-                  <div>{track.label || <span className="text-muted-foreground italic">Unknown label</span>}</div>
-                  {track.publisher && (
+                <div className="text-sm space-y-1" data-testid={`text-publisher-${track.id}`}>
+                  <div>{track.publisher || <span className="text-muted-foreground italic">Unknown</span>}</div>
+                  {track.label && (
                     <div className="text-xs text-muted-foreground">
-                      Pub: {track.publisher}
+                      Label: {track.label}
                     </div>
                   )}
                 </div>
