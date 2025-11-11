@@ -18,7 +18,7 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, parseISO } from "date-fns";
 import { TrackTagPopover } from "@/components/track-tag-popover";
 import { TrackContactDialog } from "@/components/track-contact-dialog";
 import { PublisherStatusBadge } from "./publisher-status-badge";
@@ -169,7 +169,7 @@ export function DetailsDrawer({
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Added:</span>
                       <span className="text-xs">
-                        {formatDistanceToNow(new Date(track.addedAt), { addSuffix: true })}
+                        {formatDistanceToNow(parseISO(track.addedAt), { addSuffix: true })}
                       </span>
                     </div>
                   )}
@@ -192,7 +192,7 @@ export function DetailsDrawer({
                     Enrich Data
                   </Button>
 
-                  <TrackTagPopover trackId={track.id} asChild>
+                  <TrackTagPopover trackId={track.id} asChild={false}>
                     <Button
                       variant="outline"
                       className="w-full justify-start gap-2"
@@ -203,7 +203,7 @@ export function DetailsDrawer({
                     </Button>
                   </TrackTagPopover>
 
-                  <TrackContactDialog track={track} asChild>
+                  <TrackContactDialog track={track} asChild={false}>
                     <Button
                       variant="outline"
                       className="w-full justify-start gap-2"
@@ -255,7 +255,7 @@ export function DetailsDrawer({
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium">{item.eventDescription}</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+                            {formatDistanceToNow(parseISO(item.createdAt), { addSuffix: true })}
                           </p>
                         </div>
                       </div>
