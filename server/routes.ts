@@ -1,11 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { eq, sql } from "drizzle-orm";
 import { getUncachableSpotifyClient, getAuthUrl, exchangeCodeForToken, isAuthenticated, searchTrackByNameAndArtist } from "./spotify";
 import { calculateUnsignedScore } from "./scoring";
 import { searchByISRC, searchRecordingByName, searchArtistByName, getArtistExternalLinks } from "./musicbrainz";
 import { generateAIInsights } from "./ai-insights";
-import { playlists, type InsertPlaylistSnapshot, type PlaylistSnapshot, insertTagSchema, insertTrackedPlaylistSchema } from "@shared/schema";
+import { playlists, playlistSnapshots, type InsertPlaylistSnapshot, type PlaylistSnapshot, insertTagSchema, insertTrackedPlaylistSchema } from "@shared/schema";
 import { scrapeSpotifyPlaylist, scrapeTrackCredits } from "./scraper";
 import { fetchEditorialTracksViaNetwork } from "./scrapers/spotifyEditorialNetwork";
 import { harvestVirtualizedRows } from "./scrapers/spotifyEditorialDom";
@@ -1777,6 +1779,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error backfilling metadata:", error);
       res.status(500).json({ error: "Failed to backfill playlist metadata" });
+    }
+  });
+
+  app.post("/api/backfill-album-art", async (req, res) => {
+    try {
+      const spotify = await getUncachableSpotifyClient();
+      
+      // Get all tracks missing album art
+      const tracks = await db.select()
+        .from(playlistSnapshots)
+        .where(sql`${playlistSnapshots.albumArt} IS NULL`)
+        .limit(500); // Process in batches to avoid timeout
+      
+      if (tracks.length === 0) {
+        return res.json({ 
+          success: true, 
+          message: "All tracks already have album art",
+          updated: 0 
+        });
+      }
+      
+      console.log(`Backfilling album art for ${tracks.length} tracks...`);
+      
+      let updatedCount = 0;
+      let failedCount = 0;
+      
+      for (const track of tracks) {
+        try {
+          // Extract track ID from Spotify URL
+          const trackIdMatch = track.spotifyUrl.match(/track\/([a-zA-Z0-9]+)/);
+          if (!trackIdMatch) {
+            failedCount++;
+            continue;
+          }
+          
+          const trackId = trackIdMatch[1];
+          
+          // Fetch track details from Spotify
+          const trackData = await spotify.tracks.get(trackId);
+          const albumArt = trackData.album?.images?.[1]?.url || trackData.album?.images?.[0]?.url || null;
+          
+          if (albumArt) {
+            // Update track with album art
+            await db.update(playlistSnapshots)
+              .set({ albumArt })
+              .where(eq(playlistSnapshots.id, track.id));
+            
+            updatedCount++;
+            
+            if (updatedCount % 50 === 0) {
+              console.log(`Progress: ${updatedCount}/${tracks.length} tracks updated...`);
+            }
+          } else {
+            failedCount++;
+          }
+          
+          // Rate limiting - small delay between requests
+          await new Promise(resolve => setTimeout(resolve, 50));
+        } catch (error: any) {
+          console.error(`Failed to fetch album art for track ${track.trackName}:`, error.message);
+          failedCount++;
+        }
+      }
+      
+      console.log(`Backfill complete: ${updatedCount} updated, ${failedCount} failed`);
+      
+      res.json({ 
+        success: true, 
+        updated: updatedCount,
+        failed: failedCount,
+        total: tracks.length,
+        hasMore: tracks.length === 500 // Indicate if there are more tracks to process
+      });
+    } catch (error) {
+      console.error("Error backfilling album art:", error);
+      res.status(500).json({ error: "Failed to backfill album art" });
     }
   });
 

@@ -216,7 +216,9 @@ export function DetailsDrawer({
                   {track.songwriter && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Songwriter:</span>
-                      <span className="font-medium">{track.songwriter}</span>
+                      <div className="font-medium">
+                        <SongwriterDisplay songwriters={track.songwriter} />
+                      </div>
                     </div>
                   )}
                   {track.isrc && (

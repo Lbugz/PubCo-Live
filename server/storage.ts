@@ -42,7 +42,7 @@ export class DatabaseStorage implements IStorage {
     if (week === "all") {
       return db.select()
         .from(playlistSnapshots)
-        .orderBy(desc(playlistSnapshots.week), desc(playlistSnapshots.unsignedScore));
+        .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore));
     }
     
     if (week === "latest") {
@@ -51,13 +51,13 @@ export class DatabaseStorage implements IStorage {
       return db.select()
         .from(playlistSnapshots)
         .where(eq(playlistSnapshots.week, latestWeek))
-        .orderBy(desc(playlistSnapshots.unsignedScore));
+        .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore));
     }
     
     return db.select()
       .from(playlistSnapshots)
       .where(eq(playlistSnapshots.week, week))
-      .orderBy(desc(playlistSnapshots.unsignedScore));
+      .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore));
   }
 
   async getTracksByPlaylist(playlistId: string, week?: string): Promise<PlaylistSnapshot[]> {
@@ -70,7 +70,7 @@ export class DatabaseStorage implements IStorage {
     return db.select()
       .from(playlistSnapshots)
       .where(and(...conditions))
-      .orderBy(desc(playlistSnapshots.week), desc(playlistSnapshots.unsignedScore));
+      .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore));
   }
 
   async getTrackById(id: string): Promise<PlaylistSnapshot | null> {
@@ -194,7 +194,8 @@ export class DatabaseStorage implements IStorage {
       .select({ track: playlistSnapshots })
       .from(trackTags)
       .innerJoin(playlistSnapshots, eq(trackTags.trackId, playlistSnapshots.id))
-      .where(eq(trackTags.tagId, tagId));
+      .where(eq(trackTags.tagId, tagId))
+      .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore));
     
     return result.map(r => r.track);
   }
