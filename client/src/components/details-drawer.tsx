@@ -18,6 +18,12 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  BarChart3,
+  TrendingUp,
+  Eye,
+  Users,
+  Music2,
+  Smile,
 } from "lucide-react";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { TrackTagPopover } from "@/components/track-tag-popover";
@@ -293,6 +299,146 @@ export function DetailsDrawer({
                   </div>
                 )}
               </div>
+
+              {/* Chartmetric Analytics */}
+              {displayTrack.chartmetricStatus === "success" && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="text-sm font-semibold font-heading mb-3 flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4" />
+                      Analytics
+                    </h3>
+                    <div className="space-y-3 text-sm">
+                      {/* Streaming Metrics */}
+                      {displayTrack.spotifyStreams !== null && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground flex items-center gap-2">
+                            <Music className="h-3.5 w-3.5" />
+                            Spotify Streams:
+                          </span>
+                          <span className="font-medium">{displayTrack.spotifyStreams?.toLocaleString() || 'N/A'}</span>
+                        </div>
+                      )}
+                      
+                      {displayTrack.streamingVelocity !== null && displayTrack.streamingVelocity !== undefined && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground flex items-center gap-2">
+                            <TrendingUp className="h-3.5 w-3.5" />
+                            Velocity (30d):
+                          </span>
+                          <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+                            {(() => {
+                              const velocityNum = typeof displayTrack.streamingVelocity === 'number' 
+                                ? displayTrack.streamingVelocity 
+                                : parseFloat(displayTrack.streamingVelocity);
+                              
+                              if (!isNaN(velocityNum)) {
+                                return `${velocityNum >= 0 ? '+' : ''}${velocityNum}%`;
+                              }
+                              return displayTrack.streamingVelocity;
+                            })()}
+                          </Badge>
+                        </div>
+                      )}
+
+                      {displayTrack.trackStage && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground flex items-center gap-2">
+                            <BarChart3 className="h-3.5 w-3.5" />
+                            Career Stage:
+                          </span>
+                          <Badge variant="outline">{displayTrack.trackStage}</Badge>
+                        </div>
+                      )}
+
+                      {displayTrack.youtubeViews !== null && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground flex items-center gap-2">
+                            <Eye className="h-3.5 w-3.5" />
+                            YouTube Views:
+                          </span>
+                          <span className="font-medium">{displayTrack.youtubeViews?.toLocaleString() || 'N/A'}</span>
+                        </div>
+                      )}
+
+                      {displayTrack.playlistFollowers !== null && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground flex items-center gap-2">
+                            <Users className="h-3.5 w-3.5" />
+                            Playlist Followers:
+                          </span>
+                          <span className="font-medium">{displayTrack.playlistFollowers?.toLocaleString() || 'N/A'}</span>
+                        </div>
+                      )}
+
+                      {displayTrack.composerName && (
+                        <div className="flex justify-between items-start">
+                          <span className="text-muted-foreground flex items-center gap-2">
+                            <Music2 className="h-3.5 w-3.5" />
+                            Composer:
+                          </span>
+                          <span className="font-medium text-right">{displayTrack.composerName}</span>
+                        </div>
+                      )}
+
+                      {displayTrack.songwriterIds && displayTrack.songwriterIds.length > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground flex items-center gap-2">
+                            <Database className="h-3.5 w-3.5" />
+                            Chartmetric IDs:
+                          </span>
+                          <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
+                            {displayTrack.songwriterIds.length} songwriter{displayTrack.songwriterIds.length > 1 ? 's' : ''}
+                          </Badge>
+                        </div>
+                      )}
+
+                      {/* Moods */}
+                      {displayTrack.moods && displayTrack.moods.length > 0 && (
+                        <div className="space-y-2">
+                          <span className="text-muted-foreground flex items-center gap-2 text-xs">
+                            <Smile className="h-3.5 w-3.5" />
+                            Moods (Sync Opportunities):
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {displayTrack.moods.map((mood, idx) => (
+                              <Badge 
+                                key={idx} 
+                                variant="outline" 
+                                className="text-xs bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20"
+                              >
+                                {mood}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Activities */}
+                      {displayTrack.activities && displayTrack.activities.length > 0 && (
+                        <div className="space-y-2">
+                          <span className="text-muted-foreground flex items-center gap-2 text-xs">
+                            <BarChart3 className="h-3.5 w-3.5" />
+                            Activities (Sync Opportunities):
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {displayTrack.activities.map((activity, idx) => (
+                              <Badge 
+                                key={idx} 
+                                variant="outline" 
+                                className="text-xs bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
+                              >
+                                {activity}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
 
               <Separator />
 

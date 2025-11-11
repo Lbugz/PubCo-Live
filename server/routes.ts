@@ -860,6 +860,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   activities: chartmetricData.activities
                 });
                 
+                // Log main enrichment activity
+                const streamsText = chartmetricData.spotifyStreams !== null && chartmetricData.spotifyStreams !== undefined
+                  ? `${chartmetricData.spotifyStreams.toLocaleString()} streams` 
+                  : 'unknown streams';
+                const stageText = chartmetricData.trackStage || 'unknown stage';
+                const velocityText = chartmetricData.streamingVelocity !== null && chartmetricData.streamingVelocity !== undefined
+                  ? `, ${chartmetricData.streamingVelocity} velocity` 
+                  : '';
+                
+                await storage.logActivity({
+                  trackId: track.id,
+                  eventType: "chartmetric_enriched",
+                  eventDescription: `Chartmetric analytics: ${streamsText}, ${stageText}${velocityText}`
+                });
+                
+                // Log songwriter IDs if found
+                if (chartmetricData.songwriterIds && chartmetricData.songwriterIds.length > 0) {
+                  await storage.logActivity({
+                    trackId: track.id,
+                    eventType: "chartmetric_songwriters",
+                    eventDescription: `Found ${chartmetricData.songwriterIds.length} songwriter Chartmetric ID${chartmetricData.songwriterIds.length > 1 ? 's' : ''}`
+                  });
+                }
+                
+                // Log moods if found
+                if (chartmetricData.moods && chartmetricData.moods.length > 0) {
+                  await storage.logActivity({
+                    trackId: track.id,
+                    eventType: "chartmetric_metadata",
+                    eventDescription: `Moods: ${chartmetricData.moods.slice(0, 3).join(', ')}${chartmetricData.moods.length > 3 ? `, +${chartmetricData.moods.length - 3} more` : ''}`
+                  });
+                }
+                
+                // Log activities if found
+                if (chartmetricData.activities && chartmetricData.activities.length > 0) {
+                  await storage.logActivity({
+                    trackId: track.id,
+                    eventType: "chartmetric_metadata",
+                    eventDescription: `Activities: ${chartmetricData.activities.slice(0, 3).join(', ')}${chartmetricData.activities.length > 3 ? `, +${chartmetricData.activities.length - 3} more` : ''}`
+                  });
+                }
+                
                 enrichedCount++;
                 success = true;
                 
@@ -871,6 +913,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   chartmetricStatus: "failed_api",
                   chartmetricEnrichedAt: new Date()
                 });
+                
+                // Log failed enrichment
+                await storage.logActivity({
+                  trackId: track.id,
+                  eventType: "chartmetric_failed",
+                  eventDescription: "No Chartmetric data found for this track"
+                });
+                
                 failedApi++;
                 success = true;
                 console.log(`⚠️  No Chartmetric data found for track`);
