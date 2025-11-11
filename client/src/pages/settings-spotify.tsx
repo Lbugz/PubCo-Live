@@ -2,8 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle2, Calendar, Clock, Cookie, ExternalLink, AlertTriangle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Calendar, Clock, Cookie, ExternalLink, AlertTriangle, Music2, ShieldCheck } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useState } from "react";
 
 interface CookieStatus {
   healthy: boolean;
@@ -15,11 +16,46 @@ interface CookieStatus {
   cookieExpired: boolean | null;
 }
 
+interface AuthStatus {
+  authenticated: boolean;
+}
+
 export default function SettingsSpotify() {
+  const [authWindow, setAuthWindow] = useState<Window | null>(null);
+  
+  const { data: authStatus, isLoading: authLoading, refetch: refetchAuth } = useQuery<AuthStatus>({
+    queryKey: ["/api/spotify/status"],
+    refetchInterval: 5000,
+  });
+
   const { data: cookieStatus, isLoading } = useQuery<CookieStatus>({
     queryKey: ["/api/spotify/cookie-status"],
     refetchInterval: 30000,
   });
+
+  const handleSpotifyAuth = () => {
+    const width = 600;
+    const height = 700;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
+    
+    const popup = window.open(
+      '/api/spotify/auth',
+      'Spotify Authorization',
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+    
+    setAuthWindow(popup);
+    
+    // Poll for window closure
+    const checkClosed = setInterval(() => {
+      if (popup?.closed) {
+        clearInterval(checkClosed);
+        setAuthWindow(null);
+        refetchAuth();
+      }
+    }, 500);
+  };
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Never";
@@ -45,9 +81,92 @@ export default function SettingsSpotify() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Spotify & APIs</h1>
         <p className="text-muted-foreground">
-          Monitor cookie authentication health and manage API integrations
+          Monitor authentication health and manage API integrations
         </p>
       </div>
+
+      {/* Spotify OAuth Authentication */}
+      <Card className="glass-panel mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5" />
+                Spotify OAuth Authentication
+              </CardTitle>
+              <CardDescription>
+                Authenticate with Spotify to access album artwork and full track metadata
+              </CardDescription>
+            </div>
+            {!authLoading && authStatus && (
+              <Badge 
+                variant={authStatus.authenticated ? "default" : "outline"}
+                className="flex items-center gap-1"
+              >
+                {authStatus.authenticated ? (
+                  <><CheckCircle2 className="h-3 w-3" /> Connected</>
+                ) : (
+                  <><AlertCircle className="h-3 w-3" /> Not Connected</>
+                )}
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {authLoading ? (
+            <p className="text-muted-foreground">Loading authentication status...</p>
+          ) : (
+            <>
+              {!authStatus?.authenticated && (
+                <Alert>
+                  <Music2 className="h-4 w-4" />
+                  <AlertTitle>Connect Spotify for Full Features</AlertTitle>
+                  <AlertDescription>
+                    Authenticate with Spotify to enable album artwork downloads and full track metadata when fetching playlists.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={handleSpotifyAuth}
+                  disabled={!!authWindow}
+                  className="flex items-center gap-2"
+                  data-testid="button-spotify-auth"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  {authStatus?.authenticated ? 'Re-authenticate Spotify' : 'Connect Spotify Account'}
+                </Button>
+                
+                {authStatus?.authenticated && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span>Your Spotify account is connected and ready</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4 border-t border-white/10">
+                <h3 className="text-sm font-semibold mb-2">How to Pull Album Artwork</h3>
+                <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                  <li>Click "Connect Spotify Account" above to authenticate (if not already connected)</li>
+                  <li>Go to <span className="font-medium text-foreground">Playlists View</span> in the sidebar</li>
+                  <li>Click <span className="font-medium text-foreground">"Add Playlist"</span> and enter a Spotify playlist URL</li>
+                  <li>Click <span className="font-medium text-foreground">"Fetch Data"</span> on the playlist you want to import</li>
+                  <li>Album artwork will be automatically downloaded for all tracks</li>
+                </ol>
+                <Alert className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Note:</strong> Album artwork is fetched automatically when you import playlists via the Playlist Manager. 
+                    No additional action needed once you're authenticated!
+                  </AlertDescription>
+                </Alert>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Cookie Health Status */}
       <Card className="glass-panel mb-6">
