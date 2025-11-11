@@ -65,19 +65,19 @@ function decideShouldSplit(transitions: number, segments: string[], original: st
     return false;
   }
 
-  // 2+ transitions = likely concatenated
+  // Check for Mc/Mac prefix exception first
+  if (hasMcMacPrefix(original)) {
+    return false;
+  }
+
+  // 2+ transitions = likely concatenated names (e.g., "GustavImanKonta")
   if (transitions >= 2) {
     return true;
   }
 
-  // 1 transition - need additional evidence
+  // 1 transition - need additional evidence to avoid splitting mononyms like "DaBaby"
   if (transitions === 1) {
-    // Check for Mc/Mac prefix exception
-    if (hasMcMacPrefix(original)) {
-      return false;
-    }
-
-    // At least one segment has whitespace = merged multi-word names
+    // At least one segment has whitespace = merged multi-word names (e.g., "Ian van der MerweKayleigh Estine")
     const hasMultiWordSegment = segments.some((seg) => seg.includes(' '));
     if (hasMultiWordSegment) {
       return true;
@@ -93,4 +93,69 @@ function decideShouldSplit(transitions: number, segments: string[], original: st
 function hasMcMacPrefix(name: string): boolean {
   // Pattern: Mc or Mac followed by capital letter (e.g., "McDonald", "MacGregor")
   return /Mc[A-Z]/.test(name) || /Mac[A-Z]/.test(name);
+}
+
+/**
+ * Returns a vanilla JS script that can be injected into a browser context (e.g., Puppeteer page.evaluate)
+ * to provide the same name-splitting logic
+ */
+export function getNameSplitScript(): string {
+  return `
+(function() {
+  function hasMcMacPrefix(name) {
+    return /Mc[A-Z]/.test(name) || /Mac[A-Z]/.test(name);
+  }
+
+  function decideShouldSplit(transitions, segments, original) {
+    if (segments.length === 0) return false;
+    if (hasMcMacPrefix(original)) return false;
+    if (transitions >= 2) return true;
+    
+    if (transitions === 1) {
+      const hasMultiWordSegment = segments.some(function(seg) { return seg.includes(' '); });
+      if (hasMultiWordSegment) return true;
+    }
+    
+    return false;
+  }
+
+  window.splitConcatenatedNames = function(name) {
+    if (!name || typeof name !== 'string') {
+      return [];
+    }
+
+    const capitalTransitions = (name.match(/[a-z][A-Z]/g) || []).length;
+
+    if (capitalTransitions === 0) {
+      return [name];
+    }
+
+    const splitNames = [];
+    let currentName = '';
+
+    for (let i = 0; i < name.length; i++) {
+      const char = name[i];
+      const prevChar = i > 0 ? name[i - 1] : '';
+
+      if (i > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
+        if (currentName.trim().length > 0) {
+          splitNames.push(currentName.trim());
+        }
+        currentName = char;
+      } else {
+        currentName += char;
+      }
+    }
+
+    if (currentName.trim().length > 0) {
+      splitNames.push(currentName.trim());
+    }
+
+    const validSegments = splitNames.filter(function(seg) { return seg.length > 1; });
+    const shouldSplit = decideShouldSplit(capitalTransitions, validSegments, name);
+
+    return shouldSplit ? validSegments : [name];
+  };
+})();
+`;
 }

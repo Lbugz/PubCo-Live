@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { recordAuthSuccess, recordAuthFailure } from "./auth-monitor";
 import { execSync } from "child_process";
+import { getNameSplitScript } from "../client/src/lib/name-utils";
 
 const COOKIES_FILE = path.join(process.cwd(), "spotify_cookies.json");
 
@@ -518,6 +519,9 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
       };
     }
     
+    // Inject shared name-splitting utility
+    await page.addScriptTag({ content: getNameSplitScript() });
+    
     // Extract credits information
     console.log("Extracting credits data...");
     const credits = await page.evaluate(() => {
@@ -544,35 +548,13 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         // Check for role labels
         if (line.toLowerCase().includes('written by') || line.toLowerCase().includes('songwriter')) {
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            // Smart split: try commas first, then check each segment for concatenated names
-            let names = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
-            
-            // Check EACH name segment for concatenated names (capital letter transitions)
+            // Split by commas first, then apply concatenated name detection to each segment
+            const segments = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
             const finalNames = [];
-            for (let k = 0; k < names.length; k++) {
-              const singleName = names[k];
-              const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
-              
-              // If 1+ transitions, this segment has concatenated names - split by capital letters
-              if (capitalTransitions >= 1) {
-                const splitNames = [];
-                let currentName = '';
-                for (let j = 0; j < singleName.length; j++) {
-                  const char = singleName[j];
-                  const prevChar = j > 0 ? singleName[j - 1] : '';
-                  if (j > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
-                    if (currentName.trim().length > 0) splitNames.push(currentName.trim());
-                    currentName = char;
-                  } else {
-                    currentName += char;
-                  }
-                }
-                if (currentName.trim().length > 0) splitNames.push(currentName.trim());
-                finalNames.push.apply(finalNames, splitNames.filter(function(n) { return n.length > 1; }));
-              } else {
-                // No concatenation detected, keep as-is
-                finalNames.push(singleName);
-              }
+            
+            for (let k = 0; k < segments.length; k++) {
+              const splitResult = window.splitConcatenatedNames(segments[k]);
+              finalNames.push.apply(finalNames, splitResult);
             }
             
             writers.push.apply(writers, finalNames);
@@ -582,35 +564,13 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         
         if (line.toLowerCase().includes('produced by') || line.toLowerCase().includes('producer')) {
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            // Smart split: try commas first, then check each segment for concatenated names
-            let names = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
-            
-            // Check EACH name segment for concatenated names (capital letter transitions)
+            // Split by commas first, then apply concatenated name detection to each segment
+            const segments = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
             const finalNames = [];
-            for (let k = 0; k < names.length; k++) {
-              const singleName = names[k];
-              const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
-              
-              // If 1+ transitions, this segment has concatenated names - split by capital letters
-              if (capitalTransitions >= 1) {
-                const splitNames = [];
-                let currentName = '';
-                for (let j = 0; j < singleName.length; j++) {
-                  const char = singleName[j];
-                  const prevChar = j > 0 ? singleName[j - 1] : '';
-                  if (j > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
-                    if (currentName.trim().length > 0) splitNames.push(currentName.trim());
-                    currentName = char;
-                  } else {
-                    currentName += char;
-                  }
-                }
-                if (currentName.trim().length > 0) splitNames.push(currentName.trim());
-                finalNames.push.apply(finalNames, splitNames.filter(function(n) { return n.length > 1; }));
-              } else {
-                // No concatenation detected, keep as-is
-                finalNames.push(singleName);
-              }
+            
+            for (let k = 0; k < segments.length; k++) {
+              const splitResult = window.splitConcatenatedNames(segments[k]);
+              finalNames.push.apply(finalNames, splitResult);
             }
             
             producers.push.apply(producers, finalNames);
@@ -620,35 +580,13 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         
         if (line.toLowerCase().includes('composer')) {
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            // Smart split: try commas first, then check each segment for concatenated names
-            let names = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
-            
-            // Check EACH name segment for concatenated names (capital letter transitions)
+            // Split by commas first, then apply concatenated name detection to each segment
+            const segments = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
             const finalNames = [];
-            for (let k = 0; k < names.length; k++) {
-              const singleName = names[k];
-              const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
-              
-              // If 1+ transitions, this segment has concatenated names - split by capital letters
-              if (capitalTransitions >= 1) {
-                const splitNames = [];
-                let currentName = '';
-                for (let j = 0; j < singleName.length; j++) {
-                  const char = singleName[j];
-                  const prevChar = j > 0 ? singleName[j - 1] : '';
-                  if (j > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
-                    if (currentName.trim().length > 0) splitNames.push(currentName.trim());
-                    currentName = char;
-                  } else {
-                    currentName += char;
-                  }
-                }
-                if (currentName.trim().length > 0) splitNames.push(currentName.trim());
-                finalNames.push.apply(finalNames, splitNames.filter(function(n) { return n.length > 1; }));
-              } else {
-                // No concatenation detected, keep as-is
-                finalNames.push(singleName);
-              }
+            
+            for (let k = 0; k < segments.length; k++) {
+              const splitResult = window.splitConcatenatedNames(segments[k]);
+              finalNames.push.apply(finalNames, splitResult);
             }
             
             composers.push.apply(composers, finalNames);
