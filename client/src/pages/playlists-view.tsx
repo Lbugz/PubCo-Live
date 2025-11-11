@@ -44,6 +44,7 @@ export default function PlaylistsView() {
   const [newPlaylistUrl, setNewPlaylistUrl] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [selectedPlaylistIds, setSelectedPlaylistIds] = useState<Set<string>>(new Set());
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const [, navigate] = useLocation();
   const { toast } = useToast();
   
@@ -276,20 +277,161 @@ export default function PlaylistsView() {
     setSelectedPlaylistIds(new Set());
   };
 
-  // Bulk action handlers (to be implemented in task 4.3)
-  const handleBulkFetchData = (mode: BulkActionMode) => {
-    // TODO: Implement bulk fetch data
-    console.log(`Bulk fetch data: ${mode}`);
+  // Bulk action handlers
+  const handleBulkFetchData = async (mode: BulkActionMode) => {
+    const targetPlaylists = mode === "selected" ? selectedFilteredPlaylists : filteredPlaylists;
+    
+    if (targetPlaylists.length === 0) {
+      toast({
+        title: "No playlists to fetch",
+        description: "Please select at least one playlist",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsBulkProcessing(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    toast({
+      title: "Starting bulk fetch",
+      description: `Fetching data for ${targetPlaylists.length} playlist${targetPlaylists.length !== 1 ? 's' : ''}...`,
+    });
+
+    try {
+      for (const playlist of targetPlaylists) {
+        try {
+          await fetchPlaylistDataMutation.mutateAsync(playlist.playlistId);
+          successCount++;
+        } catch (error) {
+          failCount++;
+          console.error(`Failed to fetch playlist ${playlist.name}:`, error);
+        }
+      }
+
+      // Invalidate queries to refresh UI
+      await queryClient.invalidateQueries({ queryKey: ["/api/playlist-snapshot"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
+
+    } finally {
+      setIsBulkProcessing(false);
+      clearSelection();
+
+      toast({
+        title: "Bulk fetch complete",
+        description: `${successCount} succeeded, ${failCount} failed`,
+        variant: failCount > 0 ? "destructive" : "default",
+      });
+    }
   };
 
-  const handleBulkRefreshMetadata = (mode: BulkActionMode) => {
-    // TODO: Implement bulk refresh metadata
-    console.log(`Bulk refresh metadata: ${mode}`);
+  const handleBulkRefreshMetadata = async (mode: BulkActionMode) => {
+    const targetPlaylists = mode === "selected" ? selectedFilteredPlaylists : filteredPlaylists;
+    
+    if (targetPlaylists.length === 0) {
+      toast({
+        title: "No playlists to refresh",
+        description: "Please select at least one playlist",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsBulkProcessing(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    toast({
+      title: "Starting bulk refresh",
+      description: `Refreshing metadata for ${targetPlaylists.length} playlist${targetPlaylists.length !== 1 ? 's' : ''}...`,
+    });
+
+    try {
+      for (const playlist of targetPlaylists) {
+        try {
+          await refreshMetadataMutation.mutateAsync(playlist.id);
+          successCount++;
+        } catch (error) {
+          failCount++;
+          console.error(`Failed to refresh playlist ${playlist.name}:`, error);
+        }
+      }
+
+      // Invalidate queries to refresh UI
+      await queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
+
+    } finally {
+      setIsBulkProcessing(false);
+      clearSelection();
+
+      toast({
+        title: "Bulk refresh complete",
+        description: `${successCount} succeeded, ${failCount} failed`,
+        variant: failCount > 0 ? "destructive" : "default",
+      });
+    }
   };
 
   const handleBulkExport = (mode: BulkActionMode) => {
-    // TODO: Implement bulk export
-    console.log(`Bulk export: ${mode}`);
+    const targetPlaylists = mode === "selected" ? selectedFilteredPlaylists : filteredPlaylists;
+    
+    if (targetPlaylists.length === 0) {
+      toast({
+        title: "No playlists to export",
+        description: "Please select at least one playlist",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const headers = [
+        "Name", "Curator", "Followers", "Total Tracks", "Source", "Genre",
+        "Last Updated", "Last Checked", "Status", "Playlist ID", "Playlist URL"
+      ];
+      
+      const rows = targetPlaylists.map(playlist => [
+        playlist.name,
+        playlist.curator || "",
+        (playlist.followers || 0).toString(),
+        (playlist.totalTracks || 0).toString(),
+        playlist.source || "unknown",
+        playlist.genre || "",
+        playlist.lastUpdated ? new Date(playlist.lastUpdated).toLocaleDateString() : "",
+        playlist.lastChecked ? new Date(playlist.lastChecked).toLocaleDateString() : "",
+        playlist.status || "unknown",
+        playlist.playlistId,
+        `https://open.spotify.com/playlist/${playlist.playlistId}`
+      ]);
+      
+      const csvContent = [
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      ].join("\n");
+      
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${mode === "selected" ? "selected" : "filtered"}-playlists-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Export successful",
+        description: `Exported ${targetPlaylists.length} playlist${targetPlaylists.length !== 1 ? 's' : ''} to CSV`,
+      });
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast({
+        title: "Export failed",
+        description: "Failed to generate CSV file",
+        variant: "destructive",
+      });
+    }
   };
 
   // Normalize source value for consistent filtering
@@ -606,8 +748,8 @@ export default function PlaylistsView() {
         onRefreshMetadata={handleBulkRefreshMetadata}
         onExport={handleBulkExport}
         onClearSelection={clearSelection}
-        isFetching={false}
-        isRefreshing={false}
+        isFetching={isBulkProcessing}
+        isRefreshing={isBulkProcessing}
       />
 
       {/* View Toggle and Count */}
