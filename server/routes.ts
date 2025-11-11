@@ -10,6 +10,7 @@ import { scrapeSpotifyPlaylist, scrapeTrackCredits } from "./scraper";
 import { fetchEditorialTracksViaNetwork } from "./scrapers/spotifyEditorialNetwork";
 import { harvestVirtualizedRows } from "./scrapers/spotifyEditorialDom";
 import { broadcastEnrichmentUpdate } from "./websocket";
+import { getAuthStatus, isAuthHealthy } from "./auth-monitor";
 
 // Helper function to fetch all tracks from a playlist with pagination
 async function fetchAllPlaylistTracks(spotify: any, playlistId: string): Promise<any[]> {
@@ -98,6 +99,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/spotify/status", (req, res) => {
     res.json({ authenticated: isAuthenticated() });
+  });
+
+  app.get("/api/spotify/cookie-status", (req, res) => {
+    const authStatus = getAuthStatus();
+    const isHealthy = isAuthHealthy();
+    
+    res.json({
+      healthy: isHealthy,
+      lastSuccessfulAuth: authStatus.lastSuccessfulAuth,
+      lastFailedAuth: authStatus.lastFailedAuth,
+      consecutiveFailures: authStatus.consecutiveFailures,
+      cookieSource: authStatus.cookieSource,
+      cookieExpiry: authStatus.cookieExpiry,
+      cookieExpired: authStatus.cookieExpiry ? new Date(authStatus.cookieExpiry) < new Date() : null,
+    });
   });
 
   app.get("/api/spotify/playlist/:playlistId", async (req, res) => {
