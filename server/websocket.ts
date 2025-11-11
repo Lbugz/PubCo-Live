@@ -25,13 +25,17 @@ export function initializeWebSocket(server: Server) {
 }
 
 export function broadcastEnrichmentUpdate(data: {
-  type: 'track_enriched' | 'batch_complete' | 'enrichment_progress';
+  type: 'track_enriched' | 'batch_complete' | 'enrichment_progress' | 'chartmetric_progress';
   trackId?: string;
   trackName?: string;
   artistName?: string;
   enrichedCount?: number;
   totalCount?: number;
   playlistId?: string;
+  processed?: number;
+  total?: number;
+  enriched?: number;
+  failed?: number;
 }) {
   if (!wss) {
     console.warn('WebSocket server not initialized');
