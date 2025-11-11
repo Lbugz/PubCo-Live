@@ -396,6 +396,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/tracks/:trackId/full", async (req, res) => {
+    try {
+      const trackId = req.params.trackId;
+      
+      // Fetch all track data in parallel
+      const [track, tags, activity, artists] = await Promise.all([
+        storage.getTrackById(trackId),
+        storage.getTrackTags(trackId),
+        storage.getTrackActivity(trackId),
+        storage.getArtistsByTrackId(trackId),
+      ]);
+
+      if (!track) {
+        return res.status(404).json({ error: "Track not found" });
+      }
+
+      // Return comprehensive track object
+      res.json({
+        ...track,
+        tags,
+        activity,
+        artists,
+      });
+    } catch (error) {
+      console.error("Error fetching full track details:", error);
+      res.status(500).json({ error: "Failed to fetch track details" });
+    }
+  });
+
   app.get("/api/tracked-playlists", async (req, res) => {
     try {
       const playlists = await storage.getTrackedPlaylists();
