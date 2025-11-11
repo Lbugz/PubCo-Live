@@ -1043,12 +1043,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const publisherString = publishers.length > 0 ? publishers.join(", ") : undefined;
             const labelString = labels.length > 0 ? labels.join(", ") : undefined;
             
-            await storage.updateTrackMetadata(track.id, {
+            const updateData: any = {
               songwriter: songwriterString,
               publisher: publisherString,
               label: labelString,
               enrichedAt: new Date(),
-            });
+            };
+            
+            // Also capture Spotify stream count if available
+            if (creditsResult.spotifyStreams) {
+              updateData.spotifyStreams = creditsResult.spotifyStreams;
+              console.log(`✅ Captured Spotify streams: ${creditsResult.spotifyStreams.toLocaleString()}`);
+            }
+            
+            await storage.updateTrackMetadata(track.id, updateData);
             
             console.log(`✅ Enriched: ${track.trackName} - ${songwriters.length} songwriters, ${labels.length} labels, ${publishers.length} publishers`);
             enrichedCount++;
@@ -1144,13 +1152,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updates.songwriter = songwriterString;
           updates.publisher = publisherString;
           updates.label = labelString;
+          
+          // Store Spotify stream count if available (fallback for tracks without Chartmetric data)
+          if (creditsResult.spotifyStreams && !updates.spotifyStreams) {
+            updates.spotifyStreams = creditsResult.spotifyStreams;
+            console.log(`✅ Captured Spotify streams from page: ${creditsResult.spotifyStreams.toLocaleString()}`);
+          }
+          
           enrichmentTier = "spotify-credits";
           
           tierResults.push({
             tier: "spotify-credits",
             success: true,
             message: `Found ${songwriters.length} songwriters, ${publishers.length} publishers`,
-            data: { songwriters, publishers, labels }
+            data: { songwriters, publishers, labels, spotifyStreams: creditsResult.spotifyStreams }
           });
           console.log(`✅ [Tier 1] Success: ${songwriters.length} songwriters found`);
         } else {
@@ -1356,6 +1371,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             console.log(`✅ [Tier 4] Success: ${streamsText}`);
           } else {
+            // Log activity when Chartmetric has no data
+            await storage.logActivity({
+              trackId: track.id,
+              eventType: "chartmetric_enriched",
+              eventDescription: `No Chartmetric data found for ISRC ${effectiveIsrc}`,
+            });
+            
             tierResults.push({
               tier: "chartmetric",
               success: false,

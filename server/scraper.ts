@@ -105,6 +105,7 @@ interface TrackCredits {
 interface CreditsResult {
   success: boolean;
   credits?: TrackCredits;
+  spotifyStreams?: number | null;
   error?: string;
 }
 
@@ -605,15 +606,16 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
     await page.waitForFunction('typeof window.splitConcatenatedNames === "function"', { timeout: 5000 });
     console.log("Name-splitting utility injected successfully");
     
-    // Extract credits information
-    console.log("Extracting credits data...");
-    const credits = await page.evaluate(() => {
+    // Extract credits information AND stream count
+    console.log("Extracting credits data and stream count...");
+    const creditsAndStreams = await page.evaluate(() => {
       const writers = [];
       const composers = [];
       const producers = [];
       const labels = [];
       const publishers = [];
       const allCredits = [];
+      let spotifyStreams: number | null = null;
       
       // Get all text nodes in the modal to parse credit structure
       const allText = document.body.innerText;
@@ -805,23 +807,77 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         }
       });
       
+      // Extract Spotify stream count from the page
+      // Stream counts appear in various places - look for large formatted numbers
+      try {
+        // Look for stream count near artist/track header (format: "1,234,567" or "1.2M")
+        const bodyText = document.body.innerText;
+        const lines = bodyText.split('\n').map(l => l.trim());
+        
+        // Find numbers that look like stream counts (3+ digits with commas or M/K suffix)
+        const streamPattern = /^[\d,]+$/; // e.g., "33,741" or "1,234,567"
+        const shortPattern = /^([\d.]+)([MK])$/; // e.g., "1.2M" or "45K"
+        
+        for (const line of lines) {
+          // Check for comma-formatted numbers (most reliable)
+          if (streamPattern.test(line)) {
+            const num = parseInt(line.replace(/,/g, ''), 10);
+            // Stream counts are typically > 100 and < 1 billion
+            if (num >= 100 && num < 1000000000) {
+              spotifyStreams = num;
+              break;
+            }
+          }
+          // Check for abbreviated format (1.2M, 45K)
+          const match = line.match(shortPattern);
+          if (match) {
+            const value = parseFloat(match[1]);
+            const suffix = match[2];
+            if (suffix === 'M') {
+              spotifyStreams = Math.round(value * 1000000);
+              break;
+            } else if (suffix === 'K') {
+              spotifyStreams = Math.round(value * 1000);
+              break;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to extract stream count:', err);
+      }
+      
       return {
         writers: Array.from(new Set(writers)),
         composers: Array.from(new Set(composers)),
         producers: Array.from(new Set(producers)),
         labels: Array.from(new Set(labels)),
         publishers: Array.from(new Set(publishers)),
-        allCredits
+        allCredits,
+        spotifyStreams
       };
     });
     
-    console.log(`Extracted ${credits.allCredits.length} credits`);
+    console.log(`Extracted ${creditsAndStreams.allCredits.length} credits`);
+    
+    if (creditsAndStreams.spotifyStreams) {
+      console.log(`✅ Found Spotify stream count: ${creditsAndStreams.spotifyStreams.toLocaleString()}`);
+    } else {
+      console.log(`⚠️ No stream count found on page`);
+    }
     
     await browser.close();
     
     return {
       success: true,
-      credits
+      credits: {
+        writers: creditsAndStreams.writers,
+        composers: creditsAndStreams.composers,
+        producers: creditsAndStreams.producers,
+        labels: creditsAndStreams.labels,
+        publishers: creditsAndStreams.publishers,
+        allCredits: creditsAndStreams.allCredits
+      },
+      spotifyStreams: creditsAndStreams.spotifyStreams
     };
     
   } catch (error: any) {
