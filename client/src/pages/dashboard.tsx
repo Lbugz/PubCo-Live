@@ -1,12 +1,27 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown, Music2, Users } from "lucide-react";
+import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown, Music2, Users, Music, Target, TrendingUp, Activity, Search, Filter } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { UnifiedControlPanel } from "@/components/unified-control-panel";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
+import { StatsCard } from "@/components/stats-card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { BulkActionsToolbar } from "@/components/bulk-actions-toolbar";
 import { TrackTable } from "@/components/track-table";
 import { CardView } from "@/components/card-view";
@@ -28,6 +43,17 @@ import {
 
 type ViewMode = "table" | "card" | "kanban";
 
+const filterOptions = [
+  { id: "has-isrc", label: "Has ISRC", section: "ISRC Code" },
+  { id: "no-isrc", label: "No ISRC", section: "ISRC Code" },
+  { id: "has-credits", label: "Has Credits", section: "Credits Data" },
+  { id: "no-credits", label: "No Credits", section: "Credits Data" },
+  { id: "has-publisher", label: "Has Publisher", section: "Publisher Info" },
+  { id: "no-publisher", label: "No Publisher", section: "Publisher Info" },
+  { id: "has-songwriter", label: "Has Songwriter", section: "Songwriter Info" },
+  { id: "no-songwriter", label: "No Songwriter", section: "Songwriter Info" },
+];
+
 export default function Dashboard() {
   const [location] = useLocation();
   const [selectedWeek, setSelectedWeek] = useState<string>("all");
@@ -43,7 +69,8 @@ export default function Dashboard() {
   const [playlistManagerOpen, setPlaylistManagerOpen] = useState(false);
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const [recentEnrichments, setRecentEnrichments] = useState<Array<{ trackName: string; artistName: string; timestamp: number }>>([]);
-  const { toast } = useToast();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const { toast} = useToast();
 
   // WebSocket connection for real-time updates
   useWebSocket({
@@ -180,35 +207,6 @@ export default function Dashboard() {
     queryKey: ["/api/tags"],
   });
 
-  const fetchPlaylistsMutation = useMutation({
-    mutationFn: async ({ mode = 'all', playlistId }: { mode?: string; playlistId?: string }) => {
-      console.log("Starting fetch playlists mutation...", { mode, playlistId });
-      const response = await apiRequest("POST", "/api/fetch-playlists", { mode, playlistId });
-      const data = await response.json();
-      console.log("Fetch playlists response:", data);
-      return data;
-    },
-    onSuccess: (data: any) => {
-      console.log("Fetch playlists success:", data);
-      const totalSkipped = data.completenessResults?.reduce((sum: number, r: any) => sum + (r.skipped || 0), 0) || 0;
-      toast({
-        title: "Success!",
-        description: `Fetched ${data.tracksAdded} new tracks from Spotify for week ${data.week}${totalSkipped > 0 ? ` (${totalSkipped} duplicates skipped)` : ''}`,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/weeks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
-    },
-    onError: (error: any) => {
-      console.error("Fetch playlists error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to fetch playlists",
-        variant: "destructive",
-      });
-    },
-  });
-
   const enrichMutation = useMutation({
     mutationFn: async ({ trackId }: { trackId: string }) => {
       console.log("Starting unified enrichment for track:", trackId);
@@ -296,6 +294,21 @@ export default function Dashboard() {
   const avgScore = filteredTracks.length 
     ? (filteredTracks.reduce((sum, t) => sum + t.unsignedScore, 0) / filteredTracks.length)
     : 0;
+
+  // Check if any filter is active
+  const hasActiveFilters = 
+    selectedWeek !== "all" || 
+    selectedPlaylist !== "all" || 
+    selectedTag !== "all" || 
+    searchQuery !== "" || 
+    activeFilters.length > 0 ||
+    (scoreRange[0] !== 0 || scoreRange[1] !== 10);
+
+  const filterSections = filterOptions.reduce((acc, filter) => {
+    if (!acc[filter.section]) acc[filter.section] = [];
+    acc[filter.section].push(filter);
+    return acc;
+  }, {} as Record<string, typeof filterOptions>);
 
   const handleExport = async () => {
     try {
@@ -407,55 +420,6 @@ export default function Dashboard() {
     });
   }, [selectedTrackIds, filteredTracks, toast]);
 
-  // Memoize action buttons to prevent infinite re-renders
-  const fetchDataButton = useMemo(() => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="gradient"
-          size="default"
-          className="gap-2"
-          disabled={fetchPlaylistsMutation.isPending}
-          data-testid="button-fetch-data"
-        >
-          <RefreshCw className={`h-4 w-4 ${fetchPlaylistsMutation.isPending ? "animate-spin" : ""}`} />
-          <span className="hidden sm:inline">
-            {fetchPlaylistsMutation.isPending ? "Fetching..." : "Fetch Data"}
-          </span>
-          {!fetchPlaylistsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
-        <DropdownMenuLabel>Fetch Options</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'all' })} data-testid="menu-fetch-all">
-          Fetch All Playlists
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'editorial' })} data-testid="menu-fetch-editorial">
-          Fetch Editorial Playlists Only
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'non-editorial' })} data-testid="menu-fetch-non-editorial">
-          Fetch Non-Editorial Playlists Only
-        </DropdownMenuItem>
-        {trackedPlaylists.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Fetch Specific Playlist</DropdownMenuLabel>
-            {trackedPlaylists.map((playlist) => (
-              <DropdownMenuItem 
-                key={playlist.id} 
-                onClick={() => fetchPlaylistsMutation.mutate({ mode: 'specific', playlistId: playlist.id })}
-                data-testid={`menu-fetch-playlist-${playlist.id}`}
-              >
-                {playlist.name}
-              </DropdownMenuItem>
-            ))}
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  ), [fetchPlaylistsMutation.isPending, trackedPlaylists]);
-
   const handleEnrichTrack = useCallback((trackId: string) => {
     enrichMutation.mutate({ trackId });
   }, [enrichMutation]);
@@ -532,39 +496,201 @@ export default function Dashboard() {
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6 fade-in">
-          {/* Unified Control Panel */}
-          <UnifiedControlPanel
-            totalTracks={filteredTracks.length}
-            highPotential={highPotentialCount}
-            mediumPotential={mediumPotentialCount}
-            avgScore={avgScore}
-            fetchDataButton={fetchDataButton}
-            enrichArtistsButton={enrichArtistsButton}
-            exportButton={exportButton}
-            playlistManagerButton={<PlaylistManager open={playlistManagerOpen} onOpenChange={setPlaylistManagerOpen} />}
-            tagManagerButton={<TagManager open={tagManagerOpen} onOpenChange={setTagManagerOpen} />}
-            compareButton={compareButton}
-            onExport={handleExport}
-            onPlaylistManager={handleOpenPlaylistManager}
-            onTagManager={handleOpenTagManager}
-            weeks={weeks || []}
-            selectedWeek={selectedWeek}
-            onWeekChange={setSelectedWeek}
-            playlists={trackedPlaylists}
-            selectedPlaylist={selectedPlaylist}
-            onPlaylistChange={setSelectedPlaylist}
-            tags={tags}
-            selectedTag={selectedTag}
-            onTagChange={setSelectedTag}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            scoreRange={scoreRange}
-            onScoreRangeChange={setScoreRange}
-            activeFilters={activeFilters}
-            onFilterToggle={toggleFilter}
-            onClearFilters={clearFilters}
-            onClearAllFilters={clearAllFilters}
-          />
+          {/* Header with Enrich Artists Button */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Tracks</h1>
+            <Button
+              onClick={() => enrichArtistsMutation.mutate({ limit: 50 })}
+              variant="gradient"
+              size="default"
+              className="gap-2"
+              disabled={enrichArtistsMutation.isPending || !tracks || tracks.length === 0}
+              data-testid="button-enrich-artists"
+            >
+              <Users className={`h-4 w-4 ${enrichArtistsMutation.isPending ? "animate-pulse" : ""}`} />
+              <span className="hidden md:inline">
+                {enrichArtistsMutation.isPending ? "Enriching Artists..." : "Enrich Artists"}
+              </span>
+            </Button>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatsCard
+              title="Total Tracks"
+              value={filteredTracks.length.toLocaleString()}
+              icon={Music}
+              variant="default"
+              testId="stats-total-tracks"
+            />
+            <StatsCard
+              title="High Potential"
+              value={highPotentialCount.toLocaleString()}
+              subtitle="Score 7-10"
+              icon={Target}
+              variant="success"
+              testId="stats-high-potential"
+            />
+            <StatsCard
+              title="Medium Potential"
+              value={mediumPotentialCount.toLocaleString()}
+              subtitle="Score 4-6"
+              icon={TrendingUp}
+              variant="warning"
+              testId="stats-medium-potential"
+            />
+            <StatsCard
+              title="Avg Score"
+              value={avgScore.toFixed(1)}
+              subtitle="Out of 10"
+              icon={Activity}
+              variant="default"
+              testId="stats-avg-score"
+            />
+          </div>
+
+          {/* Filters Row */}
+          <Card className="glass-panel backdrop-blur-xl border border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Week Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-secondary-foreground font-medium">Week:</span>
+                  <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                    <SelectTrigger className="w-[160px]" data-testid="select-week">
+                      <SelectValue placeholder="All Dates" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Dates</SelectItem>
+                      {weeks?.map((week) => (
+                        <SelectItem key={week} value={week}>
+                          {week}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Playlist Filter */}
+                <Select value={selectedPlaylist} onValueChange={setSelectedPlaylist}>
+                  <SelectTrigger className="w-[160px]" data-testid="select-playlist">
+                    <SelectValue placeholder="All Playlists" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Playlists</SelectItem>
+                    {trackedPlaylists.map((playlist) => (
+                      <SelectItem key={playlist.playlistId} value={playlist.playlistId}>
+                        {playlist.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Tag Filter */}
+                <Select value={selectedTag} onValueChange={setSelectedTag}>
+                  <SelectTrigger className="w-[160px]" data-testid="select-tag">
+                    <SelectValue placeholder="All Tags" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Tags</SelectItem>
+                    {tags.map((tag) => (
+                      <SelectItem key={tag.id} value={tag.id}>
+                        {tag.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Search Bar */}
+                <div className="relative flex-1 min-w-[240px]">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search tracks, artists, labels..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                    data-testid="input-search"
+                  />
+                </div>
+
+                {/* Completeness Filters Popover */}
+                <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="default"
+                      className="gap-2"
+                      data-testid="button-completeness-filters"
+                    >
+                      <Filter className="h-4 w-4" />
+                      Completeness Filters
+                      {activeFilters.length > 0 && (
+                        <Badge variant="default" className="ml-1 px-1.5 py-0">
+                          {activeFilters.length}
+                        </Badge>
+                      )}
+                      <ChevronDown className={`h-3 w-3 ${filtersOpen ? "rotate-180" : ""}`} />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 glass-panel" align="end">
+                    <div className="space-y-4">
+                      {/* Score Range Filter */}
+                      <div>
+                        <h4 className="text-sm font-medium mb-3">Score Range</h4>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-medium whitespace-nowrap">
+                            {scoreRange[0]} - {scoreRange[1]}
+                          </span>
+                          <Slider
+                            min={0}
+                            max={10}
+                            step={1}
+                            value={scoreRange}
+                            onValueChange={(value) => setScoreRange(value as [number, number])}
+                            className="flex-1"
+                            data-testid="slider-score-range"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-3" />
+
+                      {/* Data Completeness Filters */}
+                      {Object.entries(filterSections).map(([section, filters]) => (
+                        <div key={section}>
+                          <h4 className="text-sm font-medium mb-2">{section}</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {filters.map((filter) => (
+                              <Button
+                                key={filter.id}
+                                variant={activeFilters.includes(filter.id) ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => toggleFilter(filter.id)}
+                                className="text-xs"
+                                data-testid={`filter-${filter.id}`}
+                              >
+                                {filter.label}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="border-t pt-3 flex justify-between">
+                        <Button variant="outline" size="sm" onClick={clearFilters}>
+                          Clear Selected
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={clearAllFilters} data-testid="button-clear-all-filters">
+                          Clear All Filters
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* View Switcher */}
           <div className="flex items-center justify-between glass-panel backdrop-blur-xl p-3 rounded-lg border border-primary/20 slide-in-right">
