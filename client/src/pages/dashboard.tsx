@@ -94,6 +94,15 @@ export default function Dashboard() {
     setActiveFilters([]);
   };
 
+  const clearAllFilters = () => {
+    setSelectedWeek("latest");
+    setSelectedPlaylist("all");
+    setSelectedTag("all");
+    setSearchQuery("");
+    setScoreRange([0, 10]);
+    setActiveFilters([]);
+  };
+
   const toggleTrackSelection = (trackId: string) => {
     setSelectedTrackIds(prev => {
       const newSet = new Set(prev);
@@ -163,10 +172,6 @@ export default function Dashboard() {
     enabled: !!selectedWeek || selectedTag !== "all" || selectedPlaylist !== "all",
   });
 
-  const { data: playlists } = useQuery<string[]>({
-    queryKey: ["/api/playlists"],
-  });
-
   const { data: trackedPlaylists = [] } = useQuery<TrackedPlaylist[]>({
     queryKey: ["/api/tracked-playlists"],
   });
@@ -192,7 +197,6 @@ export default function Dashboard() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/weeks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/playlists"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
     },
     onError: (error: any) => {
@@ -286,11 +290,12 @@ export default function Dashboard() {
     return matchesSearch && matchesScore && matchesAdvancedFilters;
   }) || [];
 
-  const highPotentialCount = tracks?.filter(t => t.unsignedScore >= 7).length || 0;
-  const mediumPotentialCount = tracks?.filter(t => t.unsignedScore >= 4 && t.unsignedScore < 7).length || 0;
-  const avgScore = tracks?.length 
-    ? (tracks.reduce((sum, t) => sum + t.unsignedScore, 0) / tracks.length).toFixed(1)
-    : "0.0";
+  // Calculate stats based on FILTERED tracks (dynamic stats)
+  const highPotentialCount = filteredTracks.filter(t => t.unsignedScore >= 7).length;
+  const mediumPotentialCount = filteredTracks.filter(t => t.unsignedScore >= 4 && t.unsignedScore < 7).length;
+  const avgScore = filteredTracks.length 
+    ? (filteredTracks.reduce((sum, t) => sum + t.unsignedScore, 0) / filteredTracks.length)
+    : 0;
 
   const handleExport = async () => {
     try {
@@ -529,10 +534,10 @@ export default function Dashboard() {
         <div className="space-y-6 fade-in">
           {/* Unified Control Panel */}
           <UnifiedControlPanel
-            totalTracks={tracks?.length || 0}
+            totalTracks={filteredTracks.length}
             highPotential={highPotentialCount}
             mediumPotential={mediumPotentialCount}
-            avgScore={parseFloat(avgScore)}
+            avgScore={avgScore}
             fetchDataButton={fetchDataButton}
             enrichArtistsButton={enrichArtistsButton}
             exportButton={exportButton}
@@ -545,7 +550,7 @@ export default function Dashboard() {
             weeks={weeks || []}
             selectedWeek={selectedWeek}
             onWeekChange={setSelectedWeek}
-            playlists={playlists || []}
+            playlists={trackedPlaylists}
             selectedPlaylist={selectedPlaylist}
             onPlaylistChange={setSelectedPlaylist}
             tags={tags}
@@ -558,6 +563,7 @@ export default function Dashboard() {
             activeFilters={activeFilters}
             onFilterToggle={toggleFilter}
             onClearFilters={clearFilters}
+            onClearAllFilters={clearAllFilters}
           />
 
           {/* View Switcher */}

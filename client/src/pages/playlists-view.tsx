@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw } from "lucide-react";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { type TrackedPlaylist } from "@shared/schema";
@@ -12,6 +12,15 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +35,9 @@ export default function PlaylistsView() {
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [selectedPlaylist, setSelectedPlaylist] = useState<TrackedPlaylist | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [newPlaylistUrl, setNewPlaylistUrl] = useState("");
+  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
@@ -128,6 +140,81 @@ export default function PlaylistsView() {
     },
   });
 
+  const addPlaylistMutation = useMutation({
+    mutationFn: async (url: string): Promise<TrackedPlaylist> => {
+      const playlistId = extractPlaylistId(url);
+      if (!playlistId) {
+        throw new Error("Invalid Spotify playlist URL or ID");
+      }
+
+      const playlistData = await fetchPlaylistInfo(playlistId);
+      
+      const res = await apiRequest("POST", "/api/tracked-playlists", {
+        name: playlistData.name,
+        playlistId: playlistData.foundViaSearch ? playlistData.id : playlistId,
+        spotifyUrl: `https://open.spotify.com/playlist/${playlistData.foundViaSearch ? playlistData.id : playlistId}`,
+      });
+      
+      const playlist: TrackedPlaylist = await res.json();
+      return playlist;
+    },
+    onSuccess: (data: TrackedPlaylist) => {
+      const totalTracksInfo = data.totalTracks ? ` (${data.totalTracks} tracks)` : '';
+      toast({
+        title: "Playlist Added!",
+        description: `Now tracking "${data.name}"${totalTracksInfo}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
+      setNewPlaylistUrl("");
+      setAddDialogOpen(false);
+    },
+    onError: (error: any) => {
+      const isRestricted = error.message?.includes("region-restricted") || error.message?.includes("editorial-only");
+      
+      toast({
+        title: isRestricted ? "Playlist Restricted" : "Error",
+        description: error.message || "Failed to add playlist",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const extractPlaylistId = (urlOrId: string): string | null => {
+    const trimmed = urlOrId.trim();
+    
+    const urlMatch = trimmed.match(/playlist\/([a-zA-Z0-9]+)/);
+    if (urlMatch) {
+      return urlMatch[1];
+    }
+    
+    if (/^[a-zA-Z0-9]+$/.test(trimmed)) {
+      return trimmed;
+    }
+    
+    return null;
+  };
+
+  const fetchPlaylistInfo = async (playlistId: string) => {
+    const response = await fetch(`/api/spotify/playlist/${playlistId}`);
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "Failed to fetch playlist info from Spotify");
+    }
+    return response.json();
+  };
+
+  const handleAddPlaylist = () => {
+    if (!newPlaylistUrl.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a Spotify playlist URL or ID",
+        variant: "destructive",
+      });
+      return;
+    }
+    addPlaylistMutation.mutate(newPlaylistUrl);
+  };
+
   // Normalize source value for consistent filtering
   const normalizeSource = (source: string | null) => {
     return source || "unknown";
@@ -158,11 +245,24 @@ export default function PlaylistsView() {
   // Calculate stats
   const stats = useMemo(() => {
     const total = playlists.length;
-    const active = playlists.filter(p => p.status === "active").length;
-    const paused = playlists.filter(p => p.status === "paused").length;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentFetches = playlists.filter(p => {
+      if (!p.lastChecked) return false;
+      return new Date(p.lastChecked) >= sevenDaysAgo;
+    }).length;
+    
+    const topPlaylist = playlists.reduce((max, p) => 
+      (p.totalTracks || 0) > (max?.totalTracks || 0) ? p : max
+    , playlists[0] || null);
+    
+    const totalFollowers = playlists.reduce((sum, p) => sum + (p.followers || 0), 0);
+    const avgFollowers = playlists.length > 0 
+      ? Math.round(totalFollowers / playlists.length) 
+      : 0;
     const error = playlists.filter(p => p.status === "error").length;
 
-    return { total, active, paused, error };
+    return { total, recentFetches, topPlaylist, avgFollowers, error };
   }, [playlists]);
 
   // Get unique sources for filter, including "unknown" for playlists without a source
@@ -209,6 +309,53 @@ export default function PlaylistsView() {
   return (
     <div className="p-8 space-y-6 fade-in">
 
+      {/* Header with Add Button */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Playlists</h1>
+        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="gradient" size="default" className="gap-2" data-testid="button-add-playlist">
+              <Plus className="h-4 w-4" />
+              Add Playlist
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="glass-panel">
+            <DialogHeader>
+              <DialogTitle>Add Spotify Playlist</DialogTitle>
+              <DialogDescription>
+                Enter a Spotify playlist URL or ID to start tracking it
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="playlist-url">Playlist URL or ID</Label>
+                <Input
+                  id="playlist-url"
+                  placeholder="https://open.spotify.com/playlist/..."
+                  value={newPlaylistUrl}
+                  onChange={(e) => setNewPlaylistUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddPlaylist();
+                    }
+                  }}
+                  data-testid="input-new-playlist-url"
+                />
+              </div>
+              <Button 
+                onClick={handleAddPlaylist} 
+                disabled={addPlaylistMutation.isPending}
+                className="w-full"
+                data-testid="button-submit-add-playlist"
+              >
+                {addPlaylistMutation.isPending ? "Adding..." : "Add Playlist"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 slide-in-right">
         <StatsCard
@@ -219,25 +366,28 @@ export default function PlaylistsView() {
           testId="stats-total-playlists"
         />
         <StatsCard
-          title="Active"
-          value={stats.active}
-          icon={List}
+          title="Recent Fetches"
+          value={stats.recentFetches}
+          subtitle="Last 7 days"
+          icon={RefreshCw}
           variant="success"
-          testId="stats-active-playlists"
+          testId="stats-recent-fetches"
         />
         <StatsCard
-          title="Paused"
-          value={stats.paused}
-          icon={Calendar}
-          variant="warning"
-          testId="stats-paused-playlists"
+          title="Top Playlist"
+          value={stats.topPlaylist ? stats.topPlaylist.name.substring(0, 20) + (stats.topPlaylist.name.length > 20 ? '...' : '') : '—'}
+          subtitle={stats.topPlaylist ? `${(stats.topPlaylist.totalTracks || 0).toLocaleString()} tracks` : ''}
+          icon={List}
+          variant="default"
+          testId="stats-top-playlist"
         />
         <StatsCard
-          title="Errors"
-          value={stats.error}
+          title="Avg Followers"
+          value={stats.avgFollowers > 1000 ? `${(stats.avgFollowers / 1000).toFixed(1)}K` : stats.avgFollowers.toLocaleString()}
+          subtitle="Per playlist"
           icon={Filter}
           variant="warning"
-          testId="stats-error-playlists"
+          testId="stats-avg-followers"
         />
       </div>
 
@@ -289,13 +439,35 @@ export default function PlaylistsView() {
         </CardContent>
       </Card>
 
-      {/* Table */}
+      {/* View Toggle and Count */}
       <Card className="glass-panel backdrop-blur-xl border border-primary/20">
         <CardHeader>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">
               {filteredPlaylists.length} Playlist{filteredPlaylists.length !== 1 ? 's' : ''}
             </h2>
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === "table" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("table")}
+                className="gap-2"
+                data-testid="button-view-table"
+              >
+                <LayoutList className="h-4 w-4" />
+                Table
+              </Button>
+              <Button
+                variant={viewMode === "cards" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("cards")}
+                className="gap-2"
+                data-testid="button-view-cards"
+              >
+                <LayoutGrid className="h-4 w-4" />
+                Cards
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -304,6 +476,94 @@ export default function PlaylistsView() {
           ) : filteredPlaylists.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {playlists.length === 0 ? "No playlists tracked yet" : "No playlists match your filters"}
+            </div>
+          ) : viewMode === "cards" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredPlaylists.map(playlist => (
+                <Card 
+                  key={playlist.id} 
+                  className="glass-panel hover-elevate cursor-pointer"
+                  onClick={() => openDrawer(playlist)}
+                  data-testid={`card-playlist-${playlist.id}`}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-md bg-primary/10">
+                          <Music2 className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold truncate">{playlist.name}</h3>
+                          {playlist.isEditorial === 1 && (
+                            <Badge variant="secondary" className="mt-1">Editorial</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            data-testid={`button-card-actions-${playlist.id}`}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            viewTracks(playlist.playlistId);
+                          }}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Tracks
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fetchPlaylistDataMutation.mutate(playlist.playlistId);
+                            }}
+                            disabled={fetchPlaylistDataMutation.isPending}
+                          >
+                            <RefreshCw className={cn("h-4 w-4 mr-2", fetchPlaylistDataMutation.isPending && "animate-spin")} />
+                            Fetch Data
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(playlist.spotifyUrl, "_blank");
+                          }}>
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Open in Spotify
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Music2 className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{formatNumber(playlist.totalTracks)}</span>
+                      <span className="text-muted-foreground">tracks</span>
+                    </div>
+                    {playlist.curator && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <User2 className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground truncate">{playlist.curator}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-sm">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{formatNumber(playlist.followers)}</span>
+                      <span className="text-muted-foreground">followers</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(playlist.lastChecked)}
+                      </span>
+                      {getStatusBadge(playlist.status)}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           ) : (
             <Table>

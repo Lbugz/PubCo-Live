@@ -68,9 +68,9 @@ interface UnifiedControlPanelProps {
   selectedWeek?: string;
   onWeekChange?: (week: string) => void;
   
-  playlists: string[];
+  playlists: Array<{ playlistId: string; name: string }>;
   selectedPlaylist?: string;
-  onPlaylistChange?: (playlist: string) => void;
+  onPlaylistChange?: (playlistId: string) => void;
   
   tags: Array<{ id: string; name: string }>;
   selectedTag?: string;
@@ -85,6 +85,7 @@ interface UnifiedControlPanelProps {
   activeFilters?: string[];
   onFilterToggle?: (filter: string) => void;
   onClearFilters?: () => void;
+  onClearAllFilters?: () => void;
 }
 
 const filterOptions = [
@@ -131,8 +132,18 @@ export function UnifiedControlPanel({
   activeFilters = [],
   onFilterToggle,
   onClearFilters,
+  onClearAllFilters,
 }: UnifiedControlPanelProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
+  
+  // Check if any filter is active
+  const hasActiveFilters = 
+    selectedWeek !== "latest" || 
+    selectedPlaylist !== "all" || 
+    selectedTag !== "all" || 
+    searchQuery !== "" || 
+    activeFilters.length > 0 ||
+    (scoreRange[0] !== 0 || scoreRange[1] !== 10);
 
   const filterSections = filterOptions.reduce((acc, filter) => {
     if (!acc[filter.section]) acc[filter.section] = [];
@@ -225,19 +236,22 @@ export function UnifiedControlPanel({
       <div className="glass-panel p-3 rounded-lg">
         <div className="flex flex-wrap items-center gap-2">
           {/* Dropdowns */}
-          <Select value={selectedWeek} onValueChange={onWeekChange}>
-            <SelectTrigger className="w-[160px]" data-testid="select-week">
-              <SelectValue placeholder="All Dates" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Dates</SelectItem>
-              {weeks.map((week) => (
-                <SelectItem key={week} value={week}>
-                  {week}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Week:</span>
+            <Select value={selectedWeek} onValueChange={onWeekChange}>
+              <SelectTrigger className="w-[160px]" data-testid="select-week">
+                <SelectValue placeholder="All Dates" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Dates</SelectItem>
+                {weeks.map((week) => (
+                  <SelectItem key={week} value={week}>
+                    {week}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <Select value={selectedPlaylist} onValueChange={onPlaylistChange}>
             <SelectTrigger className="w-[160px]" data-testid="select-playlist">
@@ -246,8 +260,8 @@ export function UnifiedControlPanel({
             <SelectContent>
               <SelectItem value="all">All Playlists</SelectItem>
               {playlists.map((playlist) => (
-                <SelectItem key={playlist} value={playlist}>
-                  {playlist}
+                <SelectItem key={playlist.playlistId} value={playlist.playlistId}>
+                  {playlist.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -359,6 +373,19 @@ export function UnifiedControlPanel({
               </div>
             </PopoverContent>
           </Popover>
+
+          {/* Clear All Filters Button */}
+          {hasActiveFilters && onClearAllFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClearAllFilters}
+              className="gap-2 text-muted-foreground hover:text-foreground"
+              data-testid="button-clear-all-filters"
+            >
+              Clear All
+            </Button>
+          )}
         </div>
       </div>
     </div>
