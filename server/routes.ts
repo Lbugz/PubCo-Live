@@ -1183,20 +1183,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update track with all collected data
-      updates.enrichedAt = new Date();
-      updates.enrichmentTier = enrichmentTier;
-      await storage.updateTrackMetadata(track.id, updates);
-
-      // Broadcast real-time update
-      broadcastEnrichmentUpdate({
-        type: 'track_enriched',
-        trackId: track.id,
-        trackName: track.trackName,
-        artistName: track.artistName,
-      });
-
       const successfulTiers = tierResults.filter(t => t.success).length;
-      const enrichmentStatus = successfulTiers > 0 ? "success" : "partial";
+      
+      // Only set enrichedAt if we actually got some data
+      if (successfulTiers > 0 || Object.keys(updates).length > 0) {
+        updates.enrichedAt = new Date();
+        updates.enrichmentTier = enrichmentTier;
+        await storage.updateTrackMetadata(track.id, updates);
+
+        // Broadcast real-time update
+        broadcastEnrichmentUpdate({
+          type: 'track_enriched',
+          trackId: track.id,
+          trackName: track.trackName,
+          artistName: track.artistName,
+        });
+      }
+
+      // If all tiers failed, return error
+      if (successfulTiers === 0) {
+        const failureMessages = tierResults
+          .filter(t => !t.success)
+          .map(t => `${t.tier}: ${t.message}`)
+          .join('; ');
+        
+        return res.status(500).json({
+          error: `Enrichment failed for all tiers. ${failureMessages}`,
+          errorType: "EnrichmentError",
+          tierResults
+        });
+      }
+
+      const enrichmentStatus = successfulTiers === tierResults.length ? "success" : "partial";
 
       res.json({
         success: true,
