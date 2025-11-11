@@ -3,7 +3,6 @@ import fs from "fs";
 import path from "path";
 import { recordAuthSuccess, recordAuthFailure } from "./auth-monitor";
 import { execSync } from "child_process";
-import { getNameSplitScript } from "../client/src/lib/name-utils";
 
 const COOKIES_FILE = path.join(process.cwd(), "spotify_cookies.json");
 
@@ -539,8 +538,72 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
       };
     }
     
-    // Inject shared name-splitting utility
-    await page.addScriptTag({ content: getNameSplitScript() });
+    // Inject shared name-splitting utility as a plain string to avoid transpiler issues
+    console.log("Injecting name-splitting utility...");
+    const nameSplitScript = `
+      (function() {
+        function hasMcMacPrefix(fullName) {
+          return /Mc[A-Z]/.test(fullName) || /Mac[A-Z]/.test(fullName);
+        }
+
+        function decideShouldSplit(transitions, segments, original) {
+          if (segments.length === 0) return false;
+          if (hasMcMacPrefix(original)) return false;
+          if (transitions >= 2) return true;
+          
+          if (transitions === 1) {
+            var hasMultiWordSegment = segments.some(function(seg) { return seg.includes(' '); });
+            if (hasMultiWordSegment) return true;
+          }
+          
+          return false;
+        }
+
+        window.splitConcatenatedNames = function(fullName) {
+          if (!fullName || typeof fullName !== 'string') {
+            return [];
+          }
+
+          var capitalTransitions = (fullName.match(/[a-z][A-Z]/g) || []).length;
+
+          if (capitalTransitions === 0) {
+            return [fullName];
+          }
+
+          var splitNames = [];
+          var currentName = '';
+
+          for (var i = 0; i < fullName.length; i++) {
+            var char = fullName[i];
+            var prevChar = i > 0 ? fullName[i - 1] : '';
+
+            if (i > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
+              if (currentName.trim().length > 0) {
+                splitNames.push(currentName.trim());
+              }
+              currentName = char;
+            } else {
+              currentName += char;
+            }
+          }
+
+          if (currentName.trim().length > 0) {
+            splitNames.push(currentName.trim());
+          }
+
+          var validSegments = splitNames.filter(function(seg) { return seg.length > 1; });
+          var shouldSplit = decideShouldSplit(capitalTransitions, validSegments, fullName);
+
+          return shouldSplit ? validSegments : [fullName];
+        };
+      })();
+    `;
+    
+    await page.evaluate(nameSplitScript);
+    
+    // Verify function is available
+    await page.waitForFunction('typeof window.splitConcatenatedNames === "function"', { timeout: 5000 });
+    console.log("Name-splitting utility injected successfully");
     
     // Extract credits information
     console.log("Extracting credits data...");
