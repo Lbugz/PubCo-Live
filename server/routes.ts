@@ -824,13 +824,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   trackStage: chartmetricData.trackStage,
                   playlistFollowers: chartmetricData.playlistFollowers,
                   youtubeViews: chartmetricData.youtubeViews,
-                  chartmetricEnrichedAt: new Date()
+                  chartmetricEnrichedAt: new Date(),
+                  songwriterIds: chartmetricData.songwriterIds,
+                  composerName: chartmetricData.composerName,
+                  moods: chartmetricData.moods,
+                  activities: chartmetricData.activities
                 });
                 
                 enrichedCount++;
                 success = true;
                 
-                console.log(`✅ Enriched with Chartmetric: ${chartmetricData.spotifyStreams?.toLocaleString()} streams, stage: ${chartmetricData.trackStage}`);
+                const songwriterInfo = chartmetricData.songwriterIds?.length ? `, ${chartmetricData.songwriterIds.length} songwriter IDs` : '';
+                console.log(`✅ Enriched with Chartmetric: ${chartmetricData.spotifyStreams?.toLocaleString()} streams, stage: ${chartmetricData.trackStage}${songwriterInfo}`);
               } else {
                 // No data found but no error
                 await storage.updateTrackChartmetric(track.id, {
