@@ -279,6 +279,10 @@ export interface ChartmetricEnrichmentResult {
   playlistFollowers?: number;
   youtubeViews?: number;
   trackStage?: string;
+  songwriterIds?: string[];
+  composerName?: string;
+  moods?: string[];
+  activities?: string[];
   songwriters?: Array<{
     id: string;
     name: string;
@@ -300,8 +304,11 @@ export async function enrichTrackWithChartmetric(track: PlaylistSnapshot): Promi
       return null;
     }
 
-    // Step 2: Get streaming stats
+    // Step 2: Get streaming stats (gracefully handle 401 for basic tier)
     const stats = await getTrackStreamingStats(chartmetricTrack.id);
+
+    // Step 3: Get full track metadata for songwriter IDs and additional context
+    const metadata = await getTrackMetadata(chartmetricTrack.id);
 
     // Determine track stage based on Spotify popularity (0-100 scale)
     let trackStage: string | undefined;
@@ -314,16 +321,47 @@ export async function enrichTrackWithChartmetric(track: PlaylistSnapshot): Promi
       else trackStage = "Developing";
     }
 
+    // Extract songwriter IDs and metadata fields
+    let songwriterIds: string[] | undefined;
+    let composerName: string | undefined;
+    let moods: string[] | undefined;
+    let activities: string[] | undefined;
+
+    if (metadata) {
+      // songwriterIds is an array of Chartmetric songwriter IDs
+      if (metadata.songwriterIds && Array.isArray(metadata.songwriterIds)) {
+        songwriterIds = metadata.songwriterIds.map((id: any) => String(id));
+      }
+      
+      // composer_name is a string field
+      if (metadata.composer_name) {
+        composerName = metadata.composer_name;
+      }
+      
+      // moods and activities are arrays (added Jan 2025)
+      if (metadata.moods && Array.isArray(metadata.moods)) {
+        moods = metadata.moods;
+      }
+      
+      if (metadata.activities && Array.isArray(metadata.activities)) {
+        activities = metadata.activities;
+      }
+    }
+
     const result: ChartmetricEnrichmentResult = {
       chartmetricId: chartmetricTrack.id,
       spotifyStreams: stats?.spotify?.current_streams,
       streamingVelocity: stats?.spotify?.velocity,
       youtubeViews: stats?.youtube?.views,
       trackStage,
+      songwriterIds,
+      composerName,
+      moods,
+      activities,
     };
 
     const fieldsCount = Object.keys(result).filter(k => result[k as keyof ChartmetricEnrichmentResult] != null).length;
-    console.log(`✅ Chartmetric: Enriched track with ${fieldsCount} fields (ID: ${result.chartmetricId}, Stage: ${trackStage})`);
+    console.log(`✅ Chartmetric: Enriched track with ${fieldsCount} fields (ID: ${result.chartmetricId}, Songwriter IDs: ${songwriterIds?.length || 0})`);
     
     return result;
   } catch (error: any) {
