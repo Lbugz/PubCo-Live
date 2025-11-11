@@ -13,6 +13,7 @@ import { fetchEditorialTracksViaNetwork } from "./scrapers/spotifyEditorialNetwo
 import { harvestVirtualizedRows } from "./scrapers/spotifyEditorialDom";
 import { broadcastEnrichmentUpdate } from "./websocket";
 import { getAuthStatus, isAuthHealthy } from "./auth-monitor";
+import { enrichTrackWithChartmetric, getSongwriterProfile, getSongwriterCollaborators, getSongwriterPublishers } from "./chartmetric";
 
 // Helper function to fetch all tracks from a playlist with pagination
 async function fetchAllPlaylistTracks(spotify: any, playlistId: string): Promise<any[]> {
@@ -762,6 +763,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error enriching artists:", error);
       res.status(500).json({ error: "Failed to enrich artists" });
+    }
+  });
+
+  app.post("/api/enrich-chartmetric", async (req, res) => {
+    try {
+      const { limit = 50 } = req.body;
+      
+      const tracksNeedingEnrichment = await storage.getTracksNeedingChartmetricEnrichment(limit);
+      
+      if (tracksNeedingEnrichment.length === 0) {
+        return res.json({
+          success: true,
+          enrichedCount: 0,
+          failedNoIsrc: 0,
+          failedApi: 0,
+          totalProcessed: 0,
+          message: "No tracks need Chartmetric enrichment"
+        });
+      }
+
+      console.log(`\n🎵 Starting Chartmetric enrichment for ${tracksNeedingEnrichment.length} tracks...`);
+      
+      let enrichedCount = 0;
+      let failedNoIsrc = 0;
+      let failedApi = 0;
+      let processedCount = 0;
+      
+      // Process tracks sequentially to respect rate limiting
+      for (const track of tracksNeedingEnrichment) {
+        try {
+          // Skip tracks without ISRC
+          if (!track.isrc) {
+            await storage.updateTrackChartmetric(track.id, {
+              chartmetricStatus: "failed_missing_isrc"
+            });
+            failedNoIsrc++;
+            processedCount++;
+            continue;
+          }
+
+          console.log(`\n📊 [${processedCount + 1}/${tracksNeedingEnrichment.length}] Enriching: ${track.trackName} by ${track.artistName}`);
+          
+          // Attempt enrichment with retry logic
+          let retries = 0;
+          let success = false;
+          let lastError: Error | null = null;
+          
+          while (retries < 3 && !success) {
+            try {
+              const chartmetricData = await enrichTrackWithChartmetric(track);
+              
+              if (chartmetricData) {
+                // Update track with Chartmetric data
+                await storage.updateTrackChartmetric(track.id, {
+                  chartmetricId: chartmetricData.chartmetricId,
+                  chartmetricStatus: "success",
+                  spotifyStreams: chartmetricData.spotifyStreams,
+                  streamingVelocity: chartmetricData.streamingVelocity?.toString(),
+                  trackStage: chartmetricData.trackStage,
+                  playlistFollowers: chartmetricData.playlistFollowers,
+                  youtubeViews: chartmetricData.youtubeViews,
+                  chartmetricEnrichedAt: new Date()
+                });
+                
+                enrichedCount++;
+                success = true;
+                
+                console.log(`✅ Enriched with Chartmetric: ${chartmetricData.spotifyStreams?.toLocaleString()} streams, stage: ${chartmetricData.trackStage}`);
+              } else {
+                // No data found but no error
+                await storage.updateTrackChartmetric(track.id, {
+                  chartmetricStatus: "failed_api",
+                  chartmetricEnrichedAt: new Date()
+                });
+                failedApi++;
+                success = true;
+                console.log(`⚠️  No Chartmetric data found for track`);
+              }
+            } catch (error: any) {
+              lastError = error;
+              retries++;
+              
+              if (retries < 3) {
+                // Exponential backoff: 2s, 4s, 8s
+                const backoffMs = Math.pow(2, retries) * 1000;
+                console.log(`⚠️  Retry ${retries}/3 after ${backoffMs}ms: ${error.message}`);
+                await new Promise(resolve => setTimeout(resolve, backoffMs));
+              }
+            }
+          }
+          
+          // If all retries failed, mark as failed
+          if (!success && lastError) {
+            await storage.updateTrackChartmetric(track.id, {
+              chartmetricStatus: "failed_api",
+              chartmetricEnrichedAt: new Date()
+            });
+            failedApi++;
+            console.error(`❌ Failed after 3 retries: ${lastError.message}`);
+          }
+          
+        } catch (error: any) {
+          console.error(`❌ Error processing track ${track.id}:`, error.message);
+          await storage.updateTrackChartmetric(track.id, {
+            chartmetricStatus: "failed_api",
+            chartmetricEnrichedAt: new Date()
+          });
+          failedApi++;
+        }
+        
+        processedCount++;
+        
+        // Send WebSocket progress update every 5 tracks
+        if (processedCount % 5 === 0 || processedCount === tracksNeedingEnrichment.length) {
+          broadcastEnrichmentUpdate({
+            type: "chartmetric_progress",
+            processed: processedCount,
+            total: tracksNeedingEnrichment.length,
+            enriched: enrichedCount,
+            failed: failedNoIsrc + failedApi
+          });
+        }
+      }
+      
+      const message = `Enriched ${enrichedCount} tracks with Chartmetric analytics`;
+      const details: string[] = [];
+      if (failedNoIsrc > 0) details.push(`${failedNoIsrc} skipped (no ISRC)`);
+      if (failedApi > 0) details.push(`${failedApi} failed (API errors)`);
+      
+      res.json({
+        success: true,
+        enrichedCount,
+        failedNoIsrc,
+        failedApi,
+        totalProcessed: processedCount,
+        message: details.length > 0 ? `${message}. ${details.join(", ")}` : message
+      });
+    } catch (error: any) {
+      console.error("Error in Chartmetric enrichment:", error);
+      res.status(500).json({ error: "Failed to enrich with Chartmetric" });
     }
   });
 

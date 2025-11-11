@@ -34,6 +34,7 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   contactNotes: text("contact_notes"),
   dataSource: text("data_source").notNull().default("api"),
   chartmetricId: text("chartmetric_id"),
+  chartmetricStatus: text("chartmetric_status").default("pending"),
   spotifyStreams: integer("spotify_streams"),
   streamingVelocity: text("streaming_velocity"),
   trackStage: text("track_stage"),

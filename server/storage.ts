@@ -35,6 +35,9 @@ export interface IStorage {
   getArtistsByTrackId(trackId: string): Promise<Artist[]>;
   getTracksNeedingArtistEnrichment(limit?: number): Promise<PlaylistSnapshot[]>;
   updateArtistLinks(artistId: string, links: { instagram?: string; twitter?: string; facebook?: string; bandcamp?: string; linkedin?: string; youtube?: string; discogs?: string; website?: string }): Promise<void>;
+  getTracksNeedingChartmetricEnrichment(limit?: number): Promise<PlaylistSnapshot[]>;
+  updateTrackChartmetric(id: string, data: { chartmetricId?: string; chartmetricStatus?: string; spotifyStreams?: number; streamingVelocity?: string; trackStage?: string; playlistFollowers?: number; youtubeViews?: number; chartmetricEnrichedAt?: Date }): Promise<void>;
+  getStaleChartmetricTracks(daysOld: number, limit?: number): Promise<PlaylistSnapshot[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -364,6 +367,39 @@ export class DatabaseStorage implements IStorage {
     await db.update(artists)
       .set({ ...links, updatedAt: new Date() })
       .where(eq(artists.id, artistId));
+  }
+
+  async getTracksNeedingChartmetricEnrichment(limit: number = 50): Promise<PlaylistSnapshot[]> {
+    return db.select()
+      .from(playlistSnapshots)
+      .where(
+        sql`${playlistSnapshots.isrc} IS NOT NULL 
+        AND ${playlistSnapshots.isrc} != '' 
+        AND (${playlistSnapshots.chartmetricStatus} IS NULL 
+             OR ${playlistSnapshots.chartmetricStatus} = 'pending')`
+      )
+      .orderBy(desc(playlistSnapshots.addedAt))
+      .limit(limit);
+  }
+
+  async updateTrackChartmetric(id: string, data: { chartmetricId?: string; chartmetricStatus?: string; spotifyStreams?: number; streamingVelocity?: string; trackStage?: string; playlistFollowers?: number; youtubeViews?: number; chartmetricEnrichedAt?: Date }): Promise<void> {
+    await db.update(playlistSnapshots)
+      .set(data)
+      .where(eq(playlistSnapshots.id, id));
+  }
+
+  async getStaleChartmetricTracks(daysOld: number = 7, limit: number = 50): Promise<PlaylistSnapshot[]> {
+    const staleDate = new Date();
+    staleDate.setDate(staleDate.getDate() - daysOld);
+    
+    return db.select()
+      .from(playlistSnapshots)
+      .where(
+        sql`${playlistSnapshots.chartmetricStatus} = 'success' 
+        AND ${playlistSnapshots.chartmetricEnrichedAt} < ${staleDate}`
+      )
+      .orderBy(playlistSnapshots.chartmetricEnrichedAt)
+      .limit(limit);
   }
 }
 
