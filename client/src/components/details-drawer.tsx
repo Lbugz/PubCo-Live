@@ -292,7 +292,7 @@ export function DetailsDrawer({
             </div>
           </Card>
 
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 px-4">
             {(() => {
               // Merge songwriter string with artists array
               const songwriterNames = displayTrack.songwriter?.split(",").map((name) => name.trim().toLowerCase()).filter(Boolean) ?? [];
@@ -316,56 +316,61 @@ export function DetailsDrawer({
               };
 
               return (
-                <div className="p-4 flex flex-col lg:flex-row gap-6 lg:items-start">
-                  {/* Left Column (60%) - Songwriter Tabs */}
-                  <section className="flex-1 lg:w-[60%] space-y-4">
-                    <h3 className="text-sm font-semibold font-heading">Songwriters & Relationships</h3>
+                <div className="space-y-6 py-2">
+                  {/* Songwriters Section */}
+                  <section className="space-y-4">
+                    <h3 className="text-sm font-semibold font-heading flex items-center gap-2">
+                      <Music2 className="h-4 w-4" />
+                      SONGWRITERS ({songwriterEntries.length})
+                    </h3>
                     
                     {trackLoading ? (
                       <div className="space-y-3">
                         {[1, 2].map((i) => (
                           <Card key={i} className="p-4">
-                            <div className="flex items-start gap-3">
-                              <Skeleton className="h-10 w-10 rounded-full" />
-                              <div className="flex-1 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 flex-1">
                                 <Skeleton className="h-4 w-32" />
-                                <Skeleton className="h-3 w-48" />
+                                <Skeleton className="h-5 w-16" />
                               </div>
+                              <Skeleton className="h-4 w-4" />
                             </div>
                           </Card>
                         ))}
                       </div>
                     ) : songwriterEntries.length > 0 ? (
-                      <Tabs defaultValue={songwriterEntries[0]?.id ?? ""} className="space-y-4">
-                        <TabsList className="w-full overflow-x-auto flex justify-start">
-                          {songwriterEntries.map((entry) => (
-                            <TabsTrigger 
-                              key={entry.id} 
-                              value={entry.id}
-                              data-testid={`tab-songwriter-${entry.id}`}
-                            >
-                              {entry.name}
-                            </TabsTrigger>
-                          ))}
-                        </TabsList>
-
+                      <Accordion type="multiple" defaultValue={[songwriterEntries[0]?.id ?? ""]} className="space-y-3">
                         {songwriterEntries.map((entry) => {
                           const socialLinks = getSocialLinks(entry);
                           const isEnriched = 'musicbrainzId' in entry;
+                          const isVerified = isEnriched;
                           
                           return (
-                            <TabsContent key={entry.id} value={entry.id} className="space-y-4">
-                              <Card className="p-4" data-testid={`card-songwriter-${entry.id}`}>
-                                {/* Songwriter Name & Role */}
-                                <div className="flex items-start justify-between gap-2 mb-3">
-                                  <h4 className="font-semibold text-lg">{entry.name}</h4>
-                                  <Badge variant="outline" className="text-xs">
-                                    {'role' in entry ? entry.role : "Songwriter"}
+                            <AccordionItem 
+                              key={entry.id} 
+                              value={entry.id}
+                              className="border rounded-lg"
+                              data-testid={`accordion-songwriter-${entry.id}`}
+                            >
+                              <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate">
+                                <div className="flex items-center gap-2 flex-1 text-left">
+                                  <span className="font-semibold">{entry.name}</span>
+                                  {isVerified ? (
+                                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                  ) : (
+                                    <XCircle className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                  )}
+                                  <Badge 
+                                    variant="outline"
+                                    className={cn(
+                                      "text-xs ml-auto mr-2",
+                                      isVerified 
+                                        ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
+                                        : "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20"
+                                    )}
+                                  >
+                                    {isVerified ? "Verified" : "Unverified"}
                                   </Badge>
-                                </div>
-
-                                {/* Analytics Badges */}
-                                <div className="flex flex-wrap gap-1.5 mb-4">
                                   <Badge 
                                     variant="outline"
                                     className={cn(
@@ -375,118 +380,102 @@ export function DetailsDrawer({
                                       "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
                                     )}
                                   >
-                                    Score: {displayTrack.unsignedScore}/10
+                                    Score {displayTrack.unsignedScore}/10
                                   </Badge>
-
-                                  {displayTrack.streamingVelocity && (
-                                    <Badge variant="outline" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
-                                      {(() => {
-                                        const velocityNum = typeof displayTrack.streamingVelocity === 'number' 
-                                          ? displayTrack.streamingVelocity 
-                                          : parseFloat(displayTrack.streamingVelocity);
-                                        if (!isNaN(velocityNum)) {
-                                          return `${velocityNum >= 0 ? '+' : ''}${velocityNum}%`;
-                                        }
-                                        return displayTrack.streamingVelocity;
-                                      })()} Velocity
-                                    </Badge>
-                                  )}
-
-                                  {displayTrack.trackStage && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {displayTrack.trackStage}
-                                    </Badge>
-                                  )}
-
-                                  {isEnriched && (
-                                    <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
-                                      <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
-                                      Verified
-                                    </Badge>
-                                  )}
                                 </div>
-
-                                {/* Moods & Activities */}
-                                {displayTrack.moods && displayTrack.moods.length > 0 && (
-                                  <div className="space-y-2 mb-4">
-                                    <span className="text-xs text-muted-foreground">Moods (Sync):</span>
-                                    <div className="flex flex-wrap gap-1">
-                                      {displayTrack.moods.slice(0, 5).map((mood, idx) => (
-                                        <Badge key={idx} variant="outline" className="text-xs bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20">
-                                          {mood}
-                                        </Badge>
-                                      ))}
+                              </AccordionTrigger>
+                              <AccordionContent className="px-4 pb-4 pt-2">
+                                <div className="space-y-4">
+                                  {/* Publisher & Stage Row */}
+                                  <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                      <span className="text-muted-foreground block mb-1">Publisher</span>
+                                      <span className="font-medium">{displayTrack.publisher || "—"}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground block mb-1">Stage</span>
+                                      <span className="font-medium">{displayTrack.trackStage || "Emerging"}</span>
                                     </div>
                                   </div>
-                                )}
 
-                                {displayTrack.activities && displayTrack.activities.length > 0 && (
-                                  <div className="space-y-2 mb-4">
-                                    <span className="text-xs text-muted-foreground">Activities (Sync):</span>
-                                    <div className="flex flex-wrap gap-1">
-                                      {displayTrack.activities.slice(0, 5).map((activity, idx) => (
-                                        <Badge key={idx} variant="outline" className="text-xs bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
-                                          {activity}
-                                        </Badge>
-                                      ))}
+                                  {/* Social Links */}
+                                  {socialLinks.length > 0 ? (
+                                    <div>
+                                      <span className="text-xs text-muted-foreground block mb-2">Socials</span>
+                                      <div className="flex gap-2">
+                                        {socialLinks.map((link) => (
+                                          <Button
+                                            key={link.name}
+                                            variant="outline"
+                                            size="icon"
+                                            className={cn("h-8 w-8", link.color)}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              window.open(link.url, '_blank', 'noopener,noreferrer');
+                                            }}
+                                            data-testid={`link-${link.name.toLowerCase()}-${entry.id}`}
+                                            title={link.name}
+                                          >
+                                            <link.icon className="h-4 w-4" />
+                                          </Button>
+                                        ))}
+                                      </div>
                                     </div>
-                                  </div>
-                                )}
+                                  ) : isEnriched ? (
+                                    <p className="text-xs text-muted-foreground italic">No social links found</p>
+                                  ) : (
+                                    <Badge variant="outline" className="text-xs text-amber-700 dark:text-amber-400 border-amber-500/20">
+                                      Enrich to discover socials
+                                    </Badge>
+                                  )}
 
-                                <Separator className="my-4" />
-
-                                {/* Social Links */}
-                                {socialLinks.length > 0 ? (
-                                  <div className="space-y-2 mb-4">
-                                    <span className="text-xs text-muted-foreground">Social Profiles:</span>
-                                    <div className="flex flex-wrap gap-2">
-                                      {socialLinks.map((link) => (
-                                        <Button
-                                          key={link.name}
-                                          variant="ghost"
-                                          size="icon"
-                                          className={link.color}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            window.open(link.url, '_blank', 'noopener,noreferrer');
-                                          }}
-                                          data-testid={`link-${link.name.toLowerCase()}-${entry.id}`}
-                                          title={link.name}
-                                        >
-                                          <link.icon className="h-4 w-4" />
-                                        </Button>
-                                      ))}
+                                  {/* Notes Display */}
+                                  {displayTrack.contactNotes && (
+                                    <div>
+                                      <span className="text-xs text-muted-foreground block mb-1">Notes</span>
+                                      <p className="text-sm italic">"{displayTrack.contactNotes}"</p>
                                     </div>
-                                  </div>
-                                ) : isEnriched ? (
-                                  <Badge variant="outline" className="text-xs text-muted-foreground mb-4">
-                                    No social links found
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-xs text-amber-700 dark:text-amber-400 border-amber-500/20 mb-4">
-                                    Enrich to discover socials
-                                  </Badge>
-                                )}
+                                  )}
 
-                                {/* Contact CTA */}
-                                <TrackContactDialog track={displayTrack} asChild={false}>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="w-full gap-2"
-                                    data-testid={`button-contact-${entry.id}`}
-                                  >
-                                    <UserPlus className="h-3.5 w-3.5" />
-                                    Add Contact Info
-                                  </Button>
-                                </TrackContactDialog>
-                              </Card>
-                            </TabsContent>
+                                  {/* Tags Display */}
+                                  {fullTrack?.tags && fullTrack.tags.length > 0 && (
+                                    <div>
+                                      <span className="text-xs text-muted-foreground block mb-2">Tags</span>
+                                      <div className="flex flex-wrap gap-1">
+                                        {fullTrack.tags.map((tag) => (
+                                          <Badge 
+                                            key={tag.id} 
+                                            variant="outline" 
+                                            className="text-xs"
+                                            style={{ backgroundColor: `${tag.color}20`, borderColor: tag.color, color: tag.color }}
+                                          >
+                                            {tag.name}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Add Contact Info Button */}
+                                  <TrackContactDialog track={displayTrack} asChild={false}>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="w-full gap-2"
+                                      data-testid={`button-contact-${entry.id}`}
+                                    >
+                                      <UserPlus className="h-3.5 w-3.5" />
+                                      Add Contact Info
+                                    </Button>
+                                  </TrackContactDialog>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
                           );
                         })}
-                      </Tabs>
+                      </Accordion>
                     ) : (
-                      <Card className="p-8 text-center">
+                      <Card className="p-8 text-center rounded-lg">
                         <Music2 className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
                         <p className="text-sm text-muted-foreground">No songwriter information available yet</p>
                         <p className="text-xs text-muted-foreground mt-1">Enrich this track to discover songwriters</p>
@@ -494,128 +483,139 @@ export function DetailsDrawer({
                     )}
                   </section>
 
-                  {/* Right Column (40%) */}
-                  <aside className="flex-1 lg:w-[40%] space-y-4">
-                    {/* Track Info Card */}
-                    <Card className="p-4">
-                      <h3 className="text-sm font-semibold font-heading mb-3">Track Info</h3>
+                  {/* Track Analytics Section */}
+                  <section className="space-y-4">
+                    <h3 className="text-sm font-semibold font-heading flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4" />
+                      TRACK ANALYTICS
+                    </h3>
+                    <Card className="p-4 rounded-lg">
                       {isEnriching ? (
-                        <div className="space-y-2">
-                          {[1, 2, 3].map((i) => (
+                        <div className="space-y-3">
+                          {[1, 2, 3, 4].map((i) => (
                             <div key={i} className="flex justify-between">
-                              <Skeleton className="h-3 w-20" />
-                              <Skeleton className="h-3 w-28" />
+                              <Skeleton className="h-4 w-24" />
+                              <Skeleton className="h-4 w-16" />
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <div className="space-y-2 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Playlist:</span>
-                            <span className="font-medium text-right">{displayTrack.playlistName}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Label:</span>
-                            <span className="font-medium text-right">
-                              {displayTrack.label || <span className="italic">Unknown</span>}
-                            </span>
-                          </div>
-                          {displayTrack.addedAt && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Added:</span>
-                              <span className="text-right">
-                                {formatDistanceToNow(new Date(displayTrack.addedAt), { addSuffix: true })}
+                        <div className="space-y-3 text-sm">
+                          {/* Streaming Metrics */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <span className="text-muted-foreground block mb-1">Spotify Streams</span>
+                              <span className="font-semibold text-lg">
+                                {displayTrack.spotifyStreams ? displayTrack.spotifyStreams.toLocaleString() : '—'}
                               </span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block mb-1">Velocity</span>
+                              <span className={cn(
+                                "font-semibold text-lg",
+                                displayTrack.streamingVelocity && parseFloat(displayTrack.streamingVelocity.toString()) > 0 
+                                  ? "text-green-600 dark:text-green-400" 
+                                  : ""
+                              )}>
+                                {displayTrack.streamingVelocity 
+                                  ? `${parseFloat(displayTrack.streamingVelocity.toString()) >= 0 ? '+' : ''}${displayTrack.streamingVelocity}%`
+                                  : '—'
+                                }
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <span className="text-muted-foreground block mb-1">YouTube Views</span>
+                              <span className="font-semibold">
+                                {displayTrack.youtubeViews ? displayTrack.youtubeViews.toLocaleString() : '—'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block mb-1">Playlist Followers</span>
+                              <span className="font-semibold">
+                                {displayTrack.playlistFollowers ? displayTrack.playlistFollowers.toLocaleString() : '—'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Moods */}
+                          {displayTrack.moods && displayTrack.moods.length > 0 && (
+                            <div>
+                              <span className="text-xs text-muted-foreground block mb-2">Moods</span>
+                              <div className="flex flex-wrap gap-1">
+                                {displayTrack.moods.slice(0, 5).map((mood, idx) => (
+                                  <Badge 
+                                    key={idx} 
+                                    variant="outline" 
+                                    className="text-xs bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20"
+                                  >
+                                    {mood}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Activities */}
+                          {displayTrack.activities && displayTrack.activities.length > 0 && (
+                            <div>
+                              <span className="text-xs text-muted-foreground block mb-2">Activities</span>
+                              <div className="flex flex-wrap gap-1">
+                                {displayTrack.activities.slice(0, 5).map((activity, idx) => (
+                                  <Badge 
+                                    key={idx} 
+                                    variant="outline" 
+                                    className="text-xs bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
+                                  >
+                                    {activity}
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
                       )}
                     </Card>
+                  </section>
 
-                    {/* Analytics Summary Card */}
-                    {displayTrack.chartmetricStatus === "success" && (
-                      <Card className="p-4">
-                        <h3 className="text-sm font-semibold font-heading mb-3 flex items-center gap-2">
-                          <BarChart3 className="h-3.5 w-3.5" />
-                          Analytics
-                        </h3>
-                        <div className="space-y-2 text-xs">
-                          {displayTrack.spotifyStreams !== null && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-muted-foreground flex items-center gap-1.5">
-                                <Music className="h-3 w-3" />
-                                Spotify:
-                              </span>
-                              <span className="font-medium">{displayTrack.spotifyStreams.toLocaleString()}</span>
-                            </div>
-                          )}
-                          {displayTrack.youtubeViews !== null && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-muted-foreground flex items-center gap-1.5">
-                                <Eye className="h-3 w-3" />
-                                YouTube:
-                              </span>
-                              <span className="font-medium">{displayTrack.youtubeViews.toLocaleString()}</span>
-                            </div>
-                          )}
-                          {displayTrack.playlistFollowers !== null && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-muted-foreground flex items-center gap-1.5">
-                                <Users className="h-3 w-3" />
-                                Playlist:
-                              </span>
-                              <span className="font-medium">{displayTrack.playlistFollowers.toLocaleString()}</span>
-                            </div>
-                          )}
-                          {displayTrack.composerName && (
-                            <div className="flex justify-between items-start">
-                              <span className="text-muted-foreground flex items-center gap-1.5">
-                                <Music2 className="h-3 w-3" />
-                                Composer:
-                              </span>
-                              <span className="font-medium text-right">{displayTrack.composerName}</span>
-                            </div>
-                          )}
-                        </div>
-                      </Card>
-                    )}
-
-                    {/* Activity Accordion */}
-                    {activity && activity.length > 0 && (
-                      <Accordion type="single" collapsible defaultValue="">
-                        <AccordionItem value="activity">
-                          <AccordionTrigger className="text-sm font-semibold font-heading py-3 px-4 hover:no-underline hover-elevate">
-                            <span className="flex items-center gap-2">
-                              <Clock className="h-3.5 w-3.5" />
-                              Activity History ({activity.length})
-                            </span>
-                          </AccordionTrigger>
-                          <AccordionContent className="px-4 pb-4">
-                            <div className="space-y-3">
-                              {activity.slice(0, 5).map((item) => (
-                                <div key={item.id} className="flex gap-2 text-xs">
-                                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                                    <Clock className="h-3 w-3 text-muted-foreground" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium leading-snug">{item.eventDescription}</p>
-                                    <p className="text-muted-foreground mt-0.5">
-                                      {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
-                                    </p>
-                                  </div>
-                                </div>
-                              ))}
-                              {activity.length > 5 && (
-                                <p className="text-xs text-muted-foreground text-center pt-2">
-                                  +{activity.length - 5} more events
+                  {/* Activity History Section */}
+                  {activity && activity.length > 0 && (
+                    <section className="space-y-4">
+                      <h3 className="text-sm font-semibold font-heading flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        ACTIVITY HISTORY ({activity.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {activity.slice(0, 5).map((item) => (
+                          <Card key={item.id} className="p-3 rounded-lg hover-elevate">
+                            <div className="flex gap-3 items-start">
+                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                                {item.eventType === "enrichment" && <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />}
+                                {item.eventType === "contact" && <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />}
+                                {item.eventType === "tag" && <TagIcon className="h-3.5 w-3.5 text-muted-foreground" />}
+                                {!["enrichment", "contact", "tag"].includes(item.eventType) && (
+                                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium leading-snug">{item.eventDescription}</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
                                 </p>
-                              )}
+                              </div>
                             </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-                    )}
-                  </aside>
+                          </Card>
+                        ))}
+                        {activity.length > 5 && (
+                          <p className="text-xs text-muted-foreground text-center pt-2">
+                            +{activity.length - 5} more events
+                          </p>
+                        )}
+                      </div>
+                    </section>
+                  )}
                 </div>
               );
             })()}
