@@ -145,16 +145,43 @@ async function makeChartmetricRequest<T>(endpoint: string, method: string = "GET
 export async function getTrackByISRC(isrc: string): Promise<ChartmetricTrack | null> {
   try {
     console.log(`🔍 Chartmetric: Looking up track by ISRC ${isrc}`);
-    const result = await makeChartmetricRequest<ChartmetricTrack>(`/track/isrc/${isrc}`);
-    console.log(`✅ Chartmetric: Found track ${result.name} (ID: ${result.id})`);
-    return result;
+    const result = await makeChartmetricRequest<any>(`/track/isrc/${isrc}/get-ids`);
+    
+    // get-ids returns an array of track IDs with metadata
+    if (!result || (Array.isArray(result) && result.length === 0)) {
+      console.log(`⚠️  Chartmetric: No track found for ISRC ${isrc}`);
+      return null;
+    }
+    
+    const trackData = Array.isArray(result) ? result[0] : result;
+    
+    // Response format: { chartmetric_ids: [123], spotify_ids: [...], isrc: "..." }
+    const chartmetricIds = trackData.chartmetric_ids || [];
+    
+    if (!chartmetricIds || chartmetricIds.length === 0) {
+      console.log(`⚠️  Chartmetric: No Chartmetric ID in response for ISRC ${isrc}`);
+      return null;
+    }
+    
+    const trackId = chartmetricIds[0];
+    console.log(`✅ Chartmetric: Found track with Chartmetric ID ${trackId}`);
+    
+    // Convert to our ChartmetricTrack format
+    // Note: track name is not included in get-ids response, will be fetched separately if needed
+    return {
+      id: trackId.toString(),
+      name: '', // Will be populated by metadata call if needed
+      isrc: trackData.isrc || isrc,
+      release_date: '',
+      artists: []
+    };
   } catch (error: any) {
     if (error.message.includes("404")) {
       console.log(`⚠️  Chartmetric: No track found for ISRC ${isrc}`);
       return null;
     }
     console.error(`❌ Chartmetric: Error looking up ISRC ${isrc}:`, error.message);
-    throw error;
+    return null; // Return null instead of throwing to handle gracefully
   }
 }
 
@@ -162,27 +189,48 @@ export async function getTrackStreamingStats(chartmetricId: string): Promise<Cha
   try {
     console.log(`📊 Chartmetric: Fetching streaming stats for track ${chartmetricId}`);
     
-    // Get Spotify streams
-    const spotifyData = await makeChartmetricRequest<any>(`/track/${chartmetricId}/spotify/streams`);
+    // Use the correct endpoint: /track/:id/spotify/stats
+    const spotifyData = await makeChartmetricRequest<any>(`/track/${chartmetricId}/spotify/stats`);
     
     // Calculate velocity from recent data if available
     let velocity: number | undefined;
+    let currentStreams: number | undefined;
+    
     if (spotifyData && Array.isArray(spotifyData) && spotifyData.length >= 2) {
       const latest = spotifyData[spotifyData.length - 1];
       const previous = spotifyData[spotifyData.length - 2];
-      if (latest?.streams && previous?.streams && previous.streams > 0) {
-        velocity = ((latest.streams - previous.streams) / previous.streams) * 100;
+      currentStreams = latest?.value || latest?.popularity;
+      
+      if (latest?.value && previous?.value && previous.value > 0) {
+        velocity = ((latest.value - previous.value) / previous.value) * 100;
       }
+    } else if (spotifyData && Array.isArray(spotifyData) && spotifyData.length === 1) {
+      currentStreams = spotifyData[0]?.value || spotifyData[0]?.popularity;
+    }
+
+    // Try to get YouTube views
+    let youtubeViews: number | undefined;
+    try {
+      const youtubeData = await makeChartmetricRequest<any>(`/track/${chartmetricId}/youtube/stats`);
+      if (youtubeData && Array.isArray(youtubeData) && youtubeData.length > 0) {
+        youtubeViews = youtubeData[youtubeData.length - 1]?.value;
+      }
+    } catch (err) {
+      // YouTube data might not be available for all tracks
+      console.log(`⚠️  Chartmetric: No YouTube data for track ${chartmetricId}`);
     }
 
     const stats: ChartmetricStreamStats = {
       spotify: {
-        current_streams: spotifyData?.[spotifyData.length - 1]?.streams,
+        current_streams: currentStreams,
         velocity,
       },
+      youtube: {
+        views: youtubeViews
+      }
     };
 
-    console.log(`✅ Chartmetric: Retrieved stats - ${stats.spotify?.current_streams?.toLocaleString()} streams, ${velocity?.toFixed(1)}% velocity`);
+    console.log(`✅ Chartmetric: Retrieved stats - ${currentStreams?.toLocaleString()} Spotify popularity${velocity ? `, ${velocity.toFixed(1)}% velocity` : ''}`);
     return stats;
   } catch (error: any) {
     console.error(`❌ Chartmetric: Error fetching streaming stats:`, error.message);
@@ -190,54 +238,38 @@ export async function getTrackStreamingStats(chartmetricId: string): Promise<Cha
   }
 }
 
-export async function getSongwriterProfile(songwriterId: string): Promise<ChartmetricSongwriterProfile | null> {
+export async function getTrackMetadata(chartmetricId: string): Promise<any | null> {
   try {
-    console.log(`👤 Chartmetric: Fetching songwriter profile ${songwriterId}`);
-    const profile = await makeChartmetricRequest<ChartmetricSongwriterProfile>(`/artist/${songwriterId}`);
-    console.log(`✅ Chartmetric: Retrieved profile for ${profile.name}`);
-    return profile;
+    console.log(`📋 Chartmetric: Fetching track metadata for ${chartmetricId}`);
+    const metadata = await makeChartmetricRequest<any>(`/track/${chartmetricId}`);
+    console.log(`✅ Chartmetric: Retrieved metadata for ${metadata.name || 'track'}`);
+    return metadata;
   } catch (error: any) {
-    console.error(`❌ Chartmetric: Error fetching songwriter profile:`, error.message);
+    console.error(`❌ Chartmetric: Error fetching track metadata:`, error.message);
     return null;
   }
 }
 
+// Note: Songwriter profiles, collaborators, and publishers are not available in the public API
+// These features require accessing Chartmetric's web platform or enterprise API
+export async function getSongwriterProfile(songwriterId: string): Promise<ChartmetricSongwriterProfile | null> {
+  console.log(`⚠️  Chartmetric: Songwriter profiles not available in public API`);
+  return null;
+}
+
 export async function getSongwriterCollaborators(songwriterId: string): Promise<ChartmetricCollaborator[]> {
-  try {
-    console.log(`🤝 Chartmetric: Fetching collaborators for songwriter ${songwriterId}`);
-    const collaborators = await makeChartmetricRequest<ChartmetricCollaborator[]>(`/artist/${songwriterId}/related-artists`);
-    console.log(`✅ Chartmetric: Found ${collaborators?.length || 0} collaborators`);
-    return collaborators || [];
-  } catch (error: any) {
-    console.error(`❌ Chartmetric: Error fetching collaborators:`, error.message);
-    return [];
-  }
+  console.log(`⚠️  Chartmetric: Collaborator data not available in public API`);
+  return [];
 }
 
 export async function getSongwriterPublishers(songwriterId: string): Promise<ChartmetricPublisher[]> {
-  try {
-    console.log(`📝 Chartmetric: Fetching publishers for songwriter ${songwriterId}`);
-    // Note: This endpoint may vary - adjust based on actual Chartmetric API docs
-    const publishers = await makeChartmetricRequest<ChartmetricPublisher[]>(`/artist/${songwriterId}/publishers`);
-    console.log(`✅ Chartmetric: Found ${publishers?.length || 0} publishers`);
-    return publishers || [];
-  } catch (error: any) {
-    // Publishers endpoint may not exist for all songwriters
-    console.log(`⚠️  Chartmetric: No publisher data available for songwriter ${songwriterId}`);
-    return [];
-  }
+  console.log(`⚠️  Chartmetric: Publisher data not available in public API`);
+  return [];
 }
 
 export async function getTrackCredits(chartmetricId: string): Promise<ChartmetricSongwriter[]> {
-  try {
-    console.log(`✍️  Chartmetric: Fetching credits for track ${chartmetricId}`);
-    const credits = await makeChartmetricRequest<{ songwriters?: ChartmetricSongwriter[] }>(`/track/${chartmetricId}/credits`);
-    console.log(`✅ Chartmetric: Found ${credits?.songwriters?.length || 0} songwriters`);
-    return credits?.songwriters || [];
-  } catch (error: any) {
-    console.error(`❌ Chartmetric: Error fetching credits:`, error.message);
-    return [];
-  }
+  console.log(`⚠️  Chartmetric: Track credits not available in public API - use track metadata instead`);
+  return [];
 }
 
 export interface ChartmetricEnrichmentResult {
@@ -271,16 +303,14 @@ export async function enrichTrackWithChartmetric(track: PlaylistSnapshot): Promi
     // Step 2: Get streaming stats
     const stats = await getTrackStreamingStats(chartmetricTrack.id);
 
-    // Step 3: Get track credits (songwriters)
-    const songwriters = await getTrackCredits(chartmetricTrack.id);
-
-    // Determine track stage based on streams
+    // Determine track stage based on Spotify popularity (0-100 scale)
     let trackStage: string | undefined;
-    const streams = stats?.spotify?.current_streams;
-    if (streams) {
-      if (streams >= 100000000) trackStage = "Superstar";
-      else if (streams >= 10000000) trackStage = "Mainstream";
-      else if (streams >= 1000000) trackStage = "Mid-Level";
+    const popularity = stats?.spotify?.current_streams;
+    if (popularity !== undefined) {
+      // Spotify popularity is 0-100
+      if (popularity >= 75) trackStage = "Superstar";
+      else if (popularity >= 50) trackStage = "Mainstream";
+      else if (popularity >= 25) trackStage = "Mid-Level";
       else trackStage = "Developing";
     }
 
@@ -290,10 +320,10 @@ export async function enrichTrackWithChartmetric(track: PlaylistSnapshot): Promi
       streamingVelocity: stats?.spotify?.velocity,
       youtubeViews: stats?.youtube?.views,
       trackStage,
-      songwriters: songwriters.map(sw => ({ id: sw.id, name: sw.name })),
     };
 
-    console.log(`✅ Chartmetric: Enriched track with ${Object.keys(result).filter(k => result[k as keyof ChartmetricEnrichmentResult] != null).length} fields`);
+    const fieldsCount = Object.keys(result).filter(k => result[k as keyof ChartmetricEnrichmentResult] != null).length;
+    console.log(`✅ Chartmetric: Enriched track with ${fieldsCount} fields (ID: ${result.chartmetricId}, Stage: ${trackStage})`);
     
     return result;
   } catch (error: any) {
