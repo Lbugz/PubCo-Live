@@ -407,6 +407,10 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
     const page = await browser.newPage();
     await page.setViewport({ width: 1920, height: 1080 });
     
+    // Set default timeouts to prevent indefinite hangs
+    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(30000);
+    
     // Load cookies from Replit Secret or file
     try {
       let cookies;
@@ -450,10 +454,26 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
     }
     
     console.log("Navigating to track page...");
-    await page.goto(trackUrl, { 
-      waitUntil: "networkidle2", 
-      timeout: 60000 
-    });
+    
+    // Try networkidle2 first, fall back to domcontentloaded if timeout
+    try {
+      await page.goto(trackUrl, { 
+        waitUntil: "networkidle2", 
+        timeout: 30000 
+      });
+      console.log("Page loaded with networkidle2");
+    } catch (error: any) {
+      if (error.name === 'TimeoutError') {
+        console.warn("Navigation timeout with networkidle2, trying domcontentloaded fallback...");
+        await page.goto(trackUrl, { 
+          waitUntil: "domcontentloaded", 
+          timeout: 15000 
+        });
+        console.log("Page loaded with domcontentloaded fallback");
+      } else {
+        throw error;
+      }
+    }
     
     // Handle cookie consent banner if present
     await handleCookieConsent(page);
@@ -751,6 +771,45 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
     return {
       success: false,
       error: error.message || "Unknown credits scraping error",
+    };
+  }
+}
+
+// Wrapper with master timeout to prevent indefinite hangs
+export async function scrapeTrackCreditsWithTimeout(trackUrl: string, timeoutMs: number = 45000): Promise<CreditsResult> {
+  let timeoutHandle: NodeJS.Timeout;
+  
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      const error = new Error(`Scraping timeout after ${timeoutMs}ms`);
+      error.name = 'TimeoutError';
+      reject(error);
+    }, timeoutMs);
+  });
+  
+  try {
+    const result = await Promise.race<CreditsResult>([
+      scrapeTrackCredits(trackUrl),
+      timeoutPromise
+    ]);
+    
+    // Clear timeout on successful completion
+    clearTimeout(timeoutHandle!);
+    return result;
+  } catch (error: any) {
+    // Clear timeout on error
+    clearTimeout(timeoutHandle!);
+    
+    // Re-throw TimeoutError so route can handle it
+    if (error.name === 'TimeoutError') {
+      throw error;
+    }
+    
+    // For other errors, log and return error result
+    console.error(`Scraping failed: ${error.message}`);
+    return {
+      success: false,
+      error: error.message || "Scraping error"
     };
   }
 }

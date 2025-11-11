@@ -8,7 +8,7 @@ import { calculateUnsignedScore } from "./scoring";
 import { searchByISRC, searchRecordingByName, searchArtistByName, getArtistExternalLinks } from "./musicbrainz";
 import { generateAIInsights } from "./ai-insights";
 import { playlists, playlistSnapshots, type InsertPlaylistSnapshot, type PlaylistSnapshot, insertTagSchema, insertTrackedPlaylistSchema } from "@shared/schema";
-import { scrapeSpotifyPlaylist, scrapeTrackCredits } from "./scraper";
+import { scrapeSpotifyPlaylist, scrapeTrackCredits, scrapeTrackCreditsWithTimeout } from "./scraper";
 import { fetchEditorialTracksViaNetwork } from "./scrapers/spotifyEditorialNetwork";
 import { harvestVirtualizedRows } from "./scrapers/spotifyEditorialDom";
 import { broadcastEnrichmentUpdate } from "./websocket";
@@ -953,7 +953,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`Scraping credits for: ${track.trackName} by ${track.artistName}`);
           
-          const creditsResult = await scrapeTrackCredits(track.spotifyUrl);
+          const creditsResult = await scrapeTrackCreditsWithTimeout(track.spotifyUrl, 45000);
           
           if (creditsResult.success && creditsResult.credits) {
             const { writers, composers, labels, publishers } = creditsResult.credits;
@@ -1027,7 +1027,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // TIER 1: Spotify Credits Scraping
       try {
         console.log(`[Tier 1: Spotify Credits] Scraping...`);
-        const creditsResult = await scrapeTrackCredits(track.spotifyUrl);
+        const creditsResult = await scrapeTrackCreditsWithTimeout(track.spotifyUrl, 45000);
         
         if (creditsResult.success && creditsResult.credits) {
           const { writers, composers, labels, publishers } = creditsResult.credits;
@@ -1209,8 +1209,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[Unified Enrichment] Complete: ${successfulTiers}/${tierResults.length} tiers successful`);
     } catch (error: any) {
-      console.error("Error in unified enrichment:", error);
-      res.status(500).json({ error: error.message || "Failed to enrich track" });
+      console.error("[Unified Enrichment] Error:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack?.split('\n').slice(0, 3).join('\n'),
+        trackId: req.params.id
+      });
+      
+      // Provide detailed error message to frontend
+      const errorMessage = error.name === 'TimeoutError' 
+        ? "Enrichment timed out - the track page took too long to load"
+        : error.message || "Failed to enrich track";
+      
+      res.status(500).json({ 
+        error: errorMessage,
+        errorType: error.name || "UnknownError"
+      });
     }
   });
 
