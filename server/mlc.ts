@@ -1,6 +1,20 @@
+import { execSync } from "child_process";
+
 const MLC_USERNAME = process.env.MLC_USERNAME;
 const MLC_PASSWORD = process.env.MLC_PASSWORD;
 const MLC_API_BASE_URL = "https://public-api.themlc.com";
+
+function getChromiumPath(): string | undefined {
+  try {
+    const chromiumPath = execSync("which chromium || which chromium-browser || which google-chrome", {
+      encoding: "utf8",
+    }).trim();
+    return chromiumPath || undefined;
+  } catch (error) {
+    console.warn("[MLC Portal] Could not find system chromium, will use Puppeteer's bundled browser");
+    return undefined;
+  }
+}
 
 let cachedToken: { accessToken: string; expiresAt: number } | null = null;
 
@@ -287,6 +301,173 @@ export async function searchWorkByTitleAndWriter(
   }
 }
 
+export async function scrapeMLCPortal(isrc: string): Promise<{
+  publisherName: string | null;
+  publisherStatus: PublisherStatus;
+  collectionShare: string | null;
+  ipiNumber: string | null;
+  iswc: string | null;
+  mlcSongCode: string | null;
+  writers: string[];
+} | null> {
+  const puppeteer = await import("puppeteer");
+  let browser;
+
+  try {
+    console.log(`[MLC Portal] Searching for ISRC: ${isrc}`);
+    
+    const chromiumPath = getChromiumPath();
+    
+    browser = await puppeteer.default.launch({
+      headless: true,
+      executablePath: chromiumPath,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--disable-software-rasterizer",
+        "--disable-extensions",
+      ],
+    });
+
+    const page = await browser.newPage();
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    );
+
+    await page.goto("https://portal.themlc.com/search", {
+      waitUntil: "networkidle2",
+      timeout: 30000,
+    });
+
+    console.log("[MLC Portal] Loaded search page");
+
+    await page.waitForSelector('input[placeholder*="ISRC"], input[name*="isrc"], input[type="text"]', { timeout: 10000 });
+
+    const searchInput = await page.$('input[placeholder*="ISRC"], input[name*="isrc"], input[type="text"]');
+    if (!searchInput) {
+      throw new Error("Could not find search input");
+    }
+
+    await searchInput.type(isrc);
+    console.log(`[MLC Portal] Entered ISRC: ${isrc}`);
+
+    await Promise.race([
+      page.waitForSelector('button[type="submit"]', { timeout: 5000 }).then(btn => btn?.click()),
+      page.keyboard.press("Enter"),
+    ]);
+
+    console.log("[MLC Portal] Submitted search");
+
+    try {
+      await page.waitForNetworkIdle({ timeout: 10000 });
+      await page.waitForTimeout(2000);
+    } catch (error) {
+      console.log("[MLC Portal] Network idle timeout, continuing with extraction");
+    }
+
+    console.log("[MLC Portal] Extracting results...");
+
+    const extractedData = await page.evaluate(() => {
+      const results = {
+        publishers: [],
+        writers: [],
+        iswc: null,
+        songCode: null,
+      };
+
+      const allText = document.body.innerText;
+      
+      const iswcMatch = allText.match(/ISWC[:\s]+([A-Z0-9\-\.]+)/i);
+      if (iswcMatch) results.iswc = iswcMatch[1];
+
+      const songCodeMatch = allText.match(/MLC Song Code[:\s]+([A-Z0-9\-]+)/i);
+      if (songCodeMatch) results.songCode = songCodeMatch[1];
+
+      const publisherElements = document.querySelectorAll(
+        '[class*="publisher"], [data-testid*="publisher"], td:contains("Publisher"), .publisher-name'
+      );
+      publisherElements.forEach(el => {
+        const text = el.textContent?.trim();
+        if (text && text.length > 2 && !text.toLowerCase().includes("publisher name")) {
+          results.publishers.push(text);
+        }
+      });
+
+      const writerElements = document.querySelectorAll(
+        '[class*="writer"], [data-testid*="writer"], td:contains("Writer"), .writer-name'
+      );
+      writerElements.forEach(el => {
+        const text = el.textContent?.trim();
+        if (text && text.length > 2 && !text.toLowerCase().includes("writer name")) {
+          results.writers.push(text);
+        }
+      });
+
+      if (results.publishers.length === 0) {
+        const rows = document.querySelectorAll("tr");
+        rows.forEach(row => {
+          const cells = row.querySelectorAll("td");
+          cells.forEach((cell, idx) => {
+            const text = cell.textContent?.trim().toLowerCase() || "";
+            if (text.includes("publisher") && cells[idx + 1]) {
+              const pubName = cells[idx + 1].textContent?.trim();
+              if (pubName && pubName.length > 2) {
+                results.publishers.push(pubName);
+              }
+            }
+            if (text.includes("writer") && cells[idx + 1]) {
+              const writerName = cells[idx + 1].textContent?.trim();
+              if (writerName && writerName.length > 2) {
+                results.writers.push(writerName);
+              }
+            }
+          });
+        });
+      }
+
+      return results;
+    });
+
+    console.log(`[MLC Portal] Found ${extractedData.publishers.length} publishers, ${extractedData.writers.length} writers`);
+
+    if (extractedData.publishers.length === 0 && extractedData.writers.length === 0) {
+      console.log("[MLC Portal] No results found for ISRC");
+      return null;
+    }
+
+    const publishers: MLCPublisher[] = extractedData.publishers.map(name => ({
+      publisherId: "",
+      publisherName: name,
+      publisherIpiNumber: "",
+      publisherRoleCode: "",
+      collectionShare: 0,
+      mlcPublisherNumber: "",
+    }));
+
+    const publisherStatus = determinePublisherStatus(publishers);
+    const primaryPublisher = publishers.length > 0 ? publishers[0] : null;
+
+    return {
+      publisherName: primaryPublisher?.publisherName || null,
+      publisherStatus,
+      collectionShare: null,
+      ipiNumber: null,
+      iswc: extractedData.iswc,
+      mlcSongCode: extractedData.songCode,
+      writers: extractedData.writers,
+    };
+  } catch (error) {
+    console.error(`[MLC Portal] Error scraping for ISRC ${isrc}:`, error);
+    return null;
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+}
+
 export async function enrichTrackWithMLC(isrc: string): Promise<{
   publisherName: string | null;
   publisherStatus: PublisherStatus;
@@ -301,13 +482,13 @@ export async function enrichTrackWithMLC(isrc: string): Promise<{
     
     if (!recording || !recording.mlcsongCode) {
       console.log(`[MLC] No recording found or missing MLC Song Code for ISRC: ${isrc}`);
-      return null;
+      return scrapeMLCPortal(isrc);
     }
 
     const work = await getWorkByMlcSongCode(recording.mlcsongCode);
     
     if (!work) {
-      return null;
+      return scrapeMLCPortal(isrc);
     }
 
     const publishers = work.publishers || [];
