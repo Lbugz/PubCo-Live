@@ -8,7 +8,6 @@ import { type PlaylistSnapshot, type Tag } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { TrackActionsDropdown } from "./track-actions-dropdown";
 import { SongwriterDisplay } from "./songwriter-display";
-import { PublisherStatusBadge } from "./publisher-status-badge";
 import { useQuery } from "@tanstack/react-query";
 import { getTagColorClass } from "./tag-manager";
 
