@@ -4,6 +4,7 @@ import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkle
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
+import { useMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -71,6 +72,14 @@ export default function Dashboard() {
   const [recentEnrichments, setRecentEnrichments] = useState<Array<{ trackName: string; artistName: string; timestamp: number }>>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { toast} = useToast();
+  const isMobile = useMobile(768);
+  
+  // Auto-switch to card view on mobile (from table or kanban)
+  useEffect(() => {
+    if (isMobile && viewMode !== "card") {
+      setViewMode("card");
+    }
+  }, [isMobile, viewMode]);
 
   // WebSocket connection for real-time updates
   useWebSocket({
@@ -435,7 +444,7 @@ export default function Dashboard() {
     >
       <Users className={`h-4 w-4 ${enrichArtistsMutation.isPending ? "animate-pulse" : ""}`} />
       <span className="hidden md:inline">
-        {enrichArtistsMutation.isPending ? "Enriching Artists..." : "Enrich Artists"}
+        {enrichArtistsMutation.isPending ? "Enriching Data..." : "Enrich Data"}
       </span>
     </Button>
   ), [enrichArtistsMutation.isPending, tracks]);
@@ -496,7 +505,7 @@ export default function Dashboard() {
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6 fade-in">
-          {/* Header with Enrich Artists Button */}
+          {/* Header with Enrich Data Button */}
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Tracks</h1>
             <Button
@@ -509,7 +518,7 @@ export default function Dashboard() {
             >
               <Users className={`h-4 w-4 ${enrichArtistsMutation.isPending ? "animate-pulse" : ""}`} />
               <span className="hidden md:inline">
-                {enrichArtistsMutation.isPending ? "Enriching Artists..." : "Enrich Artists"}
+                {enrichArtistsMutation.isPending ? "Enriching Data..." : "Enrich Data"}
               </span>
             </Button>
           </div>
@@ -551,13 +560,13 @@ export default function Dashboard() {
 
           {/* Filters Row */}
           <Card className="glass-panel backdrop-blur-xl border border-primary/20">
-            <CardContent className="p-4">
-              <div className="flex flex-wrap items-center gap-3">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3">
                 {/* Week Filter */}
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-secondary-foreground font-medium">Week:</span>
+                  <span className="text-sm text-secondary-foreground font-medium hidden md:inline">Week:</span>
                   <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                    <SelectTrigger className="w-[160px]" data-testid="select-week">
+                    <SelectTrigger className="flex-1 md:w-[160px]" data-testid="select-week">
                       <SelectValue placeholder="All Dates" />
                     </SelectTrigger>
                     <SelectContent>
@@ -573,7 +582,7 @@ export default function Dashboard() {
 
                 {/* Playlist Filter */}
                 <Select value={selectedPlaylist} onValueChange={setSelectedPlaylist}>
-                  <SelectTrigger className="w-[160px]" data-testid="select-playlist">
+                  <SelectTrigger className="flex-1 md:w-[160px]" data-testid="select-playlist">
                     <SelectValue placeholder="All Playlists" />
                   </SelectTrigger>
                   <SelectContent>
@@ -588,7 +597,7 @@ export default function Dashboard() {
 
                 {/* Tag Filter */}
                 <Select value={selectedTag} onValueChange={setSelectedTag}>
-                  <SelectTrigger className="w-[160px]" data-testid="select-tag">
+                  <SelectTrigger className="flex-1 md:w-[160px]" data-testid="select-tag">
                     <SelectValue placeholder="All Tags" />
                   </SelectTrigger>
                   <SelectContent>
@@ -602,7 +611,7 @@ export default function Dashboard() {
                 </Select>
 
                 {/* Search Bar */}
-                <div className="relative flex-1 min-w-[240px]">
+                <div className="relative flex-1 md:min-w-[240px]">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="search"
@@ -695,16 +704,18 @@ export default function Dashboard() {
           {/* View Switcher */}
           <div className="flex items-center justify-between glass-panel backdrop-blur-xl p-3 rounded-lg border border-primary/20 slide-in-right">
             <div className="flex gap-2">
+              {/* Table view - hidden on mobile */}
               <Button
                 variant={viewMode === "table" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode("table")}
-                className="gap-2"
+                className="gap-2 hidden md:flex"
                 data-testid="button-view-table"
               >
                 <LayoutList className="h-4 w-4" />
-                Table
+                <span className="hidden lg:inline">Table</span>
               </Button>
+              {/* Card view - always visible */}
               <Button
                 variant={viewMode === "card" ? "default" : "outline"}
                 size="sm"
@@ -713,22 +724,24 @@ export default function Dashboard() {
                 data-testid="button-view-card"
               >
                 <LayoutGrid className="h-4 w-4" />
-                Card
+                <span className="hidden sm:inline">Card</span>
               </Button>
+              {/* Kanban view - hidden on mobile */}
               <Button
                 variant={viewMode === "kanban" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode("kanban")}
-                className="gap-2"
+                className="gap-2 hidden md:flex"
                 data-testid="button-view-kanban"
               >
                 <Kanban className="h-4 w-4" />
-                Kanban
+                <span className="hidden lg:inline">Kanban</span>
               </Button>
             </div>
 
-            <div className="text-sm text-muted-foreground" data-testid="text-results-count">
-              {filteredTracks.length} {filteredTracks.length === 1 ? "result" : "results"}
+            <div className="text-sm text-muted-foreground whitespace-nowrap" data-testid="text-results-count">
+              <span className="hidden sm:inline">{filteredTracks.length} {filteredTracks.length === 1 ? "result" : "results"}</span>
+              <span className="sm:hidden">{filteredTracks.length}</span>
             </div>
           </div>
 

@@ -544,16 +544,17 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         // Check for role labels
         if (line.toLowerCase().includes('written by') || line.toLowerCase().includes('songwriter')) {
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            // Smart split: try commas first, then capital letters as fallback
+            // Smart split: try commas first, then check each segment for concatenated names
             let names = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
             
-            // If only one name after comma split, check if it's concatenated names
-            if (names.length === 1) {
-              const singleName = names[0];
+            // Check EACH name segment for concatenated names (capital letter transitions)
+            const finalNames = [];
+            for (let k = 0; k < names.length; k++) {
+              const singleName = names[k];
               const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
               
-              // If 2+ transitions, split by capital letters
-              if (capitalTransitions >= 2) {
+              // If 1+ transitions, this segment has concatenated names - split by capital letters
+              if (capitalTransitions >= 1) {
                 const splitNames = [];
                 let currentName = '';
                 for (let j = 0; j < singleName.length; j++) {
@@ -567,24 +568,31 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
                   }
                 }
                 if (currentName.trim().length > 0) splitNames.push(currentName.trim());
-                names = splitNames.filter(function(n) { return n.length > 1; });
+                finalNames.push.apply(finalNames, splitNames.filter(function(n) { return n.length > 1; }));
+              } else {
+                // No concatenation detected, keep as-is
+                finalNames.push(singleName);
               }
             }
             
-            writers.push.apply(writers, names);
-            names.forEach(function(name) { allCredits.push({ name: name, role: 'Writer' }); });
+            writers.push.apply(writers, finalNames);
+            finalNames.forEach(function(name) { allCredits.push({ name: name, role: 'Writer' }); });
           }
         }
         
         if (line.toLowerCase().includes('produced by') || line.toLowerCase().includes('producer')) {
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
-            // Smart split: try commas first, then capital letters as fallback
+            // Smart split: try commas first, then check each segment for concatenated names
             let names = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
             
-            if (names.length === 1) {
-              const singleName = names[0];
+            // Check EACH name segment for concatenated names (capital letter transitions)
+            const finalNames = [];
+            for (let k = 0; k < names.length; k++) {
+              const singleName = names[k];
               const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
-              if (capitalTransitions >= 2) {
+              
+              // If 1+ transitions, this segment has concatenated names - split by capital letters
+              if (capitalTransitions >= 1) {
                 const splitNames = [];
                 let currentName = '';
                 for (let j = 0; j < singleName.length; j++) {
@@ -598,23 +606,31 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
                   }
                 }
                 if (currentName.trim().length > 0) splitNames.push(currentName.trim());
-                names = splitNames.filter(function(n) { return n.length > 1; });
+                finalNames.push.apply(finalNames, splitNames.filter(function(n) { return n.length > 1; }));
+              } else {
+                // No concatenation detected, keep as-is
+                finalNames.push(singleName);
               }
             }
             
-            producers.push.apply(producers, names);
-            names.forEach(function(name) { allCredits.push({ name: name, role: 'Producer' }); });
+            producers.push.apply(producers, finalNames);
+            finalNames.forEach(function(name) { allCredits.push({ name: name, role: 'Producer' }); });
           }
         }
         
         if (line.toLowerCase().includes('composer')) {
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
+            // Smart split: try commas first, then check each segment for concatenated names
             let names = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
             
-            if (names.length === 1) {
-              const singleName = names[0];
+            // Check EACH name segment for concatenated names (capital letter transitions)
+            const finalNames = [];
+            for (let k = 0; k < names.length; k++) {
+              const singleName = names[k];
               const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
-              if (capitalTransitions >= 2) {
+              
+              // If 1+ transitions, this segment has concatenated names - split by capital letters
+              if (capitalTransitions >= 1) {
                 const splitNames = [];
                 let currentName = '';
                 for (let j = 0; j < singleName.length; j++) {
@@ -628,12 +644,15 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
                   }
                 }
                 if (currentName.trim().length > 0) splitNames.push(currentName.trim());
-                names = splitNames.filter(function(n) { return n.length > 1; });
+                finalNames.push.apply(finalNames, splitNames.filter(function(n) { return n.length > 1; }));
+              } else {
+                // No concatenation detected, keep as-is
+                finalNames.push(singleName);
               }
             }
             
-            composers.push.apply(composers, names);
-            names.forEach(function(name) { allCredits.push({ name: name, role: 'Composer' }); });
+            composers.push.apply(composers, finalNames);
+            finalNames.forEach(function(name) { allCredits.push({ name: name, role: 'Composer' }); });
           }
         }
         

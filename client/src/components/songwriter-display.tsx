@@ -5,6 +5,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { splitConcatenatedNames } from "@/lib/name-utils";
 
 interface SongwriterDisplayProps {
   songwriters: string | null;
@@ -24,10 +25,19 @@ export function SongwriterDisplay({ songwriters, className, testId }: Songwriter
   }
 
   // Parse songwriters - they might be separated by commas, semicolons, or " and "
-  const songwriterList = songwriters
+  let songwriterList = songwriters
     .split(/[,;]|\s+and\s+/i)
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
+  
+  // Defensive parsing: check each segment for concatenated names (legacy data fix)
+  const finalList: string[] = [];
+  songwriterList.forEach((name) => {
+    const splitNames = splitConcatenatedNames(name);
+    finalList.push(...splitNames);
+  });
+  
+  songwriterList = finalList;
 
   if (songwriterList.length === 0) {
     return (
