@@ -242,28 +242,28 @@ export default function PlaylistsView() {
     return filtered;
   }, [playlists, searchQuery, sourceFilter]);
 
-  // Calculate stats
+  // Calculate stats from filtered playlists
   const stats = useMemo(() => {
-    const total = playlists.length;
+    const total = filteredPlaylists.length;
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentFetches = playlists.filter(p => {
+    const recentFetches = filteredPlaylists.filter(p => {
       if (!p.lastChecked) return false;
       return new Date(p.lastChecked) >= sevenDaysAgo;
     }).length;
     
-    const topPlaylist = playlists.reduce((max, p) => 
+    const topPlaylist = filteredPlaylists.reduce((max, p) => 
       (p.totalTracks || 0) > (max?.totalTracks || 0) ? p : max
-    , playlists[0] || null);
+    , filteredPlaylists[0] || null);
     
-    const totalFollowers = playlists.reduce((sum, p) => sum + (p.followers || 0), 0);
-    const avgFollowers = playlists.length > 0 
-      ? Math.round(totalFollowers / playlists.length) 
+    const totalFollowers = filteredPlaylists.reduce((sum, p) => sum + (p.followers || 0), 0);
+    const avgFollowers = filteredPlaylists.length > 0 
+      ? Math.round(totalFollowers / filteredPlaylists.length) 
       : 0;
-    const error = playlists.filter(p => p.status === "error").length;
+    const error = filteredPlaylists.filter(p => p.status === "error").length;
 
     return { total, recentFetches, topPlaylist, avgFollowers, error };
-  }, [playlists]);
+  }, [filteredPlaylists]);
 
   // Get unique sources for filter, including "unknown" for playlists without a source
   const sources = useMemo(() => {
