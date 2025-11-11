@@ -1103,6 +1103,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let enrichmentTier = track.enrichmentTier || "none";
       const updates: any = {};
 
+      // TIER 0: ISRC Recovery (if missing, try to fetch from Spotify)
+      if (!track.isrc && isAuthenticated()) {
+        try {
+          console.log(`[Tier 0: ISRC Recovery] Track missing ISRC, attempting Spotify lookup...`);
+          const spotifyData = await searchTrackByNameAndArtist(track.trackName, track.artistName);
+          
+          if (spotifyData && spotifyData.isrc) {
+            updates.isrc = spotifyData.isrc;
+            console.log(`✅ [Tier 0] Recovered ISRC: ${spotifyData.isrc}`);
+            
+            await storage.logActivity({
+              trackId: track.id,
+              eventType: "isrc_recovered",
+              eventDescription: `Recovered ISRC: ${spotifyData.isrc}`,
+            });
+          } else {
+            console.log(`⚠️ [Tier 0] No ISRC found in Spotify`);
+          }
+        } catch (error: any) {
+          console.error(`[Tier 0] Error during ISRC recovery:`, error);
+        }
+      }
+
+      // Use recovered ISRC for subsequent tiers
+      const effectiveIsrc = updates.isrc || track.isrc;
+
       // TIER 1: Spotify Credits Scraping
       try {
         console.log(`[Tier 1: Spotify Credits] Scraping...`);
@@ -1147,12 +1173,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // TIER 2: MLC API Lookup (only if we have ISRC)
-      if (track.isrc) {
+      if (effectiveIsrc) {
         try {
           console.log(`[Tier 2: MLC] Looking up publisher status...`);
           const { enrichTrackWithMLC } = await import('./mlc.js');
           
-          const mlcEnrichment = await enrichTrackWithMLC(track.isrc);
+          const mlcEnrichment = await enrichTrackWithMLC(effectiveIsrc);
           
           if (mlcEnrichment) {
             updates.publisherStatus = mlcEnrichment.publisherStatus;
@@ -1282,10 +1308,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // TIER 4: Chartmetric Analytics (only if we have ISRC)
-      if (track.isrc) {
+      if (effectiveIsrc) {
         try {
           console.log(`[Tier 4: Chartmetric] Fetching analytics...`);
-          const chartmetricData = await enrichTrackWithChartmetric(track);
+          // Create a temporary track object with the recovered ISRC for Chartmetric
+          const trackWithIsrc = { ...track, isrc: effectiveIsrc };
+          const chartmetricData = await enrichTrackWithChartmetric(trackWithIsrc);
           
           if (chartmetricData) {
             updates.chartmetricId = chartmetricData.chartmetricId;
