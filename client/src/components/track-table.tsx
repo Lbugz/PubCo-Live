@@ -138,7 +138,11 @@ export function TrackTable({
             >
               <div className="grid grid-cols-1 lg:grid-cols-[auto_2fr_2fr_2fr_2fr_2fr_1fr_auto] gap-4 p-4 items-center">
                 {/* Checkbox Column - Desktop Only */}
-                <div className="hidden lg:flex items-center" onClick={(e) => e.stopPropagation()}>
+                <div 
+                  className="hidden lg:flex items-center" 
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
                   {onToggleSelection && (
                     <Checkbox
                       checked={isSelected}

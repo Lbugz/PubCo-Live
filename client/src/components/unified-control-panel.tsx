@@ -161,13 +161,6 @@ export function UnifiedControlPanel({
           
           {/* Primary Actions */}
           {fetchDataButton}
-          
-          {/* Enrichment Actions */}
-          <div className="flex gap-2">
-            {enrichMBButton}
-            {enrichCreditsButton}
-            {enrichArtistsButton}
-          </div>
 
           {/* More Actions Dropdown */}
           <DropdownMenu>
@@ -182,6 +175,21 @@ export function UnifiedControlPanel({
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </DropdownMenuItem>
+              {enrichMBButton && (
+                <DropdownMenuItem asChild data-testid="menu-enrich-mb">
+                  {enrichMBButton}
+                </DropdownMenuItem>
+              )}
+              {enrichCreditsButton && (
+                <DropdownMenuItem asChild data-testid="menu-enrich-credits">
+                  {enrichCreditsButton}
+                </DropdownMenuItem>
+              )}
+              {enrichArtistsButton && (
+                <DropdownMenuItem asChild data-testid="menu-enrich-artists">
+                  {enrichArtistsButton}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onSelect={() => onPlaylistManager?.()} data-testid="menu-playlists">
                 <List className="mr-2 h-4 w-4" />
                 Manage Playlists
@@ -237,7 +245,7 @@ export function UnifiedControlPanel({
         <div className="flex flex-wrap items-center gap-2">
           {/* Dropdowns */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Week:</span>
+            <span className="text-sm text-secondary-foreground font-medium">Week:</span>
             <Select value={selectedWeek} onValueChange={onWeekChange}>
               <SelectTrigger className="w-[160px]" data-testid="select-week">
                 <SelectValue placeholder="All Dates" />
