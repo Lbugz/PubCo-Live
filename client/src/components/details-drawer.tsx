@@ -130,168 +130,167 @@ export function DetailsDrawer({
 
   return (
     <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <SheetContent className="w-full sm:max-w-[640px] p-0 glass-panel">
+      <SheetContent className="w-full sm:max-w-[640px] p-0">
         <div className="flex flex-col h-full">
-          {/* Compact Header */}
-          <div className="p-4 border-b">
-            <div className="flex items-start gap-4">
-              {/* Album Art Thumbnail */}
-              <div className="flex-shrink-0">
-                {displayTrack.albumArt ? (
-                  <img 
-                    src={displayTrack.albumArt} 
-                    alt={`${displayTrack.trackName} album art`}
-                    className="w-16 h-16 rounded-md object-cover"
-                    loading="eager"
-                    decoding="async"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-md bg-muted flex items-center justify-center">
-                    <Music className="w-8 h-8 text-muted-foreground/30" />
-                  </div>
-                )}
-              </div>
-
-              {/* Title, Artist, and Metadata */}
-              <div className="flex-1 min-w-0">
-                {/* Title and Artist on same line */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <SheetTitle className="font-heading text-lg leading-tight line-clamp-1">
-                      {displayTrack.trackName}
-                    </SheetTitle>
-                    <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
-                      {displayTrack.artistName}
-                    </p>
-                  </div>
-
-                  {/* Close Button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onClose}
-                    className="flex-shrink-0"
-                    data-testid="button-close-drawer"
-                    aria-label="Close drawer"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Condensed Metadata Chips */}
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {/* Mini Score Badge */}
-                  <Badge 
-                    variant="outline"
-                    className={cn(
-                      "text-xs font-semibold",
-                      displayTrack.unsignedScore >= 7 ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20" :
-                      displayTrack.unsignedScore >= 4 ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20" :
-                      "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
-                    )}
-                  >
-                    Score: {displayTrack.unsignedScore}/10
-                  </Badge>
-
-                  {displayTrack.label && (
-                    <Badge variant="outline" className="text-xs">
-                      {displayTrack.label}
-                    </Badge>
-                  )}
-
-                  {displayTrack.isrc ? (
-                    <Badge
-                      variant="outline"
-                      className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
-                    >
-                      <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
-                      ISRC
-                    </Badge>
+          {/* Hero Header Block */}
+          <Card className="m-4 rounded-lg backdrop-blur-md bg-background/80 border">
+            <div className="p-4">
+              {/* Header Row: Album Art + Title/Artist + Close */}
+              <div className="flex items-start gap-4 mb-3">
+                {/* Album Art */}
+                <div className="flex-shrink-0">
+                  {displayTrack.albumArt ? (
+                    <img 
+                      src={displayTrack.albumArt} 
+                      alt={`${displayTrack.trackName} album art`}
+                      className="w-16 h-16 rounded-md object-cover"
+                      loading="eager"
+                      decoding="async"
+                    />
                   ) : (
-                    <Badge
-                      variant="outline"
-                      className="text-xs bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20"
-                    >
-                      <XCircle className="w-2.5 h-2.5 mr-1" />
-                      No ISRC
-                    </Badge>
-                  )}
-
-                  {displayTrack.dataSource === "scraped" && (
-                    <Badge
-                      variant="outline"
-                      className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
-                    >
-                      Scraped
-                    </Badge>
+                    <div className="w-16 h-16 rounded-md bg-muted flex items-center justify-center">
+                      <Music className="w-8 h-8 text-muted-foreground/30" />
+                    </div>
                   )}
                 </div>
+
+                {/* Title + Artist */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <SheetTitle className="font-heading text-lg leading-tight line-clamp-1">
+                        {displayTrack.trackName}
+                      </SheetTitle>
+                      <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
+                        {displayTrack.artistName}
+                      </p>
+                    </div>
+
+                    {/* Close Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={onClose}
+                      className="flex-shrink-0"
+                      data-testid="button-close-drawer"
+                      aria-label="Close drawer"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Metadata Chips */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <Badge 
+                      variant="outline"
+                      className={cn(
+                        "text-xs font-semibold",
+                        displayTrack.unsignedScore >= 7 ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20" :
+                        displayTrack.unsignedScore >= 4 ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20" :
+                        "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
+                      )}
+                    >
+                      Score: {displayTrack.unsignedScore}/10
+                    </Badge>
+
+                    {displayTrack.label && (
+                      <Badge variant="outline" className="text-xs">
+                        Label: {displayTrack.label}
+                      </Badge>
+                    )}
+
+                    {displayTrack.playlistName && (
+                      <Badge variant="outline" className="text-xs">
+                        {displayTrack.playlistName}
+                      </Badge>
+                    )}
+
+                    {displayTrack.isrc ? (
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
+                      >
+                        <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
+                        ISRC
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20"
+                      >
+                        <XCircle className="w-2.5 h-2.5 mr-1" />
+                        No ISRC
+                      </Badge>
+                    )}
+
+                    {displayTrack.dataSource === "scraped" && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
+                      >
+                        API
+                      </Badge>
+                    )}
+
+                    {displayTrack.addedAt && (
+                      <Badge variant="outline" className="text-xs text-muted-foreground">
+                        Added {formatDistanceToNow(new Date(displayTrack.addedAt), { addSuffix: true })}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons Row */}
+              <div className="flex gap-2 overflow-x-auto">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="gap-2 flex-shrink-0"
+                  onClick={handleEnrich}
+                  disabled={isEnriching}
+                  data-testid="action-enrich"
+                >
+                  {isEnriching ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Enriching...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Enrich
+                    </>
+                  )}
+                </Button>
+
+                <TrackTagPopover trackId={displayTrack.id} asChild={false}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 flex-shrink-0"
+                    data-testid="action-add-tags"
+                  >
+                    <TagIcon className="h-3.5 w-3.5" />
+                    Tag
+                  </Button>
+                </TrackTagPopover>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 flex-shrink-0"
+                  asChild
+                  data-testid="action-open-spotify"
+                >
+                  <a href={displayTrack.spotifyUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Open in Spotify
+                  </a>
+                </Button>
               </div>
             </div>
-          </div>
-
-          {/* Sticky Action Toolbar */}
-          <div className="sticky top-0 z-20 backdrop-blur-md bg-background/80 border-b px-4 py-2">
-            <div className="flex gap-2 overflow-x-auto">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 flex-shrink-0"
-                onClick={handleEnrich}
-                disabled={isEnriching}
-                data-testid="action-enrich"
-              >
-                {isEnriching ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Enriching...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Enrich
-                  </>
-                )}
-              </Button>
-
-              <TrackTagPopover trackId={displayTrack.id} asChild={false}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 flex-shrink-0"
-                  data-testid="action-add-tags"
-                >
-                  <TagIcon className="h-3.5 w-3.5" />
-                  Tags
-                </Button>
-              </TrackTagPopover>
-
-              <TrackContactDialog track={displayTrack} asChild={false}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 flex-shrink-0"
-                  data-testid="action-contact-artist"
-                >
-                  <UserPlus className="h-3.5 w-3.5" />
-                  Contact
-                </Button>
-              </TrackContactDialog>
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 flex-shrink-0"
-                asChild
-                data-testid="action-open-spotify"
-              >
-                <a href={displayTrack.spotifyUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  Spotify
-                </a>
-              </Button>
-            </div>
-          </div>
+          </Card>
 
           <ScrollArea className="flex-1">
             {(() => {

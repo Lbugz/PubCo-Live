@@ -1,0 +1,137 @@
+Perfect — here’s a **step-by-step guide** for running your new `TracksDrawerV6` component cleanly inside **Replit**, fully aligned with your Create/OS stack.
+
+---
+
+## ⚙️ **1. Project Setup (Confirm Baseline)**
+
+Make sure your Replit project has the following:
+
+* **React + Vite or CRA environment**
+  (`npx create-react-app` or `npx create-vite my-app --template react`)
+* **Tailwind CSS** already configured.
+* **Lucide-react** installed.
+
+If not, run:
+
+```bash
+npm install lucide-react
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+```
+
+Then in your `tailwind.config.js` add:
+
+```js
+export default {
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        primary: "#4156E8",
+        secondary: "#19E3FF",
+        success: "#4ADE80",
+        warning: "#FACC15",
+        error: "#F87171",
+        textPrimary: "#FFFFFF",
+        textSecondary: "#B5B9C9",
+        purple: "#A855F7",
+      },
+      fontFamily: {
+        sans: ["Inter", "sans-serif"],
+        display: ["Space Grotesk", "sans-serif"],
+      },
+    },
+  },
+  plugins: [],
+};
+```
+
+In your global CSS (e.g., `index.css`):
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-[#0B0D18] text-white font-sans;
+}
+```
+
+---
+
+## 📁 **2. File Placement**
+
+Inside `src/components/tracks/`, create a file:
+
+```
+TracksDrawerV6.jsx
+```
+
+Then paste in the code from your textdoc (the v6 layout version I just provided).
+
+---
+
+## 🚀 **3. Hook It Into Your App**
+
+In `App.jsx` (or any test view):
+
+```jsx
+import TracksDrawerV6 from "./components/tracks/TracksDrawerV6";
+
+export default function App() {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-8">
+      <TracksDrawerV6 />
+    </div>
+  );
+}
+```
+
+Now when you press **Run**, you’ll see your full **drawer preview** centered in Replit.
+
+---
+
+## 🎨 **4. (Optional) Install Create/OS Fonts**
+
+If you want the typography to match exactly:
+Add this in `index.html` `<head>`:
+
+```html
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+```
+
+---
+
+## ⚡ **5. Framer Motion (Optional Enhancement)**
+
+If you want subtle fade/slide animations:
+
+```bash
+npm install framer-motion
+```
+
+Then wrap sections with:
+
+```jsx
+import { motion } from "framer-motion";
+
+<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+  {/* Section Content */}
+</motion.div>
+```
+
+---
+
+## ✅ **6. Sanity Check**
+
+When you hit **Run** in Replit, you should see:
+
+* A **glassmorphic drawer** with “Love Rehab” header.
+* Expandable songwriters.
+* Gradient dividers and subtle motion.
+* A “Play” icon next to the title and “Enrich / Tag / Contact” buttons.
+
+---
+
+Would you like me to include a **minimal Replit-ready index.html + App.jsx + Tailwind config bundle** (so you can copy/paste into a new Replit project and see this exact drawer instantly)?
