@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StatsCard } from "@/components/stats-card";
+import { PlaylistBulkActionsToolbar, type BulkActionMode } from "@/components/playlist-bulk-actions-toolbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +43,7 @@ export default function PlaylistsView() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newPlaylistUrl, setNewPlaylistUrl] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  const [selectedPlaylistIds, setSelectedPlaylistIds] = useState<Set<string>>(new Set());
   const [, navigate] = useLocation();
   const { toast } = useToast();
   
@@ -60,6 +63,25 @@ export default function PlaylistsView() {
       }
     }
   }, [playlists, selectedPlaylist?.id]);
+
+  // Clean up orphaned selections when playlists data changes
+  useEffect(() => {
+    if (selectedPlaylistIds.size > 0) {
+      const validIds = new Set(playlists.map(p => p.id));
+      const newSelection = new Set<string>();
+      
+      selectedPlaylistIds.forEach(id => {
+        if (validIds.has(id)) {
+          newSelection.add(id);
+        }
+      });
+
+      // Only update if there were orphaned IDs
+      if (newSelection.size !== selectedPlaylistIds.size) {
+        setSelectedPlaylistIds(newSelection);
+      }
+    }
+  }, [playlists]);
 
   const enrichTracksMutation = useMutation({
     mutationFn: async (playlistId: string) => {
@@ -221,6 +243,55 @@ export default function PlaylistsView() {
     addPlaylistMutation.mutate(newPlaylistUrl);
   };
 
+  // Selection helpers
+  const togglePlaylistSelection = (playlistId: string) => {
+    setSelectedPlaylistIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(playlistId)) {
+        newSet.delete(playlistId);
+      } else {
+        newSet.add(playlistId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const allFilteredSelected = filteredPlaylists.length > 0 && filteredPlaylists.every(p => selectedPlaylistIds.has(p.id));
+    
+    if (allFilteredSelected) {
+      // All filtered playlists selected - deselect them (keep other selections)
+      const newSet = new Set(selectedPlaylistIds);
+      filteredPlaylists.forEach(p => newSet.delete(p.id));
+      setSelectedPlaylistIds(newSet);
+    } else {
+      // Not all filtered playlists selected - select all filtered playlists (keep existing selections)
+      const newSet = new Set(selectedPlaylistIds);
+      filteredPlaylists.forEach(p => newSet.add(p.id));
+      setSelectedPlaylistIds(newSet);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedPlaylistIds(new Set());
+  };
+
+  // Bulk action handlers (to be implemented in task 4.3)
+  const handleBulkFetchData = (mode: BulkActionMode) => {
+    // TODO: Implement bulk fetch data
+    console.log(`Bulk fetch data: ${mode}`);
+  };
+
+  const handleBulkRefreshMetadata = (mode: BulkActionMode) => {
+    // TODO: Implement bulk refresh metadata
+    console.log(`Bulk refresh metadata: ${mode}`);
+  };
+
+  const handleBulkExport = (mode: BulkActionMode) => {
+    // TODO: Implement bulk export
+    console.log(`Bulk export: ${mode}`);
+  };
+
   // Normalize source value for consistent filtering
   const normalizeSource = (source: string | null) => {
     return source || "unknown";
@@ -247,6 +318,39 @@ export default function PlaylistsView() {
 
     return filtered;
   }, [playlists, searchQuery, sourceFilter]);
+
+  // Calculate selected playlists from filtered set
+  const selectedFilteredPlaylists = useMemo(() => {
+    return filteredPlaylists.filter(p => selectedPlaylistIds.has(p.id));
+  }, [filteredPlaylists, selectedPlaylistIds]);
+
+  // Reconcile selections with filtered playlists (strict filter-aligned selection)
+  useEffect(() => {
+    if (selectedPlaylistIds.size === 0) return;
+    
+    const filteredIds = new Set(filteredPlaylists.map(p => p.id));
+    const reconciled = new Set<string>();
+    
+    selectedPlaylistIds.forEach(id => {
+      if (filteredIds.has(id)) {
+        reconciled.add(id);
+      }
+    });
+
+    // Early return if no pruning needed
+    if (reconciled.size === selectedPlaylistIds.size) return;
+    
+    // Update selection and notify user
+    const removedCount = selectedPlaylistIds.size - reconciled.size;
+    setSelectedPlaylistIds(reconciled);
+    
+    if (removedCount > 0) {
+      toast({
+        title: "Selections updated",
+        description: `${removedCount} hidden playlist${removedCount !== 1 ? 's' : ''} deselected`,
+      });
+    }
+  }, [filteredPlaylists, selectedPlaylistIds, toast]);
 
   // Calculate stats from filtered playlists
   const stats = useMemo(() => {
@@ -494,6 +598,18 @@ export default function PlaylistsView() {
         </CardContent>
       </Card>
 
+      {/* Bulk Actions Toolbar */}
+      <PlaylistBulkActionsToolbar
+        selectedCount={selectedFilteredPlaylists.length}
+        totalFilteredCount={filteredPlaylists.length}
+        onFetchData={handleBulkFetchData}
+        onRefreshMetadata={handleBulkRefreshMetadata}
+        onExport={handleBulkExport}
+        onClearSelection={clearSelection}
+        isFetching={false}
+        isRefreshing={false}
+      />
+
       {/* View Toggle and Count */}
       <Card className="glass-panel backdrop-blur-xl border border-primary/20">
         <CardHeader>
@@ -537,13 +653,26 @@ export default function PlaylistsView() {
               {filteredPlaylists.map(playlist => (
                 <Card 
                   key={playlist.id} 
-                  className="glass-panel hover-elevate cursor-pointer"
+                  className="glass-panel hover-elevate cursor-pointer relative"
                   onClick={() => openDrawer(playlist)}
                   data-testid={`card-playlist-${playlist.id}`}
                 >
+                  {/* Checkbox Overlay */}
+                  <div 
+                    className="absolute top-3 left-3 z-10"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={selectedPlaylistIds.has(playlist.id)}
+                      onCheckedChange={() => togglePlaylistSelection(playlist.id)}
+                      aria-label={`Select ${playlist.name}`}
+                      data-testid={`checkbox-card-${playlist.id}`}
+                    />
+                  </div>
+                  
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3 pl-8">
                         <div className="p-2 rounded-md bg-primary/10">
                           <Music2 className="h-5 w-5 text-primary" />
                         </div>
@@ -624,6 +753,14 @@ export default function PlaylistsView() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[50px]">
+                    <Checkbox
+                      checked={filteredPlaylists.length > 0 && filteredPlaylists.every(p => selectedPlaylistIds.has(p.id))}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="Select all playlists"
+                      data-testid="checkbox-select-all"
+                    />
+                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Source</TableHead>
                   <TableHead className="text-right">Tracks</TableHead>
@@ -642,6 +779,14 @@ export default function PlaylistsView() {
                     onClick={() => openDrawer(playlist)}
                     data-testid={`row-playlist-${playlist.id}`}
                   >
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedPlaylistIds.has(playlist.id)}
+                        onCheckedChange={() => togglePlaylistSelection(playlist.id)}
+                        aria-label={`Select ${playlist.name}`}
+                        data-testid={`checkbox-playlist-${playlist.id}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <Music2 className="h-4 w-4 text-primary" />
