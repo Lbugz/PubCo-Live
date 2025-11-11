@@ -30,6 +30,8 @@ The frontend is a single-page React application built with a a modular component
 - **Scoring Algorithm**: Proprietary algorithm ranks tracks based on Fresh Finds appearance, independent label status, and missing publisher/writer data.
 - **2-Tier Unified Enrichment Pipeline**:
     - **Tier 1 (Spotify Credits Scraping)**: Uses Puppeteer to scrape songwriter, composer, producer, and publisher credits from Spotify track pages. Includes smart name splitting for accurate songwriter identification.
+        - **Critical Transpiler Fix**: Resolved `__name is not defined` error by switching from arrow function to plain string injection in `page.evaluate()`. The tsx/esbuild transpiler wraps functions with `__name(fn, "fnName")` helper calls that don't exist in the browser context. Solution: inject code as plain strings using `page.evaluate(stringVariable)` instead of `page.evaluate(() => {...})` to bypass transpilation entirely.
+        - **Timeout Protection**: 45s master timeout with proper cleanup, networkidle2/domcontentloaded fallback strategy prevents server crashes.
     - **Tier 2 (MusicBrainz Social Links)**: Queries MusicBrainz API for social profiles of identified songwriters using ISRC-based, Spotify API ISRC recovery, and name-based lookups.
     - **MLC Publisher Status (Future)**: Designed for MLC API integration to determine publisher status.
     - **Artist Normalization**: Separate `artists` table with unique MusicBrainz IDs prevents duplicates, and `artist_songwriters` junction table enables many-to-many track-artist relationships.
