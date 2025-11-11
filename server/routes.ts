@@ -383,6 +383,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/tracks/:trackId/artists", async (req, res) => {
+    try {
+      const artists = await storage.getArtistsByTrackId(req.params.trackId);
+      res.json(artists);
+    } catch (error) {
+      console.error("Error fetching track artists:", error);
+      res.status(500).json({ error: "Failed to fetch artist information" });
+    }
+  });
+
   app.get("/api/tracked-playlists", async (req, res) => {
     try {
       const playlists = await storage.getTrackedPlaylists();

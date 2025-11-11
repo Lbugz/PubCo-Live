@@ -23,6 +23,7 @@ import { TrackTagPopover } from "@/components/track-tag-popover";
 import { TrackContactDialog } from "@/components/track-contact-dialog";
 import { PublisherStatusBadge } from "./publisher-status-badge";
 import { SongwriterDisplay } from "./songwriter-display";
+import { SongwriterPanel } from "./songwriter-panel";
 import { cn } from "@/lib/utils";
 
 interface DetailsDrawerProps {
@@ -61,36 +62,95 @@ export function DetailsDrawer({
     <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <SheetContent className="w-full sm:max-w-[540px] p-0 glass-panel">
         <div className="flex flex-col h-full">
-          <SheetHeader className="px-6 py-4 glass-header sticky top-0 z-10">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <SheetTitle className="font-heading text-xl">
+          {/* Hero Section with Album Art and Close Button */}
+          <div className="relative">
+            {track.albumArt ? (
+              <div className="relative h-72 overflow-hidden">
+                <img 
+                  src={track.albumArt} 
+                  alt={`${track.trackName} album art`}
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                  decoding="async"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+              </div>
+            ) : (
+              <div className="relative h-72 bg-muted flex items-center justify-center">
+                <Music className="w-24 h-24 text-muted-foreground/30" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+              </div>
+            )}
+            
+            {/* Close Button Overlay */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm hover:bg-background/90"
+              data-testid="button-close-drawer"
+              aria-label="Close drawer"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Track Info Header - Overlaps Album Art */}
+          <SheetHeader className="px-6 -mt-16 relative z-10">
+            <div className="flex items-end gap-4">
+              {/* Radial Score Indicator */}
+              <div className="flex-shrink-0">
+                <div className="relative w-24 h-24">
+                  <svg className="transform -rotate-90 w-24 h-24">
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="42"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="none"
+                      className="text-muted/20"
+                    />
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="42"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeDasharray={`${(track.unsignedScore / 10) * 264} 264`}
+                      className={cn(
+                        track.unsignedScore >= 7 ? "text-green-500" :
+                        track.unsignedScore >= 4 ? "text-yellow-500" :
+                        "text-red-500"
+                      )}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center bg-card rounded-full w-20 h-20 flex items-center justify-center border-2 border-border">
+                      <div>
+                        <div className="text-2xl font-bold">{track.unsignedScore}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Score</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Track Title and Artist */}
+              <div className="flex-1 min-w-0 pb-2">
+                <SheetTitle className="font-heading text-2xl leading-tight">
                   {track.trackName}
                 </SheetTitle>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-base text-muted-foreground mt-2">
                   {track.artistName}
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="shrink-0"
-                data-testid="button-close-drawer"
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
 
-            {/* Score and Metadata Badges */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              <Badge
-                variant={getScoreBadgeVariant(track.unsignedScore)}
-                className="font-semibold"
-              >
-                {getScoreLabel(track.unsignedScore)} Score: {track.unsignedScore}
-              </Badge>
-
+            {/* Metadata Badges */}
+            <div className="flex flex-wrap gap-2 mt-6 pb-4">
               {track.publisherStatus && (
                 <PublisherStatusBadge status={track.publisherStatus} showIcon />
               )}
@@ -169,7 +229,7 @@ export function DetailsDrawer({
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Added:</span>
                       <span className="text-xs">
-                        {formatDistanceToNow(parseISO(track.addedAt), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(track.addedAt), { addSuffix: true })}
                       </span>
                     </div>
                   )}
@@ -230,6 +290,14 @@ export function DetailsDrawer({
 
               <Separator />
 
+              {/* Songwriters & Social Links */}
+              <div>
+                <h3 className="text-sm font-semibold font-heading mb-3">Songwriters & Social Links</h3>
+                <SongwriterPanel trackId={track.id} />
+              </div>
+
+              <Separator />
+
               {/* Activity History */}
               <div>
                 <h3 className="text-sm font-semibold font-heading mb-3">Activity History</h3>
@@ -255,7 +323,7 @@ export function DetailsDrawer({
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium">{item.eventDescription}</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatDistanceToNow(parseISO(item.createdAt), { addSuffix: true })}
+                            {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
                           </p>
                         </div>
                       </div>
