@@ -39,6 +39,12 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getTracksByWeek(week: string): Promise<PlaylistSnapshot[]> {
+    if (week === "all") {
+      return db.select()
+        .from(playlistSnapshots)
+        .orderBy(desc(playlistSnapshots.week), desc(playlistSnapshots.unsignedScore));
+    }
+    
     if (week === "latest") {
       const latestWeek = await this.getLatestWeek();
       if (!latestWeek) return [];

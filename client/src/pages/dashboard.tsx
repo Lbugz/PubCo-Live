@@ -30,7 +30,7 @@ type ViewMode = "table" | "card" | "kanban";
 
 export default function Dashboard() {
   const [location] = useLocation();
-  const [selectedWeek, setSelectedWeek] = useState<string>("latest");
+  const [selectedWeek, setSelectedWeek] = useState<string>("all");
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("all");
   const [selectedTag, setSelectedTag] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -95,7 +95,7 @@ export default function Dashboard() {
   };
 
   const clearAllFilters = () => {
-    setSelectedWeek("latest");
+    setSelectedWeek("all");
     setSelectedPlaylist("all");
     setSelectedTag("all");
     setSearchQuery("");

@@ -1,9 +1,18 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users } from "lucide-react";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { type TrackedPlaylist } from "@shared/schema";
+import { useFetchPlaylistsMutation } from "@/hooks/use-fetch-playlists-mutation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { StatsCard } from "@/components/stats-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,12 +30,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +43,9 @@ export default function PlaylistsView() {
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  
+  // Fetch playlists mutation
+  const fetchPlaylistsMutation = useFetchPlaylistsMutation();
 
   const { data: playlists = [], isLoading } = useQuery<TrackedPlaylist[]>({
     queryKey: ["/api/tracked-playlists"],
@@ -312,13 +318,61 @@ export default function PlaylistsView() {
       {/* Header with Add Button */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Playlists</h1>
-        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="gradient" size="default" className="gap-2" data-testid="button-add-playlist">
-              <Plus className="h-4 w-4" />
-              Add Playlist
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          {/* Fetch Data Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="default"
+                className="gap-2"
+                disabled={fetchPlaylistsMutation.isPending}
+                data-testid="button-fetch-data"
+              >
+                <RefreshCw className={`h-4 w-4 ${fetchPlaylistsMutation.isPending ? "animate-spin" : ""}`} />
+                <span className="hidden sm:inline">
+                  {fetchPlaylistsMutation.isPending ? "Fetching..." : "Fetch Data"}
+                </span>
+                {!fetchPlaylistsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel>Fetch Options</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'all' })} data-testid="menu-fetch-all">
+                Fetch All Playlists
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'editorial' })} data-testid="menu-fetch-editorial">
+                Fetch Editorial Playlists Only
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'non-editorial' })} data-testid="menu-fetch-non-editorial">
+                Fetch Non-Editorial Playlists Only
+              </DropdownMenuItem>
+              {playlists.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Fetch Specific Playlist</DropdownMenuLabel>
+                  {playlists.map((playlist) => (
+                    <DropdownMenuItem 
+                      key={playlist.id} 
+                      onClick={() => fetchPlaylistsMutation.mutate({ mode: 'specific', playlistId: playlist.id })}
+                      data-testid={`menu-fetch-playlist-${playlist.id}`}
+                    >
+                      {playlist.name}
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="gradient" size="default" className="gap-2" data-testid="button-add-playlist">
+                <Plus className="h-4 w-4" />
+                Add Playlist
+              </Button>
+            </DialogTrigger>
           <DialogContent className="glass-panel">
             <DialogHeader>
               <DialogTitle>Add Spotify Playlist</DialogTitle>
@@ -354,6 +408,7 @@ export default function PlaylistsView() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Stats Cards */}
