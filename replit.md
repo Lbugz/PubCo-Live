@@ -41,17 +41,17 @@ The frontend is a single-page React application built with a a modular component
 - **Custom Playlist Tracking**: Supports adding, managing, and bulk importing Spotify playlists, including automatic metadata fetching and duplicate prevention.
 - **Advanced Editorial Playlist Capture**: Two-tier approach using Puppeteer for network capture (primary) and DOM harvesting (fallback) to access tracks from editorial playlists.
 - **Enhanced CSV Export**: Includes all metadata and contact fields.
-- **Chartmetric Analytics Integration**: Provides cross-platform tracking and industry insights. Stores Chartmetric IDs and implements rate limiting with exponential backoff.
+- **Chartmetric Analytics Integration**: Provides cross-platform tracking and industry insights. Stores Chartmetric IDs and implements rate limiting with exponential backoff. **Enhanced Metadata Capture**: Enrichment now calls `/api/track/:id` metadata endpoint to capture songwriter Chartmetric IDs, composer names, moods, and activities for deeper A&R insights.
 
 ### System Design Choices
-- **Database Schema**: Includes `PlaylistSnapshot` (track-level data, enriched metadata, scores, contact info), `TrackedPlaylists` (user-selected Spotify playlists), `Tags` (custom tags), `TrackTags` (links tracks to tags), `Artists` (normalized songwriter/composer table with MusicBrainz IDs and social links), and `ArtistSongwriters` (junction table for track-artist relationships). Chartmetric fields (`chartmetricId`, `spotifyStreams`, `streamingVelocity`, `chartmetricStatus`) are integrated into `PlaylistSnapshot`.
+- **Database Schema**: Includes `PlaylistSnapshot` (track-level data, enriched metadata, scores, contact info), `TrackedPlaylists` (user-selected Spotify playlists), `Tags` (custom tags), `TrackTags` (links tracks to tags), `Artists` (normalized songwriter/composer table with MusicBrainz IDs and social links), and `ArtistSongwriters` (junction table for track-artist relationships). Chartmetric fields (`chartmetricId`, `spotifyStreams`, `streamingVelocity`, `chartmetricStatus`, `songwriterIds`, `composerName`, `moods`, `activities`) are integrated into `PlaylistSnapshot`.
 - **Backend API**: Provides RESTful endpoints for data retrieval, management, and enrichment.
 - **Spotify Integration**: Uses the Spotify API and custom scraping for playlist and track data.
 
 ## External Dependencies
 - **Spotify API**: For fetching playlist and track data. Note: Editorial playlists owned by Spotify are inaccessible via API.
 - **MusicBrainz API**: For enriching tracks with publisher and songwriter metadata via ISRC.
-- **Chartmetric API**: For cross-platform analytics and industry insights. **Current Access**: Basic API tier provides ISRC lookup and Chartmetric ID retrieval (95% success rate). **Enterprise Tier Required**: Streaming stats endpoints (`/track/{id}/spotify/stats`, `/track/{id}/youtube/stats`) return 401 "internal API endpoint" error - these require enterprise-tier API access. **Value**: Chartmetric IDs stored in database enable future analytics integration and cross-platform tracking.
+- **Chartmetric API**: For cross-platform analytics and industry insights. **Current Access**: Basic API tier provides ISRC lookup, Chartmetric ID retrieval (95% success rate), and track metadata including songwriter IDs, composer names, moods, and activities. **Enterprise Tier Required**: Streaming stats endpoints (`/track/{id}/spotify/stats`, `/track/{id}/youtube/stats`) return 401 "internal API endpoint" error - these require enterprise-tier API access. **Value**: Chartmetric songwriter IDs enable cross-referencing with songwriter collaboration networks and future analytics integration.
 - **Neon (PostgreSQL)**: Managed PostgreSQL database for data storage.
 - **GPT-4o-mini (via Replit AI Integrations)**: For AI-powered lead prioritization and insights.
 - **Puppeteer**: Used for web scraping Spotify track credits and editorial playlists.

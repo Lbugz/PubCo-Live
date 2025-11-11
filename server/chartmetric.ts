@@ -243,18 +243,6 @@ export async function getTrackMetadata(chartmetricId: string): Promise<any | nul
     console.log(`📋 Chartmetric: Fetching track metadata for ${chartmetricId}`);
     const metadata = await makeChartmetricRequest<any>(`/track/${chartmetricId}`);
     console.log(`✅ Chartmetric: Retrieved metadata for ${metadata.name || 'track'}`);
-    
-    // Debug: Log available metadata fields
-    const fields = {
-      songwriterIds: metadata.songwriterIds,
-      songwriter: metadata.songwriter,
-      songwriters: metadata.songwriters,
-      composer_name: metadata.composer_name,
-      moods: metadata.moods,
-      activities: metadata.activities
-    };
-    console.log(`🔍 Chartmetric metadata fields:`, JSON.stringify(fields, null, 2));
-    
     return metadata;
   } catch (error: any) {
     console.error(`❌ Chartmetric: Error fetching track metadata:`, error.message);
