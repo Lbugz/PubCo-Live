@@ -71,7 +71,7 @@ export function CardView({
           <Card
             key={track.id}
             className={cn(
-              "glass-panel p-6 interactive-scale cursor-pointer hover-gradient",
+              "glass-panel p-6 cursor-pointer hover-gradient",
               "transition-all duration-200",
               isSelected && "ring-2 ring-primary bg-primary/5"
             )}

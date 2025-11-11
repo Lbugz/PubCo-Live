@@ -412,7 +412,7 @@ export default function PlaylistsView() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 slide-in-right">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 slide-in-right">
         <StatsCard
           title="Total Playlists"
           value={stats.total}

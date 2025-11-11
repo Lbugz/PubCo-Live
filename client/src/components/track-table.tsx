@@ -129,7 +129,7 @@ export function TrackTable({
             <Card
               key={track.id}
               className={cn(
-                "hover-gradient cursor-pointer interactive-scale rounded-none border-x-0 border-t-0",
+                "hover-gradient cursor-pointer rounded-none border-x-0 border-t-0",
                 index % 2 === 0 ? "bg-card/50" : "bg-card/30",
                 isSelected && "ring-2 ring-primary bg-primary/5"
               )}
