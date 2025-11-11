@@ -64,19 +64,29 @@ export function DetailsDrawer({
   });
 
   // Handle enrichment button click
-  const handleEnrich = () => {
+  const handleEnrich = async () => {
     if (track) {
       setIsEnriching(true);
-      onEnrich(track.id);
+      try {
+        await onEnrich(track.id);
+      } catch (error) {
+        console.error('Enrichment error:', error);
+        setIsEnriching(false);
+      }
     }
   };
 
-  // Reset enriching state when drawer closes
+  // Reset enriching state when drawer closes or track changes
   useEffect(() => {
     if (!open) {
       setIsEnriching(false);
     }
   }, [open]);
+
+  // Reset enriching state when track changes
+  useEffect(() => {
+    setIsEnriching(false);
+  }, [track?.id]);
 
   if (!track) return null;
 
