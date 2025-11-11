@@ -33,6 +33,13 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   email: text("email"),
   contactNotes: text("contact_notes"),
   dataSource: text("data_source").notNull().default("api"),
+  chartmetricId: text("chartmetric_id"),
+  spotifyStreams: integer("spotify_streams"),
+  streamingVelocity: text("streaming_velocity"),
+  trackStage: text("track_stage"),
+  playlistFollowers: integer("playlist_followers"),
+  youtubeViews: integer("youtube_views"),
+  chartmetricEnrichedAt: timestamp("chartmetric_enriched_at"),
 }, (table) => ({
   uniqueTrackIdx: uniqueIndex("unique_track_per_week_idx").on(table.week, table.playlistId, table.spotifyUrl),
 }));
@@ -149,6 +156,48 @@ export const insertArtistSchema = createInsertSchema(artists).omit({
 export type InsertArtist = z.infer<typeof insertArtistSchema>;
 export type Artist = typeof artists.$inferSelect;
 export type ArtistSongwriter = typeof artistSongwriters.$inferSelect;
+
+export const songwriterProfiles = pgTable("songwriter_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  chartmetricId: text("chartmetric_id").unique().notNull(),
+  name: text("name").notNull(),
+  totalTracks: integer("total_tracks"),
+  playlistFollowers: integer("playlist_followers"),
+  youtubeViews: integer("youtube_views"),
+  topPublisher: text("top_publisher"),
+  topPublisherWorks: integer("top_publisher_works"),
+  genres: text("genres").array(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const songwriterCollaborations = pgTable("songwriter_collaborations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  songwriterId: varchar("songwriter_id").notNull().references(() => songwriterProfiles.id, { onDelete: "cascade" }),
+  collaboratorChartmetricId: text("collaborator_chartmetric_id").notNull(),
+  collaboratorName: text("collaborator_name").notNull(),
+  workCount: integer("work_count").notNull().default(0),
+  frequency: text("frequency"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  uniqueCollaboration: sql`UNIQUE (${table.songwriterId}, ${table.collaboratorChartmetricId})`,
+}));
+
+export const insertSongwriterProfileSchema = createInsertSchema(songwriterProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSongwriterCollaborationSchema = createInsertSchema(songwriterCollaborations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSongwriterProfile = z.infer<typeof insertSongwriterProfileSchema>;
+export type SongwriterProfile = typeof songwriterProfiles.$inferSelect;
+export type InsertSongwriterCollaboration = z.infer<typeof insertSongwriterCollaborationSchema>;
+export type SongwriterCollaboration = typeof songwriterCollaborations.$inferSelect;
 
 export const playlists = [
   {
