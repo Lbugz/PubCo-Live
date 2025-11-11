@@ -1121,6 +1121,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // TIER 3: MusicBrainz (social links fallback)
+      const musicbrainzResults: { name: string; found: boolean; hasLinks: boolean }[] = [];
+      
       if (updates.songwriter) {
         try {
           console.log(`[Tier 3: MusicBrainz] Enriching social links...`);
@@ -1148,12 +1150,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 });
                 await storage.linkArtistToTrack(artist.id, track.id);
                 
-                if (Object.keys(links).some(k => links[k as keyof typeof links])) {
+                const hasLinks = Object.keys(links).some(k => links[k as keyof typeof links]);
+                if (hasLinks) {
                   linksFound++;
                 }
+                
+                musicbrainzResults.push({
+                  name: songwriterName,
+                  found: true,
+                  hasLinks
+                });
+              } else {
+                musicbrainzResults.push({
+                  name: songwriterName,
+                  found: false,
+                  hasLinks: false
+                });
               }
             } catch (error) {
               console.error(`Error getting links for ${songwriterName}:`, error);
+              musicbrainzResults.push({
+                name: songwriterName,
+                found: false,
+                hasLinks: false
+              });
             }
           }
           
@@ -1190,6 +1210,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updates.enrichedAt = new Date();
         updates.enrichmentTier = enrichmentTier;
         await storage.updateTrackMetadata(track.id, updates);
+
+        // Log enrichment activity
+        const enrichmentSummary = tierResults
+          .filter(t => t.success)
+          .map(t => t.tier)
+          .join(', ');
+        
+        await storage.logActivity({
+          trackId: track.id,
+          eventType: "track_enriched",
+          eventDescription: `Track enriched via ${enrichmentSummary}`,
+          metadata: JSON.stringify({
+            tiers: tierResults.map(t => ({ tier: t.tier, success: t.success, message: t.message })),
+            songwritersFound: updates.songwriter ? updates.songwriter.split(',').length : 0,
+            publishersFound: updates.publisher ? updates.publisher.split(',').length : 0,
+            labelsFound: updates.label ? 1 : 0
+          }),
+        });
+
+        // Log MusicBrainz results for each songwriter
+        if (musicbrainzResults.length > 0) {
+          for (const result of musicbrainzResults) {
+            if (result.found && result.hasLinks) {
+              await storage.logActivity({
+                trackId: track.id,
+                eventType: "musicbrainz_lookup",
+                eventDescription: `Found MusicBrainz record for ${result.name} with social links`,
+                metadata: JSON.stringify({ songwriter: result.name, hasLinks: true }),
+              });
+            } else if (result.found && !result.hasLinks) {
+              await storage.logActivity({
+                trackId: track.id,
+                eventType: "musicbrainz_lookup",
+                eventDescription: `Found MusicBrainz record for ${result.name} (no social links)`,
+                metadata: JSON.stringify({ songwriter: result.name, hasLinks: false }),
+              });
+            } else {
+              await storage.logActivity({
+                trackId: track.id,
+                eventType: "musicbrainz_lookup",
+                eventDescription: `No MusicBrainz record found for ${result.name}`,
+                metadata: JSON.stringify({ songwriter: result.name, found: false }),
+              });
+            }
+          }
+        }
 
         // Broadcast real-time update
         broadcastEnrichmentUpdate({

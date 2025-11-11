@@ -17,6 +17,7 @@ import {
   Music,
   CheckCircle2,
   XCircle,
+  Loader2,
 } from "lucide-react";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { TrackTagPopover } from "@/components/track-tag-popover";
@@ -25,6 +26,9 @@ import { PublisherStatusBadge } from "./publisher-status-badge";
 import { SongwriterDisplay } from "./songwriter-display";
 import { SongwriterPanel } from "./songwriter-panel";
 import { cn } from "@/lib/utils";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { queryClient } from "@/lib/queryClient";
+import { useState, useEffect } from "react";
 
 interface DetailsDrawerProps {
   track: PlaylistSnapshot | null;
@@ -39,10 +43,40 @@ export function DetailsDrawer({
   onClose,
   onEnrich,
 }: DetailsDrawerProps) {
+  const [isEnriching, setIsEnriching] = useState(false);
+
   const { data: activity, isLoading: activityLoading } = useQuery<ActivityHistory[]>({
     queryKey: ["/api/tracks", track?.id, "activity"],
     enabled: !!track?.id && open,
   });
+
+  // Listen for WebSocket updates
+  useWebSocket({
+    onTrackEnriched: (data) => {
+      if (data.trackId === track?.id) {
+        setIsEnriching(false);
+        // Invalidate all queries for this track to refresh data
+        queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/tracks", track?.id, "activity"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/tracks", track?.id, "artists"] });
+      }
+    },
+  });
+
+  // Handle enrichment button click
+  const handleEnrich = () => {
+    if (track) {
+      setIsEnriching(true);
+      onEnrich(track.id);
+    }
+  };
+
+  // Reset enriching state when drawer closes
+  useEffect(() => {
+    if (!open) {
+      setIsEnriching(false);
+    }
+  }, [open]);
 
   if (!track) return null;
 
@@ -196,46 +230,57 @@ export function DetailsDrawer({
               {/* Track Details */}
               <div>
                 <h3 className="text-sm font-semibold font-heading mb-3">Track Details</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Playlist:</span>
-                    <span className="font-medium">{track.playlistName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Label:</span>
-                    <span className="font-medium">
-                      {track.label || <span className="italic">Unknown</span>}
-                    </span>
-                  </div>
-                  {track.publisher && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Publisher:</span>
-                      <span className="font-medium">{track.publisher}</span>
-                    </div>
-                  )}
-                  {track.songwriter && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Songwriter:</span>
-                      <div className="font-medium">
-                        <SongwriterDisplay songwriters={track.songwriter} />
+                {isEnriching ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex justify-between">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-32" />
                       </div>
-                    </div>
-                  )}
-                  {track.isrc && (
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">ISRC:</span>
-                      <span className="font-mono text-xs">{track.isrc}</span>
+                      <span className="text-muted-foreground">Playlist:</span>
+                      <span className="font-medium">{track.playlistName}</span>
                     </div>
-                  )}
-                  {track.addedAt && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Added:</span>
-                      <span className="text-xs">
-                        {formatDistanceToNow(new Date(track.addedAt), { addSuffix: true })}
+                      <span className="text-muted-foreground">Label:</span>
+                      <span className="font-medium">
+                        {track.label || <span className="italic">Unknown</span>}
                       </span>
                     </div>
-                  )}
-                </div>
+                    {track.publisher && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Publisher:</span>
+                        <span className="font-medium">{track.publisher}</span>
+                      </div>
+                    )}
+                    {track.songwriter && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Songwriter:</span>
+                        <div className="font-medium">
+                          <SongwriterDisplay songwriters={track.songwriter} />
+                        </div>
+                      </div>
+                    )}
+                    {track.isrc && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">ISRC:</span>
+                        <span className="font-mono text-xs">{track.isrc}</span>
+                      </div>
+                    )}
+                    {track.addedAt && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Added:</span>
+                        <span className="text-xs">
+                          {formatDistanceToNow(new Date(track.addedAt), { addSuffix: true })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <Separator />
@@ -247,11 +292,21 @@ export function DetailsDrawer({
                   <Button
                     variant="outline"
                     className="w-full justify-start gap-2"
-                    onClick={() => onEnrich(track.id)}
+                    onClick={handleEnrich}
+                    disabled={isEnriching}
                     data-testid="action-enrich"
                   >
-                    <Sparkles className="h-4 w-4" />
-                    Enrich Data
+                    {isEnriching ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Enriching...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Enrich Data
+                      </>
+                    )}
                   </Button>
 
                   <TrackTagPopover trackId={track.id} asChild={false}>
