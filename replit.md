@@ -31,11 +31,10 @@ The frontend is a single-page React application built with a modular component a
 ### Technical Implementations
 - **Data Fetching**: Utilizes TanStack Query for efficient data fetching.
 - **Scoring Algorithm**: A proprietary algorithm ranks tracks based on criteria such as Fresh Finds appearance, independent label status, and missing publisher/writer data.
-- **3-Tier MusicBrainz Enrichment Pipeline (November 2025)**: Comprehensive enrichment system with automatic fallback:
-  - **Tier 1 (ISRC-based)**: Direct ISRC → Recording → Work chain lookup (fastest, most accurate)
-  - **Tier 2 (Spotify → ISRC)**: For tracks missing ISRCs, searches Spotify API by track name + artist to recover ISRC, then queries MusicBrainz
-  - **Tier 3 (Name-based fallback)**: When no ISRC available, uses MusicBrainz recording search with 90+ confidence threshold to minimize false matches
-  - **Artist Social Link Extraction**: Automatically discovers and stores songwriter social profiles (Instagram, Twitter, Facebook, Bandcamp, LinkedIn, YouTube, Discogs, Website) via MusicBrainz artist URL relationships
+- **2-Tier Unified Enrichment Pipeline (November 2025)**: Streamlined enrichment system with two primary tiers:
+  - **Tier 1 (Spotify Credits Scraping)**: Uses Puppeteer to scrape songwriter, composer, producer, and publisher credits directly from Spotify track pages. This is the primary source for songwriter discovery and provides the most comprehensive credit data.
+  - **Tier 2 (MusicBrainz Social Links)**: For each songwriter identified in Tier 1, queries MusicBrainz API to discover social profiles (Instagram, Twitter, Facebook, Bandcamp, LinkedIn, YouTube, Discogs, Website) via artist URL relationships. Uses 3-tier MusicBrainz lookup: (1) ISRC-based (fastest), (2) Spotify API ISRC recovery, (3) Name-based search with 90+ confidence threshold.
+  - **MLC Publisher Status (Future)**: System architecture includes MLC API integration (`enrichTrackWithMLC()` in `server/mlc.ts`) to determine publisher status (Unsigned/Self-Published/Indie/Major) once official API credentials are obtained from themlc.com/dataprograms. Current implementation gracefully skips MLC lookups when credentials are not configured.
   - **Artist Normalization**: Separate `artists` table with unique MusicBrainz IDs prevents duplicate profiles; `artist_songwriters` junction enables many-to-many track-artist relationships for proper CRM integration
   - **Backfill Endpoint**: `/api/enrich-artists` processes existing enriched tracks to populate artist records and social links retrospectively
 - **Lead Tagging System**: Allows creation of custom, color-coded tags for tracks and filtering.
