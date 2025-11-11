@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { type PlaylistSnapshot, type ActivityHistory } from "@shared/schema";
+import { type PlaylistSnapshot, type ActivityHistory, type Artist, type Tag } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -37,6 +37,12 @@ interface DetailsDrawerProps {
   onEnrich: (trackId: string) => void;
 }
 
+interface FullTrackDetails extends PlaylistSnapshot {
+  tags: Tag[];
+  activity: ActivityHistory[];
+  artists: Artist[];
+}
+
 export function DetailsDrawer({
   track,
   open,
@@ -45,9 +51,12 @@ export function DetailsDrawer({
 }: DetailsDrawerProps) {
   const [isEnriching, setIsEnriching] = useState(false);
 
-  const { data: activity, isLoading: activityLoading } = useQuery<ActivityHistory[]>({
-    queryKey: ["/api/tracks", track?.id, "activity"],
+  // Fetch full track details immediately on open
+  const { data: fullTrack, isLoading: trackLoading } = useQuery<FullTrackDetails>({
+    queryKey: ["/api/tracks", track?.id, "full"],
     enabled: !!track?.id && open,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   // Listen for WebSocket updates
@@ -55,10 +64,9 @@ export function DetailsDrawer({
     onTrackEnriched: (data) => {
       if (data.trackId === track?.id) {
         setIsEnriching(false);
-        // Invalidate all queries for this track to refresh data
+        // Invalidate queries to refetch complete data
         queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/tracks", track?.id, "activity"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/tracks", track?.id, "artists"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/tracks", track?.id, "full"] });
       }
     },
   });
@@ -90,6 +98,11 @@ export function DetailsDrawer({
 
   if (!track) return null;
 
+  // Use fullTrack data if available, otherwise fall back to track prop
+  const displayTrack = fullTrack || track;
+  const activity = fullTrack?.activity || [];
+  const artists = fullTrack?.artists || [];
+
   const getScoreBadgeVariant = (score: number) => {
     if (score >= 7) return "high";
     if (score >= 4) return "medium";
@@ -108,11 +121,11 @@ export function DetailsDrawer({
         <div className="flex flex-col h-full">
           {/* Hero Section with Album Art and Close Button */}
           <div className="relative">
-            {track.albumArt ? (
+            {displayTrack.albumArt ? (
               <div className="relative h-72 overflow-hidden">
                 <img 
-                  src={track.albumArt} 
-                  alt={`${track.trackName} album art`}
+                  src={displayTrack.albumArt} 
+                  alt={`${displayTrack.trackName} album art`}
                   className="w-full h-full object-cover"
                   loading="eager"
                   decoding="async"
@@ -162,10 +175,10 @@ export function DetailsDrawer({
                       stroke="currentColor"
                       strokeWidth="8"
                       fill="none"
-                      strokeDasharray={`${(track.unsignedScore / 10) * 264} 264`}
+                      strokeDasharray={`${(displayTrack.unsignedScore / 10) * 264} 264`}
                       className={cn(
-                        track.unsignedScore >= 7 ? "text-green-500" :
-                        track.unsignedScore >= 4 ? "text-yellow-500" :
+                        displayTrack.unsignedScore >= 7 ? "text-green-500" :
+                        displayTrack.unsignedScore >= 4 ? "text-yellow-500" :
                         "text-red-500"
                       )}
                       strokeLinecap="round"
@@ -174,7 +187,7 @@ export function DetailsDrawer({
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center bg-card rounded-full w-20 h-20 flex items-center justify-center border-2 border-border">
                       <div>
-                        <div className="text-2xl font-bold">{track.unsignedScore}</div>
+                        <div className="text-2xl font-bold">{displayTrack.unsignedScore}</div>
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Score</div>
                       </div>
                     </div>
@@ -185,21 +198,21 @@ export function DetailsDrawer({
               {/* Track Title and Artist */}
               <div className="flex-1 min-w-0 pb-2">
                 <SheetTitle className="font-heading text-2xl leading-tight">
-                  {track.trackName}
+                  {displayTrack.trackName}
                 </SheetTitle>
                 <p className="text-base text-muted-foreground mt-2">
-                  {track.artistName}
+                  {displayTrack.artistName}
                 </p>
               </div>
             </div>
 
             {/* Metadata Badges */}
             <div className="flex flex-wrap gap-2 mt-6 pb-4">
-              {track.publisherStatus && (
-                <PublisherStatusBadge status={track.publisherStatus} showIcon />
+              {displayTrack.publisherStatus && (
+                <PublisherStatusBadge status={displayTrack.publisherStatus} showIcon />
               )}
 
-              {track.isrc ? (
+              {displayTrack.isrc ? (
                 <Badge
                   variant="outline"
                   className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
@@ -217,7 +230,7 @@ export function DetailsDrawer({
                 </Badge>
               )}
 
-              {track.dataSource === "scraped" ? (
+              {displayTrack.dataSource === "scraped" ? (
                 <Badge
                   variant="outline"
                   className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
@@ -253,39 +266,27 @@ export function DetailsDrawer({
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Playlist:</span>
-                      <span className="font-medium">{track.playlistName}</span>
+                      <span className="font-medium">{displayTrack.playlistName}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Label:</span>
                       <span className="font-medium">
-                        {track.label || <span className="italic">Unknown</span>}
+                        {displayTrack.label || <span className="italic">Unknown</span>}
                       </span>
                     </div>
-                    {track.publisher && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Publisher:</span>
-                        <span className="font-medium">{track.publisher}</span>
-                      </div>
-                    )}
-                    {track.songwriter && (
+                    {displayTrack.songwriter && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Songwriter:</span>
                         <div className="font-medium">
-                          <SongwriterDisplay songwriters={track.songwriter} />
+                          <SongwriterDisplay songwriters={displayTrack.songwriter} />
                         </div>
                       </div>
                     )}
-                    {track.isrc && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">ISRC:</span>
-                        <span className="font-mono text-xs">{track.isrc}</span>
-                      </div>
-                    )}
-                    {track.addedAt && (
+                    {displayTrack.addedAt && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Added:</span>
                         <span className="text-xs">
-                          {formatDistanceToNow(new Date(track.addedAt), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(displayTrack.addedAt), { addSuffix: true })}
                         </span>
                       </div>
                     )}
@@ -319,7 +320,7 @@ export function DetailsDrawer({
                     )}
                   </Button>
 
-                  <TrackTagPopover trackId={track.id} asChild={false}>
+                  <TrackTagPopover trackId={displayTrack.id} asChild={false}>
                     <Button
                       variant="outline"
                       className="w-full justify-start gap-2"
@@ -330,7 +331,7 @@ export function DetailsDrawer({
                     </Button>
                   </TrackTagPopover>
 
-                  <TrackContactDialog track={track} asChild={false}>
+                  <TrackContactDialog track={displayTrack} asChild={false}>
                     <Button
                       variant="outline"
                       className="w-full justify-start gap-2"
@@ -347,7 +348,7 @@ export function DetailsDrawer({
                     asChild
                     data-testid="action-open-spotify"
                   >
-                    <a href={track.spotifyUrl} target="_blank" rel="noopener noreferrer">
+                    <a href={displayTrack.spotifyUrl} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-4 w-4" />
                       Open in Spotify
                     </a>
@@ -360,7 +361,7 @@ export function DetailsDrawer({
               {/* Songwriters & Social Links */}
               <div>
                 <h3 className="text-sm font-semibold font-heading mb-3">Songwriters & Social Links</h3>
-                <SongwriterPanel trackId={track.id} />
+                <SongwriterPanel trackId={displayTrack.id} />
               </div>
 
               <Separator />
@@ -368,7 +369,7 @@ export function DetailsDrawer({
               {/* Activity History */}
               <div>
                 <h3 className="text-sm font-semibold font-heading mb-3">Activity History</h3>
-                {activityLoading ? (
+                {trackLoading ? (
                   <div className="space-y-3">
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="flex gap-3">
