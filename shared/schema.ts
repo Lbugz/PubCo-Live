@@ -41,6 +41,10 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   playlistFollowers: integer("playlist_followers"),
   youtubeViews: integer("youtube_views"),
   chartmetricEnrichedAt: timestamp("chartmetric_enriched_at"),
+  songwriterIds: text("songwriter_ids").array(),
+  composerName: text("composer_name"),
+  moods: text("moods").array(),
+  activities: text("activities").array(),
 }, (table) => ({
   uniqueTrackIdx: uniqueIndex("unique_track_per_week_idx").on(table.week, table.playlistId, table.spotifyUrl),
 }));
