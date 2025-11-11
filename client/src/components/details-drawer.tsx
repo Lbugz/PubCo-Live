@@ -133,7 +133,7 @@ export function DetailsDrawer({
       <SheetContent className="w-full sm:max-w-[640px] p-0">
         <div className="flex flex-col h-full">
           {/* Hero Header Block */}
-          <Card className="m-4 rounded-lg backdrop-blur-md bg-background/80 border">
+          <Card className="m-4 rounded-lg backdrop-blur-md bg-background/80 border shadow-sm">
             <div className="p-4">
               {/* Header Row: Album Art + Title/Artist + Close */}
               <div className="flex items-start gap-4 mb-3">
