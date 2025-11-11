@@ -124,7 +124,18 @@ export class DatabaseStorage implements IStorage {
   async insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<void> {
     if (tracks.length === 0) return;
     
-    await db.insert(playlistSnapshots).values(tracks);
+    await db.insert(playlistSnapshots)
+      .values(tracks)
+      .onConflictDoUpdate({
+        target: [playlistSnapshots.week, playlistSnapshots.playlistId, playlistSnapshots.spotifyUrl],
+        set: {
+          trackName: sql`EXCLUDED.track_name`,
+          artistName: sql`EXCLUDED.artist_name`,
+          albumArt: sql`EXCLUDED.album_art`,
+          addedAt: sql`EXCLUDED.added_at`,
+          dataSource: sql`EXCLUDED.data_source`,
+        },
+      });
   }
 
   async deleteTracksByWeek(week: string): Promise<void> {
