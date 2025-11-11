@@ -36,6 +36,8 @@ The frontend is a single-page React application built with a a modular component
     - **MLC Publisher Status (Future)**: Designed for MLC API integration to determine publisher status.
     - **Artist Normalization**: Separate `artists` table with unique MusicBrainz IDs prevents duplicates, and `artist_songwriters` junction table enables many-to-many track-artist relationships.
     - **Backfill Endpoint**: Processes existing enriched tracks to populate artist records and social links retrospectively.
+    - **Real-time Enrichment Updates**: WebSocket integration broadcasts `track_enriched` events to connected clients. Details drawer automatically invalidates React Query caches and refreshes data without requiring user to close/reopen. Loading states include skeleton loaders for track details and spinner on enrichment button.
+    - **Enrichment Activity Logging**: Creates detailed activity history entries including overall enrichment summary and per-songwriter MusicBrainz lookup results (found/not found with social links status).
 - **Lead Tagging System**: Allows custom, color-coded tags for tracks and filtering.
 - **Batch Week Comparison**: Enables comparison of track progression across multiple weeks.
 - **Contact Discovery**: Manages artist contact information.
