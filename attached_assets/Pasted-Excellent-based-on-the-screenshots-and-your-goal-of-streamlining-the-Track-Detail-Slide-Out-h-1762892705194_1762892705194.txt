@@ -1,0 +1,127 @@
+Excellent — based on the screenshots and your goal of streamlining the **Track Detail Slide-Out**, here’s a proposed redesign that balances hierarchy, space, and clarity while keeping songwriters at the core.
+
+---
+
+## 🎧 **Proposed Layout: Track Detail Drawer (v2)**
+
+### **1. Header Zone (Top Section)**
+
+**Left Side (Image / Placeholder Icon)**
+
+* Keep the album art or track icon smaller (optional, not dominant).
+* Use the space to the **right of it** for key metadata.
+
+**Right Side (Track Metadata)**
+
+```
+───────────────────────────────
+Killher                         [Score 8 ⭑]
+Year Of The Rat Records          Label
+Fresh Finds Heavy                Playlist
+Added: 3 days ago                Added
+───────────────────────────────
+```
+
+* You can place the **Score 8** badge as a small pill or ring near the title (not huge and centered as before).
+* Consider using subtle color rings (green for 8–10, yellow for 5–7, red for <5).
+
+---
+
+### **2. Actions Row (Compact & Dynamic)**
+
+A **dropdown / icon bar** with quick access:
+
+```
+⚙️ Actions ▾  [Enrich Data | Contact | Tag | Open in Spotify]
+```
+
+* Keep it condensed in one line or under a single icon-trigger button.
+* When clicked, it expands into contextual options.
+* Alternatively, float a small ⚙️ icon at top right of the drawer for global actions.
+
+---
+
+### **3. Main Body (Songwriters Focused Section)**
+
+#### **Songwriters Pane**
+
+This becomes the main content area:
+
+```
+🎼 Songwriters
+───────────────────────────────
+[<] Chris Lalic (Verified)
+No social links yet  
+Publisher: —  
+Email: contact@example.com  
+Instagram: @chrislalic  
+Twitter/X: —  
+TikTok: —  
+
+🗂️ Tags: [Sync] [Potential Deal]  
+📝 Notes: “Reached out on IG; awaiting reply.”
+
+───────────────
+[>] Qarin Hipe (Unverified)
+No publisher found
+```
+
+* Use **left/right arrows or swipe** to navigate between songwriters.
+* Alternatively, a **dropdown or tabs** labeled “Chris Lalic | Qarin Hipe” for switching.
+* Include **Tag + Contact + Publisher Info + Socials + Notes** inline (no modal needed unless editing).
+
+---
+
+### **4. Activity History (Bottom Section)**
+
+Keep it minimal and scrollable:
+
+```
+📜 Activity
+───────────────────────────────
+✔️ Track enriched via spotify-credits     <1 min ago  
+⚠️ No MusicBrainz record for Qarin Hipe   <1 min ago  
+ℹ️ Found record for Chris Lalic (no socials)  <1 min ago
+```
+
+* Small icons and timestamps keep it compact.
+* Consider grouping by event type (Discovery, Enrichment, Outreach).
+
+---
+
+### **5. Optional Enhancements**
+
+**A. Dual-Column Layout for Larger Screens**
+If screen width allows:
+
+* **Left column:** Track Info & Actions
+* **Right column:** Songwriter Carousel + Activity Log
+
+**B. Add “Contact State” Indicators**
+
+* 🟢 Contacted | 🟡 Pending | 🔴 Not Contacted
+* Useful for CRM purposes without opening modal.
+
+**C. Tagging Shortcut**
+Hover over songwriter → small “🏷️” icon appears to add tag quickly.
+
+---
+
+## 💡 Opinionated Design Principle
+
+Your drawer should evolve from a *track view* to a *relationship hub*.
+Instead of treating this as static metadata, it becomes the **bridge between discovery and dealmaking** — a space to take action on songwriters directly.
+
+So:
+
+* Keep **Track Info** concise and up top (context).
+* Center the **Songwriter Profiles** as the actionable middle.
+* End with **Activity Logs** (receipts of what’s been done).
+
+---
+
+Would you like me to mock this up visually (in Figma-style layout or ShadCN React JSX)?
+I can generate either:
+
+1. A **visual wireframe** for UX review, or
+2. A **code-ready JSX/Tailwind layout** for your Replit front-end.
