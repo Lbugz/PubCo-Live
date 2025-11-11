@@ -1281,6 +1281,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // TIER 4: Chartmetric Analytics (only if we have ISRC)
+      if (track.isrc) {
+        try {
+          console.log(`[Tier 4: Chartmetric] Fetching analytics...`);
+          const chartmetricData = await enrichTrackWithChartmetric(track);
+          
+          if (chartmetricData) {
+            updates.chartmetricId = chartmetricData.chartmetricId;
+            updates.chartmetricStatus = "success";
+            updates.spotifyStreams = chartmetricData.spotifyStreams;
+            updates.streamingVelocity = chartmetricData.streamingVelocity?.toString();
+            updates.trackStage = chartmetricData.trackStage;
+            updates.playlistFollowers = chartmetricData.playlistFollowers;
+            updates.youtubeViews = chartmetricData.youtubeViews;
+            updates.chartmetricEnrichedAt = new Date();
+            updates.songwriterIds = chartmetricData.songwriterIds;
+            updates.composerName = chartmetricData.composerName;
+            updates.moods = chartmetricData.moods;
+            updates.activities = chartmetricData.activities;
+            
+            const streamsText = chartmetricData.spotifyStreams !== null && chartmetricData.spotifyStreams !== undefined
+              ? `${chartmetricData.spotifyStreams.toLocaleString()} streams` 
+              : 'unknown streams';
+            const stageText = chartmetricData.trackStage || 'unknown stage';
+            
+            tierResults.push({
+              tier: "chartmetric",
+              success: true,
+              message: `Analytics: ${streamsText}, ${stageText}`,
+              data: { 
+                streams: chartmetricData.spotifyStreams,
+                velocity: chartmetricData.streamingVelocity,
+                stage: chartmetricData.trackStage,
+                moods: chartmetricData.moods,
+                activities: chartmetricData.activities
+              }
+            });
+            
+            // Log Chartmetric activity
+            await storage.logActivity({
+              trackId: track.id,
+              eventType: "chartmetric_enriched",
+              eventDescription: `Chartmetric analytics: ${streamsText}, ${stageText}`,
+            });
+            
+            console.log(`✅ [Tier 4] Success: ${streamsText}`);
+          } else {
+            tierResults.push({
+              tier: "chartmetric",
+              success: false,
+              message: "No Chartmetric data found",
+              data: null
+            });
+            console.log(`⚠️ [Tier 4] No data found`);
+          }
+        } catch (error: any) {
+          console.error(`[Tier 4] Error:`, error);
+          tierResults.push({
+            tier: "chartmetric",
+            success: false,
+            message: error.message || "Chartmetric lookup failed",
+            data: null
+          });
+        }
+      } else {
+        tierResults.push({
+          tier: "chartmetric",
+          success: false,
+          message: "Skipped - no ISRC available",
+          data: null
+        });
+      }
+
       // Update track with all collected data
       const successfulTiers = tierResults.filter(t => t.success).length;
       
