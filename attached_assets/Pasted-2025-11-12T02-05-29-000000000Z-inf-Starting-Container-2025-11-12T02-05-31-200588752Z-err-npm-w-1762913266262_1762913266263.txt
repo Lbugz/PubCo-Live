@@ -1,0 +1,222 @@
+2025-11-12T02:05:29.000000000Z [inf]  Starting Container
+2025-11-12T02:05:31.200588752Z [err]  npm warn exec The following package was not found and will be installed: tsx@4.20.6
+2025-11-12T02:05:31.578481616Z [err]  
+2025-11-12T02:05:31.578489566Z [err]  node:internal/modules/run_main:123
+2025-11-12T02:05:31.578503315Z [err]      triggerUncaughtException(
+2025-11-12T02:05:31.578534587Z [err]      ^
+2025-11-12T02:05:31.578542853Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/server/scraper-server.ts' imported from /app/
+2025-11-12T02:05:31.578550209Z [err]      at finalizeResolution (node:internal/modules/esm/resolve:283:11)
+2025-11-12T02:05:31.578556985Z [err]      at moduleResolve (node:internal/modules/esm/resolve:952:10)
+2025-11-12T02:05:31.578564618Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:05:31.578571710Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:31.578578924Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913131466:2:3744)
+2025-11-12T02:05:31.578585063Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913131466:2:4243)
+2025-11-12T02:05:31.578591898Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913131466:2:4984)
+2025-11-12T02:05:31.578600715Z [err]      at resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913131466:2:5361)
+2025-11-12T02:05:31.578609526Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:31.578615560Z [err]      at Hooks.resolve (node:internal/modules/esm/hooks:306:30) {
+2025-11-12T02:05:31.578620665Z [err]    code: 'ERR_MODULE_NOT_FOUND',
+2025-11-12T02:05:31.578625683Z [err]    url: 'file:///app/server/scraper-server.ts'
+2025-11-12T02:05:31.578631987Z [err]  }
+2025-11-12T02:05:31.578637285Z [err]  
+2025-11-12T02:05:31.578646653Z [err]  Node.js v20.19.5
+2025-11-12T02:05:33.599352731Z [err]  
+2025-11-12T02:05:33.599360454Z [err]  node:internal/modules/run_main:123
+2025-11-12T02:05:33.599366295Z [err]      triggerUncaughtException(
+2025-11-12T02:05:33.599372470Z [err]      ^
+2025-11-12T02:05:33.601888286Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/server/scraper-server.ts' imported from /app/
+2025-11-12T02:05:33.601905297Z [err]      at finalizeResolution (node:internal/modules/esm/resolve:283:11)
+2025-11-12T02:05:33.601914536Z [err]      at moduleResolve (node:internal/modules/esm/resolve:952:10)
+2025-11-12T02:05:33.601925436Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:05:33.601934780Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:33.601943024Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913133501:2:3744)
+2025-11-12T02:05:33.601952766Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913133501:2:4243)
+2025-11-12T02:05:33.601960324Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913133501:2:4984)
+2025-11-12T02:05:33.601969828Z [err]      at resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913133501:2:5361)
+2025-11-12T02:05:33.601978734Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:33.601989535Z [err]      at Hooks.resolve (node:internal/modules/esm/hooks:306:30) {
+2025-11-12T02:05:33.601997207Z [err]    code: 'ERR_MODULE_NOT_FOUND',
+2025-11-12T02:05:33.602005803Z [err]    url: 'file:///app/server/scraper-server.ts'
+2025-11-12T02:05:33.602013575Z [err]  }
+2025-11-12T02:05:33.602022655Z [err]  
+2025-11-12T02:05:33.602031845Z [err]  Node.js v20.19.5
+2025-11-12T02:05:35.544853980Z [err]  Node.js v20.19.5
+2025-11-12T02:05:35.544884969Z [err]  
+2025-11-12T02:05:35.544891227Z [err]  node:internal/modules/run_main:123
+2025-11-12T02:05:35.544908303Z [err]      triggerUncaughtException(
+2025-11-12T02:05:35.544914622Z [err]      ^
+2025-11-12T02:05:35.544920382Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/server/scraper-server.ts' imported from /app/
+2025-11-12T02:05:35.544926851Z [err]      at finalizeResolution (node:internal/modules/esm/resolve:283:11)
+2025-11-12T02:05:35.544933284Z [err]      at moduleResolve (node:internal/modules/esm/resolve:952:10)
+2025-11-12T02:05:35.544940568Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:05:35.544947660Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:35.544954265Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913135438:2:3744)
+2025-11-12T02:05:35.544960530Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913135438:2:4243)
+2025-11-12T02:05:35.544967039Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913135438:2:4984)
+2025-11-12T02:05:35.544975804Z [err]      at resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913135438:2:5361)
+2025-11-12T02:05:35.544985951Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:35.544994310Z [err]      at Hooks.resolve (node:internal/modules/esm/hooks:306:30) {
+2025-11-12T02:05:35.545000649Z [err]    code: 'ERR_MODULE_NOT_FOUND',
+2025-11-12T02:05:35.545007515Z [err]    url: 'file:///app/server/scraper-server.ts'
+2025-11-12T02:05:35.545017623Z [err]  }
+2025-11-12T02:05:35.545025445Z [err]  
+2025-11-12T02:05:37.720778692Z [err]  
+2025-11-12T02:05:37.720780135Z [err]  Node.js v20.19.5
+2025-11-12T02:05:37.720786745Z [err]  node:internal/modules/run_main:123
+2025-11-12T02:05:37.720792382Z [err]      triggerUncaughtException(
+2025-11-12T02:05:37.720798860Z [err]      ^
+2025-11-12T02:05:37.720804433Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/server/scraper-server.ts' imported from /app/
+2025-11-12T02:05:37.720809089Z [err]      at finalizeResolution (node:internal/modules/esm/resolve:283:11)
+2025-11-12T02:05:37.720813209Z [err]      at moduleResolve (node:internal/modules/esm/resolve:952:10)
+2025-11-12T02:05:37.720818478Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:05:37.720824167Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:37.720829341Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913137611:2:3744)
+2025-11-12T02:05:37.720834156Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913137611:2:4243)
+2025-11-12T02:05:37.720839006Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913137611:2:4984)
+2025-11-12T02:05:37.720843412Z [err]      at resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913137611:2:5361)
+2025-11-12T02:05:37.720848508Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:37.720852715Z [err]      at Hooks.resolve (node:internal/modules/esm/hooks:306:30) {
+2025-11-12T02:05:37.720857114Z [err]    code: 'ERR_MODULE_NOT_FOUND',
+2025-11-12T02:05:37.720862418Z [err]    url: 'file:///app/server/scraper-server.ts'
+2025-11-12T02:05:37.720866741Z [err]  }
+2025-11-12T02:05:37.720871013Z [err]  
+2025-11-12T02:05:39.654165435Z [err]  
+2025-11-12T02:05:39.654176853Z [err]  node:internal/modules/run_main:123
+2025-11-12T02:05:39.654188845Z [err]      triggerUncaughtException(
+2025-11-12T02:05:39.654195696Z [err]      ^
+2025-11-12T02:05:39.657164783Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/server/scraper-server.ts' imported from /app/
+2025-11-12T02:05:39.657176046Z [err]      at finalizeResolution (node:internal/modules/esm/resolve:283:11)
+2025-11-12T02:05:39.657183495Z [err]      at moduleResolve (node:internal/modules/esm/resolve:952:10)
+2025-11-12T02:05:39.657190782Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:05:39.657197604Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:39.657204336Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913139557:2:3744)
+2025-11-12T02:05:39.657216916Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913139557:2:4243)
+2025-11-12T02:05:39.657223196Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913139557:2:4984)
+2025-11-12T02:05:39.657230479Z [err]      at resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913139557:2:5361)
+2025-11-12T02:05:39.657237069Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:39.657245780Z [err]      at Hooks.resolve (node:internal/modules/esm/hooks:306:30) {
+2025-11-12T02:05:39.657252079Z [err]    code: 'ERR_MODULE_NOT_FOUND',
+2025-11-12T02:05:39.657262026Z [err]    url: 'file:///app/server/scraper-server.ts'
+2025-11-12T02:05:39.657269264Z [err]  }
+2025-11-12T02:05:39.657276301Z [err]  
+2025-11-12T02:05:39.657285379Z [err]  Node.js v20.19.5
+2025-11-12T02:05:41.630639461Z [err]  
+2025-11-12T02:05:41.630655288Z [err]  node:internal/modules/run_main:123
+2025-11-12T02:05:41.630665117Z [err]      triggerUncaughtException(
+2025-11-12T02:05:41.630671934Z [err]      ^
+2025-11-12T02:05:41.630679095Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/server/scraper-server.ts' imported from /app/
+2025-11-12T02:05:41.630686460Z [err]      at finalizeResolution (node:internal/modules/esm/resolve:283:11)
+2025-11-12T02:05:41.630693359Z [err]      at moduleResolve (node:internal/modules/esm/resolve:952:10)
+2025-11-12T02:05:41.630702263Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:05:41.630708643Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:41.630715400Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913141524:2:3744)
+2025-11-12T02:05:41.630720735Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913141524:2:4243)
+2025-11-12T02:05:41.630726494Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913141524:2:4984)
+2025-11-12T02:05:41.630734188Z [err]      at resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913141524:2:5361)
+2025-11-12T02:05:41.630739921Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:41.630744364Z [err]      at Hooks.resolve (node:internal/modules/esm/hooks:306:30) {
+2025-11-12T02:05:41.630749919Z [err]    code: 'ERR_MODULE_NOT_FOUND',
+2025-11-12T02:05:41.630755383Z [err]    url: 'file:///app/server/scraper-server.ts'
+2025-11-12T02:05:41.630761517Z [err]  }
+2025-11-12T02:05:41.630768704Z [err]  
+2025-11-12T02:05:41.630773634Z [err]  Node.js v20.19.5
+2025-11-12T02:05:43.676189312Z [err]  
+2025-11-12T02:05:43.676198499Z [err]  node:internal/modules/run_main:123
+2025-11-12T02:05:43.676205996Z [err]      triggerUncaughtException(
+2025-11-12T02:05:43.676219863Z [err]      ^
+2025-11-12T02:05:43.678720008Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/server/scraper-server.ts' imported from /app/
+2025-11-12T02:05:43.678731523Z [err]      at finalizeResolution (node:internal/modules/esm/resolve:283:11)
+2025-11-12T02:05:43.678738742Z [err]      at moduleResolve (node:internal/modules/esm/resolve:952:10)
+2025-11-12T02:05:43.678745244Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:05:43.678751987Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:43.678758152Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913143582:2:3744)
+2025-11-12T02:05:43.678764279Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913143582:2:4243)
+2025-11-12T02:05:43.678770348Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913143582:2:4984)
+2025-11-12T02:05:43.678776278Z [err]      at resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913143582:2:5361)
+2025-11-12T02:05:43.678783358Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:43.678789041Z [err]      at Hooks.resolve (node:internal/modules/esm/hooks:306:30) {
+2025-11-12T02:05:43.678795537Z [err]    code: 'ERR_MODULE_NOT_FOUND',
+2025-11-12T02:05:43.678802440Z [err]    url: 'file:///app/server/scraper-server.ts'
+2025-11-12T02:05:43.678809159Z [err]  }
+2025-11-12T02:05:43.678815997Z [err]  
+2025-11-12T02:05:43.678823085Z [err]  Node.js v20.19.5
+2025-11-12T02:05:47.215472143Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/server/scraper-server.ts' imported from /app/
+2025-11-12T02:05:47.215485682Z [err]  
+2025-11-12T02:05:47.215488309Z [err]      at finalizeResolution (node:internal/modules/esm/resolve:283:11)
+2025-11-12T02:05:47.215501536Z [err]  node:internal/modules/run_main:123
+2025-11-12T02:05:47.215503590Z [err]      at moduleResolve (node:internal/modules/esm/resolve:952:10)
+2025-11-12T02:05:47.215512077Z [err]      triggerUncaughtException(
+2025-11-12T02:05:47.215515708Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:05:47.215525145Z [err]      ^
+2025-11-12T02:05:47.215526407Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:47.215550660Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913146843:2:4984)
+2025-11-12T02:05:47.215559188Z [err]      at resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913146843:2:5361)
+2025-11-12T02:05:47.215565933Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:47.215585954Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913146843:2:3744)
+2025-11-12T02:05:47.215593494Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913146843:2:4243)
+2025-11-12T02:05:47.215635277Z [err]      at Hooks.resolve (node:internal/modules/esm/hooks:306:30) {
+2025-11-12T02:05:47.215647198Z [err]    code: 'ERR_MODULE_NOT_FOUND',
+2025-11-12T02:05:47.215659361Z [err]    url: 'file:///app/server/scraper-server.ts'
+2025-11-12T02:05:47.215667591Z [err]  }
+2025-11-12T02:05:47.215676607Z [err]  
+2025-11-12T02:05:47.215690474Z [err]  Node.js v20.19.5
+2025-11-12T02:05:49.228597606Z [err]  
+2025-11-12T02:05:49.228610362Z [err]  node:internal/modules/run_main:123
+2025-11-12T02:05:49.228618373Z [err]      triggerUncaughtException(
+2025-11-12T02:05:49.228625027Z [err]      ^
+2025-11-12T02:05:49.228631908Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/server/scraper-server.ts' imported from /app/
+2025-11-12T02:05:49.228637447Z [err]      at finalizeResolution (node:internal/modules/esm/resolve:283:11)
+2025-11-12T02:05:49.228642981Z [err]      at moduleResolve (node:internal/modules/esm/resolve:952:10)
+2025-11-12T02:05:49.228651034Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:05:49.228657863Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:49.228666103Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913148975:2:3744)
+2025-11-12T02:05:49.228671070Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913148975:2:4243)
+2025-11-12T02:05:49.228677474Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913148975:2:4984)
+2025-11-12T02:05:49.228682137Z [err]      at resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913148975:2:5361)
+2025-11-12T02:05:49.228688058Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:49.228693211Z [err]      at Hooks.resolve (node:internal/modules/esm/hooks:306:30) {
+2025-11-12T02:05:49.228700678Z [err]    code: 'ERR_MODULE_NOT_FOUND',
+2025-11-12T02:05:49.228706365Z [err]    url: 'file:///app/server/scraper-server.ts'
+2025-11-12T02:05:49.228712444Z [err]  }
+2025-11-12T02:05:49.228718493Z [err]  
+2025-11-12T02:05:49.228724017Z [err]  Node.js v20.19.5
+2025-11-12T02:05:51.198876504Z [err]      ^
+2025-11-12T02:05:51.198889141Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/server/scraper-server.ts' imported from /app/
+2025-11-12T02:05:51.198899437Z [err]      at finalizeResolution (node:internal/modules/esm/resolve:283:11)
+2025-11-12T02:05:51.198907077Z [err]      at moduleResolve (node:internal/modules/esm/resolve:952:10)
+2025-11-12T02:05:51.198914311Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:05:51.198922256Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:51.198930069Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913151053:2:3744)
+2025-11-12T02:05:51.198938445Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913151053:2:4243)
+2025-11-12T02:05:51.198951295Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913151053:2:4984)
+2025-11-12T02:05:51.198963453Z [err]      at resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913151053:2:5361)
+2025-11-12T02:05:51.198970393Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:51.198977786Z [err]      at Hooks.resolve (node:internal/modules/esm/hooks:306:30) {
+2025-11-12T02:05:51.198983786Z [err]    code: 'ERR_MODULE_NOT_FOUND',
+2025-11-12T02:05:51.198992784Z [err]    url: 'file:///app/server/scraper-server.ts'
+2025-11-12T02:05:51.198998476Z [err]  }
+2025-11-12T02:05:51.199004962Z [err]  
+2025-11-12T02:05:51.199011884Z [err]  Node.js v20.19.5
+2025-11-12T02:05:51.199190173Z [err]  
+2025-11-12T02:05:51.199196573Z [err]  node:internal/modules/run_main:123
+2025-11-12T02:05:51.199203018Z [err]      triggerUncaughtException(
+2025-11-12T02:05:53.456153291Z [err]  
+2025-11-12T02:05:53.456162299Z [err]  node:internal/modules/run_main:123
+2025-11-12T02:05:53.456168587Z [err]      triggerUncaughtException(
+2025-11-12T02:05:53.456173595Z [err]      ^
+2025-11-12T02:05:53.459680253Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/server/scraper-server.ts' imported from /app/
+2025-11-12T02:05:53.459691121Z [err]      at finalizeResolution (node:internal/modules/esm/resolve:283:11)
+2025-11-12T02:05:53.459697157Z [err]      at moduleResolve (node:internal/modules/esm/resolve:952:10)
+2025-11-12T02:05:53.459705069Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:05:53.459711944Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:53.459717396Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913153352:2:3744)
+2025-11-12T02:05:53.459723606Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913153352:2:4243)
+2025-11-12T02:05:53.459730194Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913153352:2:4984)
+2025-11-12T02:05:53.459735974Z [err]      at resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762913153352:2:5361)
+2025-11-12T02:05:53.459741718Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T02:05:53.459749052Z [err]      at Hooks.resolve (node:internal/modules/esm/hooks:306:30) {
+2025-11-12T02:05:53.459756109Z [err]    code: 'ERR_MODULE_NOT_FOUND',
+2025-11-12T02:05:53.459764764Z [err]    url: 'file:///app/server/scraper-server.ts'
+2025-11-12T02:05:53.459771578Z [err]  }
+2025-11-12T02:05:53.459778341Z [err]  
+2025-11-12T02:05:53.459783537Z [err]  Node.js v20.19.5
