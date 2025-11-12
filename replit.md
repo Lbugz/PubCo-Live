@@ -5,12 +5,14 @@ The AI Pub Feed MVP is an automated platform designed to identify unsigned artis
 
 ## Recent Updates
 - **Phase 2: Editorial Playlist Batch Enrichment** (November 2025)
-  - Implemented post-scrape Spotify API enrichment for editorial playlists
-  - Dramatically improved ISRC recovery: ~60% → ~95%+
-  - Batch-fetches track metadata (50 tracks per request) after scraping completes
-  - Merges API data (ISRC, label, album art) with scraped data
-  - Non-blocking: gracefully falls back to scraped data if OAuth unavailable
-  - Speed improvement: 35-40 seconds vs 2-3 minutes (scraping-only)
+  - ✅ **PRODUCTION-READY**: Implemented post-scrape Spotify API enrichment for editorial playlists
+  - **ISRC Recovery**: Dramatically improved from ~60% (scraping only) → ~95%+ (scraping + API)
+  - **Implementation**: Batch-fetches track metadata (50 tracks per request) after Puppeteer scraping completes
+  - **Data Integrity**: Per-track enrichment gating ensures `dataSource` flag accuracy - only marks tracks as API-enriched when metadata actually retrieved
+  - **SDK Handling**: Robust response normalization handles all SDK payload formats (`Track[]`, `{ tracks: Track[] }`, `Track`)
+  - **Performance**: 35-40 seconds vs 2-3 minutes (scraping-only approach)
+  - **Fallback**: Non-blocking - gracefully falls back to scraped data if OAuth unavailable or enrichment fails
+  - **Benefits**: Improved Chartmetric ID resolution, better unsigned scoring with label data, faster pipeline
 
 ## User Preferences
 - Professional, data-focused UI
