@@ -125,7 +125,7 @@ async function getAuthToken(): Promise<string> {
   return cachedToken;
 }
 
-async function makeChartmetricRequest<T>(endpoint: string, method: string = "GET"): Promise<T> {
+async function makeChartmetricRequest<T>(endpoint: string, method: string = "GET", retryCount: number = 0): Promise<T> {
   const token = await getAuthToken();
   await rateLimiter.throttle();
 
@@ -136,6 +136,17 @@ async function makeChartmetricRequest<T>(endpoint: string, method: string = "GET
       "Content-Type": "application/json",
     },
   });
+
+  // Retry once on 429 (rate limit) or 5xx (server errors) with jitter
+  if (!response.ok && retryCount === 0 && (response.status === 429 || response.status >= 500)) {
+    const jitter = Math.random() * 2000; // 0-2 seconds random jitter
+    const retryDelay = 3000 + jitter; // 3-5 seconds total
+    
+    console.log(`⚠️  Chartmetric API ${response.status} error - retrying in ${(retryDelay / 1000).toFixed(1)}s...`);
+    await new Promise(resolve => setTimeout(resolve, retryDelay));
+    
+    return makeChartmetricRequest<T>(endpoint, method, retryCount + 1);
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -479,12 +490,22 @@ export async function lookupIsrcBatch(tracks: BatchLookupInput[]): Promise<Batch
 
   // Step 2: Process unique ISRCs with concurrency control (3 workers)
   const semaphore = new Semaphore(3);
+  let completed = 0;
+  
   const lookupPromises = uniqueIsrcs.map(isrc =>
     semaphore.run(async () => {
       try {
         const track = await getTrackByISRC(isrc);
+        completed++;
+        
+        // Progress logging every 25 tracks for large batches
+        if (stats.deduped >= 25 && completed % 25 === 0) {
+          console.log(`  📊 Chartmetric Batch Progress: ${completed}/${stats.deduped} ISRCs processed`);
+        }
+        
         return { isrc, track, error: null };
       } catch (error: any) {
+        completed++;
         return { isrc, track: null, error: error.message };
       }
     })
