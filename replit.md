@@ -28,6 +28,8 @@ The frontend is a single-page React application built with a a modular component
 ### Technical Implementations
 - **Data Fetching**: Utilizes TanStack Query.
 - **Scoring Algorithm**: Proprietary algorithm ranks tracks based on Fresh Finds appearance, independent label status, and missing publisher/writer data.
+- **Playlist Metadata Timing Fix**: Critical bug fix ensures playlist metadata (name, artwork, curator, followers) is persisted to `tracked_playlists` BEFORE track insertion. Previously, tracks were created with `playlistName = playlistId` because metadata update happened after track insertion. Solution: Refetch updated playlist after scraper returns metadata, ensuring tracks use correct playlist name. Backfill endpoint (`/api/backfill-track-playlist-names`) updates existing tracks retroactively.
+- **Automatic Enrichment Trigger**: Background enrichment now triggers automatically after playlist fetch operations via `scheduleMetricsUpdate({ source: "fetch_playlists" })`. Previously only Spotify API path triggered enrichment; scraping path was missing the scheduler call.
 - **5-Tier Unified Enrichment Pipeline**:
     - **Tier 0 (ISRC Recovery)**: Uses Spotify API to recover missing ISRCs for tracks via name/artist search when not available from initial playlist fetch.
     - **Tier 1 (Spotify Credits & Stream Count Scraping)**: Uses Puppeteer to scrape songwriter, composer, producer, and publisher credits from Spotify track pages. **Also extracts Spotify stream counts** (e.g., "33,741" or "1.2M") directly from the page as a fallback for tracks without Chartmetric data. Includes smart name splitting for accurate songwriter identification.

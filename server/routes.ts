@@ -2188,7 +2188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 fetchMethod = 'network-capture';
                 capturedTracks = networkResult.tracks ?? [];
                 
-                // Update playlist metadata (name, curator, followers, artwork) if available
+                // Update playlist metadata (name, curator, followers, artwork) BEFORE processing tracks
                 if (networkResult.playlistName || networkResult.curator || networkResult.followers !== null || networkResult.imageUrl) {
                   const updates: any = {
                     totalTracks: networkTrackCount
@@ -2235,6 +2235,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             
             // Process captured tracks
+            // Get updated playlist name (in case scraper updated it)
+            const currentPlaylist = await storage.getTrackedPlaylistBySpotifyId(playlist.playlistId);
+            const playlistNameForTracks = currentPlaylist?.name || playlist.name;
+            
             for (const capturedTrack of capturedTracks) {
               const trackUrl = capturedTrack.spotifyUrl || `https://open.spotify.com/track/${capturedTrack.trackId}`;
               const trackKey = `${playlist.playlistId}_${trackUrl}`;
@@ -2245,7 +2249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
               
               const score = calculateUnsignedScore({
-                playlistName: playlist.name,
+                playlistName: playlistNameForTracks,
                 label: null,
                 publisher: null,
                 writer: null,
@@ -2257,7 +2261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               const newTrack: InsertPlaylistSnapshot = {
                 week: today,
-                playlistName: playlist.name,
+                playlistName: playlistNameForTracks,
                 playlistId: playlist.playlistId,
                 trackName: capturedTrack.name,
                 artistName: artistName,
@@ -2380,6 +2384,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         await storage.insertTracks(allTracks);
         console.log(`Successfully saved ${allTracks.length} new tracks for ${today}`);
+        
+        // Trigger enrichment and metrics update for newly added tracks
+        scheduleMetricsUpdate({ source: "fetch_playlists" });
+        console.log(`✅ Scheduled background enrichment for ${allTracks.length} new tracks`);
       }
       
       res.json({ 
@@ -2536,6 +2544,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error backfilling album art:", error);
       res.status(500).json({ error: "Failed to backfill album art" });
+    }
+  });
+
+  app.post("/api/backfill-track-playlist-names", async (req, res) => {
+    try {
+      // Get all tracked playlists
+      const trackedPlaylists = await storage.getTrackedPlaylists();
+      
+      if (trackedPlaylists.length === 0) {
+        return res.json({ 
+          success: true, 
+          message: "No tracked playlists found",
+          updated: 0 
+        });
+      }
+      
+      console.log(`Backfilling playlist names for tracks from ${trackedPlaylists.length} playlists...`);
+      
+      let updatedCount = 0;
+      const results: Array<{ playlistId: string; oldName: string; newName: string; tracksUpdated: number }> = [];
+      
+      for (const playlist of trackedPlaylists) {
+        try {
+          // Update all tracks with this playlist ID to have the correct playlist name
+          const result = await db.update(playlistSnapshots)
+            .set({ playlistName: playlist.name })
+            .where(eq(playlistSnapshots.playlistId, playlist.playlistId))
+            .returning({ id: playlistSnapshots.id });
+          
+          const tracksUpdated = result.length;
+          updatedCount += tracksUpdated;
+          
+          if (tracksUpdated > 0) {
+            results.push({
+              playlistId: playlist.playlistId,
+              oldName: playlist.playlistId, // They were using ID as name
+              newName: playlist.name,
+              tracksUpdated,
+            });
+            console.log(`✓ ${playlist.name}: Updated ${tracksUpdated} tracks`);
+          }
+        } catch (error: any) {
+          console.error(`Failed to backfill ${playlist.name}:`, error.message);
+        }
+      }
+      
+      console.log(`Backfill complete: ${updatedCount} tracks updated across ${results.length} playlists`);
+      
+      res.json({ 
+        success: true, 
+        updated: updatedCount,
+        playlistsProcessed: trackedPlaylists.length,
+        playlistsWithUpdates: results.length,
+        results 
+      });
+    } catch (error) {
+      console.error("Error backfilling track playlist names:", error);
+      res.status(500).json({ error: "Failed to backfill track playlist names" });
     }
   });
 
