@@ -38,6 +38,9 @@ export interface IStorage {
   getTracksNeedingChartmetricEnrichment(limit?: number): Promise<PlaylistSnapshot[]>;
   updateTrackChartmetric(id: string, data: { chartmetricId?: string; chartmetricStatus?: string; spotifyStreams?: number; streamingVelocity?: string; trackStage?: string; playlistFollowers?: number; youtubeViews?: number; chartmetricEnrichedAt?: Date; songwriterIds?: string[]; composerName?: string; moods?: string[]; activities?: string[] }): Promise<void>;
   getStaleChartmetricTracks(daysOld: number, limit?: number): Promise<PlaylistSnapshot[]>;
+  getDataCounts(): Promise<{ playlists: number; tracks: number; songwriters: number; tags: number; activities: number }>;
+  deleteAllData(): Promise<void>;
+  deletePlaylistCascade(playlistId: string, options: { deleteSongwriters?: boolean }): Promise<{ tracksDeleted: number; songwritersDeleted: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -411,6 +414,96 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(playlistSnapshots.chartmetricEnrichedAt)
       .limit(limit);
+  }
+
+  async getDataCounts(): Promise<{ playlists: number; tracks: number; songwriters: number; tags: number; activities: number }> {
+    const [playlistsCount] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(trackedPlaylists);
+    
+    const [tracksCount] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(playlistSnapshots);
+    
+    const [songwritersCount] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(artists);
+    
+    const [tagsCount] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(tags);
+    
+    const [activitiesCount] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(activityHistory);
+    
+    return {
+      playlists: playlistsCount.count,
+      tracks: tracksCount.count,
+      songwriters: songwritersCount.count,
+      tags: tagsCount.count,
+      activities: activitiesCount.count,
+    };
+  }
+
+  async deleteAllData(): Promise<void> {
+    await db.transaction(async (tx) => {
+      await tx.delete(playlistSnapshots);
+      await tx.delete(trackedPlaylists);
+      await tx.delete(tags);
+      await tx.delete(artists);
+      
+      const songwriterProfilesTable = await import("@shared/schema").then(m => m.songwriterProfiles);
+      await tx.delete(songwriterProfilesTable);
+      
+      console.log("All data deleted successfully");
+    });
+  }
+
+  async deletePlaylistCascade(playlistId: string, options: { deleteSongwriters?: boolean } = {}): Promise<{ tracksDeleted: number; songwritersDeleted: number }> {
+    return await db.transaction(async (tx) => {
+      const trackedPlaylist = await this.getTrackedPlaylistBySpotifyId(playlistId);
+      
+      const tracksToDelete = await tx.select()
+        .from(playlistSnapshots)
+        .where(eq(playlistSnapshots.playlistId, playlistId));
+      
+      const tracksDeleted = tracksToDelete.length;
+      let songwritersDeleted = 0;
+      
+      if (options.deleteSongwriters && tracksDeleted > 0) {
+        const trackIds = tracksToDelete.map(t => t.id);
+        
+        const artistLinks = await tx.select({ artistId: artistSongwriters.artistId })
+          .from(artistSongwriters)
+          .where(inArray(artistSongwriters.trackId, trackIds));
+        
+        const uniqueArtistIds = new Set(artistLinks.map(link => link.artistId));
+        const affectedArtistIds = Array.from(uniqueArtistIds);
+        
+        await tx.delete(playlistSnapshots)
+          .where(eq(playlistSnapshots.playlistId, playlistId));
+        
+        for (const artistId of affectedArtistIds) {
+          const [remainingLinks] = await tx.select({ count: sql<number>`count(*)::int` })
+            .from(artistSongwriters)
+            .where(eq(artistSongwriters.artistId, artistId));
+          
+          if (remainingLinks.count === 0) {
+            await tx.delete(artists)
+              .where(eq(artists.id, artistId));
+            songwritersDeleted++;
+          }
+        }
+      } else {
+        await tx.delete(playlistSnapshots)
+          .where(eq(playlistSnapshots.playlistId, playlistId));
+      }
+      
+      if (trackedPlaylist) {
+        await tx.delete(trackedPlaylists)
+          .where(eq(trackedPlaylists.id, trackedPlaylist.id));
+      }
+      
+      console.log(`Deleted playlist ${playlistId}: ${tracksDeleted} tracks, ${songwritersDeleted} songwriters`);
+      
+      return { tracksDeleted, songwritersDeleted };
+    });
   }
 }
 

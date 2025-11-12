@@ -2515,6 +2515,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/data/counts", async (req, res) => {
+    try {
+      const counts = await storage.getDataCounts();
+      res.json(counts);
+    } catch (error) {
+      console.error("Error getting data counts:", error);
+      res.status(500).json({ error: "Failed to get data counts" });
+    }
+  });
+
+  app.delete("/api/data/all", async (req, res) => {
+    try {
+      await storage.deleteAllData();
+      
+      invalidateMetricsCache();
+      await flushMetricsUpdate();
+      
+      res.json({ success: true, message: "All data deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting all data:", error);
+      res.status(500).json({ error: "Failed to delete all data" });
+    }
+  });
+
+  app.delete("/api/playlists/:playlistId/cascade", async (req, res) => {
+    try {
+      const { playlistId } = req.params;
+      const { deleteSongwriters } = req.body;
+      
+      const result = await storage.deletePlaylistCascade(playlistId, { 
+        deleteSongwriters: deleteSongwriters === true 
+      });
+      
+      invalidateMetricsCache();
+      await flushMetricsUpdate();
+      
+      res.json({
+        success: true,
+        tracksDeleted: result.tracksDeleted,
+        songwritersDeleted: result.songwritersDeleted,
+        message: `Deleted ${result.tracksDeleted} tracks${result.songwritersDeleted > 0 ? ` and ${result.songwritersDeleted} songwriters` : ''}`
+      });
+    } catch (error) {
+      console.error("Error deleting playlist:", error);
+      res.status(500).json({ error: "Failed to delete playlist" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
