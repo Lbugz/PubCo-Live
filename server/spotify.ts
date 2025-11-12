@@ -1,11 +1,8 @@
 import { SpotifyApi } from "@spotify/web-api-ts-sdk";
-
-// In-memory token storage (consider using database for production)
-let tokenData: {
-  access_token: string;
-  refresh_token: string;
-  expires_at: number;
-} | null = null;
+import { db } from "./db";
+import { spotifyTokens } from "@shared/schema";
+import { encrypt, decrypt } from "./encryption";
+import { eq } from "drizzle-orm";
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID!;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET!;
@@ -25,10 +22,65 @@ export function getAuthUrl(): string {
     response_type: "code",
     redirect_uri: REDIRECT_URI,
     scope: SCOPES,
-    // Add state parameter for CSRF protection (generate random string in actual implementation)
     state: Buffer.from(Date.now().toString()).toString('base64'),
   });
   return `https://accounts.spotify.com/authorize?${params.toString()}`;
+}
+
+async function saveTokensToDatabase(accessToken: string, refreshToken: string, expiresIn: number): Promise<void> {
+  const encryptedAccessToken = encrypt(accessToken);
+  const encryptedRefreshToken = encrypt(refreshToken);
+  const expiresAt = new Date(Date.now() + expiresIn * 1000);
+  
+  await db.insert(spotifyTokens)
+    .values({
+      id: "singleton",
+      encryptedAccessToken,
+      encryptedRefreshToken,
+      expiresAt,
+    })
+    .onConflictDoUpdate({
+      target: spotifyTokens.id,
+      set: {
+        encryptedAccessToken,
+        encryptedRefreshToken,
+        expiresAt,
+        updatedAt: new Date(),
+      },
+    });
+  
+  console.log('✅ Spotify OAuth successful - encrypted tokens stored in database');
+}
+
+async function getTokensFromDatabase(): Promise<{
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+} | null> {
+  const tokens = await db.select()
+    .from(spotifyTokens)
+    .where(eq(spotifyTokens.id, "singleton"))
+    .limit(1);
+  
+  if (tokens.length === 0) {
+    return null;
+  }
+  
+  const token = tokens[0];
+  
+  try {
+    const accessToken = decrypt(token.encryptedAccessToken);
+    const refreshToken = decrypt(token.encryptedRefreshToken);
+    
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_at: token.expiresAt.getTime(),
+    };
+  } catch (error) {
+    console.error('Failed to decrypt tokens:', error);
+    return null;
+  }
 }
 
 export async function exchangeCodeForToken(code: string): Promise<void> {
@@ -53,16 +105,12 @@ export async function exchangeCodeForToken(code: string): Promise<void> {
   }
 
   const data = await response.json();
-  tokenData = {
-    access_token: data.access_token,
-    refresh_token: data.refresh_token,
-    expires_at: Date.now() + data.expires_in * 1000,
-  };
-  
-  console.log('✅ Spotify OAuth successful - tokens stored');
+  await saveTokensToDatabase(data.access_token, data.refresh_token, data.expires_in);
 }
 
 async function refreshAccessToken(): Promise<void> {
+  const tokenData = await getTokensFromDatabase();
+  
   if (!tokenData?.refresh_token) {
     throw new Error("No refresh token available");
   }
@@ -87,27 +135,39 @@ async function refreshAccessToken(): Promise<void> {
   }
 
   const data = await response.json();
-  tokenData = {
-    access_token: data.access_token,
-    refresh_token: data.refresh_token || tokenData.refresh_token,
-    expires_at: Date.now() + data.expires_in * 1000,
-  };
+  await saveTokensToDatabase(
+    data.access_token,
+    data.refresh_token || tokenData.refresh_token,
+    data.expires_in
+  );
   
   console.log('🔄 Spotify token refreshed successfully');
 }
 
-export function isAuthenticated(): boolean {
-  return tokenData !== null;
+export async function isAuthenticated(): Promise<boolean> {
+  const tokens = await getTokensFromDatabase();
+  return tokens !== null;
 }
 
 export async function getUncachableSpotifyClient(): Promise<SpotifyApi> {
+  const tokenData = await getTokensFromDatabase();
+  
   if (!tokenData) {
     throw new Error("Not authenticated. Please authorize Spotify first via /api/spotify/auth");
   }
 
-  // Refresh token if expired or about to expire (within 5 minutes)
   if (Date.now() >= tokenData.expires_at - 5 * 60 * 1000) {
     await refreshAccessToken();
+    const refreshedTokenData = await getTokensFromDatabase();
+    if (!refreshedTokenData) {
+      throw new Error("Failed to refresh token");
+    }
+    return SpotifyApi.withAccessToken(CLIENT_ID, {
+      access_token: refreshedTokenData.access_token,
+      token_type: "Bearer",
+      expires_in: Math.floor((refreshedTokenData.expires_at - Date.now()) / 1000),
+      refresh_token: refreshedTokenData.refresh_token,
+    });
   }
 
   const spotify = SpotifyApi.withAccessToken(CLIENT_ID, {
@@ -143,7 +203,6 @@ export async function searchTrackByNameAndArtist(trackName: string, artistName: 
     let isrc = track.external_ids?.isrc || null;
     const label = track.album?.label || null;
     
-    // If search result doesn't include ISRC, fetch full track details
     if (!isrc) {
       console.log(`Search result missing ISRC, fetching full track details for ID: ${track.id}`);
       try {

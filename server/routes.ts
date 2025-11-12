@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/spotify/status", async (req, res) => {
     try {
-      if (isAuthenticated()) {
+      if (await isAuthenticated()) {
         await getUncachableSpotifyClient();
         res.json({ connected: true });
       } else {

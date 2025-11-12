@@ -207,7 +207,7 @@ export type InsertSongwriterCollaboration = z.infer<typeof insertSongwriterColla
 export type SongwriterCollaboration = typeof songwriterCollaborations.$inferSelect;
 
 export const spotifyTokens = pgTable("spotify_tokens", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id").primaryKey().default("singleton"),
   encryptedAccessToken: text("encrypted_access_token").notNull(),
   encryptedRefreshToken: text("encrypted_refresh_token").notNull(),
   expiresAt: timestamp("expires_at").notNull(),

@@ -10,6 +10,11 @@ function getEncryptionKey(): string {
   if (!key) {
     throw new Error('ENCRYPTION_KEY or SESSION_SECRET must be set in environment variables');
   }
+  
+  if (key.length < 32) {
+    console.warn('⚠️  WARNING: ENCRYPTION_KEY should be at least 32 characters for strong security. Consider setting a dedicated ENCRYPTION_KEY in Replit Secrets.');
+  }
+  
   return key;
 }
 
