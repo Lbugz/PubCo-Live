@@ -507,7 +507,15 @@ export default function Dashboard() {
         <div className="space-y-6 fade-in">
           {/* Header with Enrich Data Button */}
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Tracks</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold">Tracks</h1>
+              {enrichArtistsMutation.isPending && (
+                <Badge variant="outline" className="gap-2 animate-pulse">
+                  <Sparkles className="h-3 w-3" />
+                  Enriching in background...
+                </Badge>
+              )}
+            </div>
             <Button
               onClick={() => enrichArtistsMutation.mutate({ limit: 50 })}
               variant="gradient"

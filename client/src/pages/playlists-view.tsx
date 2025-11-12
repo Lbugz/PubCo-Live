@@ -173,6 +173,9 @@ export default function PlaylistsView() {
     },
   });
 
+  const [autoFetchOnAdd, setAutoFetchOnAdd] = useState(true);
+  const [autoEnrichOnFetch, setAutoEnrichOnFetch] = useState(true);
+
   const addPlaylistMutation = useMutation({
     mutationFn: async ({ url, chartmetricUrl }: { url: string; chartmetricUrl?: string }): Promise<TrackedPlaylist> => {
       const playlistId = extractPlaylistId(url);
@@ -192,16 +195,23 @@ export default function PlaylistsView() {
       const playlist: TrackedPlaylist = await res.json();
       return playlist;
     },
-    onSuccess: (data: TrackedPlaylist) => {
+    onSuccess: async (data: TrackedPlaylist) => {
       const totalTracksInfo = data.totalTracks ? ` (${data.totalTracks} tracks)` : '';
       toast({
         title: "Playlist Added!",
-        description: `Now tracking "${data.name}"${totalTracksInfo}`,
+        description: `Now tracking "${data.name}"${totalTracksInfo}${autoFetchOnAdd ? ' - Fetching tracks...' : ''}`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
       setNewPlaylistUrl("");
       setNewChartmetricUrl("");
       setAddDialogOpen(false);
+
+      // Auto-fetch if enabled
+      if (autoFetchOnAdd) {
+        setTimeout(() => {
+          fetchPlaylistDataMutation.mutate(data.playlistId);
+        }, 500);
+      }
     },
     onError: (error: any) => {
       const isRestricted = error.message?.includes("region-restricted") || error.message?.includes("editorial-only");
@@ -668,6 +678,37 @@ export default function PlaylistsView() {
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Add a Chartmetric link for easier tracking
+                </p>
+              </div>
+
+              {/* Automation Options */}
+              <div className="space-y-3 pt-2 border-t">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="auto-fetch"
+                      checked={autoFetchOnAdd}
+                      onCheckedChange={(checked) => setAutoFetchOnAdd(checked as boolean)}
+                    />
+                    <Label htmlFor="auto-fetch" className="text-sm font-normal cursor-pointer">
+                      Auto-fetch tracks after adding
+                    </Label>
+                  </div>
+                  <Badge variant="outline" className="text-xs">Recommended</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="auto-enrich"
+                    checked={autoEnrichOnFetch}
+                    onCheckedChange={(checked) => setAutoEnrichOnFetch(checked as boolean)}
+                    disabled={!autoFetchOnAdd}
+                  />
+                  <Label htmlFor="auto-enrich" className="text-sm font-normal cursor-pointer">
+                    Auto-enrich tracks after fetching
+                  </Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Automatic enrichment pulls songwriter credits, streaming stats, and MusicBrainz data
                 </p>
               </div>
               <Button 
