@@ -44,6 +44,7 @@ export default function PlaylistsView() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newPlaylistUrl, setNewPlaylistUrl] = useState("");
+  const [newChartmetricUrl, setNewChartmetricUrl] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [selectedPlaylistIds, setSelectedPlaylistIds] = useState<Set<string>>(new Set());
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
@@ -172,7 +173,7 @@ export default function PlaylistsView() {
   });
 
   const addPlaylistMutation = useMutation({
-    mutationFn: async (url: string): Promise<TrackedPlaylist> => {
+    mutationFn: async ({ url, chartmetricUrl }: { url: string; chartmetricUrl?: string }): Promise<TrackedPlaylist> => {
       const playlistId = extractPlaylistId(url);
       if (!playlistId) {
         throw new Error("Invalid Spotify playlist URL or ID");
@@ -184,6 +185,7 @@ export default function PlaylistsView() {
         name: playlistData.name,
         playlistId: playlistData.foundViaSearch ? playlistData.id : playlistId,
         spotifyUrl: `https://open.spotify.com/playlist/${playlistData.foundViaSearch ? playlistData.id : playlistId}`,
+        chartmetricUrl: chartmetricUrl || null,
       });
       
       const playlist: TrackedPlaylist = await res.json();
@@ -197,6 +199,7 @@ export default function PlaylistsView() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
       setNewPlaylistUrl("");
+      setNewChartmetricUrl("");
       setAddDialogOpen(false);
     },
     onError: (error: any) => {
@@ -243,7 +246,10 @@ export default function PlaylistsView() {
       });
       return;
     }
-    addPlaylistMutation.mutate(newPlaylistUrl);
+    addPlaylistMutation.mutate({ 
+      url: newPlaylistUrl,
+      chartmetricUrl: newChartmetricUrl.trim() || undefined
+    });
   };
 
   // Selection helpers
@@ -637,13 +643,32 @@ export default function PlaylistsView() {
                   value={newPlaylistUrl}
                   onChange={(e) => setNewPlaylistUrl(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
+                    if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       handleAddPlaylist();
                     }
                   }}
                   data-testid="input-new-playlist-url"
                 />
+              </div>
+              <div>
+                <Label htmlFor="chartmetric-url">Chartmetric URL (Optional)</Label>
+                <Input
+                  id="chartmetric-url"
+                  placeholder="https://app.chartmetric.com/playlist/spotify/..."
+                  value={newChartmetricUrl}
+                  onChange={(e) => setNewChartmetricUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleAddPlaylist();
+                    }
+                  }}
+                  data-testid="input-chartmetric-url"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add a Chartmetric link for easier tracking
+                </p>
               </div>
               <Button 
                 onClick={handleAddPlaylist} 
@@ -1115,6 +1140,22 @@ export default function PlaylistsView() {
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Region</p>
                         <Badge variant="outline" data-testid="badge-region">{selectedPlaylist.region}</Badge>
+                      </div>
+                    )}
+
+                    {selectedPlaylist.chartmetricUrl && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Chartmetric</p>
+                        <a 
+                          href={selectedPlaylist.chartmetricUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline flex items-center gap-1"
+                          data-testid="link-chartmetric"
+                        >
+                          View on Chartmetric
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
                       </div>
                     )}
 
