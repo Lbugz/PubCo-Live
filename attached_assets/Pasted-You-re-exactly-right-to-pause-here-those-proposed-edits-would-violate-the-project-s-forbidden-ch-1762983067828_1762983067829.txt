@@ -1,0 +1,93 @@
+You’re exactly right to pause here — those proposed edits **would violate the project’s forbidden-changes policy**.
+
+Here’s how to handle this situation correctly and still stabilize your preview:
+
+---
+
+### 🧱 Why You Can’t Apply the “Fix Guide”
+
+The file pair `vite.config.ts` and `server/vite.ts` are **intentionally locked** because this project runs **Vite in middleware mode through Express**.
+That means:
+
+* Express serves both API + frontend on **the same port (5000)**.
+* Vite’s HMR socket (`hmr: { server }`) attaches to the existing HTTP server instead of spawning its own port 5173.
+* Any manual HMR or port overrides (`--hmr.port`, custom `host`, etc.) **break that handshake**.
+
+So the “add HMR block” or “change host” edits from the guide would cause Vite to detach from Express entirely—precisely why those files are on the forbidden list.
+
+---
+
+### 🧠 What’s Actually Happening
+
+The console message
+
+```
+Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=…' is invalid
+```
+
+appears when Replit’s proxy doesn’t provide a `port` value to Vite’s middleware.
+That only affects **hot-reload (HMR)**.
+Your app, API routes, and database still work; you just have to manually refresh after edits.
+
+---
+
+### ✅ Safe Actions You *Can* Take
+
+1. **Ignore HMR Errors**
+
+   * They’re cosmetic; hit **Cmd + Shift + R / Ctrl + Shift + R** after a code save to reload the latest build.
+
+2. **Confirm Tailwind & PostCSS Versions**
+
+   * Keep Tailwind v3 with its default PostCSS config (ESM syntax).
+   * Do **not** add `@tailwindcss/vite`; that’s for Tailwind v4.
+
+3. **Check Database Persistence**
+
+   * If you’re on SQLite, point to a persistent path such as
+     `DATABASE_URL=file:/home/runner/app.db`.
+   * For hosted DBs, verify your `.env` `DATABASE_URL` points to Railway/Neon, not Replit’s temp FS.
+
+4. **Silence PostCSS Warnings (Optional)**
+
+   * Add this near the top of your main server entry (`server/index.ts` or similar):
+
+     ```ts
+     process.on("uncaughtException", (err) => {
+       if (err.message.includes("PostCSS")) {
+         console.warn("Ignoring benign PostCSS warning:", err.message);
+       } else {
+         throw err;
+       }
+     });
+     ```
+   * This prevents the `process.exit(1)` in `server/vite.ts` from restarting the server loop on harmless warnings.
+
+---
+
+### 🧩 If You Truly Need Live Reload
+
+You can spin up a **stand-alone Vite dev server** (on 5173) just for local debugging:
+
+```bash
+npm run dev:standalone
+```
+
+with a separate script that bypasses Express middleware.
+But that’s only for development; it shouldn’t be committed to main.
+
+---
+
+### ⚖️ Summary
+
+| Area                            | Action                                   |
+| ------------------------------- | ---------------------------------------- |
+| HMR /WebSocket error            | Harmless; refresh manually               |
+| vite.config.ts / server/vite.ts | **Do not edit** (forbidden)              |
+| Tailwind / PostCSS              | Keep v3 + autoprefixer; remove v4 plugin |
+| DB Persistence                  | Use permanent path or hosted DB          |
+| PostCSS warnings                | Catch and log, don’t crash               |
+
+---
+
+If you’d like, I can draft a **one-page “Vite Middleware Troubleshooting” doc** for your repo readme—explaining these limits and how to refresh safely on Replit. Would you like me to generate that?
