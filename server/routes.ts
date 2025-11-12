@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
-import { getUncachableSpotifyClient, getAuthUrl, exchangeCodeForToken, isAuthenticated, searchTrackByNameAndArtist } from "./spotify";
+import { getUncachableSpotifyClient, searchTrackByNameAndArtist } from "./spotify";
 import { calculateUnsignedScore } from "./scoring";
 import { searchByISRC, searchRecordingByName, searchArtistByName, getArtistExternalLinks } from "./musicbrainz";
 import { generateAIInsights } from "./ai-insights";
@@ -69,41 +69,13 @@ function decodeHTMLEntities(text: string): string {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Spotify OAuth endpoints
-  app.get("/api/spotify/auth", (req, res) => {
-    const authUrl = getAuthUrl();
-    res.redirect(authUrl);
-  });
-
-  app.get("/api/spotify/callback", async (req, res) => {
-    const code = req.query.code as string;
-    
-    if (!code) {
-      res.status(400).send("No authorization code provided");
-      return;
-    }
-
+  app.get("/api/spotify/status", async (req, res) => {
     try {
-      await exchangeCodeForToken(code);
-      res.send(`
-        <html>
-          <body>
-            <h1>✅ Spotify Authorization Successful!</h1>
-            <p>You can now close this window and return to the application.</p>
-            <script>
-              setTimeout(() => window.close(), 2000);
-            </script>
-          </body>
-        </html>
-      `);
-    } catch (error) {
-      console.error("Error exchanging code for token:", error);
-      res.status(500).send("Failed to authorize with Spotify");
+      await getUncachableSpotifyClient();
+      res.json({ connected: true });
+    } catch (error: any) {
+      res.json({ connected: false, error: error.message });
     }
-  });
-
-  app.get("/api/spotify/status", (req, res) => {
-    res.json({ authenticated: isAuthenticated() });
   });
 
   app.get("/api/spotify/cookie-status", (req, res) => {
@@ -123,11 +95,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/spotify/playlist/:playlistId", async (req, res) => {
     try {
-      if (!isAuthenticated()) {
-        return res.status(401).json({ error: "Not authenticated. Please authorize Spotify first." });
+      let spotify;
+      try {
+        spotify = await getUncachableSpotifyClient();
+      } catch (error: any) {
+        return res.status(401).json({ error: error.message });
       }
-      
-      const spotify = await getUncachableSpotifyClient();
       
       try {
         // Try with market parameter first
@@ -471,31 +444,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let imageUrl = null;
       
-      if (isAuthenticated()) {
-        try {
-          const spotify = await getUncachableSpotifyClient();
-          const playlistData = await spotify.playlists.getPlaylist(validatedPlaylist.playlistId, "from_token" as any);
-          
-          totalTracks = playlistData.tracks?.total || null;
-          curator = playlistData.owner?.display_name || null;
-          followers = playlistData.followers?.total || null;
-          imageUrl = playlistData.images?.[0]?.url || null;
-          
-          // Determine if it's editorial based on owner
-          // Editorial playlists are typically owned by Spotify (owner.id === "spotify")
-          if (playlistData.owner?.id === 'spotify' || playlistData.owner?.display_name === 'Spotify') {
-            isEditorial = 1;
-            fetchMethod = 'scraping'; // Editorial playlists are better scraped
-          }
-          
-          console.log(`Playlist "${playlistData.name}": totalTracks=${totalTracks}, isEditorial=${isEditorial}, owner=${playlistData.owner?.display_name}, followers=${followers}`);
-        } catch (error: any) {
-          // If API call fails (404), likely editorial playlist
-          if (error?.message?.includes('404')) {
-            console.log(`Playlist ${validatedPlaylist.playlistId} returned 404, marking as editorial`);
-            isEditorial = 1;
-            fetchMethod = 'scraping';
-          }
+      try {
+        const spotify = await getUncachableSpotifyClient();
+        const playlistData = await spotify.playlists.getPlaylist(validatedPlaylist.playlistId, "from_token" as any);
+        
+        totalTracks = playlistData.tracks?.total || null;
+        curator = playlistData.owner?.display_name || null;
+        followers = playlistData.followers?.total || null;
+        imageUrl = playlistData.images?.[0]?.url || null;
+        
+        // Determine if it's editorial based on owner
+        // Editorial playlists are typically owned by Spotify (owner.id === "spotify")
+        if (playlistData.owner?.id === 'spotify' || playlistData.owner?.display_name === 'Spotify') {
+          isEditorial = 1;
+          fetchMethod = 'scraping'; // Editorial playlists are better scraped
+        }
+        
+        console.log(`Playlist "${playlistData.name}": totalTracks=${totalTracks}, isEditorial=${isEditorial}, owner=${playlistData.owner?.display_name}, followers=${followers}`);
+      } catch (error: any) {
+        console.log('Spotify not available for enrichment, skipping...');
+        // If API call fails (404), likely editorial playlist
+        if (error?.message?.includes('404')) {
+          console.log(`Playlist ${validatedPlaylist.playlistId} returned 404, marking as editorial`);
+          isEditorial = 1;
+          fetchMethod = 'scraping';
         }
       }
       
@@ -527,11 +499,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Playlist not found" });
       }
       
-      if (!isAuthenticated()) {
-        return res.status(401).json({ error: "Spotify authentication required" });
+      let spotify;
+      try {
+        spotify = await getUncachableSpotifyClient();
+      } catch (error: any) {
+        return res.status(401).json({ error: error.message });
       }
-      
-      const spotify = await getUncachableSpotifyClient();
       const playlistData = await spotify.playlists.getPlaylist(targetPlaylist.playlistId, "from_token" as any);
       
       const curator = playlistData.owner?.display_name || null;
@@ -628,8 +601,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         // TIER 2: Spotify Search → ISRC → MusicBrainz
-        else if (isAuthenticated()) {
+        else {
           try {
+            const spotify = await getUncachableSpotifyClient();
             console.log(`[Tier 2] No ISRC, searching Spotify: ${track.trackName} by ${track.artistName}`);
             const spotifyData = await searchTrackByNameAndArtist(track.trackName, track.artistName);
             
@@ -657,7 +631,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               await new Promise(resolve => setTimeout(resolve, 1000));
             }
           } catch (error) {
-            console.error(`Error searching Spotify for track ${track.id}:`, error);
+            console.log('Spotify not available for enrichment, skipping...');
           }
         }
         
@@ -1145,8 +1119,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updates: any = {};
 
       // TIER 0: ISRC Recovery (if missing, try to fetch from Spotify)
-      if (!track.isrc && isAuthenticated()) {
+      if (!track.isrc) {
         try {
+          const spotify = await getUncachableSpotifyClient();
           console.log(`[Tier 0: ISRC Recovery] Track missing ISRC, attempting Spotify lookup...`);
           const spotifyData = await searchTrackByNameAndArtist(track.trackName, track.artistName);
           
@@ -1163,7 +1138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`⚠️ [Tier 0] No ISRC found in Spotify`);
           }
         } catch (error: any) {
-          console.error(`[Tier 0] Error during ISRC recovery:`, error);
+          console.log('Spotify not available for enrichment, skipping...');
         }
       }
 
@@ -1831,14 +1806,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!existingPlaylist) {
             // Try to fetch totalTracks for non-editorial playlists
             let totalTracks = null;
-            if (!isEditorial && isAuthenticated()) {
+            if (!isEditorial) {
               try {
                 const spotify = await getUncachableSpotifyClient();
                 const playlistData = await spotify.playlists.getPlaylist(playlistId, "from_token" as any);
                 totalTracks = playlistData.tracks?.total || null;
                 console.log(`Bulk import: Fetched totalTracks=${totalTracks} for playlist ${title}`);
               } catch (error) {
-                console.log(`Could not fetch totalTracks for ${title}, will set later`);
+                console.log('Spotify not available for enrichment, skipping...');
               }
             }
             
