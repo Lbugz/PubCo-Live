@@ -42,6 +42,7 @@ export interface NetworkCaptureResult {
   success: boolean;
   tracks: NetworkCaptureTrack[];
   totalCaptured: number;
+  playlistName?: string | null;
   curator?: string | null;
   followers?: number | null;
   error?: string;
@@ -256,12 +257,25 @@ export async function fetchEditorialTracksViaNetwork(
     // Wait for any late requests
     await wait(2000);
     
-    // Extract playlist metadata (curator, followers)
+    // Extract playlist metadata (name, curator, followers)
+    let playlistName: string | null = null;
     let curator: string | null = null;
     let followers: number | null = null;
     
     try {
       const metadata = await page.evaluate(() => {
+        // Extract playlist name - be specific to avoid sidebar elements
+        const nameElement = document.querySelector('[data-testid="playlist-page"] h1[data-encore-id="type"]')
+                           || document.querySelector('main h1[data-encore-id="type"]')
+                           || document.querySelector('h1[data-encore-id="type"]');
+        let name = nameElement?.textContent?.trim() || null;
+        
+        // Fallback to page title if element not found or contains "null"
+        if (!name || name === "null" || name === "Your Library") {
+          const titleMatch = document.title.match(/^([^|]+)/);
+          name = titleMatch ? titleMatch[1].trim() : null;
+        }
+        
         const curatorElement = document.querySelector('[data-testid="entityHeaderSubtitle"] a')
                               || document.querySelector('[data-testid="entityHeaderSubtitle"] span')
                               || document.querySelector('div[data-testid="entity-subtitle"]');
@@ -272,13 +286,14 @@ export async function fetchEditorialTracksViaNetwork(
                                 || document.querySelector('[aria-label*="followers"]');
         const followerText = followerElement?.textContent?.trim() || null;
         
-        return { curator, followerText };
+        return { name, curator, followerText };
       });
       
+      playlistName = metadata.name;
       curator = metadata.curator;
       followers = metadata.followerText ? parseFollowerCount(metadata.followerText) : null;
       
-      console.log(`[Network Capture] Metadata: curator="${curator}", followers=${followers}`);
+      console.log(`[Network Capture] Metadata: name="${playlistName}", curator="${curator}", followers=${followers}`);
     } catch (err) {
       console.warn('[Network Capture] Failed to extract metadata:', err);
     }
@@ -325,6 +340,7 @@ export async function fetchEditorialTracksViaNetwork(
       success: true,
       tracks,
       totalCaptured: tracks.length,
+      playlistName,
       curator,
       followers,
     };
