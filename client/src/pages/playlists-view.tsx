@@ -133,6 +133,7 @@ export default function PlaylistsView() {
 
   const fetchPlaylistDataMutation = useMutation({
     mutationFn: async (spotifyPlaylistId: string) => {
+      console.log(`[Auto-Fetch] Starting fetch for playlist ID: ${spotifyPlaylistId}`);
       const response = await apiRequest("POST", "/api/fetch-playlists", { 
         mode: 'specific', 
         playlistId: spotifyPlaylistId 
@@ -144,6 +145,8 @@ export default function PlaylistsView() {
       const totalSkipped = data.completenessResults?.reduce((sum: number, r: any) => sum + (r.skipped || 0), 0) || 0;
       const totalNew = data.tracksAdded || 0;
       
+      console.log(`[Auto-Fetch] Fetch complete: ${totalNew} new tracks, ${totalSkipped} skipped`);
+      
       toast({
         title: "Playlist data fetched successfully",
         description: `${playlist?.name || 'Playlist'}: ${totalNew} new tracks added, ${totalSkipped} duplicates skipped`,
@@ -152,17 +155,20 @@ export default function PlaylistsView() {
       queryClient.invalidateQueries({ queryKey: ["/api/playlist-snapshot"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
       
-      // Auto-trigger enrichment after successful fetch
-      if (playlist && totalNew > 0) {
-        console.log(`Auto-triggering enrichment for playlist ${playlist.id}...`);
+      // Auto-trigger enrichment if enabled
+      if (autoEnrichOnFetch && playlist && totalNew > 0) {
+        console.log(`[Auto-Enrich] Starting enrichment for playlist ${playlist.id}...`);
         toast({
           title: "Starting track enrichment",
           description: "Fetching songwriters and publishers...",
         });
         enrichTracksMutation.mutate(playlist.playlistId);
+      } else if (!autoEnrichOnFetch && totalNew > 0) {
+        console.log(`[Auto-Enrich] Skipped - auto-enrich is disabled`);
       }
     },
     onError: (error: Error) => {
+      console.error(`[Auto-Fetch] Error:`, error);
       toast({
         title: "Failed to fetch playlist data",
         description: error.message,
@@ -217,6 +223,8 @@ export default function PlaylistsView() {
     },
     onSuccess: async (data: TrackedPlaylist) => {
       const totalTracksInfo = data.totalTracks ? ` (${data.totalTracks} tracks)` : '';
+      console.log(`[Add Playlist] Success! Playlist ID: ${data.playlistId}, autoFetchOnAdd: ${autoFetchOnAdd}`);
+      
       toast({
         title: "Playlist Added!",
         description: `Now tracking "${data.name}"${totalTracksInfo}${autoFetchOnAdd ? ' - Fetching tracks...' : ''}`,
@@ -228,9 +236,13 @@ export default function PlaylistsView() {
 
       // Auto-fetch if enabled
       if (autoFetchOnAdd) {
+        console.log(`[Auto-Fetch] Scheduling fetch for playlist ${data.playlistId} in 500ms...`);
         setTimeout(() => {
+          console.log(`[Auto-Fetch] Triggering fetch now for ${data.playlistId}`);
           fetchPlaylistDataMutation.mutate(data.playlistId);
         }, 500);
+      } else {
+        console.log(`[Auto-Fetch] Skipped - auto-fetch is disabled`);
       }
     },
     onError: (error: any) => {
