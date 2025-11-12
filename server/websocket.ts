@@ -25,7 +25,7 @@ export function initializeWebSocket(server: Server) {
 }
 
 export function broadcastEnrichmentUpdate(data: {
-  type: 'track_enriched' | 'batch_complete' | 'enrichment_progress' | 'chartmetric_progress';
+  type: 'track_enriched' | 'batch_complete' | 'enrichment_progress' | 'chartmetric_progress' | 'metric_update';
   trackId?: string;
   trackName?: string;
   artistName?: string;

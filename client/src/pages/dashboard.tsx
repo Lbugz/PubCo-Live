@@ -53,6 +53,8 @@ const filterOptions = [
   { id: "no-publisher", label: "No Publisher", section: "Publisher Info" },
   { id: "has-songwriter", label: "Has Songwriter", section: "Songwriter Info" },
   { id: "no-songwriter", label: "No Songwriter", section: "Songwriter Info" },
+  { id: "has-email", label: "Has Contact Email", section: "Contact Info" },
+  { id: "no-email", label: "No Contact Email", section: "Contact Info" },
 ];
 
 export default function Dashboard() {
@@ -99,6 +101,14 @@ export default function Dashboard() {
         title: "Track Enriched!",
         description: `${data.trackName} by ${data.artistName}`,
       });
+    },
+    onMessage: (message) => {
+      // Handle metric_update events from WebSocket
+      if (message.type === 'metric_update') {
+        console.log('Metrics updated via WebSocket');
+        // Invalidate metrics queries to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ["/api/metrics/tracks"] });
+      }
     },
   });
 
@@ -216,6 +226,19 @@ export default function Dashboard() {
     queryKey: ["/api/tags"],
   });
 
+  // Fetch metrics with weekly trends
+  const { data: trackMetrics } = useQuery<{
+    dealReady: number;
+    avgScore: number;
+    enrichedPercent: number;
+    changeDealReady: number;
+    changeAvgScore: number;
+    changeEnriched: number;
+  }>({
+    queryKey: ["/api/metrics/tracks"],
+    staleTime: 60000, // 60 seconds - aligned with backend cache TTL
+  });
+
   const enrichMutation = useMutation({
     mutationFn: async ({ trackId }: { trackId: string }) => {
       console.log("Starting unified enrichment for track:", trackId);
@@ -279,6 +302,7 @@ export default function Dashboard() {
       const hasCredits = !!track.publisher || !!track.songwriter;
       const hasPublisher = !!track.publisher;
       const hasSongwriter = !!track.songwriter;
+      const hasEmail = !!track.email;
       
       const filterMatches: Record<string, boolean> = {
         "has-isrc": hasIsrc,
@@ -289,6 +313,8 @@ export default function Dashboard() {
         "no-publisher": !hasPublisher,
         "has-songwriter": hasSongwriter,
         "no-songwriter": !hasSongwriter,
+        "has-email": hasEmail,
+        "no-email": !hasEmail,
       };
       
       matchesAdvancedFilters = activeFilters.every(filter => filterMatches[filter]);
@@ -531,38 +557,42 @@ export default function Dashboard() {
             </Button>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {/* Enhanced Stats Cards with Trends */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <StatsCard
-              title="Total Tracks"
-              value={filteredTracks.length.toLocaleString()}
-              icon={Music}
-              variant="default"
-              testId="stats-total-tracks"
-            />
-            <StatsCard
-              title="High Potential"
-              value={highPotentialCount.toLocaleString()}
-              subtitle="Score 7-10"
+              title="Deal-Ready Tracks"
+              value={trackMetrics?.dealReady?.toLocaleString() || "0"}
               icon={Target}
-              variant="success"
-              testId="stats-high-potential"
+              variant="green"
+              tooltip="Tracks with contact info (email) and high unsigned score (7+). Click to filter the table below."
+              change={trackMetrics?.changeDealReady}
+              onClick={() => {
+                setActiveFilters(['has-email']);
+                setScoreRange([7, 10]);
+                toast({
+                  title: "Filtered to deal-ready tracks",
+                  description: "Showing tracks with score 7+ and contact email",
+                });
+              }}
+              testId="stats-deal-ready"
             />
             <StatsCard
-              title="Medium Potential"
-              value={mediumPotentialCount.toLocaleString()}
-              subtitle="Score 4-6"
-              icon={TrendingUp}
-              variant="warning"
-              testId="stats-medium-potential"
-            />
-            <StatsCard
-              title="Avg Score"
-              value={avgScore.toFixed(1)}
-              subtitle="Out of 10"
+              title="Avg Unsigned Score"
+              value={trackMetrics?.avgScore?.toFixed(1) || "0.0"}
               icon={Activity}
               variant="default"
+              tooltip="Average unsigned score across all tracks in the current week"
+              change={trackMetrics?.changeAvgScore}
               testId="stats-avg-score"
+            />
+            <StatsCard
+              title="Enriched Tracks"
+              value={`${trackMetrics?.enrichedPercent?.toFixed(0) || "0"}%`}
+              icon={Sparkles}
+              variant="blue"
+              tooltip="Percentage of tracks that have been enriched with songwriter/publisher metadata"
+              change={trackMetrics?.changeEnriched}
+              testId="stats-enriched"
             />
           </div>
 

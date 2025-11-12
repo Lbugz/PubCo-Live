@@ -15,6 +15,7 @@ import { broadcastEnrichmentUpdate } from "./websocket";
 import { getAuthStatus, isAuthHealthy } from "./auth-monitor";
 import { enrichTrackWithChartmetric, getSongwriterProfile, getSongwriterCollaborators, getSongwriterPublishers } from "./chartmetric";
 import { getPlaylistMetrics, getTrackMetrics, invalidateMetricsCache } from "./metricsService";
+import { triggerMetricsUpdate, scheduleMetricsUpdate, flushMetricsUpdate } from "./metricsUpdateManager";
 
 // Helper function to fetch all tracks from a playlist with pagination
 async function fetchAllPlaylistTracks(spotify: any, playlistId: string): Promise<any[]> {
@@ -692,6 +693,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (Object.keys(trackMetadata).length > 0) {
           await storage.updateTrackMetadata(track.id, trackMetadata);
+          // Schedule debounced metrics update
+          scheduleMetricsUpdate({ source: "metadata_enrichment" });
         }
         
         // Artist Link Extraction (if we got songwriters)
@@ -737,6 +740,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (artistLinksCount > 0) {
         message += `, extracted ${artistLinksCount} artist social profiles`;
       }
+
+      // Flush any pending metrics update
+      flushMetricsUpdate();
 
       res.json({ 
         success: true, 
@@ -1525,6 +1531,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const enrichmentStatus = successfulTiers === tierResults.length ? "success" : "partial";
+
+      // Trigger metrics update after successful enrichment
+      triggerMetricsUpdate({ source: "track_enrichment" });
 
       res.json({
         success: true,

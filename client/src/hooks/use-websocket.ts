@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 
 interface WebSocketMessage {
-  type: 'connected' | 'track_enriched' | 'batch_complete' | 'enrichment_progress';
+  type: 'connected' | 'track_enriched' | 'batch_complete' | 'enrichment_progress' | 'metric_update';
   trackId?: string;
   trackName?: string;
   artistName?: string;
@@ -15,7 +15,9 @@ interface UseWebSocketOptions {
   onTrackEnriched?: (data: WebSocketMessage) => void;
   onBatchComplete?: (data: WebSocketMessage) => void;
   onEnrichmentProgress?: (data: WebSocketMessage) => void;
+  onMetricUpdate?: (data: WebSocketMessage) => void;
   onConnected?: () => void;
+  onMessage?: (data: WebSocketMessage) => void;
 }
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
@@ -59,6 +61,11 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           const data: WebSocketMessage = JSON.parse(event.data);
           console.log('WebSocket message received:', data);
 
+          // Always call generic onMessage handler if provided
+          if (callbacksRef.current.onMessage) {
+            callbacksRef.current.onMessage(data);
+          }
+
           switch (data.type) {
             case 'connected':
               // Connection confirmation
@@ -76,6 +83,11 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
             case 'enrichment_progress':
               if (callbacksRef.current.onEnrichmentProgress) {
                 callbacksRef.current.onEnrichmentProgress(data);
+              }
+              break;
+            case 'metric_update':
+              if (callbacksRef.current.onMetricUpdate) {
+                callbacksRef.current.onMetricUpdate(data);
               }
               break;
           }
