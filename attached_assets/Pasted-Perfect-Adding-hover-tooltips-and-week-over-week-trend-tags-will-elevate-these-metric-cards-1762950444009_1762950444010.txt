@@ -1,0 +1,227 @@
+Perfect. Adding **hover tooltips** and **week-over-week trend tags** will elevate these metric cards from static stats to *A&R intelligence indicators* — still fully aligned with your PubCo Live design system.
+
+Here’s the **enhanced, production-ready version** of
+`/components/features/discovery/Metrics.tsx`,
+with animated trend tags, hover hints, and optional data deltas (auto-pulled from backend if you add `change` values later).
+
+---
+
+### `/components/features/discovery/Metrics.tsx`
+
+```tsx
+"use client";
+
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  MusicIcon,
+  HandshakeIcon,
+  SparklesIcon,
+  FlameIcon,
+  InfoIcon,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+
+/* ────────────────────────────────────────────── */
+/* Generic Metric Card                           */
+/* ────────────────────────────────────────────── */
+interface MetricCardProps {
+  title: string;
+  value?: number | string;
+  icon?: React.ReactNode;
+  variant?: "default" | "success" | "warning";
+  tooltip?: string;
+  change?: number; // optional % change vs last week
+}
+
+export function MetricCard({
+  title,
+  value,
+  icon,
+  variant = "default",
+  tooltip,
+  change,
+}: MetricCardProps) {
+  const variantClasses = {
+    default: "text-foreground",
+    success: "text-green-400",
+    warning: "text-yellow-400",
+  }[variant];
+
+  const trendColor =
+    change && change !== 0
+      ? change > 0
+        ? "text-green-400"
+        : "text-red-400"
+      : "text-muted-foreground";
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Card className="relative bg-muted/10 border border-muted/20 shadow-sm rounded-2xl hover:border-muted/40 transition-all cursor-default">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                {title}
+                {tooltip && <InfoIcon className="h-3.5 w-3.5 opacity-60" />}
+              </CardTitle>
+              <span className={variantClasses}>{icon}</span>
+            </CardHeader>
+
+            <CardContent className="flex flex-col justify-between">
+              <div className="text-3xl font-semibold tracking-tight">
+                {value ?? "–"}
+              </div>
+
+              {change !== undefined && (
+                <div
+                  className={`flex items-center gap-1 mt-1 text-xs font-medium ${trendColor}`}
+                >
+                  {change > 0 ? (
+                    <TrendingUp className="h-3 w-3" />
+                  ) : change < 0 ? (
+                    <TrendingDown className="h-3 w-3" />
+                  ) : null}
+                  {change === 0
+                    ? "No change"
+                    : `${change > 0 ? "+" : ""}${change.toFixed(1)}% vs last week`}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TooltipTrigger>
+        {tooltip && (
+          <TooltipContent className="text-xs max-w-[200px] leading-snug">
+            {tooltip}
+          </TooltipContent>
+        )}
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+/* ────────────────────────────────────────────── */
+/* Playlists Metrics                             */
+/* ────────────────────────────────────────────── */
+export function PlaylistMetrics() {
+  const { data } = useQuery({
+    queryKey: ["/api/metrics/playlists"],
+    queryFn: () => fetch("/api/metrics/playlists").then((r) => r.json()),
+  });
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-3">
+      <MetricCard
+        title="Total Playlists"
+        value={data?.totalPlaylists}
+        icon={<MusicIcon size={18} />}
+        tooltip="Total number of playlists currently tracked in your discovery network."
+        change={data?.changePlaylists}
+      />
+      <MetricCard
+        title="Avg Followers"
+        value={data?.avgFollowers}
+        icon={<SparklesIcon size={18} />}
+        tooltip="Average follower count per playlist, showing reach of your discovery sources."
+        change={data?.changeFollowers}
+      />
+      <MetricCard
+        title="High-Impact Playlists"
+        value={data?.highImpactPlaylists}
+        icon={<FlameIcon size={18} />}
+        variant="warning"
+        tooltip="Playlists with an average track score ≥ 7 — hot zones for new signings."
+        change={data?.changeHighImpact}
+      />
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────── */
+/* Tracks Metrics                                */
+/* ────────────────────────────────────────────── */
+export function TrackMetrics() {
+  const { data } = useQuery({
+    queryKey: ["/api/metrics/tracks"],
+    queryFn: () => fetch("/api/metrics/tracks").then((r) => r.json()),
+  });
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-3">
+      <MetricCard
+        title="Total Enriched"
+        value={data?.totalEnriched}
+        icon={<MusicIcon size={18} />}
+        tooltip="Number of tracks with full metadata enrichment (credits, socials, Chartmetric data)."
+        change={data?.changeEnriched}
+      />
+      <MetricCard
+        title="Deal-Ready Tracks"
+        value={data?.dealReady}
+        icon={<HandshakeIcon size={18} />}
+        variant="success"
+        tooltip="Tracks with high unsigned score (≥7) and valid contact — ready for pub deal outreach."
+        change={data?.changeDealReady}
+      />
+      <MetricCard
+        title="Avg Unsigned Score"
+        value={data?.avgScore}
+        icon={<SparklesIcon size={18} />}
+        variant="warning"
+        tooltip="Average unsigned potential score across your active discovery pool."
+        change={data?.changeAvgScore}
+      />
+    </div>
+  );
+}
+```
+
+---
+
+### ✨ What’s New
+
+| Feature                  | Behavior                                                                            | Design System Consistency                            |
+| ------------------------ | ----------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| **Hover Tooltip**        | Uses `Tooltip` from Shadcn (`TooltipProvider`, `TooltipTrigger`, `TooltipContent`). | Matches your other hover UI (soft fade, small text). |
+| **Week-over-Week Trend** | Optional `change` value displays up/down arrow and % change.                        | Color-coded (`green` ↑, `red` ↓, `gray` for stable). |
+| **Interactive Feedback** | Slight hover glow on cards for visual affordance.                                   | Uses existing muted border gradient.                 |
+| **No Layout Drift**      | Same 3-column grid, same card spacing (`gap-4 sm:grid-cols-3`).                     | Fully responsive with your current theme.            |
+
+---
+
+### 🧠 Optional Backend Enhancement
+
+If you want trends to update automatically, add `change` values in your `/api/metrics/*` endpoints:
+
+```ts
+// Example: /api/metrics/tracks
+return Response.json({
+  totalEnriched: 812,
+  changeEnriched: +8.2, // % vs last week
+  dealReady: 254,
+  changeDealReady: +3.5,
+  avgScore: 6.8,
+  changeAvgScore: -0.2,
+});
+```
+
+---
+
+### ✅ Plug & Play
+
+* Paste this file into `components/features/discovery/`
+* Import `<PlaylistMetrics />` in Playlist View
+  and `<TrackMetrics />` in Track View
+* Works instantly with your current theme, typography, and layout.
+
+---
+
+Would you like me to add a **micro-animation on value change** (e.g., a subtle pulse or count-up when metrics refresh)?
+That’s a one-liner with Framer Motion or a Tailwind keyframe and makes the dashboard feel more “live.”

@@ -14,6 +14,7 @@ import { harvestVirtualizedRows } from "./scrapers/spotifyEditorialDom";
 import { broadcastEnrichmentUpdate } from "./websocket";
 import { getAuthStatus, isAuthHealthy } from "./auth-monitor";
 import { enrichTrackWithChartmetric, getSongwriterProfile, getSongwriterCollaborators, getSongwriterPublishers } from "./chartmetric";
+import { getPlaylistMetrics, getTrackMetrics, invalidateMetricsCache } from "./metricsService";
 
 // Helper function to fetch all tracks from a playlist with pagination
 async function fetchAllPlaylistTracks(spotify: any, playlistId: string): Promise<any[]> {
@@ -211,6 +212,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching weeks:", error);
       res.status(500).json({ error: "Failed to fetch weeks" });
+    }
+  });
+
+  app.get("/api/metrics/playlists", async (req, res) => {
+    try {
+      const metrics = await getPlaylistMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching playlist metrics:", error);
+      res.status(500).json({ error: "Failed to fetch playlist metrics" });
+    }
+  });
+
+  app.get("/api/metrics/tracks", async (req, res) => {
+    try {
+      const metrics = await getTrackMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching track metrics:", error);
+      res.status(500).json({ error: "Failed to fetch track metrics" });
     }
   });
 
