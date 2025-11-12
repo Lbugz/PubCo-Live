@@ -52,6 +52,13 @@ async function getAccessToken() {
 export async function getUncachableSpotifyClient() {
   const {accessToken, clientId, refreshToken, expiresIn} = await getAccessToken();
 
+  console.log('[DEBUG] Spotify credentials retrieved:');
+  console.log('  - Client ID exists:', !!clientId);
+  console.log('  - Access Token exists:', !!accessToken);
+  console.log('  - Refresh Token exists:', !!refreshToken);
+  console.log('  - Expires In:', expiresIn);
+  console.log('  - Access Token (first 20 chars):', accessToken?.substring(0, 20));
+
   const spotify = SpotifyApi.withAccessToken(clientId, {
     access_token: accessToken,
     token_type: "Bearer",
