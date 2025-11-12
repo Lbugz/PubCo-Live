@@ -50,7 +50,7 @@ export default function SettingsDatabase() {
   });
 
   const deleteAllMutation = useMutation({
-    mutationFn: () => apiRequest('/api/data/all', 'DELETE'),
+    mutationFn: () => apiRequest('DELETE', '/api/data/all'),
     onSuccess: () => {
       toast({
         title: "Success",
@@ -71,7 +71,7 @@ export default function SettingsDatabase() {
 
   const deletePlaylistMutation = useMutation({
     mutationFn: ({ playlistId, deleteSongwriters }: { playlistId: string; deleteSongwriters: boolean }) =>
-      apiRequest(`/api/playlists/${playlistId}/cascade`, 'DELETE', { deleteSongwriters }),
+      apiRequest('DELETE', `/api/playlists/${playlistId}/cascade`, { deleteSongwriters }),
     onSuccess: (data: any) => {
       toast({
         title: "Success",
