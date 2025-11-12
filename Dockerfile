@@ -60,11 +60,17 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy everything
-COPY . .
+# Copy package files first
+COPY package*.json ./
+
+# Install production dependencies only
+RUN npm install --production
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
+
+# Copy client dist (frontend build) from builder
+COPY --from=builder /app/dist/public ./dist/public
 
 EXPOSE 5000
 
