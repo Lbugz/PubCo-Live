@@ -556,16 +556,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedPlaylist = insertTrackedPlaylistSchema.parse(requestBody);
       
-      // ALWAYS use scraping mode - never use Spotify API
+      // Determine if editorial (either explicit flag or scraping mode requested)
+      let isEditorial = useScraping ? 1 : 0;
       let totalTracks = null;
-      let isEditorial = 1; // Treat all as editorial to force scraping
-      let fetchMethod = 'scraping';
+      let fetchMethod = useScraping ? 'scraping' : 'api';
       let curator = null;
       let followers = null;
       let source = 'spotify';
       let imageUrl = null;
       
-      console.log(`Playlist ${validatedPlaylist.playlistId} added with scraping mode - metadata will be fetched during track fetch`);
+      // For non-editorial playlists, try to fetch metadata via API
+      if (!useScraping) {
+        try {
+          const spotify = await getUncachableSpotifyClient();
+          const playlistData = await spotify.playlists.getPlaylist(validatedPlaylist.playlistId, "from_token" as any);
+          
+          totalTracks = playlistData.tracks?.total || null;
+          curator = playlistData.owner?.display_name || null;
+          followers = playlistData.followers?.total || null;
+          imageUrl = playlistData.images?.[0]?.url || null;
+          
+          // Detect if actually editorial based on owner
+          if (playlistData.owner?.id === 'spotify') {
+            isEditorial = 1;
+            fetchMethod = 'scraping';
+            console.log(`Detected editorial playlist (owner=spotify): ${validatedPlaylist.playlistId}`);
+          }
+          
+          console.log(`API metadata for ${playlistData.name}: ${totalTracks} tracks, curator="${curator}"`);
+        } catch (apiError: any) {
+          // API failed - likely editorial playlist
+          console.log(`API failed for ${validatedPlaylist.playlistId}, will use scraping: ${apiError.message}`);
+          isEditorial = 1;
+          fetchMethod = 'scraping';
+        }
+      } else {
+        console.log(`Playlist ${validatedPlaylist.playlistId} added with scraping mode - metadata will be fetched during track fetch`);
+      }
       
       const playlist = await storage.addTrackedPlaylist({
         ...validatedPlaylist,
@@ -2058,9 +2085,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let playlistTotalTracks = playlist.totalTracks;
           let skippedCount = 0;
           
-          // For editorial playlists, skip API and go straight to scraping
-          // For non-editorial playlists, try API first
-          let fetchMethod = 'api';
+          // Use API for non-editorial, scraping for editorial
+          let fetchMethod = playlist.fetchMethod || (playlist.isEditorial === 1 ? 'scraping' : 'api');
           
           try {
             if (playlist.isEditorial === 1) {
@@ -2070,9 +2096,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             
             if (!spotify) {
+              console.log(`Spotify OAuth not configured, falling back to scraping for: ${playlist.name}`);
               throw new Error('Spotify client not available (not authenticated)');
             }
-            console.log(`Attempting API fetch for: ${playlist.name} (isEditorial=${playlist.isEditorial})`);
+            
+            console.log(`Using Spotify API for: ${playlist.name} (isEditorial=${playlist.isEditorial})`);
             const allPlaylistItems = await fetchAllPlaylistTracks(spotify, playlist.playlistId);
             
             // Get playlist metadata for total track count
