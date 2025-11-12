@@ -26,6 +26,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageContainer } from "@/components/layout/page-container";
 import {
@@ -112,6 +114,29 @@ export default function PlaylistsView() {
   const { data: playlistActivity, isLoading: activityLoading } = useQuery<ActivityHistory[]>({
     queryKey: ['/api/playlists', selectedPlaylist?.id, 'activity'],
     enabled: !!selectedPlaylist?.id && drawerOpen,
+  });
+
+  // Fetch quality metrics for selected playlist
+  const { data: qualityMetrics, isLoading: qualityLoading, error: qualityError } = useQuery<{
+    totalTracks: number;
+    enrichedCount: number;
+    isrcCount: number;
+    avgUnsignedScore: number;
+  }>({
+    queryKey: ['/api/playlists', selectedPlaylist?.id, 'quality'],
+    queryFn: async ({ queryKey }) => {
+      const [, playlistId] = queryKey as [string, string, string];
+      if (!playlistId) {
+        return { totalTracks: 0, enrichedCount: 0, isrcCount: 0, avgUnsignedScore: 0 };
+      }
+      const response = await fetch(`/api/playlists/${playlistId}/quality`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch quality metrics: ${response.statusText}`);
+      }
+      return response.json();
+    },
+    enabled: !!selectedPlaylist?.id && drawerOpen,
+    retry: 1,
   });
 
   // Auto-update selectedPlaylist when playlists data changes (with guard to prevent infinite loop)
@@ -1137,136 +1162,302 @@ export default function PlaylistsView() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto glass-panel backdrop-blur-xl border-l border-primary/20">
           {selectedPlaylist && (
             <div className="space-y-6">
-              {/* Large Cover Art Hero */}
+              {/* Consolidated Top Banner */}
               <div className="relative">
-                <Avatar className="h-[200px] w-[200px] rounded-lg mx-auto">
-                  <AvatarImage src={selectedPlaylist.imageUrl || undefined} alt={selectedPlaylist.name} />
-                  <AvatarFallback className="rounded-lg bg-primary/10">
-                    <Music2 className="h-16 w-16 text-primary" />
-                  </AvatarFallback>
-                </Avatar>
+                {/* Large Artwork Hero */}
+                <div className="relative h-48 bg-gradient-to-b from-primary/20 to-background rounded-lg overflow-hidden">
+                  <Avatar className="h-full w-full rounded-lg">
+                    <AvatarImage src={selectedPlaylist.imageUrl || undefined} alt={selectedPlaylist.name} className="object-cover" />
+                    <AvatarFallback className="rounded-lg bg-primary/10">
+                      <Music2 className="h-16 w-16 text-primary" />
+                    </AvatarFallback>
+                  </Avatar>
+                  {/* Dark overlay for text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                </div>
                 
-                {/* Overlapping Header Card */}
-                <Card className="bg-background/95 backdrop-blur-lg border-primary/20 -mt-12 mx-4 relative z-10">
-                  <CardContent className="p-4 space-y-3">
-                    <h2 className="font-bold text-xl truncate" data-testid="text-drawer-playlist-name">
-                      {selectedPlaylist.name}
-                    </h2>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {selectedPlaylist.isEditorial === 1 && (
-                        <Badge variant="secondary" data-testid="badge-editorial">Editorial</Badge>
-                      )}
-                      {getStatusBadge(selectedPlaylist.status)}
-                      <Badge variant="outline" data-testid="badge-source">
-                        {normalizeSource(selectedPlaylist.source).charAt(0).toUpperCase() + normalizeSource(selectedPlaylist.source).slice(1)}
-                      </Badge>
+                {/* Overlapping Info Card */}
+                <Card className="bg-background/95 backdrop-blur-lg border-primary/20 -mt-16 mx-4 relative z-10">
+                  <CardContent className="p-4 space-y-4">
+                    {/* Title and Badges */}
+                    <div>
+                      <h2 className="font-bold text-xl mb-2 truncate" data-testid="text-drawer-playlist-name">
+                        {selectedPlaylist.name}
+                      </h2>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {selectedPlaylist.isEditorial === 1 && (
+                          <Badge variant="secondary" data-testid="badge-editorial">Editorial</Badge>
+                        )}
+                        {getStatusBadge(selectedPlaylist.status)}
+                        <Badge variant="outline" data-testid="badge-source">
+                          {normalizeSource(selectedPlaylist.source).charAt(0).toUpperCase() + normalizeSource(selectedPlaylist.source).slice(1)}
+                        </Badge>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-3">
-                <Card className="bg-background/60 backdrop-blur">
-                  <CardContent className="p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Total Tracks</p>
-                    <p className="text-xl font-semibold" data-testid="text-total-tracks">{formatNumber(selectedPlaylist.totalTracks)}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-background/60 backdrop-blur">
-                  <CardContent className="p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Followers</p>
-                    <p className="text-xl font-semibold" data-testid="text-followers">{formatNumber(selectedPlaylist.followers)}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-background/60 backdrop-blur">
-                  <CardContent className="p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Curator</p>
-                    <p className="text-sm font-medium truncate" data-testid="text-curator">{selectedPlaylist.curator || "—"}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-background/60 backdrop-blur">
-                  <CardContent className="p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
-                    <p className="text-sm font-medium" data-testid="text-last-updated">{formatDate(selectedPlaylist.lastChecked)}</p>
+                    {/* Key Stats Row */}
+                    <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Curator</p>
+                        <p className="font-semibold truncate" data-testid="text-curator">{selectedPlaylist.curator || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Followers</p>
+                        <p className="font-semibold" data-testid="text-followers">{formatNumber(selectedPlaylist.followers)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Total Tracks</p>
+                        <p className="font-semibold" data-testid="text-total-tracks">{formatNumber(selectedPlaylist.totalTracks)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
+                        <p className="text-sm font-medium" data-testid="text-last-updated">{formatDate(selectedPlaylist.lastChecked)}</p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
 
               {/* Accordion Sections */}
               <Accordion type="multiple" defaultValue={["metadata", "actions"]} className="space-y-3">
-                {/* Metadata Section */}
+                {/* Metadata & Quality Section */}
                 <AccordionItem value="metadata" className="border rounded-lg overflow-hidden bg-background/60 backdrop-blur">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate" data-testid="accordion-metadata">
-                    <span className="font-medium">Metadata</span>
+                    <span className="font-medium">Metadata & Quality</span>
                   </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Tracks in DB</p>
-                        <p className="font-medium" data-testid="text-tracks-in-db">{formatNumber((selectedPlaylist as any).tracksInDb)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Last Fetch Count</p>
-                        <p className="font-medium" data-testid="text-last-fetch-count">{formatNumber(selectedPlaylist.lastFetchCount)}</p>
-                      </div>
-                    </div>
+                  <AccordionContent className="px-4 pb-4 space-y-6">
                     
+                    {/* 1. Track Quality Summary */}
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">Fetch Method</p>
-                      <Badge 
-                        variant={
-                          selectedPlaylist.fetchMethod === 'network-capture' ? 'default' :
-                          selectedPlaylist.fetchMethod === 'dom-capture' ? 'outline' :
-                          'secondary'
-                        }
-                        data-testid="badge-fetch-method"
-                      >
-                        {
-                          selectedPlaylist.fetchMethod === 'network-capture' ? 'Network Capture' :
-                          selectedPlaylist.fetchMethod === 'dom-capture' ? 'DOM Capture' :
-                          selectedPlaylist.fetchMethod === 'scraping' ? 'Basic Scraping' :
-                          'API'
-                        }
-                      </Badge>
+                      <p className="text-xs font-medium text-muted-foreground mb-3">Track Quality Summary</p>
+                      {qualityLoading ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {[1, 2, 3].map((i) => (
+                            <Skeleton key={i} className="h-20" />
+                          ))}
+                        </div>
+                      ) : qualityMetrics ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {/* Enriched Count */}
+                          <Card className="bg-background/40" data-testid="quality-card-enriched">
+                            <CardContent className="p-3 text-center">
+                              <p className="text-xs text-muted-foreground mb-1">Enriched</p>
+                              <p className="text-lg font-semibold" data-testid="text-enriched-count">
+                                {qualityMetrics.enrichedCount} / {qualityMetrics.totalTracks}
+                              </p>
+                              {qualityMetrics.totalTracks > 0 && (
+                                <Badge variant="secondary" className="mt-1 text-xs" data-testid="badge-enriched-percent">
+                                  {Math.round((qualityMetrics.enrichedCount / Math.max(qualityMetrics.totalTracks, 1)) * 100)}%
+                                </Badge>
+                              )}
+                            </CardContent>
+                          </Card>
+                          
+                          {/* ISRC Coverage */}
+                          <Card className="bg-background/40" data-testid="quality-card-isrc">
+                            <CardContent className="p-3 text-center">
+                              <p className="text-xs text-muted-foreground mb-1">ISRCs</p>
+                              <p className="text-lg font-semibold" data-testid="text-isrc-count">
+                                {qualityMetrics.isrcCount} / {qualityMetrics.totalTracks}
+                              </p>
+                              {qualityMetrics.totalTracks > 0 && (
+                                <Badge variant="secondary" className="mt-1 text-xs" data-testid="badge-isrc-percent">
+                                  {Math.round((qualityMetrics.isrcCount / Math.max(qualityMetrics.totalTracks, 1)) * 100)}%
+                                </Badge>
+                              )}
+                            </CardContent>
+                          </Card>
+                          
+                          {/* Average Unsigned Score */}
+                          <Card className="bg-background/40" data-testid="quality-card-score">
+                            <CardContent className="p-3 text-center">
+                              <p className="text-xs text-muted-foreground mb-1">Avg Score</p>
+                              <p className="text-lg font-semibold" data-testid="text-avg-score">
+                                {qualityMetrics.avgUnsignedScore.toFixed(1)} / 10
+                              </p>
+                              <Badge 
+                                variant={
+                                  qualityMetrics.avgUnsignedScore >= 7 ? 'default' : 
+                                  qualityMetrics.avgUnsignedScore >= 4 ? 'secondary' : 'outline'
+                                } 
+                                className="mt-1 text-xs"
+                                data-testid="badge-score-level"
+                              >
+                                {qualityMetrics.avgUnsignedScore >= 7 ? 'High' : 
+                                 qualityMetrics.avgUnsignedScore >= 4 ? 'Medium' : 'Low'}
+                              </Badge>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Quality metrics unavailable. Fetch playlist data to calculate.</p>
+                      )}
                     </div>
 
-                    {selectedPlaylist.genre && (
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Genre</p>
-                        <Badge variant="outline" data-testid="badge-genre">{selectedPlaylist.genre}</Badge>
-                      </div>
-                    )}
-
-                    {selectedPlaylist.region && (
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Region</p>
-                        <Badge variant="outline" data-testid="badge-region">{selectedPlaylist.region}</Badge>
-                      </div>
-                    )}
-
+                    {/* 2. Chartmetric Insights */}
                     {selectedPlaylist.chartmetricUrl && (
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Chartmetric</p>
-                        <a 
-                          href={selectedPlaylist.chartmetricUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary hover:underline flex items-center gap-1"
-                          data-testid="link-chartmetric"
-                        >
-                          View on Chartmetric
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
+                        <p className="text-xs font-medium text-muted-foreground mb-3">Chartmetric Insights</p>
+                        {analyticsLoading ? (
+                          <Skeleton className="h-24" />
+                        ) : chartmetricAnalytics?.stats ? (
+                          <div className="space-y-3">
+                            {/* Current Followers + Momentum */}
+                            {chartmetricAnalytics.stats.currentFollowers !== undefined && (
+                              <div className="flex items-center justify-between p-3 bg-background/40 rounded-lg" data-testid="chartmetric-followers">
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Current Followers</p>
+                                  <p className="text-xl font-semibold">{chartmetricAnalytics.stats.currentFollowers.toLocaleString()}</p>
+                                </div>
+                                {chartmetricAnalytics.stats.momentum && (
+                                  <Badge variant={
+                                    chartmetricAnalytics.stats.momentum === 'hot' ? 'default' :
+                                    chartmetricAnalytics.stats.momentum === 'growing' ? 'secondary' :
+                                    chartmetricAnalytics.stats.momentum === 'declining' ? 'destructive' :
+                                    'outline'
+                                  } data-testid="badge-momentum">
+                                    {chartmetricAnalytics.stats.momentum === 'hot' && <TrendingUp className="h-3 w-3 mr-1" />}
+                                    {chartmetricAnalytics.stats.momentum === 'growing' && <TrendingUp className="h-3 w-3 mr-1" />}
+                                    {chartmetricAnalytics.stats.momentum === 'declining' && <TrendingDown className="h-3 w-3 mr-1" />}
+                                    {chartmetricAnalytics.stats.momentum === 'stable' && <Minus className="h-3 w-3 mr-1" />}
+                                    {chartmetricAnalytics.stats.momentum.charAt(0).toUpperCase() + chartmetricAnalytics.stats.momentum.slice(1)}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Follower Growth Deltas */}
+                            {chartmetricAnalytics.stats.followerGrowth && (
+                              <div className="grid grid-cols-3 gap-2">
+                                {chartmetricAnalytics.stats.followerGrowth.daily !== undefined && (
+                                  <div className="p-2 bg-background/40 rounded-lg text-center" data-testid="growth-daily">
+                                    <p className="text-xs text-muted-foreground mb-1">Daily</p>
+                                    <p className={cn("text-sm font-semibold", 
+                                      chartmetricAnalytics.stats.followerGrowth.daily > 0 ? "text-green-500" : 
+                                      chartmetricAnalytics.stats.followerGrowth.daily < 0 ? "text-red-500" : ""
+                                    )}>
+                                      {chartmetricAnalytics.stats.followerGrowth.daily > 0 ? "+" : ""}
+                                      {chartmetricAnalytics.stats.followerGrowth.daily.toLocaleString()}
+                                    </p>
+                                  </div>
+                                )}
+                                {chartmetricAnalytics.stats.followerGrowth.weekly !== undefined && (
+                                  <div className="p-2 bg-background/40 rounded-lg text-center" data-testid="growth-weekly">
+                                    <p className="text-xs text-muted-foreground mb-1">Weekly</p>
+                                    <p className={cn("text-sm font-semibold",
+                                      chartmetricAnalytics.stats.followerGrowth.weekly > 0 ? "text-green-500" :
+                                      chartmetricAnalytics.stats.followerGrowth.weekly < 0 ? "text-red-500" : ""
+                                    )}>
+                                      {chartmetricAnalytics.stats.followerGrowth.weekly > 0 ? "+" : ""}
+                                      {chartmetricAnalytics.stats.followerGrowth.weekly.toLocaleString()}
+                                    </p>
+                                  </div>
+                                )}
+                                {chartmetricAnalytics.stats.followerGrowth.monthly !== undefined && (
+                                  <div className="p-2 bg-background/40 rounded-lg text-center" data-testid="growth-monthly">
+                                    <p className="text-xs text-muted-foreground mb-1">Monthly</p>
+                                    <p className={cn("text-sm font-semibold",
+                                      chartmetricAnalytics.stats.followerGrowth.monthly > 0 ? "text-green-500" :
+                                      chartmetricAnalytics.stats.followerGrowth.monthly < 0 ? "text-red-500" : ""
+                                    )}>
+                                      {chartmetricAnalytics.stats.followerGrowth.monthly > 0 ? "+" : ""}
+                                      {chartmetricAnalytics.stats.followerGrowth.monthly.toLocaleString()}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">Chartmetric analytics unavailable.</p>
+                        )}
                       </div>
                     )}
 
+                    {/* 3. Fetch Details */}
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">Playlist ID</p>
-                      <code className="text-xs bg-muted px-2 py-1 rounded block truncate" data-testid="code-playlist-id">
-                        {selectedPlaylist.playlistId}
-                      </code>
+                      <p className="text-xs font-medium text-muted-foreground mb-3">Fetch Details</p>
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Tracks in DB</p>
+                            <p className="font-medium" data-testid="text-tracks-in-db">{formatNumber((selectedPlaylist as any).tracksInDb)}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Last Fetch Count</p>
+                            <p className="font-medium" data-testid="text-last-fetch-count">{formatNumber(selectedPlaylist.lastFetchCount)}</p>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Fetch Method</p>
+                          <Badge 
+                            variant={
+                              selectedPlaylist.fetchMethod === 'network-capture' ? 'default' :
+                              selectedPlaylist.fetchMethod === 'dom-capture' ? 'outline' :
+                              'secondary'
+                            }
+                            data-testid="badge-fetch-method"
+                          >
+                            {
+                              selectedPlaylist.fetchMethod === 'network-capture' ? 'Network Capture' :
+                              selectedPlaylist.fetchMethod === 'dom-capture' ? 'DOM Capture' :
+                              selectedPlaylist.fetchMethod === 'scraping' ? 'Basic Scraping' :
+                              'API'
+                            }
+                          </Badge>
+                        </div>
+
+                        {selectedPlaylist.genre && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Genre</p>
+                            <Badge variant="outline" data-testid="badge-genre">{selectedPlaylist.genre}</Badge>
+                          </div>
+                        )}
+
+                        {selectedPlaylist.region && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Region</p>
+                            <Badge variant="outline" data-testid="badge-region">{selectedPlaylist.region}</Badge>
+                          </div>
+                        )}
+
+                        {selectedPlaylist.chartmetricUrl && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Chartmetric</p>
+                            <a 
+                              href={selectedPlaylist.chartmetricUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-sm text-primary hover:underline flex items-center gap-1"
+                              data-testid="link-chartmetric"
+                            >
+                              View on Chartmetric
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    {/* 4. Advanced - Collapsible */}
+                    <Collapsible>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="w-full justify-between" data-testid="button-toggle-advanced">
+                          <span className="text-xs font-medium text-muted-foreground">Advanced Info</span>
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pt-2">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Playlist ID</p>
+                          <code className="text-xs bg-muted px-2 py-1 rounded block truncate" data-testid="code-playlist-id">
+                            {selectedPlaylist.playlistId}
+                          </code>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+
                   </AccordionContent>
                 </AccordionItem>
 
@@ -1318,149 +1509,6 @@ export default function PlaylistsView() {
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-
-                {/* Chartmetric Analytics Section */}
-                {selectedPlaylist.chartmetricUrl && (
-                  <AccordionItem value="analytics" className="border rounded-lg overflow-hidden bg-background/60 backdrop-blur">
-                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate" data-testid="accordion-analytics">
-                      <span className="font-medium">Chartmetric Analytics</span>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      {analyticsLoading ? (
-                        <div className="space-y-3">
-                          <div className="h-16 bg-muted/50 rounded animate-pulse" />
-                          <div className="h-16 bg-muted/50 rounded animate-pulse" />
-                          <div className="h-16 bg-muted/50 rounded animate-pulse" />
-                        </div>
-                      ) : chartmetricAnalytics?.stats ? (
-                        <div className="space-y-4">
-                          {/* Current Followers */}
-                          {chartmetricAnalytics.stats.currentFollowers !== undefined && (
-                            <div className="flex items-center justify-between p-3 bg-background/40 rounded-lg">
-                              <div>
-                                <p className="text-xs text-muted-foreground">Current Followers</p>
-                                <p className="text-2xl font-semibold">{chartmetricAnalytics.stats.currentFollowers.toLocaleString()}</p>
-                              </div>
-                              {chartmetricAnalytics.stats.momentum && (
-                                <Badge variant={
-                                  chartmetricAnalytics.stats.momentum === 'hot' ? 'default' :
-                                  chartmetricAnalytics.stats.momentum === 'growing' ? 'secondary' :
-                                  chartmetricAnalytics.stats.momentum === 'declining' ? 'destructive' :
-                                  'outline'
-                                }>
-                                  {chartmetricAnalytics.stats.momentum === 'hot' && <TrendingUp className="h-3 w-3 mr-1" />}
-                                  {chartmetricAnalytics.stats.momentum === 'growing' && <TrendingUp className="h-3 w-3 mr-1" />}
-                                  {chartmetricAnalytics.stats.momentum === 'declining' && <TrendingDown className="h-3 w-3 mr-1" />}
-                                  {chartmetricAnalytics.stats.momentum === 'stable' && <Minus className="h-3 w-3 mr-1" />}
-                                  {chartmetricAnalytics.stats.momentum.charAt(0).toUpperCase() + chartmetricAnalytics.stats.momentum.slice(1)}
-                                </Badge>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Follower Growth */}
-                          {chartmetricAnalytics.stats.followerGrowth && (
-                            <div className="grid grid-cols-3 gap-2">
-                              {chartmetricAnalytics.stats.followerGrowth.daily !== undefined && (
-                                <div className="p-3 bg-background/40 rounded-lg">
-                                  <p className="text-xs text-muted-foreground mb-1">Daily</p>
-                                  <p className={cn("text-lg font-semibold", 
-                                    chartmetricAnalytics.stats.followerGrowth.daily > 0 ? "text-green-500" : 
-                                    chartmetricAnalytics.stats.followerGrowth.daily < 0 ? "text-red-500" : ""
-                                  )}>
-                                    {chartmetricAnalytics.stats.followerGrowth.daily > 0 ? "+" : ""}
-                                    {chartmetricAnalytics.stats.followerGrowth.daily.toLocaleString()}
-                                  </p>
-                                </div>
-                              )}
-                              {chartmetricAnalytics.stats.followerGrowth.weekly !== undefined && (
-                                <div className="p-3 bg-background/40 rounded-lg">
-                                  <p className="text-xs text-muted-foreground mb-1">Weekly</p>
-                                  <p className={cn("text-lg font-semibold",
-                                    chartmetricAnalytics.stats.followerGrowth.weekly > 0 ? "text-green-500" :
-                                    chartmetricAnalytics.stats.followerGrowth.weekly < 0 ? "text-red-500" : ""
-                                  )}>
-                                    {chartmetricAnalytics.stats.followerGrowth.weekly > 0 ? "+" : ""}
-                                    {chartmetricAnalytics.stats.followerGrowth.weekly.toLocaleString()}
-                                  </p>
-                                </div>
-                              )}
-                              {chartmetricAnalytics.stats.followerGrowth.monthly !== undefined && (
-                                <div className="p-3 bg-background/40 rounded-lg">
-                                  <p className="text-xs text-muted-foreground mb-1">Monthly</p>
-                                  <p className={cn("text-lg font-semibold",
-                                    chartmetricAnalytics.stats.followerGrowth.monthly > 0 ? "text-green-500" :
-                                    chartmetricAnalytics.stats.followerGrowth.monthly < 0 ? "text-red-500" : ""
-                                  )}>
-                                    {chartmetricAnalytics.stats.followerGrowth.monthly > 0 ? "+" : ""}
-                                    {chartmetricAnalytics.stats.followerGrowth.monthly.toLocaleString()}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Follower History Count */}
-                          {chartmetricAnalytics.stats.followerHistory && chartmetricAnalytics.stats.followerHistory.length > 0 && (
-                            <div className="text-xs text-muted-foreground">
-                              {chartmetricAnalytics.stats.followerHistory.length} data points collected (last 30 days)
-                            </div>
-                          )}
-
-                          {/* Additional Metadata from Chartmetric */}
-                          {chartmetricAnalytics?.metadata && (
-                            <div className="space-y-3 pt-4 border-t">
-                              <p className="text-xs font-medium text-muted-foreground">Playlist Metadata</p>
-                              
-                              {chartmetricAnalytics.metadata.description && (
-                                <div className="p-3 bg-background/40 rounded-lg">
-                                  <p className="text-xs text-muted-foreground mb-1">Description</p>
-                                  <p className="text-sm">{chartmetricAnalytics.metadata.description}</p>
-                                </div>
-                              )}
-                              
-                              <div className="grid grid-cols-2 gap-2">
-                                {chartmetricAnalytics.metadata.type && (
-                                  <div className="p-3 bg-background/40 rounded-lg">
-                                    <p className="text-xs text-muted-foreground mb-1">Type</p>
-                                    <p className="text-sm font-medium">{chartmetricAnalytics.metadata.type}</p>
-                                  </div>
-                                )}
-                                
-                                {chartmetricAnalytics.metadata.trackCount && (
-                                  <div className="p-3 bg-background/40 rounded-lg">
-                                    <p className="text-xs text-muted-foreground mb-1">Tracks</p>
-                                    <p className="text-sm font-medium">{chartmetricAnalytics.metadata.trackCount.toLocaleString()}</p>
-                                  </div>
-                                )}
-                              </div>
-                              
-                              {chartmetricAnalytics.metadata.genres && chartmetricAnalytics.metadata.genres.length > 0 && (
-                                <div className="p-3 bg-background/40 rounded-lg">
-                                  <p className="text-xs text-muted-foreground mb-2">Genres</p>
-                                  <div className="flex flex-wrap gap-1">
-                                    {chartmetricAnalytics.metadata.genres.slice(0, 5).map((genre: string, idx: number) => (
-                                      <Badge key={idx} variant="secondary" className="text-xs">
-                                        {genre}
-                                      </Badge>
-                                    ))}
-                                    {chartmetricAnalytics.metadata.genres.length > 5 && (
-                                      <Badge variant="outline" className="text-xs">
-                                        +{chartmetricAnalytics.metadata.genres.length - 5} more
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No analytics data available from Chartmetric.</p>
-                      )}
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
 
                 {/* Activity History Section */}
                 <AccordionItem value="activity" className="border rounded-lg overflow-hidden bg-background/60 backdrop-blur">
