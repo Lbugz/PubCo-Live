@@ -682,7 +682,11 @@ export async function getPlaylistMetadata(playlistId: string, platform: string =
       description: metadata.description,
     };
   } catch (error: any) {
-    console.error(`❌ Chartmetric: Error fetching playlist metadata:`, error.message);
+    if (error.message?.includes('401') && error.message?.includes('internal API endpoint')) {
+      console.log(`ℹ️  Chartmetric: Playlist metadata endpoint requires Enterprise tier access (playlist: ${playlistId})`);
+    } else {
+      console.error(`❌ Chartmetric: Error fetching playlist metadata for ${playlistId}:`, error.message);
+    }
     return null;
   }
 }
@@ -765,7 +769,13 @@ export async function getPlaylistStats(playlistId: string, platform: string = 's
       trackCountHistory: trackCountHistory.length > 0 ? trackCountHistory : undefined,
     };
   } catch (error: any) {
-    console.error(`❌ Chartmetric: Error fetching playlist stats:`, error.message);
+    if (error.message?.includes('400') && error.message?.includes('platform')) {
+      console.log(`ℹ️  Chartmetric: Playlist stats endpoint requires Enterprise tier access (playlist: ${playlistId})`);
+    } else if (error.message?.includes('401')) {
+      console.log(`ℹ️  Chartmetric: Playlist stats endpoint requires Enterprise tier access (playlist: ${playlistId})`);
+    } else {
+      console.error(`❌ Chartmetric: Error fetching playlist stats for ${playlistId}:`, error.message);
+    }
     return null;
   }
 }

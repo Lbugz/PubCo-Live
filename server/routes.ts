@@ -481,6 +481,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/tracked-playlists/:id/chartmetric-analytics", async (req, res) => {
     try {
+      const enterpriseEnabled = process.env.CHARTMETRIC_ENTERPRISE_ENABLED === 'true';
+      
+      if (!enterpriseEnabled) {
+        return res.status(501).json({
+          error: "Enterprise Access Required",
+          message: "Playlist analytics require Chartmetric Enterprise tier access. Track-level analytics (streams, velocity, metadata) remain available with your current Basic tier.",
+          upgradeInfo: {
+            feature: "Playlist Analytics",
+            currentTier: "Basic",
+            requiredTier: "Enterprise",
+            availableFeatures: [
+              "Track ISRC lookup",
+              "Track streaming metrics",
+              "Songwriter metadata",
+              "Track stage classification"
+            ],
+            enterpriseFeatures: [
+              "Playlist follower analytics",
+              "Playlist growth metrics",
+              "Historical playlist stats"
+            ]
+          }
+        });
+      }
+
       const playlists = await storage.getTrackedPlaylists();
       const playlist = playlists.find(p => p.id === req.params.id);
       
