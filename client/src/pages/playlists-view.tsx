@@ -25,6 +25,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { PageContainer } from "@/components/layout/page-container";
 import {
   Dialog,
   DialogContent,
@@ -619,7 +620,7 @@ export default function PlaylistsView() {
   };
 
   return (
-    <div className="p-8 space-y-6 fade-in">
+    <PageContainer className="space-y-6 fade-in">
 
       {/* Header with Add Button */}
       <div className="flex items-center justify-between">
@@ -1458,6 +1459,6 @@ export default function PlaylistsView() {
           )}
         </SheetContent>
       </Sheet>
-    </div>
+    </PageContainer>
   );
 }

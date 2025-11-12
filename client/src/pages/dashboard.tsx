@@ -30,6 +30,7 @@ import { KanbanView } from "@/components/kanban-view";
 import { DetailsDrawer } from "@/components/details-drawer";
 import { TagManager } from "@/components/tag-manager";
 import { PlaylistManager } from "@/components/playlist-manager";
+import { PageContainer } from "@/components/layout/page-container";
 import { type PlaylistSnapshot, type Tag, type TrackedPlaylist } from "@shared/schema";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -529,7 +530,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <PageContainer>
         <div className="space-y-6 fade-in">
           {/* Header with Enrich Data Button */}
           <div className="flex items-center justify-between">
@@ -837,7 +838,7 @@ export default function Dashboard() {
             />
           )}
         </div>
-      </main>
+      </PageContainer>
 
       <DetailsDrawer
         track={selectedTrack}
