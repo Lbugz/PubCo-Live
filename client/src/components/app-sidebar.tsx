@@ -188,9 +188,12 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton 
-                  className="hover-elevate h-auto py-3"
+                <div
+                  className="flex items-center gap-2 rounded-md px-2 py-3 cursor-pointer hover-elevate"
                   data-testid="sidebar-user-profile"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="User profile menu"
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="" alt="User" />
@@ -198,11 +201,11 @@ export function AppSidebar() {
                       <User className="h-4 w-4" />
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col items-start gap-0.5 text-left">
+                  <div className="flex flex-col items-start gap-0.5 text-left flex-1 min-w-0">
                     <span className="text-sm font-medium">A&R Manager</span>
                     <span className="text-xs text-muted-foreground">PubCo Live</span>
                   </div>
-                </SidebarMenuButton>
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem data-testid="dropdown-account-settings">
