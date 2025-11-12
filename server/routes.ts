@@ -525,20 +525,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedPlaylist = insertTrackedPlaylistSchema.parse(req.body);
       
-      // Smart editorial detection: Check playlist ID pattern first (works without auth)
+      // Check for manual editorial override from user
+      const manualEditorialOverride = req.body.isEditorial === true;
+      
+      // Smart editorial detection: Check manual override first, then playlist ID pattern
       const { isEditorialPlaylist } = await import("./playlist-utils");
       const isEditorialByPattern = isEditorialPlaylist(validatedPlaylist.playlistId);
       
       let totalTracks = null;
-      let isEditorial = isEditorialByPattern ? 1 : 0;
-      let fetchMethod = isEditorialByPattern ? 'scraping' : 'api';
+      let isEditorial = (manualEditorialOverride || isEditorialByPattern) ? 1 : 0;
+      let fetchMethod = (manualEditorialOverride || isEditorialByPattern) ? 'scraping' : 'api';
       let curator = null;
       let followers = null;
       let source = 'spotify';
       let imageUrl = null;
       
+      if (manualEditorialOverride) {
+        console.log(`Playlist ${validatedPlaylist.playlistId} manually marked as editorial - using scraping method`);
+      }
+      
       // For non-editorial playlists, try to fetch metadata from Spotify API
-      if (!isEditorialByPattern) {
+      if (!manualEditorialOverride && !isEditorialByPattern) {
         try {
           const spotify = await getUncachableSpotifyClient();
           const playlistData = await spotify.playlists.getPlaylist(validatedPlaylist.playlistId, "from_token" as any);

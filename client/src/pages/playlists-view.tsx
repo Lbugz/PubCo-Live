@@ -229,9 +229,10 @@ export default function PlaylistsView() {
 
   const [autoFetchOnAdd, setAutoFetchOnAdd] = useState(true);
   const [autoEnrichOnFetch, setAutoEnrichOnFetch] = useState(true);
+  const [isEditorialOverride, setIsEditorialOverride] = useState(false);
 
   const addPlaylistMutation = useMutation({
-    mutationFn: async ({ url, chartmetricUrl }: { url: string; chartmetricUrl?: string }): Promise<TrackedPlaylist> => {
+    mutationFn: async ({ url, chartmetricUrl, isEditorial }: { url: string; chartmetricUrl?: string; isEditorial?: boolean }): Promise<TrackedPlaylist> => {
       const playlistId = extractPlaylistId(url);
       if (!playlistId) {
         throw new Error("Invalid Spotify playlist URL or ID");
@@ -244,6 +245,7 @@ export default function PlaylistsView() {
         playlistId: playlistData.foundViaSearch ? playlistData.id : playlistId,
         spotifyUrl: `https://open.spotify.com/playlist/${playlistData.foundViaSearch ? playlistData.id : playlistId}`,
         chartmetricUrl: chartmetricUrl || null,
+        ...(isEditorial && { isEditorial: true }),
       });
       
       const playlist: TrackedPlaylist = await res.json();
@@ -260,6 +262,7 @@ export default function PlaylistsView() {
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
       setNewPlaylistUrl("");
       setNewChartmetricUrl("");
+      setIsEditorialOverride(false);
       setAddDialogOpen(false);
 
       // Auto-fetch if enabled
@@ -319,7 +322,8 @@ export default function PlaylistsView() {
     }
     addPlaylistMutation.mutate({ 
       url: newPlaylistUrl,
-      chartmetricUrl: newChartmetricUrl.trim() || undefined
+      chartmetricUrl: newChartmetricUrl.trim() || undefined,
+      isEditorial: isEditorialOverride || undefined
     });
   };
 
@@ -717,6 +721,21 @@ export default function PlaylistsView() {
                 <p className="text-xs text-muted-foreground mt-1">
                   Add a Chartmetric link for easier tracking
                 </p>
+              </div>
+
+              {/* Editorial Playlist Override */}
+              <div className="flex items-center justify-between pt-2 border-t">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="is-editorial"
+                    checked={isEditorialOverride}
+                    onCheckedChange={(checked) => setIsEditorialOverride(checked === true)}
+                    data-testid="checkbox-editorial-override"
+                  />
+                  <Label htmlFor="is-editorial" className="text-sm font-normal cursor-pointer">
+                    This is an editorial playlist (use web scraping)
+                  </Label>
+                </div>
               </div>
 
               {/* Automation Options */}
