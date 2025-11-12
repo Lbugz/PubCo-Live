@@ -1398,6 +1398,54 @@ export default function PlaylistsView() {
                               {chartmetricAnalytics.stats.followerHistory.length} data points collected (last 30 days)
                             </div>
                           )}
+
+                          {/* Additional Metadata from Chartmetric */}
+                          {chartmetricAnalytics?.metadata && (
+                            <div className="space-y-3 pt-4 border-t">
+                              <p className="text-xs font-medium text-muted-foreground">Playlist Metadata</p>
+                              
+                              {chartmetricAnalytics.metadata.description && (
+                                <div className="p-3 bg-background/40 rounded-lg">
+                                  <p className="text-xs text-muted-foreground mb-1">Description</p>
+                                  <p className="text-sm">{chartmetricAnalytics.metadata.description}</p>
+                                </div>
+                              )}
+                              
+                              <div className="grid grid-cols-2 gap-2">
+                                {chartmetricAnalytics.metadata.type && (
+                                  <div className="p-3 bg-background/40 rounded-lg">
+                                    <p className="text-xs text-muted-foreground mb-1">Type</p>
+                                    <p className="text-sm font-medium">{chartmetricAnalytics.metadata.type}</p>
+                                  </div>
+                                )}
+                                
+                                {chartmetricAnalytics.metadata.trackCount && (
+                                  <div className="p-3 bg-background/40 rounded-lg">
+                                    <p className="text-xs text-muted-foreground mb-1">Tracks</p>
+                                    <p className="text-sm font-medium">{chartmetricAnalytics.metadata.trackCount.toLocaleString()}</p>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {chartmetricAnalytics.metadata.genres && chartmetricAnalytics.metadata.genres.length > 0 && (
+                                <div className="p-3 bg-background/40 rounded-lg">
+                                  <p className="text-xs text-muted-foreground mb-2">Genres</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {chartmetricAnalytics.metadata.genres.slice(0, 5).map((genre: string, idx: number) => (
+                                      <Badge key={idx} variant="secondary" className="text-xs">
+                                        {genre}
+                                      </Badge>
+                                    ))}
+                                    {chartmetricAnalytics.metadata.genres.length > 5 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        +{chartmetricAnalytics.metadata.genres.length - 5} more
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <p className="text-sm text-muted-foreground">No analytics data available from Chartmetric.</p>

@@ -601,33 +601,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Playlist not found" });
       }
       
-      let spotify;
+      let curator = null;
+      let followers = null;
+      let totalTracks = null;
+      let imageUrl = null;
+      let spotifySucceeded = false;
+      let chartmetricSucceeded = false;
+      
+      // Try to fetch from Spotify API first (works for most playlists)
       try {
-        spotify = await getUncachableSpotifyClient();
+        const spotify = await getUncachableSpotifyClient();
+        const playlistData = await spotify.playlists.getPlaylist(targetPlaylist.playlistId, "from_token" as any);
+        
+        curator = playlistData.owner?.display_name || null;
+        followers = playlistData.followers?.total || null;
+        totalTracks = playlistData.tracks?.total || null;
+        imageUrl = playlistData.images?.[0]?.url || null;
+        spotifySucceeded = true;
       } catch (error: any) {
-        return res.status(401).json({ error: error.message });
+        console.log(`Spotify API failed for "${targetPlaylist.name}": ${error.message}`);
       }
-      const playlistData = await spotify.playlists.getPlaylist(targetPlaylist.playlistId, "from_token" as any);
       
-      const curator = playlistData.owner?.display_name || null;
-      const followers = playlistData.followers?.total || null;
-      const totalTracks = playlistData.tracks?.total || null;
-      const imageUrl = playlistData.images?.[0]?.url || null;
+      // For editorial playlists with Chartmetric URL, use it as fallback for missing data
+      if (targetPlaylist.isEditorial && targetPlaylist.chartmetricUrl) {
+        const { parseChartmetricPlaylistUrl, getPlaylistMetadata } = await import("./chartmetric");
+        const parsed = parseChartmetricPlaylistUrl(targetPlaylist.chartmetricUrl);
+        
+        if (parsed) {
+          try {
+            const chartmetricData = await getPlaylistMetadata(parsed.id, parsed.platform);
+            
+            if (chartmetricData) {
+              chartmetricSucceeded = true;
+              // Use Chartmetric data as fallback only for missing fields
+              if (!imageUrl && chartmetricData.imageUrl) {
+                imageUrl = chartmetricData.imageUrl;
+                console.log(`Using Chartmetric artwork for "${targetPlaylist.name}"`);
+              }
+              if (!curator && chartmetricData.curator) {
+                curator = chartmetricData.curator;
+              }
+              if (!followers && chartmetricData.followerCount) {
+                followers = chartmetricData.followerCount;
+              }
+              if (!totalTracks && chartmetricData.trackCount) {
+                totalTracks = chartmetricData.trackCount;
+              }
+            }
+          } catch (error: any) {
+            console.log(`Chartmetric fallback failed: ${error.message}`);
+          }
+        }
+      }
       
-      await storage.updateTrackedPlaylistMetadata(req.params.id, {
-        curator,
-        followers,
-        totalTracks,
-        imageUrl,
-      });
+      // Only update storage if we got data from at least one source
+      if (!spotifySucceeded && !chartmetricSucceeded) {
+        return res.status(500).json({ 
+          error: "Both Spotify and Chartmetric APIs failed. Cannot refresh metadata." 
+        });
+      }
       
-      console.log(`Refreshed metadata for "${targetPlaylist.name}": curator="${curator}", followers=${followers}, totalTracks=${totalTracks}`);
+      // Build update object with only non-null values to avoid overwriting existing data
+      const updateData: { curator?: string | null; followers?: number | null; totalTracks?: number | null; imageUrl?: string | null } = {};
+      if (curator !== null) updateData.curator = curator;
+      if (followers !== null) updateData.followers = followers;
+      if (totalTracks !== null) updateData.totalTracks = totalTracks;
+      if (imageUrl !== null) updateData.imageUrl = imageUrl;
+      
+      await storage.updateTrackedPlaylistMetadata(req.params.id, updateData);
+      
+      console.log(`Refreshed metadata for "${targetPlaylist.name}": curator="${curator}", followers=${followers}, totalTracks=${totalTracks}, imageUrl=${imageUrl ? 'yes' : 'no'}`);
       
       res.json({ 
         success: true, 
         curator,
         followers,
         totalTracks,
+        imageUrl,
       });
     } catch (error: any) {
       console.error("Error refreshing playlist metadata:", error);

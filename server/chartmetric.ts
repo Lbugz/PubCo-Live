@@ -564,6 +564,8 @@ export interface ChartmetricPlaylistMetadata {
   trackCount?: number;
   type?: string;
   genres?: string[];
+  imageUrl?: string;
+  description?: string;
 }
 
 export interface ChartmetricPlaylistStats {
@@ -657,6 +659,16 @@ export async function getPlaylistMetadata(playlistId: string, platform: string =
       return null;
     }
 
+    // Extract image URL from images array (Chartmetric provides array like Spotify)
+    let imageUrl: string | undefined;
+    if (metadata.images && Array.isArray(metadata.images) && metadata.images.length > 0) {
+      // Images might be objects with 'url' property or direct URLs
+      const firstImage = metadata.images[0];
+      imageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url;
+    } else if (metadata.image_url) {
+      imageUrl = metadata.image_url;
+    }
+
     return {
       id: metadata.id?.toString() || chartmetricId,
       name: metadata.name || '',
@@ -666,6 +678,8 @@ export async function getPlaylistMetadata(playlistId: string, platform: string =
       trackCount: metadata.track_count || metadata.tracks,
       type: metadata.type,
       genres: metadata.genres || [],
+      imageUrl,
+      description: metadata.description,
     };
   } catch (error: any) {
     console.error(`❌ Chartmetric: Error fetching playlist metadata:`, error.message);
