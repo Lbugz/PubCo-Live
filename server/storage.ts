@@ -276,7 +276,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(trackedPlaylists.id, id));
   }
 
-  async updateTrackedPlaylistMetadata(id: string, metadata: { curator?: string | null; followers?: number | null; totalTracks?: number | null }): Promise<void> {
+  async updateTrackedPlaylistMetadata(id: string, metadata: { curator?: string | null; followers?: number | null; totalTracks?: number | null; imageUrl?: string | null }): Promise<void> {
     await db.update(trackedPlaylists)
       .set(metadata)
       .where(eq(trackedPlaylists.id, id));
