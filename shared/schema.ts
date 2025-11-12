@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, date, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, date, uniqueIndex, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -112,14 +112,24 @@ export const insertTrackedPlaylistSchema = createInsertSchema(trackedPlaylists).
 export type InsertTrackedPlaylist = z.infer<typeof insertTrackedPlaylistSchema>;
 export type TrackedPlaylist = typeof trackedPlaylists.$inferSelect;
 
+export const entityTypeEnum = pgEnum('entity_type', ['track', 'playlist']);
+
 export const activityHistory = pgTable("activity_history", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  trackId: varchar("track_id").notNull().references(() => playlistSnapshots.id, { onDelete: "cascade" }),
+  entityType: entityTypeEnum("entity_type").notNull().default('track'),
+  trackId: varchar("track_id").references(() => playlistSnapshots.id, { onDelete: "cascade" }),
+  playlistId: varchar("playlist_id").references(() => trackedPlaylists.id, { onDelete: "cascade" }),
   eventType: text("event_type").notNull(),
   eventDescription: text("event_description").notNull(),
   metadata: text("metadata"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  // Ensure exactly one of trackId or playlistId is set
+  checkOneEntity: sql`CHECK (
+    (CASE WHEN ${table.trackId} IS NOT NULL THEN 1 ELSE 0 END +
+     CASE WHEN ${table.playlistId} IS NOT NULL THEN 1 ELSE 0 END) = 1
+  )`,
+}));
 
 export const insertActivityHistorySchema = createInsertSchema(activityHistory).omit({
   id: true,

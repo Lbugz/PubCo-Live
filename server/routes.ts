@@ -430,6 +430,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/playlists/:playlistId/activity", async (req, res) => {
+    try {
+      const activity = await storage.getPlaylistActivity(req.params.playlistId);
+      res.json(activity);
+    } catch (error) {
+      console.error("Error fetching playlist activity:", error);
+      res.status(500).json({ error: "Failed to fetch playlist activity" });
+    }
+  });
+
   app.get("/api/tracks/:trackId/artists", async (req, res) => {
     try {
       const artists = await storage.getArtistsByTrackId(req.params.trackId);
@@ -2430,6 +2440,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Update completeness status
           const fetchCount = playlistTracks.length;
+          const isComplete = playlistTotalTracks !== null && fetchCount >= playlistTotalTracks;
+          
           await storage.updatePlaylistCompleteness(
             playlist.playlistId, 
             fetchCount, 
@@ -2437,10 +2449,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
             new Date()
           );
           
-          // Update fetch method used for this playlist
-          await storage.updatePlaylistMetadata(playlist.id, { fetchMethod });
+          // Update fetch method - keep activity logging separate to ensure it runs even if this fails
+          try {
+            await storage.updatePlaylistMetadata(playlist.id, { fetchMethod });
+          } catch (metadataError) {
+            console.warn(`Failed to update playlist metadata for ${playlist.name}:`, metadataError);
+          }
           
-          const isComplete = playlistTotalTracks !== null && fetchCount >= playlistTotalTracks;
+          // Log playlist activity - runs regardless of metadata update success
+          try {
+            await storage.logActivity({
+              entityType: 'playlist',
+              playlistId: playlist.id,
+              trackId: null,
+              eventType: 'fetch_completed',
+              eventDescription: `Fetched ${fetchCount}${playlistTotalTracks ? `/${playlistTotalTracks}` : ''} tracks via ${fetchMethod}`,
+              metadata: JSON.stringify({
+                playlistName: playlist.name,
+                playlistId: playlist.playlistId,
+                fetchCount,
+                totalTracks: playlistTotalTracks,
+                fetchMethod,
+                isComplete,
+                skippedCount
+              })
+            });
+          } catch (logError) {
+            console.warn(`Failed to log activity for ${playlist.name}:`, logError);
+          }
+          
           completenessResults.push({
             name: playlist.name,
             fetchCount,

@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Clock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
-import { type TrackedPlaylist } from "@shared/schema";
+import { type TrackedPlaylist, type ActivityHistory } from "@shared/schema";
+import { formatDistanceToNow } from "date-fns";
 import { useFetchPlaylistsMutation } from "@/hooks/use-fetch-playlists-mutation";
 import {
   DropdownMenu,
@@ -25,6 +26,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PageContainer } from "@/components/layout/page-container";
 import {
   Dialog,
@@ -105,6 +107,11 @@ export default function PlaylistsView() {
       return response.json();
     },
     enabled: !!selectedPlaylist && !!selectedPlaylist.chartmetricUrl && drawerOpen,
+  });
+
+  const { data: playlistActivity, isLoading: activityLoading } = useQuery<ActivityHistory[]>({
+    queryKey: ['/api/playlists', selectedPlaylist?.id, 'activity'],
+    enabled: !!selectedPlaylist?.id && drawerOpen,
   });
 
   // Auto-update selectedPlaylist when playlists data changes (with guard to prevent infinite loop)
@@ -1454,6 +1461,46 @@ export default function PlaylistsView() {
                     </AccordionContent>
                   </AccordionItem>
                 )}
+
+                {/* Activity History Section */}
+                <AccordionItem value="activity" className="border rounded-lg overflow-hidden bg-background/60 backdrop-blur">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate" data-testid="accordion-activity">
+                    <span className="font-medium">Activity History</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    {activityLoading ? (
+                      <div className="space-y-3">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="flex gap-3">
+                            <Skeleton className="h-8 w-8 rounded-full" />
+                            <div className="flex-1 space-y-2">
+                              <Skeleton className="h-4 w-3/4" />
+                              <Skeleton className="h-3 w-1/2" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : playlistActivity && playlistActivity.length > 0 ? (
+                      <div className="space-y-4">
+                        {playlistActivity.map((item) => (
+                          <div key={item.id} className="flex gap-3" data-testid={`activity-item-${item.id}`}>
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium">{item.eventDescription}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No activity recorded yet. Fetch playlist data to see activity.</p>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
               </Accordion>
             </div>
           )}

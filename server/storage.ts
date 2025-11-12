@@ -30,6 +30,7 @@ export interface IStorage {
   updateTrackContact(id: string, contact: { instagram?: string; twitter?: string; tiktok?: string; email?: string; contactNotes?: string }): Promise<void>;
   logActivity(activity: InsertActivityHistory): Promise<void>;
   getTrackActivity(trackId: string): Promise<ActivityHistory[]>;
+  getPlaylistActivity(playlistId: string): Promise<ActivityHistory[]>;
   createOrUpdateArtist(artist: InsertArtist & { musicbrainzId?: string }): Promise<Artist>;
   linkArtistToTrack(artistId: string, trackId: string): Promise<void>;
   getArtistsByTrackId(trackId: string): Promise<Artist[]>;
@@ -339,6 +340,13 @@ export class DatabaseStorage implements IStorage {
     return db.select()
       .from(activityHistory)
       .where(eq(activityHistory.trackId, trackId))
+      .orderBy(desc(activityHistory.createdAt));
+  }
+
+  async getPlaylistActivity(playlistId: string): Promise<ActivityHistory[]> {
+    return db.select()
+      .from(activityHistory)
+      .where(eq(activityHistory.playlistId, playlistId))
       .orderBy(desc(activityHistory.createdAt));
   }
 
