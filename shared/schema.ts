@@ -88,6 +88,7 @@ export const trackedPlaylists = pgTable("tracked_playlists", {
   playlistId: text("playlist_id").notNull().unique(),
   spotifyUrl: text("spotify_url").notNull(),
   imageUrl: text("image_url"),
+  chartmetricUrl: text("chartmetric_url"),
   status: text("status"),
   isEditorial: integer("is_editorial").notNull().default(0),
   totalTracks: integer("total_tracks"),
