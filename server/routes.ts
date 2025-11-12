@@ -1293,24 +1293,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let enrichmentTier = track.enrichmentTier || "none";
       const updates: any = {};
 
-      // TIER 0: ISRC Recovery (if missing, try to fetch from Spotify)
-      if (!track.isrc) {
+      // TIER 0: ISRC Recovery & Spotify Metadata (if missing, try to fetch from Spotify)
+      if (!track.isrc || !track.label || !track.albumArt) {
         try {
           const spotify = await getUncachableSpotifyClient();
-          console.log(`[Tier 0: ISRC Recovery] Track missing ISRC, attempting Spotify lookup...`);
+          console.log(`[Tier 0: Spotify API] Fetching comprehensive metadata...`);
           const spotifyData = await searchTrackByNameAndArtist(track.trackName, track.artistName);
           
-          if (spotifyData && spotifyData.isrc) {
-            updates.isrc = spotifyData.isrc;
-            console.log(`✅ [Tier 0] Recovered ISRC: ${spotifyData.isrc}`);
+          if (spotifyData) {
+            if (spotifyData.isrc) {
+              updates.isrc = spotifyData.isrc;
+              console.log(`✅ [Tier 0] Recovered ISRC: ${spotifyData.isrc}`);
+            }
+            
+            // Update label if missing
+            if (spotifyData.label && !track.label) {
+              updates.label = spotifyData.label;
+            }
+            
+            // Update album art if missing
+            if (spotifyData.albumArt && !track.albumArt) {
+              updates.albumArt = spotifyData.albumArt;
+            }
+            
+            // Store additional Spotify metadata
+            if (spotifyData.popularity !== undefined) {
+              console.log(`📊 Spotify popularity: ${spotifyData.popularity}/100`);
+            }
+            
+            // Log audio features if available (can be used as mood indicators)
+            if (spotifyData.audioFeatures) {
+              console.log(`🎵 Audio features: energy=${spotifyData.audioFeatures.energy?.toFixed(2)}, valence=${spotifyData.audioFeatures.valence?.toFixed(2)}`);
+            }
+            
+            // Log artist metadata
+            if (spotifyData.artists && spotifyData.artists.length > 0) {
+              const primaryArtist = spotifyData.artists[0];
+              console.log(`👤 Artist: ${primaryArtist.name} - Popularity: ${primaryArtist.popularity}, Genres: ${primaryArtist.genres?.join(', ') || 'N/A'}`);
+            }
             
             await storage.logActivity({
               trackId: track.id,
-              eventType: "isrc_recovered",
-              eventDescription: `Recovered ISRC: ${spotifyData.isrc}`,
+              eventType: "spotify_metadata_enriched",
+              eventDescription: `Spotify API: ${spotifyData.isrc ? 'ISRC recovered' : ''}${spotifyData.popularity ? `, popularity ${spotifyData.popularity}` : ''}`,
             });
           } else {
-            console.log(`⚠️ [Tier 0] No ISRC found in Spotify`);
+            console.log(`⚠️ [Tier 0] No Spotify data found`);
           }
         } catch (error: any) {
           console.log('Spotify not available for enrichment, skipping...');

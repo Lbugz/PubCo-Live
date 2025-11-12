@@ -185,6 +185,25 @@ export async function searchTrackByNameAndArtist(trackName: string, artistName: 
   label: string | null;
   spotifyId: string;
   spotifyUrl: string;
+  popularity?: number;
+  releaseDate?: string;
+  albumType?: string;
+  albumArt?: string;
+  durationMs?: number;
+  audioFeatures?: {
+    energy?: number;
+    danceability?: number;
+    valence?: number;
+    tempo?: number;
+    acousticness?: number;
+  };
+  artists?: Array<{
+    id: string;
+    name: string;
+    popularity?: number;
+    genres?: string[];
+    followers?: number;
+  }>;
 } | null> {
   try {
     const spotify = await getUncachableSpotifyClient();
@@ -203,25 +222,69 @@ export async function searchTrackByNameAndArtist(trackName: string, artistName: 
     let isrc = track.external_ids?.isrc || null;
     const label = track.album?.label || null;
     
-    if (!isrc) {
-      console.log(`Search result missing ISRC, fetching full track details for ID: ${track.id}`);
+    // Fetch full track details for complete metadata
+    try {
+      const fullTrack = await spotify.tracks.get(track.id);
+      isrc = fullTrack.external_ids?.isrc || isrc;
+      
+      // Fetch audio features (provides mood/energy data)
+      let audioFeatures;
       try {
-        const fullTrack = await spotify.tracks.get(track.id);
-        isrc = fullTrack.external_ids?.isrc || null;
-        console.log(`Retrieved ISRC from full track: ${isrc || "N/A"}`);
+        const features = await spotify.tracks.audioFeatures(track.id);
+        audioFeatures = {
+          energy: features.energy,
+          danceability: features.danceability,
+          valence: features.valence,
+          tempo: features.tempo,
+          acousticness: features.acousticness,
+        };
       } catch (error) {
-        console.error(`Error fetching full track details:`, error);
+        console.log(`Audio features not available for track ${track.id}`);
       }
+      
+      // Fetch artist metadata for all artists on the track
+      const artistsData = [];
+      for (const artist of fullTrack.artists.slice(0, 3)) { // Limit to 3 artists to avoid rate limits
+        try {
+          const artistDetails = await spotify.artists.get(artist.id);
+          artistsData.push({
+            id: artist.id,
+            name: artist.name,
+            popularity: artistDetails.popularity,
+            genres: artistDetails.genres,
+            followers: artistDetails.followers?.total,
+          });
+        } catch (error) {
+          console.log(`Failed to fetch details for artist ${artist.name}`);
+        }
+      }
+      
+      console.log(`Found track: ${track.name} - ISRC: ${isrc || "N/A"}, Label: ${label || "N/A"}, Popularity: ${fullTrack.popularity}`);
+      
+      return {
+        isrc,
+        label,
+        spotifyId: track.id,
+        spotifyUrl: track.external_urls.spotify,
+        popularity: fullTrack.popularity,
+        releaseDate: fullTrack.album?.release_date,
+        albumType: fullTrack.album?.album_type,
+        albumArt: fullTrack.album?.images?.[1]?.url || fullTrack.album?.images?.[0]?.url,
+        durationMs: fullTrack.duration_ms,
+        audioFeatures,
+        artists: artistsData.length > 0 ? artistsData : undefined,
+      };
+    } catch (error) {
+      console.error(`Error fetching full track details:`, error);
+      
+      // Fallback to basic data
+      return {
+        isrc,
+        label,
+        spotifyId: track.id,
+        spotifyUrl: track.external_urls.spotify,
+      };
     }
-    
-    console.log(`Found track: ${track.name} - ISRC: ${isrc || "N/A"}, Label: ${label || "N/A"}`);
-    
-    return {
-      isrc,
-      label,
-      spotifyId: track.id,
-      spotifyUrl: track.external_urls.spotify,
-    };
   } catch (error) {
     console.error(`Error searching Spotify for track ${trackName} by ${artistName}:`, error);
     return null;
