@@ -127,18 +127,34 @@ export class DatabaseStorage implements IStorage {
   async insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<void> {
     if (tracks.length === 0) return;
     
-    await db.insert(playlistSnapshots)
-      .values(tracks)
-      .onConflictDoUpdate({
-        target: [playlistSnapshots.week, playlistSnapshots.playlistId, playlistSnapshots.spotifyUrl],
-        set: {
-          trackName: sql`EXCLUDED.track_name`,
-          artistName: sql`EXCLUDED.artist_name`,
-          albumArt: sql`EXCLUDED.album_art`,
-          addedAt: sql`EXCLUDED.added_at`,
-          dataSource: sql`EXCLUDED.data_source`,
-        },
-      });
+    console.log(`[insertTracks] Attempting to insert ${tracks.length} tracks`);
+    console.log(`[insertTracks] Sample track:`, {
+      week: tracks[0].week,
+      playlistId: tracks[0].playlistId,
+      trackName: tracks[0].trackName,
+      spotifyUrl: tracks[0].spotifyUrl,
+    });
+    
+    try {
+      await db.insert(playlistSnapshots)
+        .values(tracks)
+        .onConflictDoUpdate({
+          target: [playlistSnapshots.week, playlistSnapshots.playlistId, playlistSnapshots.spotifyUrl],
+          set: {
+            trackName: sql`EXCLUDED.track_name`,
+            artistName: sql`EXCLUDED.artist_name`,
+            albumArt: sql`EXCLUDED.album_art`,
+            addedAt: sql`EXCLUDED.added_at`,
+            dataSource: sql`EXCLUDED.data_source`,
+          },
+        });
+      
+      console.log(`[insertTracks] ✅ Successfully inserted/updated ${tracks.length} tracks`);
+    } catch (error: any) {
+      console.error(`[insertTracks] ❌ ERROR inserting tracks:`, error);
+      console.error(`[insertTracks] Error details:`, error.message, error.stack);
+      throw error; // Re-throw to bubble up
+    }
   }
 
   async deleteTracksByWeek(week: string): Promise<void> {
