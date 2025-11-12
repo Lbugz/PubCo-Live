@@ -1,0 +1,83 @@
+11-12 15:01:06
+2. your cache path is incorrectly configured (which is: /home/runner/.cache/puppeteer).
+11-12 15:01:06
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+11-12 15:01:06
+All capture methods failed for 37i9dQZF1DWWjGdmeTyeJ6
+11-12 15:01:06
+8:01:06 PM [express] POST /api/fetch-playlists 200 in 672ms :: {"success":true,"tracksAdded":0,"week…
+11-12 15:01:06
+8:01:06 PM [express] GET /api/tracked-playlists 304 in 38ms :: [{"id":"8251cb51-656b-4674-88cc-c35d0…
+11-12 15:01:08
+✅ Chartmetric: ID 1645189 is already numeric (Chartmetric ID)
+11-12 15:01:08
+💾 Chartmetric: Using cached ID for spotify:1645189
+11-12 15:01:08
+📋 Chartmetric: Fetching playlist metadata for 1645189
+11-12 15:01:08
+📊 Chartmetric: Fetching playlist stats for 1645189
+11-12 15:01:09
+✅ Chartmetric authenticated, token expires in 3600s
+11-12 15:01:10
+✅ Chartmetric authenticated, token expires in 3600s
+11-12 15:01:11
+❌ Chartmetric: Error fetching playlist metadata: Chartmetric API error: 401 - {"error":"Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint."}
+11-12 15:01:12
+❌ Chartmetric: Error fetching playlist stats: Chartmetric API error: 400 - {"error":"'platform' must be one of [cm, spotify, itunes, applemusic, deezer, shazam, beatport, amazon, youtube, tunefind, soundcloud]"}
+11-12 15:01:12
+8:01:12 PM [express] GET /api/tracked-playlists/8251cb51-656b-4674-88cc-c35d0ee3a802/chartmetric-ana…
+11-12 15:02:12
+WebSocket client disconnected
+11-12 15:02:12
+8:02:12 PM [express] GET /api/data/counts 200 in 275ms :: {"playlists":2,"tracks":124,"songwriters":…
+11-12 15:02:14
+WebSocket client connected
+11-12 15:02:17
+Deleted playlist 37i9dQZF1DWWjGdmeTyeJ6: 0 tracks, 0 songwriters
+11-12 15:02:17
+8:02:17 PM [express] DELETE /api/playlists/37i9dQZF1DWWjGdmeTyeJ6/cascade 200 in 297ms :: {"success"…
+11-12 15:02:17
+8:02:17 PM [express] GET /api/tracked-playlists 200 in 35ms :: [{"id":"eb65989d-b958-495f-88dd-f757a…
+11-12 15:02:17
+8:02:17 PM [express] GET /api/data/counts 200 in 160ms :: {"playlists":1,"tracks":124,"songwriters":…
+11-12 15:02:27
+WebSocket client connected
+11-12 15:02:27
+8:02:27 PM [express] GET /api/metrics/playlists 304 in 161ms :: {"totalPlaylists":1,"uniqueSongwrite…
+11-12 15:02:45
+Playlist 37i9dQZF1DWWjGdmeTyeJ6 added with scraping mode - metadata will be fetched during track fetch
+11-12 15:02:45
+8:02:45 PM [express] POST /api/tracked-playlists 200 in 141ms :: {"id":"19a9ed33-64c3-41d0-ad7c-9cbd…
+11-12 15:02:45
+8:02:45 PM [express] GET /api/tracked-playlists 200 in 36ms :: [{"id":"19a9ed33-64c3-41d0-ad7c-9cbd3…
+11-12 15:02:46
+Fetching playlist: 37i9dQZF1DWWjGdmeTyeJ6 (isEditorial=1, method=scraping)
+11-12 15:02:46
+Editorial playlist detected: 37i9dQZF1DWWjGdmeTyeJ6. Skipping API, using scraper microservice...
+11-12 15:02:46
+API fetch failed for 37i9dQZF1DWWjGdmeTyeJ6: Editorial playlist - using scraper. Calling scraper microservice...
+11-12 15:02:46
+Calling scraper API at: https://pubco-live-production.up.railway.app
+11-12 15:02:46
+Loaded 14 saved Spotify cookies
+11-12 15:02:46
+Scraper API error for 37i9dQZF1DWWjGdmeTyeJ6: Unexpected token '<', "
+11-12 15:02:46
+Falling back to local network capture...
+11-12 15:02:46
+[Network Capture] Starting for: https://open.spotify.com/playlist/37i9dQZF1DWWjGdmeTyeJ6
+11-12 15:02:46
+[Network Capture] ⚠️ IMPORTANT: A browser window will open. If Spotify requests login, please authenticate manually.
+11-12 15:02:46
+[Network Capture] Error: Could not find Chrome (ver. 142.0.7444.61). This can occur if either
+11-12 15:02:46
+1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+11-12 15:02:46
+2. your cache path is incorrectly configured (which is: /home/runner/.cache/puppeteer).
+11-12 15:02:46
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+11-12 15:02:46
+Local network capture insufficient (0 tracks). Error: Could not find Chrome (ver. 142.0.7444.61). This can occur if either
+11-12 15:02:46
+1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+11-12 15:02:46
