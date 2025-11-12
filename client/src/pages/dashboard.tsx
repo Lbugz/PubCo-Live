@@ -601,22 +601,19 @@ export default function Dashboard() {
             <CardContent className="p-3 md:p-4">
               <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3">
                 {/* Week Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-secondary-foreground font-medium hidden md:inline">Week:</span>
-                  <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                    <SelectTrigger className="flex-1 md:w-[160px]" data-testid="select-week">
-                      <SelectValue placeholder="All Dates" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Dates</SelectItem>
-                      {weeks?.map((week) => (
-                        <SelectItem key={week} value={week}>
-                          {week}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                  <SelectTrigger className="flex-1 md:w-[160px]" data-testid="select-week">
+                    <SelectValue placeholder="All Dates" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Dates</SelectItem>
+                    {weeks?.map((week) => (
+                      <SelectItem key={week} value={week}>
+                        {week}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 {/* Playlist Filter */}
                 <Select value={selectedPlaylist} onValueChange={setSelectedPlaylist}>
