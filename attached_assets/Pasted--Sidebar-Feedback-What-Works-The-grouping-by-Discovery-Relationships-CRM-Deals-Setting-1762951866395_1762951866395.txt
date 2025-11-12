@@ -1,0 +1,49 @@
+:
+
+🧭 Sidebar Feedback
+✅ What Works
+
+The grouping by Discovery → Relationships/CRM → Deals → Settings feels logical.
+
+Submenus (Playlists, Tracks, Contacts, etc.) are clear and indented consistently.
+
+Active states (highlighted blue) create good visual clarity.
+
+Using icons (e.g., 🔁 for Discovery, 🤝 for Deals) adds helpful visual anchors.
+
+⚙️ Recommended Improvements
+Area	Recommendation	Why
+Settings Placement	📍 Move to bottom dock (separated by a divider)	Matches mental model in pro dashboards like Linear or Notion. Settings is global, not part of the core workflow.
+Section Grouping Labels	Add subtle group headers like “Discovery”, “CRM”, “Deals”	Helps orient users when sidebar expands with more modules.
+Icon Alignment	Slightly reduce icon spacing or make them uniform width	Keeps text aligned vertically, improving scan speed.
+Collapse Behavior	Add tooltip labels when collapsed (hover = show label)	Important for power users who prefer compact view.
+Theme consistency	The current background and accent blue (#4156E8) already works perfectly — keep this. Just ensure hover states use a slightly lighter tone.	
+✏️ Suggested Layout Structure
+<Sidebar>
+  <NavGroup title="Discovery">
+    <NavItem icon={<MusicIcon />} label="Playlists View" to="/playlists" />
+    <NavItem icon={<Disc3Icon />} label="Tracks View" to="/tracks" />
+  </NavGroup>
+
+  <NavGroup title="Relationships / CRM">
+    <NavItem icon={<UsersIcon />} label="Contacts" to="/contacts" />
+    <NavItem icon={<MessageSquareIcon />} label="Engagements" to="/engagements" />
+    <NavItem icon={<TargetIcon />} label="Opportunities" to="/opportunities" />
+  </NavGroup>
+
+  <NavGroup title="Deals">
+    <NavItem icon={<HandshakeIcon />} label="Pipeline" to="/pipeline" />
+    <NavItem icon={<FileTextIcon />} label="Deal Detail" to="/deal-detail" />
+    <NavItem icon={<LayoutIcon />} label="Templates" to="/deal-templates" />
+  </NavGroup>
+
+  <div className="flex-1" /> {/* Push settings to bottom */}
+  <Separator className="my-2 opacity-20" />
+  <NavItem icon={<SettingsIcon />} label="Settings" to="/settings" />
+</Sidebar>
+
+💡 Bonus Ideas
+
+Add User Profile Mini Card at the bottom-left above “Settings” (name, role, avatar).
+
+Consider a collapsed mini mode for smaller screens (just icons + tooltips).
