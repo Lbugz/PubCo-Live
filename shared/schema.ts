@@ -206,6 +206,24 @@ export type SongwriterProfile = typeof songwriterProfiles.$inferSelect;
 export type InsertSongwriterCollaboration = z.infer<typeof insertSongwriterCollaborationSchema>;
 export type SongwriterCollaboration = typeof songwriterCollaborations.$inferSelect;
 
+export const spotifyTokens = pgTable("spotify_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  encryptedAccessToken: text("encrypted_access_token").notNull(),
+  encryptedRefreshToken: text("encrypted_refresh_token").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertSpotifyTokenSchema = createInsertSchema(spotifyTokens).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSpotifyToken = z.infer<typeof insertSpotifyTokenSchema>;
+export type SpotifyToken = typeof spotifyTokens.$inferSelect;
+
 export const playlists = [
   {
     name: "Fresh Finds",
