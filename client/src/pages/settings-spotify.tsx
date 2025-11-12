@@ -2,9 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle2, Calendar, Clock, Cookie, ExternalLink, AlertTriangle, Music2, ShieldCheck } from "lucide-react";
+import { AlertCircle, CheckCircle2, Calendar, Clock, Cookie, ExternalLink, AlertTriangle, ShieldCheck } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useState } from "react";
 
 interface CookieStatus {
   healthy: boolean;
@@ -17,13 +16,12 @@ interface CookieStatus {
 }
 
 interface AuthStatus {
-  authenticated: boolean;
+  connected: boolean;
+  error?: string;
 }
 
 export default function SettingsSpotify() {
-  const [authWindow, setAuthWindow] = useState<Window | null>(null);
-  
-  const { data: authStatus, isLoading: authLoading, refetch: refetchAuth } = useQuery<AuthStatus>({
+  const { data: authStatus, isLoading: authLoading } = useQuery<AuthStatus>({
     queryKey: ["/api/spotify/status"],
     refetchInterval: 5000,
   });
@@ -32,30 +30,6 @@ export default function SettingsSpotify() {
     queryKey: ["/api/spotify/cookie-status"],
     refetchInterval: 30000,
   });
-
-  const handleSpotifyAuth = () => {
-    const width = 600;
-    const height = 700;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
-    
-    const popup = window.open(
-      '/api/spotify/auth',
-      'Spotify Authorization',
-      `width=${width},height=${height},left=${left},top=${top}`
-    );
-    
-    setAuthWindow(popup);
-    
-    // Poll for window closure
-    const checkClosed = setInterval(() => {
-      if (popup?.closed) {
-        clearInterval(checkClosed);
-        setAuthWindow(null);
-        refetchAuth();
-      }
-    }, 500);
-  };
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Never";
@@ -85,25 +59,25 @@ export default function SettingsSpotify() {
         </p>
       </div>
 
-      {/* Spotify OAuth Authentication */}
+      {/* Spotify Integration Status */}
       <Card className="glass-panel mb-6">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5" />
-                Spotify OAuth Authentication
+                Spotify Integration
               </CardTitle>
               <CardDescription>
-                Authenticate with Spotify to access album artwork and full track metadata
+                Managed authentication for accessing album artwork and track metadata
               </CardDescription>
             </div>
             {!authLoading && authStatus && (
               <Badge 
-                variant={authStatus.authenticated ? "default" : "outline"}
+                variant={authStatus.connected ? "default" : "outline"}
                 className="flex items-center gap-1"
               >
-                {authStatus.authenticated ? (
+                {authStatus.connected ? (
                   <><CheckCircle2 className="h-3 w-3" /> Connected</>
                 ) : (
                   <><AlertCircle className="h-3 w-3" /> Not Connected</>
@@ -114,52 +88,50 @@ export default function SettingsSpotify() {
         </CardHeader>
         <CardContent className="space-y-4">
           {authLoading ? (
-            <p className="text-muted-foreground">Loading authentication status...</p>
+            <p className="text-muted-foreground">Loading connection status...</p>
           ) : (
             <>
-              {!authStatus?.authenticated && (
-                <Alert>
-                  <Music2 className="h-4 w-4" />
-                  <AlertTitle>Connect Spotify for Full Features</AlertTitle>
+              {!authStatus?.connected ? (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Spotify Not Connected</AlertTitle>
                   <AlertDescription>
-                    Authenticate with Spotify to enable album artwork downloads and full track metadata when fetching playlists.
+                    {authStatus?.error || 'The Spotify integration is not connected. Please authorize it through the Replit Secrets panel.'}
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert>
+                  <CheckCircle2 className="h-4 w-4" />
+                  <AlertTitle>Spotify Connected</AlertTitle>
+                  <AlertDescription>
+                    Your Spotify integration is active. Album artwork and track metadata will be automatically fetched when importing playlists.
                   </AlertDescription>
                 </Alert>
               )}
 
-              <div className="flex items-center gap-4">
-                <Button
-                  onClick={handleSpotifyAuth}
-                  disabled={!!authWindow}
-                  className="flex items-center gap-2"
-                  data-testid="button-spotify-auth"
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  {authStatus?.authenticated ? 'Re-authenticate Spotify' : 'Connect Spotify Account'}
-                </Button>
-                
-                {authStatus?.authenticated && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>Your Spotify account is connected and ready</span>
-                  </div>
-                )}
-              </div>
-
               <div className="pt-4 border-t border-white/10">
-                <h3 className="text-sm font-semibold mb-2">How to Pull Album Artwork</h3>
-                <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                  <li>Click "Connect Spotify Account" above to authenticate (if not already connected)</li>
-                  <li>Go to <span className="font-medium text-foreground">Playlists View</span> in the sidebar</li>
-                  <li>Click <span className="font-medium text-foreground">"Add Playlist"</span> and enter a Spotify playlist URL</li>
-                  <li>Click <span className="font-medium text-foreground">"Fetch Data"</span> on the playlist you want to import</li>
-                  <li>Album artwork will be automatically downloaded for all tracks</li>
-                </ol>
+                <h3 className="text-sm font-semibold mb-2">
+                  {authStatus?.connected ? 'How to Use Spotify Features' : 'How to Connect Spotify'}
+                </h3>
+                {!authStatus?.connected ? (
+                  <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                    <li>Open the Replit <span className="font-medium text-foreground">Secrets</span> panel (Tools → Secrets in the sidebar)</li>
+                    <li>Find the <span className="font-medium text-foreground">Spotify</span> integration</li>
+                    <li>Click <span className="font-medium text-foreground">"Connect"</span> and authorize with your Spotify account</li>
+                    <li>Return to this app - the connection will be automatic</li>
+                  </ol>
+                ) : (
+                  <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                    <li>Go to <span className="font-medium text-foreground">Playlists View</span> in the sidebar</li>
+                    <li>Click <span className="font-medium text-foreground">"Add Playlist"</span> and enter a Spotify playlist URL</li>
+                    <li>Click <span className="font-medium text-foreground">"Fetch Data"</span> on the playlist you want to import</li>
+                    <li>Album artwork and track metadata will be automatically fetched</li>
+                  </ol>
+                )}
                 <Alert className="mt-4">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Note:</strong> Album artwork is fetched automatically when you import playlists via the Playlist Manager. 
-                    No additional action needed once you're authenticated!
+                    <strong>Note:</strong> This uses Replit's managed OAuth integration, which automatically handles token refresh and authentication for you.
                   </AlertDescription>
                 </Alert>
               </div>
