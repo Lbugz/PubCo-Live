@@ -4,11 +4,11 @@ let connectionSettings: any;
 
 async function getAccessToken() {
   // Check if cached credentials are still valid
-  if (connectionSettings && connectionSettings.settings.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
-    const refreshToken = connectionSettings?.settings?.oauth?.credentials?.refresh_token;
-    const accessToken = connectionSettings?.settings?.access_token || connectionSettings.settings?.oauth?.credentials?.access_token;
-    const clientId = connectionSettings?.settings?.oauth?.credentials?.client_id;
-    const expiresIn = connectionSettings.settings?.oauth?.credentials?.expires_in;
+  if (connectionSettings?.settings?.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
+    const refreshToken = connectionSettings.settings.oauth?.credentials?.refresh_token;
+    const accessToken = connectionSettings.settings.access_token || connectionSettings.settings.oauth?.credentials?.access_token;
+    const clientId = connectionSettings.settings.oauth?.credentials?.client_id;
+    const expiresIn = connectionSettings.settings.oauth?.credentials?.expires_in;
     
     return {accessToken, clientId, refreshToken, expiresIn};
   }
@@ -24,7 +24,22 @@ async function getAccessToken() {
     throw new Error('X_REPLIT_TOKEN not found for repl/depl');
   }
 
-  connectionSettings = await fetch(
+  // Try fetching all connections first
+  const allResponse = await fetch(
+    'https://' + hostname + '/api/v2/connection?include_secrets=true',
+    {
+      headers: {
+        'Accept': 'application/json',
+        'X_REPLIT_TOKEN': xReplitToken
+      }
+    }
+  );
+  
+  const allData = await allResponse.json();
+  console.log('[DEBUG] All connections:', JSON.stringify(allData, null, 2));
+  
+  // Now try with the spotify filter
+  const response = await fetch(
     'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=spotify',
     {
       headers: {
@@ -32,14 +47,28 @@ async function getAccessToken() {
         'X_REPLIT_TOKEN': xReplitToken
       }
     }
-  ).then(res => res.json()).then(data => data.items?.[0]);
+  );
   
-  const refreshToken = connectionSettings?.settings?.oauth?.credentials?.refresh_token;
-  const accessToken = connectionSettings?.settings?.access_token || connectionSettings.settings?.oauth?.credentials?.access_token;
-  const clientId = connectionSettings?.settings?.oauth?.credentials?.client_id;
+  const responseData = await response.json();
+  console.log('[DEBUG] Spotify-filtered response:', JSON.stringify(responseData, null, 2));
+  
+  // Try to find Spotify in any of the connections
+  connectionSettings = responseData.items?.[0] || allData.items?.find((item: any) => 
+    item.connector?.name?.toLowerCase().includes('spotify') ||
+    item.name?.toLowerCase().includes('spotify')
+  );
+  
+  if (!connectionSettings) {
+    throw new Error('Spotify not connected. Please connect Spotify integration via Replit Secrets. Visit the Secrets panel in your Replit environment to authorize Spotify.');
+  }
+  
+  const refreshToken = connectionSettings.settings?.oauth?.credentials?.refresh_token;
+  const accessToken = connectionSettings.settings?.access_token || connectionSettings.settings?.oauth?.credentials?.access_token;
+  const clientId = connectionSettings.settings?.oauth?.credentials?.client_id;
   const expiresIn = connectionSettings.settings?.oauth?.credentials?.expires_in;
   
-  if (!connectionSettings || (!accessToken || !clientId || !refreshToken)) {
+  if (!accessToken || !clientId || !refreshToken) {
+    console.log('[DEBUG] Missing credentials. connectionSettings:', JSON.stringify(connectionSettings, null, 2));
     throw new Error('Spotify not connected. Please connect Spotify integration via Replit Secrets. Visit the Secrets panel in your Replit environment to authorize Spotify.');
   }
   
