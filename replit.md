@@ -28,16 +28,19 @@ The frontend is a single-page React application built with a a modular component
 ### Technical Implementations
 - **Data Fetching**: Utilizes TanStack Query.
 - **Scoring Algorithm**: Proprietary algorithm ranks tracks based on Fresh Finds appearance, independent label status, and missing publisher/writer data.
-- **2-Tier Unified Enrichment Pipeline**:
-    - **Tier 1 (Spotify Credits Scraping)**: Uses Puppeteer to scrape songwriter, composer, producer, and publisher credits from Spotify track pages. Includes smart name splitting for accurate songwriter identification.
+- **5-Tier Unified Enrichment Pipeline**:
+    - **Tier 0 (ISRC Recovery)**: Uses Spotify API to recover missing ISRCs for tracks via name/artist search when not available from initial playlist fetch.
+    - **Tier 1 (Spotify Credits & Stream Count Scraping)**: Uses Puppeteer to scrape songwriter, composer, producer, and publisher credits from Spotify track pages. **Also extracts Spotify stream counts** (e.g., "33,741" or "1.2M") directly from the page as a fallback for tracks without Chartmetric data. Includes smart name splitting for accurate songwriter identification.
         - **Critical Transpiler Fix**: Resolved `__name is not defined` error by switching from arrow function to plain string injection in `page.evaluate()`. The tsx/esbuild transpiler wraps functions with `__name(fn, "fnName")` helper calls that don't exist in the browser context. Solution: inject code as plain strings using `page.evaluate(stringVariable)` instead of `page.evaluate(() => {...})` to bypass transpilation entirely.
         - **Timeout Protection**: 45s master timeout with proper cleanup, networkidle2/domcontentloaded fallback strategy prevents server crashes.
-    - **Tier 2 (MusicBrainz Social Links)**: Queries MusicBrainz API for social profiles of identified songwriters using ISRC-based, Spotify API ISRC recovery, and name-based lookups.
-    - **MLC Publisher Status (Future)**: Designed for MLC API integration to determine publisher status.
+        - **Stream Count Parsing**: Handles multiple formats (comma-separated "33,741" and abbreviated "1.2M", "45K"), filters out non-stream numbers by checking realistic range (100-1B).
+    - **Tier 2 (MLC Publisher Status)**: Designed for MLC API integration to determine publisher status.
+    - **Tier 3 (MusicBrainz Social Links)**: Queries MusicBrainz API for social profiles of identified songwriters using ISRC-based, Spotify API ISRC recovery, and name-based lookups.
+    - **Tier 4 (Chartmetric Analytics)**: Fetches cross-platform streaming metrics, track stage, moods, and activities when available.
     - **Artist Normalization**: Separate `artists` table with unique MusicBrainz IDs prevents duplicates, and `artist_songwriters` junction table enables many-to-many track-artist relationships.
     - **Backfill Endpoint**: Processes existing enriched tracks to populate artist records and social links retrospectively.
     - **Real-time Enrichment Updates**: WebSocket integration broadcasts `track_enriched` events to connected clients. Details drawer automatically invalidates React Query caches and refreshes data without requiring user to close/reopen. Loading states include skeleton loaders for track details and spinner on enrichment button.
-    - **Enrichment Activity Logging**: Creates detailed activity history entries including overall enrichment summary and per-songwriter MusicBrainz lookup results (found/not found with social links status).
+    - **Enrichment Activity Logging**: Creates detailed activity history entries including overall enrichment summary and per-songwriter MusicBrainz lookup results (found/not found with social links status). Shows clear messages like "No Chartmetric data found for ISRC [ISRC]" when external APIs have no data.
 - **Lead Tagging System**: Allows custom, color-coded tags for tracks and filtering.
 - **Batch Week Comparison**: Enables comparison of track progression across multiple weeks.
 - **Contact Discovery**: Manages artist contact information.
