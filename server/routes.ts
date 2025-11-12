@@ -440,6 +440,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/playlists/:playlistId/quality", async (req, res) => {
+    try {
+      const metrics = await storage.getPlaylistQualityMetrics(req.params.playlistId);
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching playlist quality metrics:", error);
+      res.status(500).json({ error: "Failed to fetch quality metrics" });
+    }
+  });
+
   app.get("/api/tracks/:trackId/artists", async (req, res) => {
     try {
       const artists = await storage.getArtistsByTrackId(req.params.trackId);
@@ -2456,6 +2466,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.warn(`Failed to update playlist metadata for ${playlist.name}:`, metadataError);
           }
           
+          // Refetch playlist to get updated name for activity logging
+          const updatedPlaylist = await storage.getPlaylistById(playlist.id);
+          const playlistNameForLog = updatedPlaylist?.name || playlist.name;
+          
           // Log playlist activity - runs regardless of metadata update success
           try {
             await storage.logActivity({
@@ -2465,7 +2479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               eventType: 'fetch_completed',
               eventDescription: `Fetched ${fetchCount}${playlistTotalTracks ? `/${playlistTotalTracks}` : ''} tracks via ${fetchMethod}`,
               metadata: JSON.stringify({
-                playlistName: playlist.name,
+                playlistName: playlistNameForLog,
                 playlistId: playlist.playlistId,
                 fetchCount,
                 totalTracks: playlistTotalTracks,
@@ -2475,7 +2489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               })
             });
           } catch (logError) {
-            console.warn(`Failed to log activity for ${playlist.name}:`, logError);
+            console.warn(`Failed to log activity for ${playlistNameForLog}:`, logError);
           }
           
           completenessResults.push({

@@ -35,6 +35,13 @@ export function useFetchPlaylistsMutation() {
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics/playlists"] });
+      // Invalidate all activity history and quality metrics queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key[0] === "/api/playlists";
+        }
+      });
     },
     onError: (error: Error) => {
       console.error("Fetch playlists mutation error:", error);

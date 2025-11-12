@@ -22,6 +22,7 @@ export interface IStorage {
   getTracksByTag(tagId: string): Promise<PlaylistSnapshot[]>;
   getTrackedPlaylists(): Promise<TrackedPlaylist[]>;
   getTrackedPlaylistBySpotifyId(playlistId: string): Promise<TrackedPlaylist | null>;
+  getPlaylistById(id: string): Promise<TrackedPlaylist | null>;
   addTrackedPlaylist(playlist: InsertTrackedPlaylist): Promise<TrackedPlaylist>;
   updatePlaylistCompleteness(playlistId: string, fetchCount: number, totalTracks: number | null, lastChecked: Date): Promise<void>;
   updatePlaylistMetadata(id: string, metadata: { totalTracks?: number | null; isEditorial?: number; fetchMethod?: string | null }): Promise<void>;
@@ -31,6 +32,7 @@ export interface IStorage {
   logActivity(activity: InsertActivityHistory): Promise<void>;
   getTrackActivity(trackId: string): Promise<ActivityHistory[]>;
   getPlaylistActivity(playlistId: string): Promise<ActivityHistory[]>;
+  getPlaylistQualityMetrics(playlistId: string): Promise<{ totalTracks: number; enrichedCount: number; isrcCount: number; avgUnsignedScore: number }>;
   createOrUpdateArtist(artist: InsertArtist & { musicbrainzId?: string }): Promise<Artist>;
   linkArtistToTrack(artistId: string, trackId: string): Promise<void>;
   getArtistsByTrackId(trackId: string): Promise<Artist[]>;
@@ -275,6 +277,15 @@ export class DatabaseStorage implements IStorage {
     return playlist || null;
   }
 
+  async getPlaylistById(id: string): Promise<TrackedPlaylist | null> {
+    const [playlist] = await db.select()
+      .from(trackedPlaylists)
+      .where(eq(trackedPlaylists.id, id))
+      .limit(1);
+    
+    return playlist || null;
+  }
+
   async addTrackedPlaylist(playlist: InsertTrackedPlaylist): Promise<TrackedPlaylist> {
     const [inserted] = await db.insert(trackedPlaylists).values(playlist).returning();
     return inserted;
@@ -348,6 +359,31 @@ export class DatabaseStorage implements IStorage {
       .from(activityHistory)
       .where(eq(activityHistory.playlistId, playlistId))
       .orderBy(desc(activityHistory.createdAt));
+  }
+
+  async getPlaylistQualityMetrics(playlistId: string): Promise<{ totalTracks: number; enrichedCount: number; isrcCount: number; avgUnsignedScore: number }> {
+    // First get the Spotify playlist ID from trackedPlaylists
+    const playlist = await this.getPlaylistById(playlistId);
+    if (!playlist) {
+      return { totalTracks: 0, enrichedCount: 0, isrcCount: 0, avgUnsignedScore: 0 };
+    }
+
+    // Query playlistSnapshots using the Spotify playlist ID
+    const [result] = await db.select({
+      totalTracks: sql<number>`CAST(COUNT(*) AS INTEGER)`,
+      enrichedCount: sql<number>`CAST(SUM(CASE WHEN ${playlistSnapshots.enrichedAt} IS NOT NULL THEN 1 ELSE 0 END) AS INTEGER)`,
+      isrcCount: sql<number>`CAST(SUM(CASE WHEN ${playlistSnapshots.isrc} IS NOT NULL THEN 1 ELSE 0 END) AS INTEGER)`,
+      avgUnsignedScore: sql<number>`CAST(COALESCE(AVG(${playlistSnapshots.unsignedScore}), 0) AS FLOAT)`,
+    })
+      .from(playlistSnapshots)
+      .where(eq(playlistSnapshots.playlistId, playlist.playlistId));
+
+    return {
+      totalTracks: result?.totalTracks || 0,
+      enrichedCount: result?.enrichedCount || 0,
+      isrcCount: result?.isrcCount || 0,
+      avgUnsignedScore: Math.round((result?.avgUnsignedScore || 0) * 10) / 10, // Round to 1 decimal
+    };
   }
 
   async createOrUpdateArtist(artist: InsertArtist & { musicbrainzId?: string }): Promise<Artist> {
