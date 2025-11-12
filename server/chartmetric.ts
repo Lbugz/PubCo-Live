@@ -66,7 +66,7 @@ const API_KEY = process.env.CHARTMETRIC_API_KEY;
 
 class ChartmetricRateLimiter {
   private lastRequestTime: number = 0;
-  private readonly minInterval: number = 1000; // 1 request per second
+  private readonly minInterval: number = 2000; // 2 seconds = 30 requests per minute
 
   async throttle(): Promise<void> {
     const now = Date.now();
@@ -82,6 +82,10 @@ class ChartmetricRateLimiter {
 }
 
 const rateLimiter = new ChartmetricRateLimiter();
+
+// In-memory caches for batch processing
+const isrcCache = new Map<string, ChartmetricTrack | null>();
+const metadataCache = new Map<string, any>();
 
 async function getAuthToken(): Promise<string> {
   if (!API_KEY) {
@@ -143,6 +147,12 @@ async function makeChartmetricRequest<T>(endpoint: string, method: string = "GET
 }
 
 export async function getTrackByISRC(isrc: string): Promise<ChartmetricTrack | null> {
+  // Check cache first
+  if (isrcCache.has(isrc)) {
+    console.log(`💾 Chartmetric: Using cached result for ISRC ${isrc}`);
+    return isrcCache.get(isrc)!;
+  }
+
   try {
     console.log(`🔍 Chartmetric: Looking up track by ISRC ${isrc}`);
     const result = await makeChartmetricRequest<any>(`/track/isrc/${isrc}/get-ids`);
@@ -150,6 +160,7 @@ export async function getTrackByISRC(isrc: string): Promise<ChartmetricTrack | n
     // get-ids returns an array of track IDs with metadata
     if (!result || (Array.isArray(result) && result.length === 0)) {
       console.log(`⚠️  Chartmetric: No track found for ISRC ${isrc}`);
+      isrcCache.set(isrc, null);
       return null;
     }
     
@@ -160,6 +171,7 @@ export async function getTrackByISRC(isrc: string): Promise<ChartmetricTrack | n
     
     if (!chartmetricIds || chartmetricIds.length === 0) {
       console.log(`⚠️  Chartmetric: No Chartmetric ID in response for ISRC ${isrc}`);
+      isrcCache.set(isrc, null);
       return null;
     }
     
@@ -167,20 +179,24 @@ export async function getTrackByISRC(isrc: string): Promise<ChartmetricTrack | n
     console.log(`✅ Chartmetric: Found track with Chartmetric ID ${trackId}`);
     
     // Convert to our ChartmetricTrack format
-    // Note: track name is not included in get-ids response, will be fetched separately if needed
-    return {
+    const track: ChartmetricTrack = {
       id: trackId.toString(),
       name: '', // Will be populated by metadata call if needed
       isrc: trackData.isrc || isrc,
       release_date: '',
       artists: []
     };
+    
+    isrcCache.set(isrc, track);
+    return track;
   } catch (error: any) {
     if (error.message.includes("404")) {
       console.log(`⚠️  Chartmetric: No track found for ISRC ${isrc}`);
+      isrcCache.set(isrc, null);
       return null;
     }
     console.error(`❌ Chartmetric: Error looking up ISRC ${isrc}:`, error.message);
+    isrcCache.set(isrc, null);
     return null; // Return null instead of throwing to handle gracefully
   }
 }
@@ -368,4 +384,152 @@ export async function enrichTrackWithChartmetric(track: PlaylistSnapshot): Promi
     console.error(`❌ Chartmetric: Error enriching track ${track.trackName}:`, error.message);
     return null;
   }
+}
+
+// Batch ISRC lookup for upfront enrichment during playlist fetch
+interface BatchLookupInput {
+  isrc: string;
+  trackId: string;
+  trackName: string;
+}
+
+interface BatchLookupResult {
+  status: "success" | "not_found" | "error";
+  track?: ChartmetricTrack;
+  error?: string;
+}
+
+interface BatchLookupResponse {
+  results: Record<string, BatchLookupResult>;
+  stats: {
+    requested: number;
+    deduped: number;
+    succeeded: number;
+    failed: number;
+  };
+}
+
+// Simple semaphore for concurrency control
+class Semaphore {
+  private running = 0;
+  private queue: Array<() => void> = [];
+
+  constructor(private max: number) {}
+
+  async acquire(): Promise<void> {
+    if (this.running < this.max) {
+      this.running++;
+      return;
+    }
+
+    await new Promise<void>(resolve => {
+      this.queue.push(resolve);
+    });
+  }
+
+  release(): void {
+    this.running--;
+    const next = this.queue.shift();
+    if (next) {
+      this.running++;
+      next();
+    }
+  }
+
+  async run<T>(fn: () => Promise<T>): Promise<T> {
+    await this.acquire();
+    try {
+      return await fn();
+    } finally {
+      this.release();
+    }
+  }
+}
+
+export async function lookupIsrcBatch(tracks: BatchLookupInput[]): Promise<BatchLookupResponse> {
+  console.log(`\n🔍 Chartmetric Batch: Processing ${tracks.length} tracks`);
+  
+  const stats = {
+    requested: tracks.length,
+    deduped: 0,
+    succeeded: 0,
+    failed: 0,
+  };
+
+  // Step 1: Deduplicate ISRCs and build mapping
+  const isrcToTracks = new Map<string, BatchLookupInput[]>();
+  const trackIdToIsrc = new Map<string, string>();
+
+  for (const track of tracks) {
+    if (!track.isrc) continue;
+
+    const isrc = track.isrc.trim();
+    trackIdToIsrc.set(track.trackId, isrc);
+
+    if (!isrcToTracks.has(isrc)) {
+      isrcToTracks.set(isrc, []);
+    }
+    isrcToTracks.get(isrc)!.push(track);
+  }
+
+  const uniqueIsrcs = Array.from(isrcToTracks.keys());
+  stats.deduped = uniqueIsrcs.length;
+  
+  console.log(`📊 Chartmetric Batch: ${stats.deduped} unique ISRCs (${stats.requested - stats.deduped} duplicates removed)`);
+
+  // Step 2: Process unique ISRCs with concurrency control (3 workers)
+  const semaphore = new Semaphore(3);
+  const lookupPromises = uniqueIsrcs.map(isrc =>
+    semaphore.run(async () => {
+      try {
+        const track = await getTrackByISRC(isrc);
+        return { isrc, track, error: null };
+      } catch (error: any) {
+        return { isrc, track: null, error: error.message };
+      }
+    })
+  );
+
+  const lookupResults = await Promise.allSettled(lookupPromises);
+
+  // Step 3: Build results map for each track ID
+  const results: Record<string, BatchLookupResult> = {};
+
+  for (const track of tracks) {
+    const isrc = trackIdToIsrc.get(track.trackId);
+    if (!isrc) {
+      results[track.trackId] = {
+        status: "error",
+        error: "No ISRC available",
+      };
+      stats.failed++;
+      continue;
+    }
+
+    // Get the cached result from isrcCache
+    const cachedTrack = isrcCache.get(isrc);
+
+    if (cachedTrack === undefined) {
+      results[track.trackId] = {
+        status: "error",
+        error: "Lookup failed",
+      };
+      stats.failed++;
+    } else if (cachedTrack === null) {
+      results[track.trackId] = {
+        status: "not_found",
+      };
+      stats.failed++;
+    } else {
+      results[track.trackId] = {
+        status: "success",
+        track: cachedTrack,
+      };
+      stats.succeeded++;
+    }
+  }
+
+  console.log(`✅ Chartmetric Batch: Complete - ${stats.succeeded} succeeded, ${stats.failed} failed`);
+  
+  return { results, stats };
 }
