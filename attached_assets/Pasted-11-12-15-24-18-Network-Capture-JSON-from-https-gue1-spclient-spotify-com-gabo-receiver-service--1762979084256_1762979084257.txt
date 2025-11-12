@@ -1,0 +1,86 @@
+11-12 15:24:18
+[Network Capture] JSON from: https://gue1-spclient.spotify.com/gabo-receiver-service/public/v3/events
+11-12 15:24:18
+[Network Capture] JSON keys: errors
+11-12 15:24:18
+[Network Capture] JSON from: https://gue1-spclient.spotify.com/gabo-receiver-service/public/v3/events
+11-12 15:24:18
+[Network Capture] JSON keys: errors
+11-12 15:24:19
+[Network Capture] JSON from: https://gue1-spclient.spotify.com/gabo-receiver-service/public/v3/events
+11-12 15:24:19
+[Network Capture] JSON keys: errors
+11-12 15:24:19
+[Network Capture] JSON from: https://pixel.spotify.com/v2/sync?ce=1&pp=
+11-12 15:24:19
+[Network Capture] JSON keys: dmp_urls, sp_adid
+11-12 15:24:19
+[Network Capture] JSON from: https://gue1-spclient.spotify.com/gabo-receiver-service/public/v3/events
+11-12 15:24:19
+[Network Capture] JSON keys: errors
+11-12 15:24:19
+[Network Capture] JSON from: https://api-partner.spotify.com/pathfinder/v2/query
+11-12 15:24:19
+[Network Capture] JSON keys: data
+11-12 15:24:19
+[Network Capture] JSON from: https://api-partner.spotify.com/pathfinder/v2/query
+11-12 15:24:19
+[Network Capture] JSON keys: data
+11-12 15:24:19
+[Network Capture] JSON from: https://gue1-spclient.spotify.com/gabo-receiver-service/public/v3/events
+11-12 15:24:19
+[Network Capture] JSON keys: errors
+11-12 15:24:20
+[Network Capture] JSON from: https://api-partner.spotify.com/pathfinder/v2/query
+11-12 15:24:20
+[Network Capture] JSON keys: data
+11-12 15:24:20
+[Network Capture] ✅ Found 25 tracks in pathfinder GraphQL response!
+11-12 15:24:20
+[Network Capture] Total captured from pathfinder: 25 unique tracks
+11-12 15:24:20
+[Network Capture] JSON from: https://gue1-spclient.spotify.com/gabo-receiver-service/public/v3/events
+11-12 15:24:20
+[Network Capture] JSON keys: errors
+11-12 15:24:20
+[Network Capture] JSON from: https://api-partner.spotify.com/pathfinder/v2/query
+11-12 15:24:20
+[Network Capture] JSON keys: data
+11-12 15:24:20
+[Network Capture] JSON from: https://api-partner.spotify.com/pathfinder/v2/query
+11-12 15:24:20
+[Network Capture] JSON keys: data
+11-12 15:24:20
+[Network Capture] ✅ Found 50 tracks in pathfinder GraphQL response!
+11-12 15:24:20
+[Network Capture] Total captured from pathfinder: 75 unique tracks
+11-12 15:24:21
+[Network Capture] JSON from: https://api-partner.spotify.com/pathfinder/v2/query
+11-12 15:24:21
+[Network Capture] JSON keys: data
+11-12 15:24:21
+[Network Capture] JSON from: https://gue1-spclient.spotify.com/gabo-receiver-service/public/v3/events
+11-12 15:24:21
+[Network Capture] JSON keys: errors
+11-12 15:24:21
+[Network Capture] JSON from: https://gue1-spclient.spotify.com/gabo-receiver-service/public/v3/events
+11-12 15:24:21
+[Network Capture] JSON keys: errors
+11-12 15:24:21
+[Network Capture] Page loaded: Fresh Finds | Spotify Playlist (https://open.spotify.com/playlist/37i9dQZF1DWWjGdmeTyeJ6)
+11-12 15:24:21
+[Network Capture] Checking for cookie consent banner...
+11-12 15:24:22
+[Network Capture] JSON from: https://gue1-spclient.spotify.com/gabo-receiver-service/public/v3/events
+11-12 15:24:22
+[Network Capture] JSON keys: errors
+11-12 15:24:22
+[Network Capture] JSON from: https://gue1-spclient.spotify.com/gabo-receiver-service/v3/events
+11-12 15:24:22
+[Network Capture] JSON keys: errors
+11-12 15:24:23
+[Network Capture] JSON from: https://api-partner.spotify.com/pathfinder/v2/query
+11-12 15:24:23
+[Network Capture] JSON keys: data
+11-12 15:24:27
+[Network Capture] JSON from: https
