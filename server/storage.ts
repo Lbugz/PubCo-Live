@@ -224,6 +224,8 @@ export class DatabaseStorage implements IStorage {
         name: trackedPlaylists.name,
         playlistId: trackedPlaylists.playlistId,
         spotifyUrl: trackedPlaylists.spotifyUrl,
+        imageUrl: trackedPlaylists.imageUrl,
+        chartmetricUrl: trackedPlaylists.chartmetricUrl,
         status: trackedPlaylists.status,
         isEditorial: trackedPlaylists.isEditorial,
         totalTracks: trackedPlaylists.totalTracks,
