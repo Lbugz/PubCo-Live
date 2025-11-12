@@ -490,31 +490,36 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
           const bodyText = document.body.innerText;
           const lines = bodyText.split('\\n').map(function(l) { return l.trim(); });
           
-          // Find numbers that look like stream counts (3+ digits with commas or M/K suffix)
-          const streamPattern = /^[\\d,]+$/;
-          const shortPattern = /^([\\d.]+)([MK])$/;
+          // Look for stream count on the same line as track duration (e.g., "3:15 • 13,343")
+          // Pattern: Track duration (M:SS) followed by bullet/separator and stream count
+          const durationPattern = /\\d{1,2}:\\d{2}/;
           
           for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             
-            // Check for comma-formatted numbers (most reliable)
-            if (streamPattern.test(line)) {
-              const num = parseInt(line.replace(/,/g, ''), 10);
-              // Stream counts are typically > 1000 and < 1 billion
-              if (num >= 1000 && num < 1000000000) {
-                return num;
+            // Check if this line contains a track duration
+            if (durationPattern.test(line)) {
+              // Look for numbers after the duration on the same line
+              // Match pattern: "3:15 • 13,343" or "3:15•13,343" or "3:15 13,343"
+              const streamMatch = line.match(/\\d{1,2}:\\d{2}[^\\d]*?([\\d,]+)/);
+              if (streamMatch && streamMatch[1]) {
+                const num = parseInt(streamMatch[1].replace(/,/g, ''), 10);
+                // Stream counts are typically > 100 and < 1 billion
+                if (num >= 100 && num < 1000000000) {
+                  return num;
+                }
               }
-            }
-            
-            // Check for abbreviated format (1.2M, 45K)
-            const match = line.match(shortPattern);
-            if (match) {
-              const value = parseFloat(match[1]);
-              const suffix = match[2];
-              if (suffix === 'M') {
-                return Math.round(value * 1000000);
-              } else if (suffix === 'K') {
-                return Math.round(value * 1000);
+              
+              // Also check for abbreviated format (1.2M, 45K) after duration
+              const shortMatch = line.match(/\\d{1,2}:\\d{2}[^\\d]*?([\\d.]+)([MK])/);
+              if (shortMatch) {
+                const value = parseFloat(shortMatch[1]);
+                const suffix = shortMatch[2];
+                if (suffix === 'M') {
+                  return Math.round(value * 1000000);
+                } else if (suffix === 'K') {
+                  return Math.round(value * 1000);
+                }
               }
             }
           }
