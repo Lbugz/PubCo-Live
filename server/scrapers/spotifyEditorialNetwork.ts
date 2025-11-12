@@ -45,6 +45,7 @@ export interface NetworkCaptureResult {
   playlistName?: string | null;
   curator?: string | null;
   followers?: number | null;
+  imageUrl?: string | null;
   error?: string;
 }
 
@@ -257,10 +258,11 @@ export async function fetchEditorialTracksViaNetwork(
     // Wait for any late requests
     await wait(2000);
     
-    // Extract playlist metadata (name, curator, followers)
+    // Extract playlist metadata (name, curator, followers, artwork)
     let playlistName: string | null = null;
     let curator: string | null = null;
     let followers: number | null = null;
+    let imageUrl: string | null = null;
     
     try {
       const metadata = await page.evaluate(() => {
@@ -286,14 +288,22 @@ export async function fetchEditorialTracksViaNetwork(
                                 || document.querySelector('[aria-label*="followers"]');
         const followerText = followerElement?.textContent?.trim() || null;
         
-        return { name, curator, followerText };
+        // Extract playlist artwork - look for the cover image
+        const imageElement = document.querySelector('[data-testid="playlist-image"] img')
+                            || document.querySelector('[data-testid="entity-image"] img')
+                            || document.querySelector('img[alt*="playlist"]')
+                            || document.querySelector('main img');
+        const imageUrl = imageElement?.getAttribute('src') || null;
+        
+        return { name, curator, followerText, imageUrl };
       });
       
       playlistName = metadata.name;
       curator = metadata.curator;
       followers = metadata.followerText ? parseFollowerCount(metadata.followerText) : null;
+      imageUrl = metadata.imageUrl;
       
-      console.log(`[Network Capture] Metadata: name="${playlistName}", curator="${curator}", followers=${followers}`);
+      console.log(`[Network Capture] Metadata: name="${playlistName}", curator="${curator}", followers=${followers}, artwork=${imageUrl ? 'yes' : 'no'}`);
     } catch (err) {
       console.warn('[Network Capture] Failed to extract metadata:', err);
     }
@@ -343,6 +353,7 @@ export async function fetchEditorialTracksViaNetwork(
       playlistName,
       curator,
       followers,
+      imageUrl,
     };
   } catch (error: any) {
     console.error(`[Network Capture] Error:`, error.message);

@@ -25,7 +25,7 @@ export interface IStorage {
   addTrackedPlaylist(playlist: InsertTrackedPlaylist): Promise<TrackedPlaylist>;
   updatePlaylistCompleteness(playlistId: string, fetchCount: number, totalTracks: number | null, lastChecked: Date): Promise<void>;
   updatePlaylistMetadata(id: string, metadata: { totalTracks?: number | null; isEditorial?: number; fetchMethod?: string | null }): Promise<void>;
-  updateTrackedPlaylistMetadata(id: string, metadata: { curator?: string | null; followers?: number | null; totalTracks?: number | null; imageUrl?: string | null }): Promise<void>;
+  updateTrackedPlaylistMetadata(id: string, metadata: { name?: string; curator?: string | null; followers?: number | null; totalTracks?: number | null; imageUrl?: string | null }): Promise<void>;
   deleteTrackedPlaylist(id: string): Promise<void>;
   updateTrackContact(id: string, contact: { instagram?: string; twitter?: string; tiktok?: string; email?: string; contactNotes?: string }): Promise<void>;
   logActivity(activity: InsertActivityHistory): Promise<void>;
@@ -297,10 +297,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(trackedPlaylists.id, id));
   }
 
-  async updateTrackedPlaylistMetadata(id: string, metadata: { curator?: string | null; followers?: number | null; totalTracks?: number | null; imageUrl?: string | null }): Promise<void> {
-    await db.update(trackedPlaylists)
+  async updateTrackedPlaylistMetadata(id: string, metadata: { name?: string; curator?: string | null; followers?: number | null; totalTracks?: number | null; imageUrl?: string | null }): Promise<void> {
+    console.log(`[updateTrackedPlaylistMetadata] Updating playlist ${id} with:`, metadata);
+    const result = await db.update(trackedPlaylists)
       .set(metadata)
-      .where(eq(trackedPlaylists.id, id));
+      .where(eq(trackedPlaylists.id, id))
+      .returning();
+    console.log(`[updateTrackedPlaylistMetadata] Update result:`, result.length > 0 ? 'Success' : 'No rows updated');
   }
 
   async deleteTrackedPlaylist(id: string): Promise<void> {

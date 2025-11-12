@@ -2188,8 +2188,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 fetchMethod = 'network-capture';
                 capturedTracks = networkResult.tracks ?? [];
                 
-                // Update playlist metadata (name, curator, followers) if available
-                if (networkResult.playlistName || networkResult.curator || networkResult.followers !== null) {
+                // Update playlist metadata (name, curator, followers, artwork) if available
+                if (networkResult.playlistName || networkResult.curator || networkResult.followers !== null || networkResult.imageUrl) {
                   const updates: any = {
                     totalTracks: networkTrackCount
                   };
@@ -2203,9 +2203,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   if (networkResult.followers !== undefined && networkResult.followers !== null) {
                     updates.followers = networkResult.followers;
                   }
+                  if (networkResult.imageUrl) {
+                    updates.imageUrl = networkResult.imageUrl;
+                  }
                   
                   await storage.updateTrackedPlaylistMetadata(playlist.id, updates);
-                  console.log(`Updated playlist metadata: name="${networkResult.playlistName}", curator="${networkResult.curator}", followers=${networkResult.followers}`);
+                  console.log(`Updated playlist metadata: name="${networkResult.playlistName}", curator="${networkResult.curator}", followers=${networkResult.followers}, artwork=${networkResult.imageUrl ? 'yes' : 'no'}`);
                 }
               } else {
                 const networkErrorDetails = networkResult.error ? ` Error: ${networkResult.error}.` : '';
