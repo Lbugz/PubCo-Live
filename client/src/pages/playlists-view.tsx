@@ -242,7 +242,7 @@ export default function PlaylistsView() {
       // ALWAYS use Puppeteer scraping - never use Spotify API
       // Backend will fetch metadata via scraping during the fetch process
       const res = await apiRequest("POST", "/api/tracked-playlists", {
-        name: playlistId,
+        name: "Loading...", // Placeholder until metadata is fetched
         playlistId: playlistId,
         spotifyUrl: `https://open.spotify.com/playlist/${playlistId}`,
         chartmetricUrl: chartmetricUrl || null,
