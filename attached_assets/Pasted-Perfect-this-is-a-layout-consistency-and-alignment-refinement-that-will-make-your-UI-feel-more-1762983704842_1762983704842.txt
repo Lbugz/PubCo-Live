@@ -1,0 +1,115 @@
+Perfect — this is a **layout consistency and alignment** refinement that will make your UI feel more unified and “product-level.” Here’s the **updated instruction set** you can give your Replit Agent (or development assistant) so both the **Playlist View** and **Tracks View** match perfectly in structure, spacing, and table controls placement.
+
+---
+
+## 🧭 **PubCo Live UI Alignment & Consistency Update**
+
+> **Goal:** Standardize the Playlist and Track pages for consistent container widths, table alignment, and control layouts.
+
+---
+
+### 1️⃣ **Container Width & Padding (Global Layout)**
+
+* Both `PlaylistsView.tsx` and `TracksView.tsx` should use the **same page container wrapper**:
+
+  ```tsx
+  <div className="mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10">
+    {/* Metrics + Table Sections */}
+  </div>
+  ```
+* This ensures the metric cards and tables are the **same width** on all dashboard pages.
+* Remove any individual `px-4` or `px-8` padding from nested components that might offset alignment.
+
+---
+
+### 2️⃣ **Metric Card Section Alignment**
+
+* Ensure both pages use identical spacing between metric cards and the table section:
+
+  ```tsx
+  <section className="mb-6">
+    <MetricsSection />
+  </section>
+  <section>
+    <TableSection />
+  </section>
+  ```
+* All metric groups (`grid grid-cols-3 gap-4 sm:gap-6`) must share the same grid and gap values.
+
+---
+
+### 3️⃣ **Table + View Mode Controls Consistency**
+
+#### 🧱 Current Issue:
+
+* In the **Playlists View**, “Table” and “Cards” toggles are aligned **to the right** (within the same card as the table).
+* In the **Tracks View**, “Table / Card / Kanban” toggles are placed **to the left** above the table.
+
+#### ✅ **Updated Instruction:**
+
+* **Move all view toggles (Table, Card, Kanban)** into a shared layout region **above the table**, aligned consistently to the **right side** of the search + filter bar.
+* Both pages should share this structure:
+
+  ```tsx
+  <div className="flex items-center justify-between mb-4">
+    <div className="flex gap-2 items-center">
+      {/* Filters: Week, Playlist, Tag, Search, Completeness */}
+    </div>
+    <div className="flex gap-2 items-center">
+      {/* View toggles (Table / Card / Kanban) */}
+    </div>
+  </div>
+  ```
+* This creates symmetry between both screens and allows all table-related actions to live in the same “control zone.”
+
+---
+
+### 4️⃣ **Empty State Cards**
+
+* Make the empty states (`No playlists tracked yet` / `No tracks found`) share identical padding and rounded border style:
+
+  ```tsx
+  <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border border-muted/20 rounded-2xl bg-muted/5">
+  ```
+* Include consistent icon sizing (e.g., `<MusicIcon size={48} className="opacity-50 mb-2" />`).
+
+---
+
+### 5️⃣ **Optional: Shared Table Layout Component**
+
+To future-proof, introduce a shared wrapper:
+
+```tsx
+// components/layout/TableContainer.tsx
+export function TableContainer({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="bg-background border border-muted/20 rounded-2xl p-4 sm:p-6 shadow-sm">
+      {children}
+    </div>
+  );
+}
+```
+
+Then replace:
+
+```tsx
+<TableContainer>
+  <YourTableComponent />
+</TableContainer>
+```
+
+---
+
+### ✅ **Summary of Visual Results**
+
+| Element               | Before                                    | After                            |
+| --------------------- | ----------------------------------------- | -------------------------------- |
+| Page Width            | Inconsistent (`max-w-6xl` vs `max-w-7xl`) | Unified (`max-w-7xl`)            |
+| Metric Cards          | Slightly misaligned                       | Perfectly matched spacing        |
+| Table Control Bar     | Different positions                       | Unified right-aligned block      |
+| Empty States          | Different background / padding            | Identical card design            |
+| Developer Maintenance | Per-view tweaks                           | Centralized, reusable components |
+
+---
+
+Would you like me to generate the updated **`PageContainer` + `TableContainer` components** (with Tailwind + Shadcn styling) so you can drop them into your Replit project and apply them across both pages?
