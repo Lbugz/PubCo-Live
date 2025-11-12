@@ -483,41 +483,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedPlaylist = insertTrackedPlaylistSchema.parse(req.body);
       
-      // Fetch playlist metadata from Spotify if authenticated
+      // Smart editorial detection: Check playlist ID pattern first (works without auth)
+      const { isEditorialPlaylist } = await import("./playlist-utils");
+      const isEditorialByPattern = isEditorialPlaylist(validatedPlaylist.playlistId);
+      
       let totalTracks = null;
-      let isEditorial = 0;
-      let fetchMethod = 'api';
+      let isEditorial = isEditorialByPattern ? 1 : 0;
+      let fetchMethod = isEditorialByPattern ? 'scraping' : 'api';
       let curator = null;
       let followers = null;
       let source = 'spotify';
-      
       let imageUrl = null;
       
-      try {
-        const spotify = await getUncachableSpotifyClient();
-        const playlistData = await spotify.playlists.getPlaylist(validatedPlaylist.playlistId, "from_token" as any);
-        
-        totalTracks = playlistData.tracks?.total || null;
-        curator = playlistData.owner?.display_name || null;
-        followers = playlistData.followers?.total || null;
-        imageUrl = playlistData.images?.[0]?.url || null;
-        
-        // Determine if it's editorial based on owner
-        // Editorial playlists are typically owned by Spotify (owner.id === "spotify")
-        if (playlistData.owner?.id === 'spotify' || playlistData.owner?.display_name === 'Spotify') {
-          isEditorial = 1;
-          fetchMethod = 'scraping'; // Editorial playlists are better scraped
+      // For non-editorial playlists, try to fetch metadata from Spotify API
+      if (!isEditorialByPattern) {
+        try {
+          const spotify = await getUncachableSpotifyClient();
+          const playlistData = await spotify.playlists.getPlaylist(validatedPlaylist.playlistId, "from_token" as any);
+          
+          totalTracks = playlistData.tracks?.total || null;
+          curator = playlistData.owner?.display_name || null;
+          followers = playlistData.followers?.total || null;
+          imageUrl = playlistData.images?.[0]?.url || null;
+          
+          // Double-check: some playlists might be editorial despite not matching pattern
+          if (playlistData.owner?.id === 'spotify' || playlistData.owner?.display_name === 'Spotify') {
+            isEditorial = 1;
+            fetchMethod = 'scraping';
+          }
+          
+          console.log(`Playlist "${playlistData.name}": totalTracks=${totalTracks}, isEditorial=${isEditorial}, owner=${playlistData.owner?.display_name}, followers=${followers}`);
+        } catch (error: any) {
+          console.log('Failed to fetch playlist metadata from Spotify API:', error.message);
+          // If API call fails, the playlist might be editorial or authentication might be missing
+          if (error?.message?.includes('404') || error?.message?.includes('Not authenticated')) {
+            console.log(`Playlist ${validatedPlaylist.playlistId} not accessible via API`);
+          }
         }
-        
-        console.log(`Playlist "${playlistData.name}": totalTracks=${totalTracks}, isEditorial=${isEditorial}, owner=${playlistData.owner?.display_name}, followers=${followers}`);
-      } catch (error: any) {
-        console.log('Spotify not available for enrichment, skipping...');
-        // If API call fails (404), likely editorial playlist
-        if (error?.message?.includes('404')) {
-          console.log(`Playlist ${validatedPlaylist.playlistId} returned 404, marking as editorial`);
-          isEditorial = 1;
-          fetchMethod = 'scraping';
-        }
+      } else {
+        console.log(`Playlist ${validatedPlaylist.playlistId} detected as editorial (ID pattern: 37i9dQZ)`);
       }
       
       const playlist = await storage.addTrackedPlaylist({
