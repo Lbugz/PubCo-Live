@@ -396,7 +396,7 @@ export default function PlaylistsView() {
     try {
       const headers = [
         "Name", "Curator", "Followers", "Total Tracks", "Source", "Genre",
-        "Last Updated", "Last Checked", "Status", "Playlist ID", "Playlist URL"
+        "Last Checked", "Status", "Playlist ID", "Playlist URL"
       ];
       
       const rows = targetPlaylists.map(playlist => [
@@ -406,7 +406,6 @@ export default function PlaylistsView() {
         (playlist.totalTracks || 0).toString(),
         playlist.source || "unknown",
         playlist.genre || "",
-        playlist.lastUpdated ? new Date(playlist.lastUpdated).toLocaleDateString() : "",
         playlist.lastChecked ? new Date(playlist.lastChecked).toLocaleDateString() : "",
         playlist.status || "unknown",
         playlist.playlistId,
