@@ -238,12 +238,23 @@ export default function PlaylistsView() {
         throw new Error("Invalid Spotify playlist URL or ID");
       }
 
-      const playlistData = await fetchPlaylistInfo(playlistId);
+      let name = playlistId;
+      let actualPlaylistId = playlistId;
+      
+      // For editorial playlists, skip Spotify API call (they return 404)
+      // User can refresh metadata later using Chartmetric
+      if (!isEditorial) {
+        const playlistData = await fetchPlaylistInfo(playlistId);
+        name = playlistData.name;
+        // CRITICAL: Always use the original playlistId from URL, not search results
+        // Search fallback returns wrong playlist IDs
+        actualPlaylistId = playlistId;
+      }
       
       const res = await apiRequest("POST", "/api/tracked-playlists", {
-        name: playlistData.name,
-        playlistId: playlistData.foundViaSearch ? playlistData.id : playlistId,
-        spotifyUrl: `https://open.spotify.com/playlist/${playlistData.foundViaSearch ? playlistData.id : playlistId}`,
+        name,
+        playlistId: actualPlaylistId,
+        spotifyUrl: `https://open.spotify.com/playlist/${actualPlaylistId}`,
         chartmetricUrl: chartmetricUrl || null,
         ...(isEditorial && { isEditorial: true }),
       });
