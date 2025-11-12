@@ -523,58 +523,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tracked-playlists", async (req, res) => {
     try {
-      // Check for manual editorial override from user BEFORE validation
-      const manualEditorialOverride = req.body.isEditorial === true;
+      // Check if frontend requested scraping mode (bypasses Spotify API)
+      const useScraping = req.body.useScraping === true;
       
-      // Remove isEditorial from body if present (we'll set it properly below)
-      const { isEditorial: _unused, ...requestBody } = req.body;
+      // Remove useScraping and isEditorial from body before validation
+      const { useScraping: _unused1, isEditorial: _unused2, ...requestBody } = req.body;
       
       const validatedPlaylist = insertTrackedPlaylistSchema.parse(requestBody);
       
-      // Smart editorial detection: Check manual override first, then playlist ID pattern
-      const { isEditorialPlaylist } = await import("./playlist-utils");
-      const isEditorialByPattern = isEditorialPlaylist(validatedPlaylist.playlistId);
-      
+      // ALWAYS use scraping mode - never use Spotify API
       let totalTracks = null;
-      let isEditorial = (manualEditorialOverride || isEditorialByPattern) ? 1 : 0;
-      let fetchMethod = (manualEditorialOverride || isEditorialByPattern) ? 'scraping' : 'api';
+      let isEditorial = 1; // Treat all as editorial to force scraping
+      let fetchMethod = 'scraping';
       let curator = null;
       let followers = null;
       let source = 'spotify';
       let imageUrl = null;
       
-      if (manualEditorialOverride) {
-        console.log(`Playlist ${validatedPlaylist.playlistId} manually marked as editorial - using scraping method`);
-      }
-      
-      // For non-editorial playlists, try to fetch metadata from Spotify API
-      if (!manualEditorialOverride && !isEditorialByPattern) {
-        try {
-          const spotify = await getUncachableSpotifyClient();
-          const playlistData = await spotify.playlists.getPlaylist(validatedPlaylist.playlistId, "from_token" as any);
-          
-          totalTracks = playlistData.tracks?.total || null;
-          curator = playlistData.owner?.display_name || null;
-          followers = playlistData.followers?.total || null;
-          imageUrl = playlistData.images?.[0]?.url || null;
-          
-          // Double-check: some playlists might be editorial despite not matching pattern
-          if (playlistData.owner?.id === 'spotify' || playlistData.owner?.display_name === 'Spotify') {
-            isEditorial = 1;
-            fetchMethod = 'scraping';
-          }
-          
-          console.log(`Playlist "${playlistData.name}": totalTracks=${totalTracks}, isEditorial=${isEditorial}, owner=${playlistData.owner?.display_name}, followers=${followers}`);
-        } catch (error: any) {
-          console.log('Failed to fetch playlist metadata from Spotify API:', error.message);
-          // If API call fails, the playlist might be editorial or authentication might be missing
-          if (error?.message?.includes('404') || error?.message?.includes('Not authenticated')) {
-            console.log(`Playlist ${validatedPlaylist.playlistId} not accessible via API`);
-          }
-        }
-      } else {
-        console.log(`Playlist ${validatedPlaylist.playlistId} detected as editorial (ID pattern: 37i9dQZ)`);
-      }
+      console.log(`Playlist ${validatedPlaylist.playlistId} added with scraping mode - metadata will be fetched during track fetch`);
       
       const playlist = await storage.addTrackedPlaylist({
         ...validatedPlaylist,

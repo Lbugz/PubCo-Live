@@ -238,25 +238,14 @@ export default function PlaylistsView() {
         throw new Error("Invalid Spotify playlist URL or ID");
       }
 
-      let name = playlistId;
-      let actualPlaylistId = playlistId;
-      
-      // For editorial playlists, skip Spotify API call (they return 404)
-      // User can refresh metadata later using Chartmetric
-      if (!isEditorial) {
-        const playlistData = await fetchPlaylistInfo(playlistId);
-        name = playlistData.name;
-        // CRITICAL: Always use the original playlistId from URL, not search results
-        // Search fallback returns wrong playlist IDs
-        actualPlaylistId = playlistId;
-      }
-      
+      // ALWAYS use Puppeteer scraping - never use Spotify API
+      // Backend will fetch metadata via scraping during the fetch process
       const res = await apiRequest("POST", "/api/tracked-playlists", {
-        name,
-        playlistId: actualPlaylistId,
-        spotifyUrl: `https://open.spotify.com/playlist/${actualPlaylistId}`,
+        name: playlistId,
+        playlistId: playlistId,
+        spotifyUrl: `https://open.spotify.com/playlist/${playlistId}`,
         chartmetricUrl: chartmetricUrl || null,
-        ...(isEditorial && { isEditorial: true }),
+        useScraping: true,
       });
       
       const playlist: TrackedPlaylist = await res.json();
