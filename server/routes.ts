@@ -447,6 +447,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let followers = null;
       let source = 'spotify';
       
+      let imageUrl = null;
+      
       if (isAuthenticated()) {
         try {
           const spotify = await getUncachableSpotifyClient();
@@ -455,6 +457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalTracks = playlistData.tracks?.total || null;
           curator = playlistData.owner?.display_name || null;
           followers = playlistData.followers?.total || null;
+          imageUrl = playlistData.images?.[0]?.url || null;
           
           // Determine if it's editorial based on owner
           // Editorial playlists are typically owned by Spotify (owner.id === "spotify")
@@ -482,6 +485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         curator,
         source,
         followers,
+        imageUrl,
         isComplete: 0,
         lastFetchCount: 0,
       });
@@ -511,11 +515,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const curator = playlistData.owner?.display_name || null;
       const followers = playlistData.followers?.total || null;
       const totalTracks = playlistData.tracks?.total || null;
+      const imageUrl = playlistData.images?.[0]?.url || null;
       
       await storage.updateTrackedPlaylistMetadata(req.params.id, {
         curator,
         followers,
         totalTracks,
+        imageUrl,
       });
       
       console.log(`Refreshed metadata for "${targetPlaylist.name}": curator="${curator}", followers=${followers}, totalTracks=${totalTracks}`);

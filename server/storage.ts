@@ -25,7 +25,7 @@ export interface IStorage {
   addTrackedPlaylist(playlist: InsertTrackedPlaylist): Promise<TrackedPlaylist>;
   updatePlaylistCompleteness(playlistId: string, fetchCount: number, totalTracks: number | null, lastChecked: Date): Promise<void>;
   updatePlaylistMetadata(id: string, metadata: { totalTracks?: number | null; isEditorial?: number; fetchMethod?: string | null }): Promise<void>;
-  updateTrackedPlaylistMetadata(id: string, metadata: { curator?: string | null; followers?: number | null; totalTracks?: number | null }): Promise<void>;
+  updateTrackedPlaylistMetadata(id: string, metadata: { curator?: string | null; followers?: number | null; totalTracks?: number | null; imageUrl?: string | null }): Promise<void>;
   deleteTrackedPlaylist(id: string): Promise<void>;
   updateTrackContact(id: string, contact: { instagram?: string; twitter?: string; tiktok?: string; email?: string; contactNotes?: string }): Promise<void>;
   logActivity(activity: InsertActivityHistory): Promise<void>;

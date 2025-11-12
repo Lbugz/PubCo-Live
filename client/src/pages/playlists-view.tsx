@@ -22,6 +22,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   Dialog,
   DialogContent,
@@ -815,9 +817,12 @@ export default function PlaylistsView() {
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-3 pl-8">
-                        <div className="p-2 rounded-md bg-primary/10">
-                          <Music2 className="h-5 w-5 text-primary" />
-                        </div>
+                        <Avatar className="h-12 w-12 rounded-md">
+                          <AvatarImage src={playlist.imageUrl || undefined} alt={playlist.name} />
+                          <AvatarFallback className="rounded-md bg-primary/10">
+                            <Music2 className="h-5 w-5 text-primary" />
+                          </AvatarFallback>
+                        </Avatar>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold truncate">{playlist.name}</h3>
                           {playlist.isEditorial === 1 && (
@@ -909,7 +914,6 @@ export default function PlaylistsView() {
                   <TableHead>Curator</TableHead>
                   <TableHead className="text-right">Followers</TableHead>
                   <TableHead>Last Updated</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -930,12 +934,19 @@ export default function PlaylistsView() {
                       />
                     </TableCell>
                     <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Music2 className="h-4 w-4 text-primary" />
-                        {playlist.name}
-                        {playlist.isEditorial === 1 && (
-                          <Badge variant="secondary" className="ml-1">Editorial</Badge>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8 rounded-md">
+                          <AvatarImage src={playlist.imageUrl || undefined} alt={playlist.name} />
+                          <AvatarFallback className="rounded-md bg-primary/10">
+                            <Music2 className="h-4 w-4 text-primary" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex items-center gap-2">
+                          {playlist.name}
+                          {playlist.isEditorial === 1 && (
+                            <Badge variant="secondary" className="ml-1">Editorial</Badge>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -947,7 +958,6 @@ export default function PlaylistsView() {
                     <TableCell className="text-muted-foreground">{playlist.curator || "—"}</TableCell>
                     <TableCell className="text-right text-muted-foreground">{formatNumber(playlist.followers)}</TableCell>
                     <TableCell className="text-muted-foreground">{formatDate(playlist.lastChecked)}</TableCell>
-                    <TableCell>{getStatusBadge(playlist.status)}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -999,161 +1009,174 @@ export default function PlaylistsView() {
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto glass-panel backdrop-blur-xl border-l border-primary/20">
           {selectedPlaylist && (
-            <>
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  <Music2 className="h-5 w-5 text-primary" />
-                  {selectedPlaylist.name}
-                </SheetTitle>
-              </SheetHeader>
-
-              <div className="mt-6 space-y-6">
-                {/* Status */}
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Status</h3>
-                  {getStatusBadge(selectedPlaylist.status)}
-                </div>
-
-                {/* Metadata */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-muted-foreground">Metadata</h3>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Total Tracks</p>
-                      <p className="font-medium">{formatNumber(selectedPlaylist.totalTracks)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Tracks in DB</p>
-                      <p className="font-medium">{formatNumber((selectedPlaylist as any).tracksInDb)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Last Fetch Count</p>
-                      <p className="font-medium">{formatNumber(selectedPlaylist.lastFetchCount)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Followers</p>
-                      <p className="font-medium">{formatNumber(selectedPlaylist.followers)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Source</p>
-                      <p className="font-medium">
+            <div className="space-y-6">
+              {/* Large Cover Art Hero */}
+              <div className="relative">
+                <Avatar className="h-[200px] w-[200px] rounded-lg mx-auto">
+                  <AvatarImage src={selectedPlaylist.imageUrl || undefined} alt={selectedPlaylist.name} />
+                  <AvatarFallback className="rounded-lg bg-primary/10">
+                    <Music2 className="h-16 w-16 text-primary" />
+                  </AvatarFallback>
+                </Avatar>
+                
+                {/* Overlapping Header Card */}
+                <Card className="bg-background/95 backdrop-blur-lg border-primary/20 -mt-12 mx-4 relative z-10">
+                  <CardContent className="p-4 space-y-3">
+                    <h2 className="font-bold text-xl truncate" data-testid="text-drawer-playlist-name">
+                      {selectedPlaylist.name}
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {selectedPlaylist.isEditorial === 1 && (
+                        <Badge variant="secondary" data-testid="badge-editorial">Editorial</Badge>
+                      )}
+                      {getStatusBadge(selectedPlaylist.status)}
+                      <Badge variant="outline" data-testid="badge-source">
                         {normalizeSource(selectedPlaylist.source).charAt(0).toUpperCase() + normalizeSource(selectedPlaylist.source).slice(1)}
-                      </p>
+                      </Badge>
                     </div>
-                  </div>
-                  
-                  <div>
-                    <p className="text-xs text-muted-foreground">Last Fetched</p>
-                    <p className="font-medium">
-                      {selectedPlaylist.lastChecked ? formatDate(selectedPlaylist.lastChecked) : 'Never'}
-                    </p>
-                  </div>
-
-                  {selectedPlaylist.curator && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Curator</p>
-                      <p className="font-medium">{selectedPlaylist.curator}</p>
-                    </div>
-                  )}
-
-                  {selectedPlaylist.genre && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Genre</p>
-                      <Badge variant="outline">{selectedPlaylist.genre}</Badge>
-                    </div>
-                  )}
-
-                  {selectedPlaylist.region && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Region</p>
-                      <Badge variant="outline">{selectedPlaylist.region}</Badge>
-                    </div>
-                  )}
-
-                  <div>
-                    <p className="text-xs text-muted-foreground">Last Updated</p>
-                    <p className="font-medium">{formatDate(selectedPlaylist.lastChecked)}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-muted-foreground">Fetch Method</p>
-                    <Badge 
-                      variant={
-                        selectedPlaylist.fetchMethod === 'network-capture' ? 'default' :
-                        selectedPlaylist.fetchMethod === 'dom-capture' ? 'outline' :
-                        'secondary'
-                      }
-                    >
-                      {
-                        selectedPlaylist.fetchMethod === 'network-capture' ? 'Network Capture' :
-                        selectedPlaylist.fetchMethod === 'dom-capture' ? 'DOM Capture' :
-                        selectedPlaylist.fetchMethod === 'scraping' ? 'Basic Scraping' :
-                        'API'
-                      }
-                    </Badge>
-                  </div>
-
-                  {selectedPlaylist.isEditorial === 1 && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Type</p>
-                      <Badge variant="secondary">Editorial Playlist</Badge>
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">Actions</h3>
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      className="w-full justify-start"
-                      variant="outline"
-                      onClick={() => viewTracks(selectedPlaylist.playlistId)}
-                      data-testid="button-drawer-view-tracks"
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Tracks
-                    </Button>
-                    <Button
-                      className="w-full justify-start"
-                      variant="outline"
-                      onClick={() => fetchPlaylistDataMutation.mutate(selectedPlaylist.playlistId)}
-                      disabled={fetchPlaylistDataMutation.isPending}
-                      data-testid="button-drawer-fetch-data"
-                    >
-                      <RefreshCw className={cn("h-4 w-4 mr-2", fetchPlaylistDataMutation.isPending && "animate-spin")} />
-                      {fetchPlaylistDataMutation.isPending ? "Fetching..." : "Fetch Data"}
-                    </Button>
-                    <Button
-                      className="w-full justify-start"
-                      variant="outline"
-                      onClick={() => refreshMetadataMutation.mutate(selectedPlaylist.id)}
-                      disabled={refreshMetadataMutation.isPending}
-                      data-testid="button-drawer-refresh-metadata"
-                    >
-                      <RefreshCw className={cn("h-4 w-4 mr-2", refreshMetadataMutation.isPending && "animate-spin")} />
-                      {refreshMetadataMutation.isPending ? "Refreshing..." : "Refresh Metadata"}
-                    </Button>
-                    <Button
-                      className="w-full justify-start"
-                      variant="outline"
-                      onClick={() => window.open(selectedPlaylist.spotifyUrl, "_blank")}
-                      data-testid="button-drawer-open-spotify"
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Open in Spotify
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Playlist ID */}
-                <div>
-                  <p className="text-xs text-muted-foreground">Playlist ID</p>
-                  <code className="text-xs bg-muted px-2 py-1 rounded">{selectedPlaylist.playlistId}</code>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
-            </>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <Card className="bg-background/60 backdrop-blur">
+                  <CardContent className="p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Total Tracks</p>
+                    <p className="text-xl font-semibold" data-testid="text-total-tracks">{formatNumber(selectedPlaylist.totalTracks)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-background/60 backdrop-blur">
+                  <CardContent className="p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Followers</p>
+                    <p className="text-xl font-semibold" data-testid="text-followers">{formatNumber(selectedPlaylist.followers)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-background/60 backdrop-blur">
+                  <CardContent className="p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Curator</p>
+                    <p className="text-sm font-medium truncate" data-testid="text-curator">{selectedPlaylist.curator || "—"}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-background/60 backdrop-blur">
+                  <CardContent className="p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
+                    <p className="text-sm font-medium" data-testid="text-last-updated">{formatDate(selectedPlaylist.lastChecked)}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Accordion Sections */}
+              <Accordion type="multiple" defaultValue={["metadata", "actions"]} className="space-y-3">
+                {/* Metadata Section */}
+                <AccordionItem value="metadata" className="border rounded-lg overflow-hidden bg-background/60 backdrop-blur">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate" data-testid="accordion-metadata">
+                    <span className="font-medium">Metadata</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Tracks in DB</p>
+                        <p className="font-medium" data-testid="text-tracks-in-db">{formatNumber((selectedPlaylist as any).tracksInDb)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Last Fetch Count</p>
+                        <p className="font-medium" data-testid="text-last-fetch-count">{formatNumber(selectedPlaylist.lastFetchCount)}</p>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Fetch Method</p>
+                      <Badge 
+                        variant={
+                          selectedPlaylist.fetchMethod === 'network-capture' ? 'default' :
+                          selectedPlaylist.fetchMethod === 'dom-capture' ? 'outline' :
+                          'secondary'
+                        }
+                        data-testid="badge-fetch-method"
+                      >
+                        {
+                          selectedPlaylist.fetchMethod === 'network-capture' ? 'Network Capture' :
+                          selectedPlaylist.fetchMethod === 'dom-capture' ? 'DOM Capture' :
+                          selectedPlaylist.fetchMethod === 'scraping' ? 'Basic Scraping' :
+                          'API'
+                        }
+                      </Badge>
+                    </div>
+
+                    {selectedPlaylist.genre && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Genre</p>
+                        <Badge variant="outline" data-testid="badge-genre">{selectedPlaylist.genre}</Badge>
+                      </div>
+                    )}
+
+                    {selectedPlaylist.region && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Region</p>
+                        <Badge variant="outline" data-testid="badge-region">{selectedPlaylist.region}</Badge>
+                      </div>
+                    )}
+
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Playlist ID</p>
+                      <code className="text-xs bg-muted px-2 py-1 rounded block truncate" data-testid="code-playlist-id">
+                        {selectedPlaylist.playlistId}
+                      </code>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Actions Section */}
+                <AccordionItem value="actions" className="border rounded-lg overflow-hidden bg-background/60 backdrop-blur">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate" data-testid="accordion-actions">
+                    <span className="font-medium">Actions</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        className="w-full justify-start"
+                        variant="outline"
+                        onClick={() => viewTracks(selectedPlaylist.playlistId)}
+                        data-testid="button-drawer-view-tracks"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Tracks
+                      </Button>
+                      <Button
+                        className="w-full justify-start"
+                        variant="outline"
+                        onClick={() => fetchPlaylistDataMutation.mutate(selectedPlaylist.playlistId)}
+                        disabled={fetchPlaylistDataMutation.isPending}
+                        data-testid="button-drawer-fetch-data"
+                      >
+                        <RefreshCw className={cn("h-4 w-4 mr-2", fetchPlaylistDataMutation.isPending && "animate-spin")} />
+                        {fetchPlaylistDataMutation.isPending ? "Fetching..." : "Fetch Data"}
+                      </Button>
+                      <Button
+                        className="w-full justify-start"
+                        variant="outline"
+                        onClick={() => refreshMetadataMutation.mutate(selectedPlaylist.id)}
+                        disabled={refreshMetadataMutation.isPending}
+                        data-testid="button-drawer-refresh-metadata"
+                      >
+                        <RefreshCw className={cn("h-4 w-4 mr-2", refreshMetadataMutation.isPending && "animate-spin")} />
+                        {refreshMetadataMutation.isPending ? "Refreshing..." : "Refresh Metadata"}
+                      </Button>
+                      <Button
+                        className="w-full justify-start"
+                        variant="outline"
+                        onClick={() => window.open(selectedPlaylist.spotifyUrl, "_blank")}
+                        data-testid="button-drawer-open-spotify"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Open in Spotify
+                      </Button>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
           )}
         </SheetContent>
       </Sheet>
