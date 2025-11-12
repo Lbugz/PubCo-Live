@@ -6,6 +6,14 @@ import { storage } from "./storage";
 import { initializeScheduler } from "./scheduler";
 import { initializeWebSocket } from "./websocket";
 
+process.on("uncaughtException", (err) => {
+  if (err.message.includes("PostCSS")) {
+    console.warn("Ignoring benign PostCSS warning:", err.message);
+  } else {
+    throw err;
+  }
+});
+
 const app = express();
 
 declare module 'http' {
