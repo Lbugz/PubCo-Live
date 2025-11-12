@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown } from "lucide-react";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useWebSocket } from "@/hooks/use-websocket";
 import { type TrackedPlaylist } from "@shared/schema";
 import { useFetchPlaylistsMutation } from "@/hooks/use-fetch-playlists-mutation";
 import {
@@ -56,6 +57,25 @@ export default function PlaylistsView() {
 
   const { data: playlists = [], isLoading } = useQuery<TrackedPlaylist[]>({
     queryKey: ["/api/tracked-playlists"],
+  });
+
+  // Fetch real-time playlist metrics
+  const { data: playlistMetrics } = useQuery<{
+    totalPlaylists: number;
+    uniqueSongwriters: number;
+    highImpactPlaylists: number;
+    changeSongwriters: number;
+    changeHighImpact: number;
+  }>({
+    queryKey: ["/api/metrics/playlists"],
+    staleTime: 60000,
+  });
+
+  // WebSocket integration for real-time metric updates
+  useWebSocket({
+    onMetricUpdate: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/metrics/playlists"] });
+    },
   });
 
   // Auto-update selectedPlaylist when playlists data changes (with guard to prevent infinite loop)
@@ -512,28 +532,6 @@ export default function PlaylistsView() {
     }
   }, [filteredPlaylists, selectedPlaylistIds, toast]);
 
-  // Calculate stats from filtered playlists
-  const stats = useMemo(() => {
-    const total = filteredPlaylists.length;
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentFetches = filteredPlaylists.filter(p => {
-      if (!p.lastChecked) return false;
-      return new Date(p.lastChecked) >= sevenDaysAgo;
-    }).length;
-    
-    const topPlaylist = filteredPlaylists.reduce((max, p) => 
-      (p.totalTracks || 0) > (max?.totalTracks || 0) ? p : max
-    , filteredPlaylists[0] || null);
-    
-    const totalFollowers = filteredPlaylists.reduce((sum, p) => sum + (p.followers || 0), 0);
-    const avgFollowers = filteredPlaylists.length > 0 
-      ? Math.round(totalFollowers / filteredPlaylists.length) 
-      : 0;
-    const error = filteredPlaylists.filter(p => p.status === "error").length;
-
-    return { total, recentFetches, topPlaylist, avgFollowers, error };
-  }, [filteredPlaylists]);
 
   // Get unique sources for filter, including "unknown" for playlists without a source
   const sources = useMemo(() => {
@@ -726,37 +724,32 @@ export default function PlaylistsView() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 slide-in-right">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 slide-in-right">
         <StatsCard
-          title="Total Playlists"
-          value={stats.total}
+          title="Total Tracked"
+          value={playlistMetrics?.totalPlaylists ?? 0}
           icon={Music2}
-          variant="default"
+          variant="blue"
+          tooltip="Total number of Spotify playlists being monitored for unsigned talent discovery"
           testId="stats-total-playlists"
         />
         <StatsCard
-          title="Recent Fetches"
-          value={stats.recentFetches}
-          subtitle="Last 7 days"
-          icon={RefreshCw}
-          variant="success"
-          testId="stats-recent-fetches"
+          title="Unique Songwriters"
+          value={playlistMetrics?.uniqueSongwriters ?? 0}
+          icon={UserCheck}
+          variant="green"
+          tooltip="Total unique songwriters discovered across all tracked playlists this week"
+          change={playlistMetrics?.changeSongwriters}
+          testId="stats-unique-songwriters"
         />
         <StatsCard
-          title="Top Playlist"
-          value={stats.topPlaylist ? stats.topPlaylist.name.substring(0, 20) + (stats.topPlaylist.name.length > 20 ? '...' : '') : '—'}
-          subtitle={stats.topPlaylist ? `${(stats.topPlaylist.totalTracks || 0).toLocaleString()} tracks` : ''}
-          icon={List}
-          variant="default"
-          testId="stats-top-playlist"
-        />
-        <StatsCard
-          title="Avg Followers"
-          value={stats.avgFollowers > 1000 ? `${(stats.avgFollowers / 1000).toFixed(1)}K` : stats.avgFollowers.toLocaleString()}
-          subtitle="Per playlist"
-          icon={Filter}
-          variant="warning"
-          testId="stats-avg-followers"
+          title="High-Impact Playlists"
+          value={playlistMetrics?.highImpactPlaylists ?? 0}
+          icon={Trophy}
+          variant="gold"
+          tooltip="Playlists with average unsigned score of 7 or higher, indicating strong publishing opportunities"
+          change={playlistMetrics?.changeHighImpact}
+          testId="stats-high-impact-playlists"
         />
       </div>
 
