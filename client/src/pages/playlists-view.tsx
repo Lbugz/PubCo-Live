@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy } from "lucide-react";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -76,6 +76,34 @@ export default function PlaylistsView() {
     onMetricUpdate: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/metrics/playlists"] });
     },
+  });
+
+  // Fetch Chartmetric analytics for selected playlist
+  const { data: chartmetricAnalytics, isLoading: analyticsLoading } = useQuery<{
+    metadata: any;
+    stats: {
+      followerHistory: Array<{ date: string; followers: number }>;
+      currentFollowers?: number;
+      followerGrowth?: {
+        daily?: number;
+        weekly?: number;
+        monthly?: number;
+      };
+      momentum?: string;
+      trackCountHistory?: Array<{ date: string; count: number }>;
+    };
+    chartmetricId: string;
+    platform: string;
+  }>({
+    queryKey: ['/api/tracked-playlists', selectedPlaylist?.id, 'chartmetric-analytics'],
+    queryFn: async () => {
+      const response = await fetch(`/api/tracked-playlists/${selectedPlaylist!.id}/chartmetric-analytics`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch analytics: ${response.statusText}`);
+      }
+      return response.json();
+    },
+    enabled: !!selectedPlaylist && !!selectedPlaylist.chartmetricUrl && drawerOpen,
   });
 
   // Auto-update selectedPlaylist when playlists data changes (with guard to prevent infinite loop)
@@ -1263,6 +1291,101 @@ export default function PlaylistsView() {
                     </div>
                   </AccordionContent>
                 </AccordionItem>
+
+                {/* Chartmetric Analytics Section */}
+                {selectedPlaylist.chartmetricUrl && (
+                  <AccordionItem value="analytics" className="border rounded-lg overflow-hidden bg-background/60 backdrop-blur">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate" data-testid="accordion-analytics">
+                      <span className="font-medium">Chartmetric Analytics</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      {analyticsLoading ? (
+                        <div className="space-y-3">
+                          <div className="h-16 bg-muted/50 rounded animate-pulse" />
+                          <div className="h-16 bg-muted/50 rounded animate-pulse" />
+                          <div className="h-16 bg-muted/50 rounded animate-pulse" />
+                        </div>
+                      ) : chartmetricAnalytics?.stats ? (
+                        <div className="space-y-4">
+                          {/* Current Followers */}
+                          {chartmetricAnalytics.stats.currentFollowers !== undefined && (
+                            <div className="flex items-center justify-between p-3 bg-background/40 rounded-lg">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Current Followers</p>
+                                <p className="text-2xl font-semibold">{chartmetricAnalytics.stats.currentFollowers.toLocaleString()}</p>
+                              </div>
+                              {chartmetricAnalytics.stats.momentum && (
+                                <Badge variant={
+                                  chartmetricAnalytics.stats.momentum === 'hot' ? 'default' :
+                                  chartmetricAnalytics.stats.momentum === 'growing' ? 'secondary' :
+                                  chartmetricAnalytics.stats.momentum === 'declining' ? 'destructive' :
+                                  'outline'
+                                }>
+                                  {chartmetricAnalytics.stats.momentum === 'hot' && <TrendingUp className="h-3 w-3 mr-1" />}
+                                  {chartmetricAnalytics.stats.momentum === 'growing' && <TrendingUp className="h-3 w-3 mr-1" />}
+                                  {chartmetricAnalytics.stats.momentum === 'declining' && <TrendingDown className="h-3 w-3 mr-1" />}
+                                  {chartmetricAnalytics.stats.momentum === 'stable' && <Minus className="h-3 w-3 mr-1" />}
+                                  {chartmetricAnalytics.stats.momentum.charAt(0).toUpperCase() + chartmetricAnalytics.stats.momentum.slice(1)}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Follower Growth */}
+                          {chartmetricAnalytics.stats.followerGrowth && (
+                            <div className="grid grid-cols-3 gap-2">
+                              {chartmetricAnalytics.stats.followerGrowth.daily !== undefined && (
+                                <div className="p-3 bg-background/40 rounded-lg">
+                                  <p className="text-xs text-muted-foreground mb-1">Daily</p>
+                                  <p className={cn("text-lg font-semibold", 
+                                    chartmetricAnalytics.stats.followerGrowth.daily > 0 ? "text-green-500" : 
+                                    chartmetricAnalytics.stats.followerGrowth.daily < 0 ? "text-red-500" : ""
+                                  )}>
+                                    {chartmetricAnalytics.stats.followerGrowth.daily > 0 ? "+" : ""}
+                                    {chartmetricAnalytics.stats.followerGrowth.daily.toLocaleString()}
+                                  </p>
+                                </div>
+                              )}
+                              {chartmetricAnalytics.stats.followerGrowth.weekly !== undefined && (
+                                <div className="p-3 bg-background/40 rounded-lg">
+                                  <p className="text-xs text-muted-foreground mb-1">Weekly</p>
+                                  <p className={cn("text-lg font-semibold",
+                                    chartmetricAnalytics.stats.followerGrowth.weekly > 0 ? "text-green-500" :
+                                    chartmetricAnalytics.stats.followerGrowth.weekly < 0 ? "text-red-500" : ""
+                                  )}>
+                                    {chartmetricAnalytics.stats.followerGrowth.weekly > 0 ? "+" : ""}
+                                    {chartmetricAnalytics.stats.followerGrowth.weekly.toLocaleString()}
+                                  </p>
+                                </div>
+                              )}
+                              {chartmetricAnalytics.stats.followerGrowth.monthly !== undefined && (
+                                <div className="p-3 bg-background/40 rounded-lg">
+                                  <p className="text-xs text-muted-foreground mb-1">Monthly</p>
+                                  <p className={cn("text-lg font-semibold",
+                                    chartmetricAnalytics.stats.followerGrowth.monthly > 0 ? "text-green-500" :
+                                    chartmetricAnalytics.stats.followerGrowth.monthly < 0 ? "text-red-500" : ""
+                                  )}>
+                                    {chartmetricAnalytics.stats.followerGrowth.monthly > 0 ? "+" : ""}
+                                    {chartmetricAnalytics.stats.followerGrowth.monthly.toLocaleString()}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Follower History Count */}
+                          {chartmetricAnalytics.stats.followerHistory && chartmetricAnalytics.stats.followerHistory.length > 0 && (
+                            <div className="text-xs text-muted-foreground">
+                              {chartmetricAnalytics.stats.followerHistory.length} data points collected (last 30 days)
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No analytics data available from Chartmetric.</p>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                )}
               </Accordion>
             </div>
           )}

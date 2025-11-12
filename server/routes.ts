@@ -479,6 +479,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/tracked-playlists/:id/chartmetric-analytics", async (req, res) => {
+    try {
+      const playlists = await storage.getTrackedPlaylists();
+      const playlist = playlists.find(p => p.id === req.params.id);
+      
+      if (!playlist) {
+        return res.status(404).json({ error: "Playlist not found" });
+      }
+
+      if (!playlist.chartmetricUrl) {
+        return res.status(400).json({ error: "No Chartmetric URL configured for this playlist" });
+      }
+
+      const { parseChartmetricPlaylistUrl, getPlaylistMetadata, getPlaylistStats } = await import("./chartmetric");
+      
+      const parsed = parseChartmetricPlaylistUrl(playlist.chartmetricUrl);
+      if (!parsed) {
+        return res.status(400).json({ error: "Invalid Chartmetric URL format" });
+      }
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const startDate = thirtyDaysAgo.toISOString().split('T')[0];
+      const endDate = new Date().toISOString().split('T')[0];
+
+      const [metadata, stats] = await Promise.all([
+        getPlaylistMetadata(parsed.id, parsed.platform),
+        getPlaylistStats(parsed.id, parsed.platform, startDate, endDate),
+      ]);
+
+      res.json({
+        metadata,
+        stats,
+        chartmetricId: parsed.id,
+        platform: parsed.platform,
+      });
+    } catch (error: any) {
+      console.error("Error fetching Chartmetric playlist analytics:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch Chartmetric analytics" });
+    }
+  });
+
   app.post("/api/tracked-playlists", async (req, res) => {
     try {
       const validatedPlaylist = insertTrackedPlaylistSchema.parse(req.body);

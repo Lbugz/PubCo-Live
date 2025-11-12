@@ -554,3 +554,204 @@ export async function lookupIsrcBatch(tracks: BatchLookupInput[]): Promise<Batch
   
   return { results, stats };
 }
+
+export interface ChartmetricPlaylistMetadata {
+  id: string;
+  name: string;
+  curator?: string;
+  platform: string;
+  followerCount?: number;
+  trackCount?: number;
+  type?: string;
+  genres?: string[];
+}
+
+export interface ChartmetricPlaylistStats {
+  followerHistory: Array<{
+    date: string;
+    followers: number;
+  }>;
+  currentFollowers?: number;
+  followerGrowth?: {
+    daily?: number;
+    weekly?: number;
+    monthly?: number;
+  };
+  momentum?: string;
+  trackCountHistory?: Array<{
+    date: string;
+    count: number;
+  }>;
+}
+
+export function parseChartmetricPlaylistUrl(url: string): { platform: string; id: string } | null {
+  try {
+    const match = url.match(/chartmetric\.com\/playlist\/([^/]+)\/([^/?#]+)/);
+    if (match) {
+      return {
+        platform: match[1],
+        id: match[2],
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error parsing Chartmetric URL:', error);
+    return null;
+  }
+}
+
+const playlistIdCache = new Map<string, string | null>();
+
+async function resolvePlaylistId(platformIdOrChartmetricId: string, platform: string = 'spotify'): Promise<string | null> {
+  const cacheKey = `${platform}:${platformIdOrChartmetricId}`;
+  
+  if (playlistIdCache.has(cacheKey)) {
+    console.log(`💾 Chartmetric: Using cached ID for ${cacheKey}`);
+    return playlistIdCache.get(cacheKey)!;
+  }
+
+  if (/^\d+$/.test(platformIdOrChartmetricId)) {
+    console.log(`✅ Chartmetric: ID ${platformIdOrChartmetricId} is already numeric (Chartmetric ID)`);
+    playlistIdCache.set(cacheKey, platformIdOrChartmetricId);
+    return platformIdOrChartmetricId;
+  }
+
+  try {
+    console.log(`🔍 Chartmetric: Looking up numeric ID for platform playlist ${platform}:${platformIdOrChartmetricId}`);
+    const lookupData = await makeChartmetricRequest<any>(`/playlist/${platform}:${platformIdOrChartmetricId}`);
+    
+    if (lookupData && lookupData.id) {
+      const chartmetricId = lookupData.id.toString();
+      console.log(`✅ Chartmetric: Resolved ${platform}:${platformIdOrChartmetricId} → Chartmetric ID ${chartmetricId}`);
+      playlistIdCache.set(cacheKey, chartmetricId);
+      return chartmetricId;
+    }
+    
+    console.log(`⚠️  Chartmetric: No numeric ID found for ${platform}:${platformIdOrChartmetricId}`);
+    playlistIdCache.set(cacheKey, null);
+    return null;
+  } catch (error: any) {
+    if (error.message?.includes('404')) {
+      console.log(`⚠️  Chartmetric: Playlist ${platform}:${platformIdOrChartmetricId} does not exist (404) - caching null`);
+      playlistIdCache.set(cacheKey, null);
+      return null;
+    }
+    
+    console.error(`❌ Chartmetric: Transient error looking up playlist ID for ${platform}:${platformIdOrChartmetricId} - not caching:`, error.message);
+    return null;
+  }
+}
+
+export async function getPlaylistMetadata(playlistId: string, platform: string = 'spotify'): Promise<ChartmetricPlaylistMetadata | null> {
+  try {
+    const chartmetricId = await resolvePlaylistId(playlistId, platform);
+    if (!chartmetricId) {
+      console.log(`⚠️  Chartmetric: Could not resolve playlist ID ${playlistId}`);
+      return null;
+    }
+
+    console.log(`📋 Chartmetric: Fetching playlist metadata for ${chartmetricId}`);
+    const metadata = await makeChartmetricRequest<any>(`/playlist/${chartmetricId}`);
+    
+    if (!metadata) {
+      return null;
+    }
+
+    return {
+      id: metadata.id?.toString() || chartmetricId,
+      name: metadata.name || '',
+      curator: metadata.curator_name || metadata.curator,
+      platform: metadata.platform || platform,
+      followerCount: metadata.follower_count || metadata.followers,
+      trackCount: metadata.track_count || metadata.tracks,
+      type: metadata.type,
+      genres: metadata.genres || [],
+    };
+  } catch (error: any) {
+    console.error(`❌ Chartmetric: Error fetching playlist metadata:`, error.message);
+    return null;
+  }
+}
+
+export async function getPlaylistStats(playlistId: string, platform: string = 'spotify', startDate?: string, endDate?: string): Promise<ChartmetricPlaylistStats | null> {
+  try {
+    const chartmetricId = await resolvePlaylistId(playlistId, platform);
+    if (!chartmetricId) {
+      console.log(`⚠️  Chartmetric: Could not resolve playlist ID ${playlistId}`);
+      return null;
+    }
+
+    console.log(`📊 Chartmetric: Fetching playlist stats for ${chartmetricId}`);
+    
+    let endpoint = `/playlist/${chartmetricId}/stats`;
+    const params = [];
+    if (startDate) params.push(`start_date=${startDate}`);
+    if (endDate) params.push(`end_date=${endDate}`);
+    if (params.length > 0) endpoint += `?${params.join('&')}`;
+    
+    const stats = await makeChartmetricRequest<any>(endpoint);
+    
+    if (!stats || !Array.isArray(stats)) {
+      console.log(`⚠️  Chartmetric: No stats data available for playlist ${chartmetricId}`);
+      return null;
+    }
+
+    const followerHistory = stats
+      .filter(item => item.followers !== undefined)
+      .map(item => ({
+        date: item.timestp || item.date,
+        followers: item.followers,
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    const trackCountHistory = stats
+      .filter(item => item.track_count !== undefined)
+      .map(item => ({
+        date: item.timestp || item.date,
+        count: item.track_count,
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    const currentFollowers = followerHistory.length > 0 
+      ? followerHistory[followerHistory.length - 1].followers 
+      : undefined;
+
+    let followerGrowth: any = {};
+    if (followerHistory.length >= 2) {
+      const latest = followerHistory[followerHistory.length - 1];
+      const previous = followerHistory[followerHistory.length - 2];
+      
+      followerGrowth.daily = latest.followers - previous.followers;
+
+      if (followerHistory.length >= 7) {
+        const weekAgo = followerHistory[followerHistory.length - 7];
+        followerGrowth.weekly = latest.followers - weekAgo.followers;
+      }
+
+      if (followerHistory.length >= 30) {
+        const monthAgo = followerHistory[followerHistory.length - 30];
+        followerGrowth.monthly = latest.followers - monthAgo.followers;
+      }
+    }
+
+    let momentum = 'stable';
+    if (followerGrowth.weekly) {
+      if (followerGrowth.weekly > 1000) momentum = 'hot';
+      else if (followerGrowth.weekly > 100) momentum = 'growing';
+      else if (followerGrowth.weekly < -100) momentum = 'declining';
+    }
+
+    console.log(`✅ Chartmetric: Retrieved ${followerHistory.length} follower data points`);
+
+    return {
+      followerHistory,
+      currentFollowers,
+      followerGrowth: Object.keys(followerGrowth).length > 0 ? followerGrowth : undefined,
+      momentum,
+      trackCountHistory: trackCountHistory.length > 0 ? trackCountHistory : undefined,
+    };
+  } catch (error: any) {
+    console.error(`❌ Chartmetric: Error fetching playlist stats:`, error.message);
+    return null;
+  }
+}
