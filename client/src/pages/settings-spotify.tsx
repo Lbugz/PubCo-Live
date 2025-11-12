@@ -21,10 +21,31 @@ interface AuthStatus {
 }
 
 export default function SettingsSpotify() {
-  const { data: authStatus, isLoading: authLoading } = useQuery<AuthStatus>({
+  const { data: authStatus, isLoading: authLoading, refetch: refetchAuth } = useQuery<AuthStatus>({
     queryKey: ["/api/spotify/status"],
     refetchInterval: 5000,
   });
+  
+  const handleSpotifyAuth = () => {
+    const width = 600;
+    const height = 700;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
+    
+    const popup = window.open(
+      '/api/spotify/auth',
+      'Spotify Authorization',
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+    
+    // Poll for window closure and refresh status
+    const checkClosed = setInterval(() => {
+      if (popup?.closed) {
+        clearInterval(checkClosed);
+        refetchAuth();
+      }
+    }, 500);
+  };
 
   const { data: cookieStatus, isLoading } = useQuery<CookieStatus>({
     queryKey: ["/api/spotify/cookie-status"],
@@ -91,47 +112,60 @@ export default function SettingsSpotify() {
             <p className="text-muted-foreground">Loading connection status...</p>
           ) : (
             <>
-              {!authStatus?.connected ? (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Spotify Not Connected</AlertTitle>
-                  <AlertDescription>
-                    {authStatus?.error || 'The Spotify integration is not connected. Please authorize it through the Replit Secrets panel.'}
-                  </AlertDescription>
-                </Alert>
-              ) : (
+              {!authStatus?.connected && (
                 <Alert>
-                  <CheckCircle2 className="h-4 w-4" />
-                  <AlertTitle>Spotify Connected</AlertTitle>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Setup Required</AlertTitle>
                   <AlertDescription>
-                    Your Spotify integration is active. Album artwork and track metadata will be automatically fetched when importing playlists.
+                    Click "Connect Spotify" below to authenticate with your Spotify account.
                   </AlertDescription>
                 </Alert>
               )}
 
-              <div className="pt-4 border-t border-white/10">
-                <h3 className="text-sm font-semibold mb-2">
-                  {authStatus?.connected ? 'How to Use Spotify Features' : 'How to Connect Spotify'}
-                </h3>
-                {!authStatus?.connected ? (
-                  <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                    <li>Open the Replit <span className="font-medium text-foreground">Secrets</span> panel (Tools → Secrets in the sidebar)</li>
-                    <li>Find the <span className="font-medium text-foreground">Spotify</span> integration</li>
-                    <li>Click <span className="font-medium text-foreground">"Connect"</span> and authorize with your Spotify account</li>
-                    <li>Return to this app - the connection will be automatic</li>
-                  </ol>
-                ) : (
-                  <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                    <li>Go to <span className="font-medium text-foreground">Playlists View</span> in the sidebar</li>
-                    <li>Click <span className="font-medium text-foreground">"Add Playlist"</span> and enter a Spotify playlist URL</li>
-                    <li>Click <span className="font-medium text-foreground">"Fetch Data"</span> on the playlist you want to import</li>
-                    <li>Album artwork and track metadata will be automatically fetched</li>
-                  </ol>
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={handleSpotifyAuth}
+                  className="flex items-center gap-2"
+                  data-testid="button-spotify-auth"
+                  variant={authStatus?.connected ? "outline" : "default"}
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  {authStatus?.connected ? 'Re-authenticate Spotify' : 'Connect Spotify'}
+                </Button>
+                
+                {authStatus?.connected && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span>Connected and ready</span>
+                  </div>
                 )}
+              </div>
+
+              {authStatus?.error && !authStatus.connected && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>{authStatus.error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="pt-4 border-t border-white/10">
+                <h3 className="text-sm font-semibold mb-2">Setup Instructions</h3>
+                <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                  <li>Create a Spotify App at <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">developer.spotify.com/dashboard</a></li>
+                  <li>Add redirect URI: <code className="bg-white/5 px-1 rounded text-xs">https://YOUR-REPLIT-DOMAIN.replit.dev/api/spotify/callback</code></li>
+                  <li>Copy your Client ID and Client Secret</li>
+                  <li>Add them to Replit Secrets:
+                    <ul className="ml-6 mt-1 space-y-1">
+                      <li>• <code className="bg-white/5 px-1 rounded text-xs">SPOTIFY_CLIENT_ID</code></li>
+                      <li>• <code className="bg-white/5 px-1 rounded text-xs">SPOTIFY_CLIENT_SECRET</code></li>
+                    </ul>
+                  </li>
+                  <li>Click "Connect Spotify" above to authenticate</li>
+                </ol>
                 <Alert className="mt-4">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Note:</strong> This uses Replit's managed OAuth integration, which automatically handles token refresh and authentication for you.
+                    <strong>Note:</strong> Your Spotify credentials are stored securely in Replit Secrets and never exposed to the frontend.
                   </AlertDescription>
                 </Alert>
               </div>

@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
-import { getUncachableSpotifyClient, searchTrackByNameAndArtist } from "./spotify";
+import { getUncachableSpotifyClient, searchTrackByNameAndArtist, getAuthUrl, exchangeCodeForToken, isAuthenticated } from "./spotify";
 import { calculateUnsignedScore } from "./scoring";
 import { searchByISRC, searchRecordingByName, searchArtistByName, getArtistExternalLinks } from "./musicbrainz";
 import { generateAIInsights } from "./ai-insights";
@@ -69,10 +69,59 @@ function decodeHTMLEntities(text: string): string {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Spotify OAuth endpoints
+  app.get("/api/spotify/auth", (req, res) => {
+    try {
+      const authUrl = getAuthUrl();
+      res.redirect(authUrl);
+    } catch (error: any) {
+      res.status(500).json({ error: "Spotify authentication not configured. Please add SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET to Replit Secrets." });
+    }
+  });
+
+  app.get("/api/spotify/callback", async (req, res) => {
+    const code = req.query.code as string;
+    
+    if (!code) {
+      res.status(400).send("No authorization code provided");
+      return;
+    }
+
+    try {
+      await exchangeCodeForToken(code);
+      res.send(`
+        <html>
+          <body style="font-family: system-ui, -apple-system, sans-serif; padding: 40px; text-align: center;">
+            <h1 style="color: #1DB954;">✅ Spotify Connected!</h1>
+            <p>Authentication successful. You can now close this window and return to the application.</p>
+            <script>
+              setTimeout(() => window.close(), 2000);
+            </script>
+          </body>
+        </html>
+      `);
+    } catch (error: any) {
+      console.error("OAuth error:", error.message);
+      res.status(500).send(`
+        <html>
+          <body style="font-family: system-ui, -apple-system, sans-serif; padding: 40px; text-align: center;">
+            <h1 style="color: #e22134;">❌ Authentication Failed</h1>
+            <p>${error.message}</p>
+            <p>Please check your Spotify App credentials in Replit Secrets.</p>
+          </body>
+        </html>
+      `);
+    }
+  });
+
   app.get("/api/spotify/status", async (req, res) => {
     try {
-      await getUncachableSpotifyClient();
-      res.json({ connected: true });
+      if (isAuthenticated()) {
+        await getUncachableSpotifyClient();
+        res.json({ connected: true });
+      } else {
+        res.json({ connected: false, error: "Not authenticated" });
+      }
     } catch (error: any) {
       res.json({ connected: false, error: error.message });
     }

@@ -1,98 +1,120 @@
 import { SpotifyApi } from "@spotify/web-api-ts-sdk";
 
-let connectionSettings: any;
+// In-memory token storage (consider using database for production)
+let tokenData: {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+} | null = null;
 
-async function getAccessToken() {
-  // Check if cached credentials are still valid
-  if (connectionSettings?.settings?.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
-    const refreshToken = connectionSettings.settings.oauth?.credentials?.refresh_token;
-    const accessToken = connectionSettings.settings.access_token || connectionSettings.settings.oauth?.credentials?.access_token;
-    const clientId = connectionSettings.settings.oauth?.credentials?.client_id;
-    const expiresIn = connectionSettings.settings.oauth?.credentials?.expires_in;
-    
-    return {accessToken, clientId, refreshToken, expiresIn};
-  }
-  
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
+const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID!;
+const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET!;
+const REPLIT_DOMAIN = process.env.REPLIT_DOMAINS?.split(',')[0] || "127.0.0.1:5000";
+const REDIRECT_URI = `https://${REPLIT_DOMAIN}/api/spotify/callback`;
 
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
-  }
+const SCOPES = [
+  "playlist-read-private",
+  "playlist-read-collaborative",
+  "user-read-email",
+  "user-read-private",
+].join(" ");
 
-  // Try fetching all connections first
-  const allResponse = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  );
-  
-  const allData = await allResponse.json();
-  console.log('[DEBUG] All connections:', JSON.stringify(allData, null, 2));
-  
-  // Now try with the spotify filter
-  const response = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=spotify',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  );
-  
-  const responseData = await response.json();
-  console.log('[DEBUG] Spotify-filtered response:', JSON.stringify(responseData, null, 2));
-  
-  // Try to find Spotify in any of the connections
-  connectionSettings = responseData.items?.[0] || allData.items?.find((item: any) => 
-    item.connector?.name?.toLowerCase().includes('spotify') ||
-    item.name?.toLowerCase().includes('spotify')
-  );
-  
-  if (!connectionSettings) {
-    throw new Error('Spotify not connected. Please connect Spotify integration via Replit Secrets. Visit the Secrets panel in your Replit environment to authorize Spotify.');
-  }
-  
-  const refreshToken = connectionSettings.settings?.oauth?.credentials?.refresh_token;
-  const accessToken = connectionSettings.settings?.access_token || connectionSettings.settings?.oauth?.credentials?.access_token;
-  const clientId = connectionSettings.settings?.oauth?.credentials?.client_id;
-  const expiresIn = connectionSettings.settings?.oauth?.credentials?.expires_in;
-  
-  if (!accessToken || !clientId || !refreshToken) {
-    console.log('[DEBUG] Missing credentials. connectionSettings:', JSON.stringify(connectionSettings, null, 2));
-    throw new Error('Spotify not connected. Please connect Spotify integration via Replit Secrets. Visit the Secrets panel in your Replit environment to authorize Spotify.');
-  }
-  
-  return {accessToken, clientId, refreshToken, expiresIn};
+export function getAuthUrl(): string {
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    response_type: "code",
+    redirect_uri: REDIRECT_URI,
+    scope: SCOPES,
+    // Add state parameter for CSRF protection (generate random string in actual implementation)
+    state: Buffer.from(Date.now().toString()).toString('base64'),
+  });
+  return `https://accounts.spotify.com/authorize?${params.toString()}`;
 }
 
-// WARNING: Never cache this client.
-// Access tokens expire, so a new client must be created each time.
-// Always call this function again to get a fresh client.
-export async function getUncachableSpotifyClient() {
-  const {accessToken, clientId, refreshToken, expiresIn} = await getAccessToken();
+export async function exchangeCodeForToken(code: string): Promise<void> {
+  const params = new URLSearchParams({
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: REDIRECT_URI,
+  });
 
-  console.log('[DEBUG] Spotify credentials retrieved:');
-  console.log('  - Client ID exists:', !!clientId);
-  console.log('  - Access Token exists:', !!accessToken);
-  console.log('  - Refresh Token exists:', !!refreshToken);
-  console.log('  - Expires In:', expiresIn);
-  console.log('  - Access Token (first 20 chars):', accessToken?.substring(0, 20));
+  const response = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`,
+    },
+    body: params.toString(),
+  });
 
-  const spotify = SpotifyApi.withAccessToken(clientId, {
-    access_token: accessToken,
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to exchange code for token: ${error}`);
+  }
+
+  const data = await response.json();
+  tokenData = {
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    expires_at: Date.now() + data.expires_in * 1000,
+  };
+  
+  console.log('✅ Spotify OAuth successful - tokens stored');
+}
+
+async function refreshAccessToken(): Promise<void> {
+  if (!tokenData?.refresh_token) {
+    throw new Error("No refresh token available");
+  }
+
+  const params = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: tokenData.refresh_token,
+  });
+
+  const response = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`,
+    },
+    body: params.toString(),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to refresh token: ${error}`);
+  }
+
+  const data = await response.json();
+  tokenData = {
+    access_token: data.access_token,
+    refresh_token: data.refresh_token || tokenData.refresh_token,
+    expires_at: Date.now() + data.expires_in * 1000,
+  };
+  
+  console.log('🔄 Spotify token refreshed successfully');
+}
+
+export function isAuthenticated(): boolean {
+  return tokenData !== null;
+}
+
+export async function getUncachableSpotifyClient(): Promise<SpotifyApi> {
+  if (!tokenData) {
+    throw new Error("Not authenticated. Please authorize Spotify first via /api/spotify/auth");
+  }
+
+  // Refresh token if expired or about to expire (within 5 minutes)
+  if (Date.now() >= tokenData.expires_at - 5 * 60 * 1000) {
+    await refreshAccessToken();
+  }
+
+  const spotify = SpotifyApi.withAccessToken(CLIENT_ID, {
+    access_token: tokenData.access_token,
     token_type: "Bearer",
-    expires_in: expiresIn || 3600,
-    refresh_token: refreshToken,
+    expires_in: Math.floor((tokenData.expires_at - Date.now()) / 1000),
+    refresh_token: tokenData.refresh_token,
   });
 
   return spotify;
