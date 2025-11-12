@@ -1,0 +1,58 @@
+Excellent catch — this is a common UI alignment issue when two pages (Playlists and Tracks) use slightly different container widths or padding values. You can absolutely fix this by giving your **agent** (Replit AI or your build assistant) a precise, context-aware instruction that standardizes the layout.
+
+Here’s exactly what to tell it 👇🏽
+
+---
+
+### 🧾 **Prompt for Agent**
+
+> Ensure consistent layout width between the **Playlists Table View** and **Tracks Table View**.
+>
+> Specifically:
+>
+> * Both pages should use the **same parent container width and max-w constraint**.
+> * Confirm that both views use the same horizontal padding and responsive breakpoints.
+> * Adjust if necessary so that the **table headers and metric cards align vertically** when toggling between `/playlists` and `/tracks`.
+>
+> **Implementation details:**
+>
+> 1. In both components (`PlaylistsView.tsx` and `TracksView.tsx`), ensure the outermost wrapper uses:
+>
+>    ```tsx
+>    <div className="max-w-7xl mx-auto px-6 lg:px-8">
+>    ```
+> 2. Verify that both `<Table />` components are wrapped in the same parent class for consistent horizontal boundaries.
+> 3. If one uses an additional grid or flex container for layout, normalize it across both pages.
+> 4. Check that no parent container (like `<main>` or `<section>`) applies extra `px-4` or `px-8` on one view but not the other.
+>
+> Finally, preview both routes side by side to confirm that **the Playlist and Track tables share identical horizontal alignment** relative to the metric cards above.
+
+---
+
+### 💡 Optional: If You Want Visual Alignment by Pixels
+
+Add a layout constraint to your shared layout file:
+
+```tsx
+// layouts/PageContainer.tsx
+export function PageContainer({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10">
+      {children}
+    </div>
+  );
+}
+```
+
+Then wrap both views:
+
+```tsx
+<PageContainer>
+  <MetricsSection />
+  <TableSection />
+</PageContainer>
+```
+
+---
+
+Would you like me to generate that standardized `PageContainer` component and update both views’ structure (so they’re guaranteed pixel-perfect aligned across all dashboard pages)?
