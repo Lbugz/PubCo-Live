@@ -480,8 +480,62 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
     
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Look for Credits section on the right panel
-    console.log("Looking for Credits section...");
+    // PHASE 1: Extract stream count from main page (BEFORE opening modal)
+    console.log("Phase 1: Extracting stream count from main page...");
+    let spotifyStreams: number | null = null;
+    
+    try {
+      const streamCountScript = `
+        (function() {
+          const bodyText = document.body.innerText;
+          const lines = bodyText.split('\\n').map(function(l) { return l.trim(); });
+          
+          // Find numbers that look like stream counts (3+ digits with commas or M/K suffix)
+          const streamPattern = /^[\\d,]+$/;
+          const shortPattern = /^([\\d.]+)([MK])$/;
+          
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            
+            // Check for comma-formatted numbers (most reliable)
+            if (streamPattern.test(line)) {
+              const num = parseInt(line.replace(/,/g, ''), 10);
+              // Stream counts are typically > 1000 and < 1 billion
+              if (num >= 1000 && num < 1000000000) {
+                return num;
+              }
+            }
+            
+            // Check for abbreviated format (1.2M, 45K)
+            const match = line.match(shortPattern);
+            if (match) {
+              const value = parseFloat(match[1]);
+              const suffix = match[2];
+              if (suffix === 'M') {
+                return Math.round(value * 1000000);
+              } else if (suffix === 'K') {
+                return Math.round(value * 1000);
+              }
+            }
+          }
+          
+          return null;
+        })();
+      `;
+      
+      spotifyStreams = await page.evaluate(streamCountScript);
+      
+      if (spotifyStreams) {
+        console.log(`✅ Found Spotify stream count: ${spotifyStreams.toLocaleString()}`);
+      } else {
+        console.log(`⚠️ No stream count found on main page`);
+      }
+    } catch (err) {
+      console.warn('Failed to extract stream count:', err);
+    }
+    
+    // PHASE 2: Open credits modal
+    console.log("Phase 2: Looking for Credits section...");
     
     // Check if Credits section is visible using page.evaluate()
     let creditsFound = await page.evaluate(() => {
@@ -606,16 +660,15 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
     await page.waitForFunction('typeof window.splitConcatenatedNames === "function"', { timeout: 5000 });
     console.log("Name-splitting utility injected successfully");
     
-    // Extract credits information AND stream count
-    console.log("Extracting credits data and stream count...");
-    const creditsAndStreams = await page.evaluate(() => {
+    // PHASE 3: Extract credits information from modal
+    console.log("Phase 3: Extracting credits data from modal...");
+    const credits = await page.evaluate(() => {
       const writers = [];
       const composers = [];
       const producers = [];
       const labels = [];
       const publishers = [];
       const allCredits = [];
-      let spotifyStreams: number | null = null;
       
       // Get all text nodes in the modal to parse credit structure
       const allText = document.body.innerText;
@@ -807,77 +860,32 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         }
       });
       
-      // Extract Spotify stream count from the page
-      // Stream counts appear in various places - look for large formatted numbers
-      try {
-        // Look for stream count near artist/track header (format: "1,234,567" or "1.2M")
-        const bodyText = document.body.innerText;
-        const lines = bodyText.split('\n').map(l => l.trim());
-        
-        // Find numbers that look like stream counts (3+ digits with commas or M/K suffix)
-        const streamPattern = /^[\d,]+$/; // e.g., "33,741" or "1,234,567"
-        const shortPattern = /^([\d.]+)([MK])$/; // e.g., "1.2M" or "45K"
-        
-        for (const line of lines) {
-          // Check for comma-formatted numbers (most reliable)
-          if (streamPattern.test(line)) {
-            const num = parseInt(line.replace(/,/g, ''), 10);
-            // Stream counts are typically > 100 and < 1 billion
-            if (num >= 100 && num < 1000000000) {
-              spotifyStreams = num;
-              break;
-            }
-          }
-          // Check for abbreviated format (1.2M, 45K)
-          const match = line.match(shortPattern);
-          if (match) {
-            const value = parseFloat(match[1]);
-            const suffix = match[2];
-            if (suffix === 'M') {
-              spotifyStreams = Math.round(value * 1000000);
-              break;
-            } else if (suffix === 'K') {
-              spotifyStreams = Math.round(value * 1000);
-              break;
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to extract stream count:', err);
-      }
-      
       return {
         writers: Array.from(new Set(writers)),
         composers: Array.from(new Set(composers)),
         producers: Array.from(new Set(producers)),
         labels: Array.from(new Set(labels)),
         publishers: Array.from(new Set(publishers)),
-        allCredits,
-        spotifyStreams
+        allCredits
       };
     });
     
-    console.log(`Extracted ${creditsAndStreams.allCredits.length} credits`);
-    
-    if (creditsAndStreams.spotifyStreams) {
-      console.log(`✅ Found Spotify stream count: ${creditsAndStreams.spotifyStreams.toLocaleString()}`);
-    } else {
-      console.log(`⚠️ No stream count found on page`);
-    }
+    console.log(`Extracted ${credits.allCredits.length} credits`);
     
     await browser.close();
     
+    // Return aggregated results from both phases
     return {
       success: true,
       credits: {
-        writers: creditsAndStreams.writers,
-        composers: creditsAndStreams.composers,
-        producers: creditsAndStreams.producers,
-        labels: creditsAndStreams.labels,
-        publishers: creditsAndStreams.publishers,
-        allCredits: creditsAndStreams.allCredits
+        writers: credits.writers,
+        composers: credits.composers,
+        producers: credits.producers,
+        labels: credits.labels,
+        publishers: credits.publishers,
+        allCredits: credits.allCredits
       },
-      spotifyStreams: creditsAndStreams.spotifyStreams
+      spotifyStreams: spotifyStreams
     };
     
   } catch (error: any) {
