@@ -1,0 +1,52 @@
+2025-11-12T02:52:07.000000000Z [inf]  Starting Container
+2025-11-12T02:52:07.614135717Z [err]  node:internal/modules/esm/resolve:873
+2025-11-12T02:52:07.614141761Z [err]    throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+2025-11-12T02:52:07.614148341Z [err]          ^
+2025-11-12T02:52:07.614154848Z [err]  
+2025-11-12T02:52:07.614163581Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+2025-11-12T02:52:07.614170696Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T02:52:07.614176903Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T02:52:07.614182485Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:52:07.614189265Z [err]      at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:708:12)
+2025-11-12T02:52:07.614196966Z [err]      at #cachedDefaultResolve (node:internal/modules/esm/loader:657:25)
+2025-11-12T02:52:07.614204768Z [err]      at ModuleLoader.resolve (node:internal/modules/esm/loader:640:38)
+2025-11-12T02:52:07.614212678Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:264:38)
+2025-11-12T02:52:07.614219237Z [err]      at ModuleJob._link (node:internal/modules/esm/module_job:168:49) {
+2025-11-12T02:52:07.614226269Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T02:52:07.614233281Z [err]  }
+2025-11-12T02:52:07.614239973Z [err]  
+2025-11-12T02:52:07.614246575Z [err]  Node.js v20.19.5
+2025-11-12T02:52:09.455261944Z [err]      at ModuleLoader.resolve (node:internal/modules/esm/loader:640:38)
+2025-11-12T02:52:09.455271791Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:264:38)
+2025-11-12T02:52:09.455278184Z [err]      at ModuleJob._link (node:internal/modules/esm/module_job:168:49) {
+2025-11-12T02:52:09.455283931Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T02:52:09.455289288Z [err]  }
+2025-11-12T02:52:09.455295836Z [err]  
+2025-11-12T02:52:09.455300817Z [err]  Node.js v20.19.5
+2025-11-12T02:52:09.455333546Z [err]  node:internal/modules/esm/resolve:873
+2025-11-12T02:52:09.455340231Z [err]    throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+2025-11-12T02:52:09.455345401Z [err]          ^
+2025-11-12T02:52:09.455351190Z [err]  
+2025-11-12T02:52:09.455357310Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+2025-11-12T02:52:09.455363323Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T02:52:09.455368257Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T02:52:09.455373074Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:52:09.455377542Z [err]      at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:708:12)
+2025-11-12T02:52:09.455383636Z [err]      at #cachedDefaultResolve (node:internal/modules/esm/loader:657:25)
+2025-11-12T02:52:14.577716118Z [err]  node:internal/modules/esm/resolve:873
+2025-11-12T02:52:14.577723339Z [err]    throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+2025-11-12T02:52:14.577731971Z [err]          ^
+2025-11-12T02:52:14.577752184Z [err]  
+2025-11-12T02:52:14.577762197Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+2025-11-12T02:52:14.577772262Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T02:52:14.577783090Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T02:52:14.577793271Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T02:52:14.577803342Z [err]      at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:708:12)
+2025-11-12T02:52:14.577812266Z [err]      at #cachedDefaultResolve (node:internal/modules/esm/loader:657:25)
+2025-11-12T02:52:14.577820365Z [err]      at ModuleLoader.resolve (node:internal/modules/esm/loader:640:38)
+2025-11-12T02:52:14.577829385Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:264:38)
+2025-11-12T02:52:14.577839907Z [err]      at ModuleJob._link (node:internal/modules/esm/module_job:168:49) {
+2025-11-12T02:52:14.577874914Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T02:52:14.577883990Z [err]  }
+2025-11-12T02:52:14.577892762Z [err]  
+2025-11-12T02:52:14.577903508Z [err]  Node.js v20.19.5
