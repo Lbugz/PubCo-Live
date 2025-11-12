@@ -58,6 +58,7 @@ export async function fetchEditorialTracksViaNetwork(
   let browser;
   try {
     browser = await puppeteer.launch({
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
       headless: false, // MUST be headed so Spotify runs full app logic and network requests work
       args: [
         "--window-size=1440,900",
