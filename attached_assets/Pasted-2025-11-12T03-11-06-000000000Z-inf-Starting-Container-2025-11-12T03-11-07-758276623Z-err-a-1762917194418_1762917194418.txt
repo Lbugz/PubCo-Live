@@ -1,0 +1,122 @@
+2025-11-12T03:11:06.000000000Z [inf]  Starting Container
+2025-11-12T03:11:07.758276623Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:11:07.758287755Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:11:07.758294548Z [err]    throw new Error(
+2025-11-12T03:11:07.758297064Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:11:07.758305274Z [err]          ^
+2025-11-12T03:11:07.758305653Z [err]  
+2025-11-12T03:11:07.758313326Z [err]  
+2025-11-12T03:11:07.758316172Z [err]  Node.js v20.19.5
+2025-11-12T03:11:07.758320263Z [err]  Error: DATABASE_URL must be set. Did you forget to provision a database?
+2025-11-12T03:11:07.758328411Z [err]      at file:///app/dist/index.js:2059:9
+2025-11-12T03:11:07.758356340Z [err]  file:///app/dist/index.js:2059
+2025-11-12T03:11:09.767521142Z [err]  file:///app/dist/index.js:2059
+2025-11-12T03:11:09.767527283Z [err]  Error: DATABASE_URL must be set. Did you forget to provision a database?
+2025-11-12T03:11:09.767527549Z [err]    throw new Error(
+2025-11-12T03:11:09.767533499Z [err]          ^
+2025-11-12T03:11:09.767538068Z [err]      at file:///app/dist/index.js:2059:9
+2025-11-12T03:11:09.767541233Z [err]  
+2025-11-12T03:11:09.767543865Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:11:09.767549561Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:11:09.767554593Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:11:09.767674800Z [err]  
+2025-11-12T03:11:09.767681994Z [err]  Node.js v20.19.5
+2025-11-12T03:11:11.703676085Z [err]  file:///app/dist/index.js:2059
+2025-11-12T03:11:11.703682410Z [err]    throw new Error(
+2025-11-12T03:11:11.703688993Z [err]          ^
+2025-11-12T03:11:11.703696431Z [err]  
+2025-11-12T03:11:11.703710516Z [err]  Error: DATABASE_URL must be set. Did you forget to provision a database?
+2025-11-12T03:11:11.703720797Z [err]      at file:///app/dist/index.js:2059:9
+2025-11-12T03:11:11.703729116Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:11:11.706444896Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:11:11.706452948Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:11:11.706458521Z [err]  
+2025-11-12T03:11:11.706463906Z [err]  Node.js v20.19.5
+2025-11-12T03:11:13.861824488Z [err]  Error: DATABASE_URL must be set. Did you forget to provision a database?
+2025-11-12T03:11:13.861838241Z [err]      at file:///app/dist/index.js:2059:9
+2025-11-12T03:11:13.861846547Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:11:13.861857669Z [err]  file:///app/dist/index.js:2059
+2025-11-12T03:11:13.861859288Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:11:13.861870038Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:11:13.861877760Z [err]  
+2025-11-12T03:11:13.861880206Z [err]    throw new Error(
+2025-11-12T03:11:13.861887121Z [err]  Node.js v20.19.5
+2025-11-12T03:11:13.861893580Z [err]          ^
+2025-11-12T03:11:13.861901248Z [err]  
+2025-11-12T03:11:16.983113990Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:11:16.983123685Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:11:16.983129564Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:11:16.983134619Z [err]  
+2025-11-12T03:11:16.983139458Z [err]  Node.js v20.19.5
+2025-11-12T03:11:16.983299643Z [err]  file:///app/dist/index.js:2059
+2025-11-12T03:11:16.983305264Z [err]    throw new Error(
+2025-11-12T03:11:16.983311270Z [err]          ^
+2025-11-12T03:11:16.983317500Z [err]  
+2025-11-12T03:11:16.983323613Z [err]  Error: DATABASE_URL must be set. Did you forget to provision a database?
+2025-11-12T03:11:16.983329651Z [err]      at file:///app/dist/index.js:2059:9
+2025-11-12T03:11:19.920144575Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:11:19.920153172Z [err]  
+2025-11-12T03:11:19.920173722Z [err]  Node.js v20.19.5
+2025-11-12T03:11:19.920443054Z [err]  file:///app/dist/index.js:2059
+2025-11-12T03:11:19.920449169Z [err]    throw new Error(
+2025-11-12T03:11:19.920454630Z [err]          ^
+2025-11-12T03:11:19.920460557Z [err]  
+2025-11-12T03:11:19.920466820Z [err]  Error: DATABASE_URL must be set. Did you forget to provision a database?
+2025-11-12T03:11:19.920472615Z [err]      at file:///app/dist/index.js:2059:9
+2025-11-12T03:11:19.920478621Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:11:19.920490084Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:11:22.032464349Z [err]  file:///app/dist/index.js:2059
+2025-11-12T03:11:22.032471760Z [err]    throw new Error(
+2025-11-12T03:11:22.032479056Z [err]          ^
+2025-11-12T03:11:22.032489110Z [err]  
+2025-11-12T03:11:22.032496493Z [err]  Error: DATABASE_URL must be set. Did you forget to provision a database?
+2025-11-12T03:11:22.032503721Z [err]      at file:///app/dist/index.js:2059:9
+2025-11-12T03:11:22.032509513Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:11:22.032515510Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:11:22.032522014Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:11:22.032527233Z [err]  
+2025-11-12T03:11:22.032532525Z [err]  Node.js v20.19.5
+2025-11-12T03:11:24.860319230Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:11:24.860330836Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:11:24.860337894Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:11:24.860345040Z [err]  
+2025-11-12T03:11:24.860352612Z [err]  Node.js v20.19.5
+2025-11-12T03:11:24.860617424Z [err]  file:///app/dist/index.js:2059
+2025-11-12T03:11:24.860622548Z [err]    throw new Error(
+2025-11-12T03:11:24.860627672Z [err]          ^
+2025-11-12T03:11:24.860632704Z [err]  
+2025-11-12T03:11:24.860636964Z [err]  Error: DATABASE_URL must be set. Did you forget to provision a database?
+2025-11-12T03:11:24.860641540Z [err]      at file:///app/dist/index.js:2059:9
+2025-11-12T03:11:26.745019983Z [err]    throw new Error(
+2025-11-12T03:11:26.745025252Z [err]  Node.js v20.19.5
+2025-11-12T03:11:26.745030520Z [err]          ^
+2025-11-12T03:11:26.745036879Z [err]  
+2025-11-12T03:11:26.745042973Z [err]  Error: DATABASE_URL must be set. Did you forget to provision a database?
+2025-11-12T03:11:26.745048985Z [err]      at file:///app/dist/index.js:2059:9
+2025-11-12T03:11:26.745066820Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:11:26.745081344Z [err]  file:///app/dist/index.js:2059
+2025-11-12T03:11:26.745081730Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:11:26.745091067Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:11:26.745099151Z [err]  
+2025-11-12T03:11:28.847307879Z [err]  Node.js v20.19.5
+2025-11-12T03:11:28.847337552Z [err]  file:///app/dist/index.js:2059
+2025-11-12T03:11:28.847345190Z [err]    throw new Error(
+2025-11-12T03:11:28.847351487Z [err]          ^
+2025-11-12T03:11:28.847359531Z [err]  
+2025-11-12T03:11:28.847364738Z [err]  Error: DATABASE_URL must be set. Did you forget to provision a database?
+2025-11-12T03:11:28.847373621Z [err]      at file:///app/dist/index.js:2059:9
+2025-11-12T03:11:28.847380285Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:11:28.847398929Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:11:28.847410254Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:11:28.847416655Z [err]  
+2025-11-12T03:11:30.927545767Z [err]          ^
+2025-11-12T03:11:30.927546960Z [err]  Node.js v20.19.5
+2025-11-12T03:11:30.927553739Z [err]  
+2025-11-12T03:11:30.927559701Z [err]  Error: DATABASE_URL must be set. Did you forget to provision a database?
+2025-11-12T03:11:30.927560323Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:11:30.927565146Z [err]      at file:///app/dist/index.js:2059:9
+2025-11-12T03:11:30.927571144Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:11:30.927571319Z [err]  
+2025-11-12T03:11:30.927576403Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:11:30.927670348Z [err]  file:///app/dist/index.js:2059
+2025-11-12T03:11:30.927677240Z [err]    throw new Error(
