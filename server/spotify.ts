@@ -290,3 +290,89 @@ export async function searchTrackByNameAndArtist(trackName: string, artistName: 
     return null;
   }
 }
+
+/**
+ * Batch enrichment for editorial playlist tracks
+ * Fetches full metadata for multiple track IDs at once
+ * Spotify API allows up to 50 tracks per request
+ * @param spotify - Existing Spotify client with tracks.getSeveral() method
+ * @param trackIds - Array of Spotify track IDs to enrich
+ * @returns Map of track IDs to enriched metadata, empty if enrichment fails
+ */
+export async function batchEnrichTracks(
+  spotify: SpotifyApi,
+  trackIds: string[]
+): Promise<Map<string, {
+  isrc: string | null;
+  label: string | null;
+  popularity: number;
+  releaseDate: string | null;
+  albumArt: string | null;
+  durationMs: number;
+  explicit: boolean;
+}>> {
+  const enrichedMap = new Map();
+  
+  if (trackIds.length === 0) {
+    return enrichedMap;
+  }
+  
+  try {
+    console.log(`\n🎵 Batch enriching ${trackIds.length} tracks via Spotify API...`);
+    
+    // Process in batches of 50 (Spotify API limit)
+    for (let i = 0; i < trackIds.length; i += 50) {
+      const batch = trackIds.slice(i, i + 50);
+      const batchNum = Math.floor(i / 50) + 1;
+      const totalBatches = Math.ceil(trackIds.length / 50);
+      
+      try {
+        console.log(`  Batch ${batchNum}/${totalBatches}: fetching ${batch.length} tracks...`);
+        
+        // SDK v1.2.0: get() overload returns different formats:
+        // - Single ID: Track
+        // - Multiple IDs: { tracks: Track[] }
+        // - Or Track[] (depending on SDK version/behavior)
+        const rawResponse = await spotify.tracks.get(batch);
+        const tracks = Array.isArray(rawResponse) 
+          ? rawResponse 
+          : (rawResponse as any).tracks ?? [rawResponse];
+        
+        // Process each track in the response (may include null for unavailable tracks)
+        let enrichedCount = 0;
+        for (const track of tracks) {
+          if (!track || !track.id) continue; // Skip null/unavailable tracks
+          
+          enrichedMap.set(track.id, {
+            isrc: track.external_ids?.isrc || null,
+            label: track.album?.label || null,
+            popularity: track.popularity,
+            releaseDate: track.album?.release_date || null,
+            albumArt: track.album?.images?.[1]?.url || track.album?.images?.[0]?.url || null,
+            durationMs: track.duration_ms,
+            explicit: track.explicit,
+          });
+          enrichedCount++;
+        }
+        
+        console.log(`  ✅ Batch ${batchNum}/${totalBatches}: enriched ${enrichedCount}/${batch.length} tracks`);
+        
+        // Small delay between batches to respect rate limits
+        if (i + 50 < trackIds.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      } catch (batchError: any) {
+        console.error(`  ⚠️  Batch ${batchNum}/${totalBatches} failed:`, batchError.message);
+        // Continue with next batch even if this one fails
+      }
+    }
+    
+    const successRate = (enrichedMap.size / trackIds.length * 100).toFixed(1);
+    console.log(`✅ Batch enrichment complete: ${enrichedMap.size}/${trackIds.length} tracks (${successRate}%)`);
+    
+    return enrichedMap;
+  } catch (error: any) {
+    console.error('Batch enrichment failed:', error.message);
+    return enrichedMap;
+  }
+}
