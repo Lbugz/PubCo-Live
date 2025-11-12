@@ -1330,11 +1330,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // TIER 4: Chartmetric Analytics (only if we have ISRC)
       if (effectiveIsrc) {
-        try {
-          console.log(`[Tier 4: Chartmetric] Fetching analytics...`);
-          // Create a temporary track object with the recovered ISRC for Chartmetric
-          const trackWithIsrc = { ...track, isrc: effectiveIsrc };
-          const chartmetricData = await enrichTrackWithChartmetric(trackWithIsrc);
+        // Skip if already enriched (status is "success" or "not_found")
+        if (track.chartmetricStatus === "success" || track.chartmetricStatus === "not_found") {
+          console.log(`⏭️  [Tier 4] Skipping - already enriched (status: ${track.chartmetricStatus})`);
+          tierResults.push({
+            tier: "chartmetric",
+            success: track.chartmetricStatus === "success",
+            message: `Already enriched (${track.chartmetricStatus})`,
+            data: track.chartmetricStatus === "success" ? {
+              chartmetricId: track.chartmetricId,
+              streams: track.spotifyStreams,
+              stage: track.trackStage,
+            } : null
+          });
+        } else {
+          try {
+            console.log(`[Tier 4: Chartmetric] Fetching analytics...`);
+            // Create a temporary track object with the recovered ISRC for Chartmetric
+            const trackWithIsrc = { ...track, isrc: effectiveIsrc };
+            const chartmetricData = await enrichTrackWithChartmetric(trackWithIsrc);
           
           if (chartmetricData) {
             updates.chartmetricId = chartmetricData.chartmetricId;
@@ -1392,14 +1406,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
             console.log(`⚠️ [Tier 4] No data found`);
           }
-        } catch (error: any) {
-          console.error(`[Tier 4] Error:`, error);
-          tierResults.push({
-            tier: "chartmetric",
-            success: false,
-            message: error.message || "Chartmetric lookup failed",
-            data: null
-          });
+          } catch (error: any) {
+            console.error(`[Tier 4] Error:`, error);
+            tierResults.push({
+              tier: "chartmetric",
+              success: false,
+              message: error.message || "Chartmetric lookup failed",
+              data: null
+            });
+          }
         }
       } else {
         tierResults.push({
