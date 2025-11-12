@@ -56,7 +56,11 @@ The frontend is a single-page React application built with a a modular component
 - **Spotify Integration**: Uses the Spotify API and custom scraping for playlist and track data.
 
 ## External Dependencies
-- **Spotify API**: For fetching playlist and track data. Note: Editorial playlists owned by Spotify are inaccessible via API.
+- **Spotify API**: For fetching playlist and track data via custom OAuth 2.0 implementation. Note: Editorial playlists owned by Spotify are inaccessible via API and require Puppeteer scraping.
+  - **OAuth Implementation**: Custom Authorization Code Flow with automatic token refresh
+  - **Security**: CSRF protection via state parameter, tokens stored server-side, HTTPS redirect URIs in production
+  - **Authentication**: Redirect URIs follow 2024-2025 standards (HTTPS required except localhost/127.0.0.1)
+  - **Why Custom OAuth?**: Replit Connectors API showed "Active" in UI but returned empty items array via API v2, preventing programmatic access. Custom OAuth provides reliable authentication until Replit integration is fixed.
 - **MusicBrainz API**: For enriching tracks with publisher and songwriter metadata via ISRC.
 - **Chartmetric API**: For cross-platform analytics and industry insights. **Current Access**: Basic API tier provides ISRC lookup, Chartmetric ID retrieval (95% success rate), and track metadata including songwriter IDs, composer names, moods, and activities. **Enterprise Tier Required**: Streaming stats endpoints (`/track/{id}/spotify/stats`, `/track/{id}/youtube/stats`) return 401 "internal API endpoint" error - these require enterprise-tier API access. **Value**: Chartmetric songwriter IDs enable cross-referencing with songwriter collaboration networks and future analytics integration.
 - **Neon (PostgreSQL)**: Managed PostgreSQL database for data storage.
