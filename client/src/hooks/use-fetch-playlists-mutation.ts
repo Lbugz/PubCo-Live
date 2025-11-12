@@ -15,7 +15,7 @@ export function useFetchPlaylistsMutation() {
       console.log("Fetch playlists mutation success:", data);
       
       const totalTracks = data.completenessResults?.reduce(
-        (sum: number, r: any) => sum + (r.new || 0), 
+        (sum: number, r: any) => sum + (r.fetchCount || 0), 
         0
       ) || 0;
       const totalSkipped = data.completenessResults?.reduce(
@@ -24,13 +24,17 @@ export function useFetchPlaylistsMutation() {
       ) || 0;
 
       toast({
-        title: "Playlist fetch complete",
-        description: `${totalTracks} new tracks added, ${totalSkipped} duplicates skipped`,
+        title: "Playlist data fetched successfully",
+        description: data.completenessResults
+          ?.map((r: any) => `${r.name}: ${r.fetchCount} new tracks added, ${r.skipped} duplicates skipped`)
+          .join('\n') || `${totalTracks} tracks fetched`,
       });
 
+      // Invalidate all related queries to refresh UI
       queryClient.invalidateQueries({ queryKey: ["/api/playlist-snapshot"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/metrics/playlists"] });
     },
     onError: (error: Error) => {
       console.error("Fetch playlists mutation error:", error);
