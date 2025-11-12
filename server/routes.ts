@@ -523,10 +523,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tracked-playlists", async (req, res) => {
     try {
-      const validatedPlaylist = insertTrackedPlaylistSchema.parse(req.body);
-      
-      // Check for manual editorial override from user
+      // Check for manual editorial override from user BEFORE validation
       const manualEditorialOverride = req.body.isEditorial === true;
+      
+      // Remove isEditorial from body if present (we'll set it properly below)
+      const { isEditorial: _unused, ...requestBody } = req.body;
+      
+      const validatedPlaylist = insertTrackedPlaylistSchema.parse(requestBody);
       
       // Smart editorial detection: Check manual override first, then playlist ID pattern
       const { isEditorialPlaylist } = await import("./playlist-utils");
@@ -586,9 +589,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastFetchCount: 0,
       });
       res.json(playlist);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding tracked playlist:", error);
-      res.status(500).json({ error: "Failed to add tracked playlist" });
+      // Return detailed error message for debugging
+      const errorMessage = error?.message || error?.toString() || "Failed to add tracked playlist";
+      res.status(500).json({ error: errorMessage });
     }
   });
 
