@@ -21,13 +21,13 @@ export async function harvestVirtualizedRows(
   playlistUrl: string
 ): Promise<DomCaptureResult> {
   console.log(`[DOM Capture] Starting fallback for: ${playlistUrl}`);
-  console.log(`[DOM Capture] ⚠️  IMPORTANT: A browser window will open. If Spotify requests login, please authenticate manually.`);
+  console.log(`[DOM Capture] Running in headless mode with saved cookies...`);
   
   let browser;
   try {
     browser = await puppeteer.launch({
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
-      headless: false, // MUST be headed to see Spotify's virtualized list properly
+      headless: true, // Run in headless mode (Replit has no X server)
       slowMo: 30,
       args: [
         "--window-size=1440,900",
