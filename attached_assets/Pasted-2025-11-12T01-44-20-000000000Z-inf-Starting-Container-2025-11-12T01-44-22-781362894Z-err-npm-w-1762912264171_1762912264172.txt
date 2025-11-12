@@ -1,0 +1,216 @@
+2025-11-12T01:44:20.000000000Z [inf]  Starting Container
+2025-11-12T01:44:22.781362894Z [err]  npm warn exec The following package was not found and will be installed: tsx@4.20.6
+2025-11-12T01:44:23.768384332Z [err]  
+2025-11-12T01:44:23.768390552Z [err]  node:internal/modules/run_main:123
+2025-11-12T01:44:23.768401764Z [err]      triggerUncaughtException(
+2025-11-12T01:44:23.768407993Z [err]      ^
+2025-11-12T01:44:23.768414361Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/server/scraper-server.ts
+2025-11-12T01:44:23.768425647Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T01:44:23.768435667Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T01:44:23.768442295Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T01:44:23.768448826Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T01:44:23.768455852Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911863186:2:3744)
+2025-11-12T01:44:23.768463296Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911863186:2:4243)
+2025-11-12T01:44:23.768469308Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911863186:2:4984)
+2025-11-12T01:44:23.768475745Z [err]      at async resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911863186:2:5355)
+2025-11-12T01:44:23.768483502Z [err]      at async nextResolve (node:internal/modules/esm/hooks:864:22)
+2025-11-12T01:44:23.768492379Z [err]      at async Hooks.resolve (node:internal/modules/esm/hooks:306:24) {
+2025-11-12T01:44:23.768500095Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T01:44:23.768506158Z [err]  }
+2025-11-12T01:44:23.768511932Z [err]  
+2025-11-12T01:44:23.768519107Z [err]  Node.js v20.19.5
+2025-11-12T01:44:23.768532781Z [err]  npm notice
+2025-11-12T01:44:23.768541612Z [err]  npm notice New major version of npm available! 10.8.2 -> 11.6.2
+2025-11-12T01:44:23.777335740Z [err]  npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.2
+2025-11-12T01:44:23.777341816Z [err]  npm notice To update run: npm install -g npm@11.6.2
+2025-11-12T01:44:23.777347946Z [err]  npm notice
+2025-11-12T01:44:25.799888749Z [err]  
+2025-11-12T01:44:25.799895026Z [err]  node:internal/modules/run_main:123
+2025-11-12T01:44:25.799900315Z [err]      triggerUncaughtException(
+2025-11-12T01:44:25.799905871Z [err]      ^
+2025-11-12T01:44:25.802259951Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T01:44:25.802267004Z [err]  }
+2025-11-12T01:44:25.802274526Z [err]  
+2025-11-12T01:44:25.802281836Z [err]  Node.js v20.19.5
+2025-11-12T01:44:25.802320233Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/server/scraper-server.ts
+2025-11-12T01:44:25.802327088Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T01:44:25.802333055Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T01:44:25.802339291Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T01:44:25.802345308Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T01:44:25.802350667Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911865662:2:3744)
+2025-11-12T01:44:25.802358631Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911865662:2:4243)
+2025-11-12T01:44:25.802365012Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911865662:2:4984)
+2025-11-12T01:44:25.802370988Z [err]      at async resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911865662:2:5355)
+2025-11-12T01:44:25.802377123Z [err]      at async nextResolve (node:internal/modules/esm/hooks:864:22)
+2025-11-12T01:44:25.802382505Z [err]      at async Hooks.resolve (node:internal/modules/esm/hooks:306:24) {
+2025-11-12T01:44:28.122968789Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T01:44:28.122988080Z [err]  
+2025-11-12T01:44:28.122993134Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T01:44:28.122994130Z [err]  node:internal/modules/run_main:123
+2025-11-12T01:44:28.123000156Z [err]      triggerUncaughtException(
+2025-11-12T01:44:28.123004716Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T01:44:28.123007556Z [err]      ^
+2025-11-12T01:44:28.123013955Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T01:44:28.123015526Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/server/scraper-server.ts
+2025-11-12T01:44:28.123021031Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911867986:2:3744)
+2025-11-12T01:44:28.123027156Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911867986:2:4243)
+2025-11-12T01:44:28.123033501Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911867986:2:4984)
+2025-11-12T01:44:28.123038745Z [err]      at async resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911867986:2:5355)
+2025-11-12T01:44:28.123042913Z [err]      at async nextResolve (node:internal/modules/esm/hooks:864:22)
+2025-11-12T01:44:28.123049747Z [err]      at async Hooks.resolve (node:internal/modules/esm/hooks:306:24) {
+2025-11-12T01:44:28.123057921Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T01:44:28.123069731Z [err]  }
+2025-11-12T01:44:28.123077042Z [err]  
+2025-11-12T01:44:28.123083794Z [err]  Node.js v20.19.5
+2025-11-12T01:44:30.895523037Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911870154:2:4243)
+2025-11-12T01:44:30.895537379Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911870154:2:4984)
+2025-11-12T01:44:30.895546157Z [err]      at async resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911870154:2:5355)
+2025-11-12T01:44:30.895555030Z [err]      at async nextResolve (node:internal/modules/esm/hooks:864:22)
+2025-11-12T01:44:30.895562550Z [err]      at async Hooks.resolve (node:internal/modules/esm/hooks:306:24) {
+2025-11-12T01:44:30.895570952Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T01:44:30.895579581Z [err]  }
+2025-11-12T01:44:30.895588830Z [err]  
+2025-11-12T01:44:30.895597725Z [err]  Node.js v20.19.5
+2025-11-12T01:44:30.895853485Z [err]  
+2025-11-12T01:44:30.895860464Z [err]  node:internal/modules/run_main:123
+2025-11-12T01:44:30.895868689Z [err]      triggerUncaughtException(
+2025-11-12T01:44:30.895874140Z [err]      ^
+2025-11-12T01:44:30.895879552Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/server/scraper-server.ts
+2025-11-12T01:44:30.895885506Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T01:44:30.895890786Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T01:44:30.895896323Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T01:44:30.895901075Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T01:44:30.895907529Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911870154:2:3744)
+2025-11-12T01:44:32.891768560Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/server/scraper-server.ts
+2025-11-12T01:44:32.891772140Z [err]  }
+2025-11-12T01:44:32.891779086Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T01:44:32.891782743Z [err]  
+2025-11-12T01:44:32.891787862Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T01:44:32.891791776Z [err]  Node.js v20.19.5
+2025-11-12T01:44:32.891797105Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T01:44:32.891809514Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T01:44:32.891815436Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911872438:2:3744)
+2025-11-12T01:44:32.891820785Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911872438:2:4243)
+2025-11-12T01:44:32.891830061Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911872438:2:4984)
+2025-11-12T01:44:32.891837020Z [err]      at async resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911872438:2:5355)
+2025-11-12T01:44:32.891843813Z [err]      at async nextResolve (node:internal/modules/esm/hooks:864:22)
+2025-11-12T01:44:32.891850938Z [err]      at async Hooks.resolve (node:internal/modules/esm/hooks:306:24) {
+2025-11-12T01:44:32.891856229Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T01:44:32.891884392Z [err]  
+2025-11-12T01:44:32.892078298Z [err]  node:internal/modules/run_main:123
+2025-11-12T01:44:32.892084393Z [err]      triggerUncaughtException(
+2025-11-12T01:44:32.892089705Z [err]      ^
+2025-11-12T01:44:35.098542393Z [err]  
+2025-11-12T01:44:35.098549284Z [err]  node:internal/modules/run_main:123
+2025-11-12T01:44:35.098556940Z [err]      triggerUncaughtException(
+2025-11-12T01:44:35.098563391Z [err]      ^
+2025-11-12T01:44:35.098568887Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/server/scraper-server.ts
+2025-11-12T01:44:35.098581747Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T01:44:35.098587686Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T01:44:35.098593237Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T01:44:35.098599412Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T01:44:35.098605082Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911874974:2:3744)
+2025-11-12T01:44:35.098610844Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911874974:2:4243)
+2025-11-12T01:44:35.098616164Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911874974:2:4984)
+2025-11-12T01:44:35.098621459Z [err]      at async resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911874974:2:5355)
+2025-11-12T01:44:35.098628993Z [err]      at async nextResolve (node:internal/modules/esm/hooks:864:22)
+2025-11-12T01:44:35.098635511Z [err]      at async Hooks.resolve (node:internal/modules/esm/hooks:306:24) {
+2025-11-12T01:44:35.098643901Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T01:44:35.098649563Z [err]  }
+2025-11-12T01:44:35.098655776Z [err]  
+2025-11-12T01:44:35.098663654Z [err]  Node.js v20.19.5
+2025-11-12T01:44:37.770601644Z [err]      ^
+2025-11-12T01:44:37.770617561Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/server/scraper-server.ts
+2025-11-12T01:44:37.770625644Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T01:44:37.770631528Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T01:44:37.770637616Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T01:44:37.770644049Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T01:44:37.770649961Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911877470:2:3744)
+2025-11-12T01:44:37.770655087Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911877470:2:4243)
+2025-11-12T01:44:37.770661608Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911877470:2:4984)
+2025-11-12T01:44:37.770668411Z [err]      at async resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911877470:2:5355)
+2025-11-12T01:44:37.770674082Z [err]      at async nextResolve (node:internal/modules/esm/hooks:864:22)
+2025-11-12T01:44:37.770679804Z [err]      at async Hooks.resolve (node:internal/modules/esm/hooks:306:24) {
+2025-11-12T01:44:37.770686924Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T01:44:37.770692979Z [err]  }
+2025-11-12T01:44:37.770699053Z [err]  
+2025-11-12T01:44:37.770705581Z [err]  Node.js v20.19.5
+2025-11-12T01:44:37.770750649Z [err]  
+2025-11-12T01:44:37.770756904Z [err]  node:internal/modules/run_main:123
+2025-11-12T01:44:37.770762906Z [err]      triggerUncaughtException(
+2025-11-12T01:44:39.753864287Z [err]  
+2025-11-12T01:44:39.753870986Z [err]  node:internal/modules/run_main:123
+2025-11-12T01:44:39.753877165Z [err]      triggerUncaughtException(
+2025-11-12T01:44:39.753883321Z [err]      ^
+2025-11-12T01:44:39.753889332Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/server/scraper-server.ts
+2025-11-12T01:44:39.753895967Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T01:44:39.753902337Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T01:44:39.753909799Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T01:44:39.753915856Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T01:44:39.753922957Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911879632:2:3744)
+2025-11-12T01:44:39.753929572Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911879632:2:4243)
+2025-11-12T01:44:39.753936080Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911879632:2:4984)
+2025-11-12T01:44:39.753944083Z [err]      at async resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911879632:2:5355)
+2025-11-12T01:44:39.753950236Z [err]      at async nextResolve (node:internal/modules/esm/hooks:864:22)
+2025-11-12T01:44:39.753956088Z [err]      at async Hooks.resolve (node:internal/modules/esm/hooks:306:24) {
+2025-11-12T01:44:39.753962267Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T01:44:39.753968636Z [err]  }
+2025-11-12T01:44:39.753974911Z [err]  
+2025-11-12T01:44:39.753980878Z [err]  Node.js v20.19.5
+2025-11-12T01:44:42.204758878Z [err]  
+2025-11-12T01:44:42.204772989Z [err]  node:internal/modules/run_main:123
+2025-11-12T01:44:42.204781320Z [err]      triggerUncaughtException(
+2025-11-12T01:44:42.204788822Z [err]      ^
+2025-11-12T01:44:42.204795938Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/server/scraper-server.ts
+2025-11-12T01:44:42.204803047Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T01:44:42.204810025Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T01:44:42.204817759Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T01:44:42.204825961Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T01:44:42.204833394Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911882078:2:3744)
+2025-11-12T01:44:42.204840884Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911882078:2:4243)
+2025-11-12T01:44:42.204846367Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911882078:2:4984)
+2025-11-12T01:44:42.204853174Z [err]      at async resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911882078:2:5355)
+2025-11-12T01:44:42.204860309Z [err]      at async nextResolve (node:internal/modules/esm/hooks:864:22)
+2025-11-12T01:44:42.204867166Z [err]      at async Hooks.resolve (node:internal/modules/esm/hooks:306:24) {
+2025-11-12T01:44:42.204876262Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T01:44:42.204883945Z [err]  }
+2025-11-12T01:44:42.204891913Z [err]  
+2025-11-12T01:44:42.204899712Z [err]  Node.js v20.19.5
+2025-11-12T01:44:44.797489090Z [err]  
+2025-11-12T01:44:44.797495970Z [err]  node:internal/modules/run_main:123
+2025-11-12T01:44:44.797504322Z [err]      triggerUncaughtException(
+2025-11-12T01:44:44.797511058Z [err]      ^
+2025-11-12T01:44:44.797518789Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/server/scraper-server.ts
+2025-11-12T01:44:44.797526823Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T01:44:44.797536646Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T01:44:44.797543936Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T01:44:44.797550784Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T01:44:44.797557972Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911884323:2:3744)
+2025-11-12T01:44:44.797565347Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911884323:2:4243)
+2025-11-12T01:44:44.797572049Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911884323:2:4984)
+2025-11-12T01:44:44.797578206Z [err]      at async resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911884323:2:5355)
+2025-11-12T01:44:44.797611388Z [err]      at async nextResolve (node:internal/modules/esm/hooks:864:22)
+2025-11-12T01:44:44.797618897Z [err]      at async Hooks.resolve (node:internal/modules/esm/hooks:306:24) {
+2025-11-12T01:44:44.797625891Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T01:44:44.797633044Z [err]  }
+2025-11-12T01:44:44.797640445Z [err]  
+2025-11-12T01:44:44.797660405Z [err]  Node.js v20.19.5
+2025-11-12T01:44:46.923056128Z [err]      at async nextResolve (node:internal/modules/esm/hooks:864:22)
+2025-11-12T01:44:46.923068420Z [err]      at async Hooks.resolve (node:internal/modules/esm/hooks:306:24) {
+2025-11-12T01:44:46.923076224Z [err]    code: 'ERR_MODULE_NOT_FOUND'
+2025-11-12T01:44:46.923083606Z [err]  }
+2025-11-12T01:44:46.923089825Z [err]  
+2025-11-12T01:44:46.923095732Z [err]  Node.js v20.19.5
+2025-11-12T01:44:46.923129116Z [err]  
+2025-11-12T01:44:46.923134781Z [err]  node:internal/modules/run_main:123
+2025-11-12T01:44:46.923140550Z [err]      triggerUncaughtException(
+2025-11-12T01:44:46.923146731Z [err]      ^
+2025-11-12T01:44:46.923151863Z [err]  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/server/scraper-server.ts
+2025-11-12T01:44:46.923157190Z [err]      at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-12T01:44:46.923162738Z [err]      at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-12T01:44:46.923168303Z [err]      at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-12T01:44:46.923175847Z [err]      at nextResolve (node:internal/modules/esm/hooks:864:28)
+2025-11-12T01:44:46.923181292Z [err]      at resolveBase (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911886772:2:3744)
+2025-11-12T01:44:46.923186467Z [err]      at resolveDirectory (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911886772:2:4243)
+2025-11-12T01:44:46.923191290Z [err]      at resolveTsPaths (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911886772:2:4984)
+2025-11-12T01:44:46.923195882Z [err]      at async resolve (file:///root/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/esm/index.mjs?1762911886772:2:5355)

@@ -1940,7 +1940,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 writer: null,
               });
               
-              const newTrack = {
+              const newTrack: InsertPlaylistSnapshot = {
                 week: today,
                 playlistName: playlist.name,
                 playlistId: playlist.playlistId,
@@ -1953,6 +1953,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 unsignedScore: score,
                 addedAt: new Date(item.added_at),
                 dataSource: "api",
+                chartmetricId: null,
+                chartmetricStatus: "pending",
               };
               
               allTracks.push(newTrack);
@@ -2097,7 +2099,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 ? capturedTrack.artists.join(", ") 
                 : capturedTrack.artists || "Unknown";
               
-              const newTrack = {
+              const newTrack: InsertPlaylistSnapshot = {
                 week: today,
                 playlistName: playlist.name,
                 playlistId: playlist.playlistId,
@@ -2110,6 +2112,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 unsignedScore: score,
                 addedAt: capturedTrack.addedAt ? new Date(capturedTrack.addedAt) : new Date(),
                 dataSource: fetchMethod,
+                chartmetricId: null,
+                chartmetricStatus: "pending",
               };
               
               allTracks.push(newTrack);
@@ -2149,6 +2153,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (allTracks.length > 0) {
+        // Prefetch Chartmetric data for tracks with ISRCs
+        let chartmetricStats = { requested: 0, succeeded: 0, failed: 0, skipped: 0 };
+        
+        if (process.env.CHARTMETRIC_API_KEY) {
+          try {
+            console.log(`\n🎵 Prefetching Chartmetric data for ${allTracks.length} tracks...`);
+            
+            // Filter tracks that have ISRCs and build batch input
+            const tracksWithIsrc = allTracks
+              .filter(t => t.isrc)
+              .map((t, idx) => ({
+                isrc: t.isrc!,
+                trackId: `temp_${idx}`, // Temporary ID since tracks not inserted yet
+                trackName: t.trackName,
+              }));
+            
+            if (tracksWithIsrc.length > 0) {
+              const { lookupIsrcBatch } = await import("./chartmetric");
+              const batchResult = await lookupIsrcBatch(tracksWithIsrc);
+              
+              chartmetricStats = {
+                requested: batchResult.stats.requested,
+                succeeded: batchResult.stats.succeeded,
+                failed: batchResult.stats.failed,
+                skipped: allTracks.length - tracksWithIsrc.length,
+              };
+              
+              // Map Chartmetric IDs back to tracks
+              let resultIndex = 0;
+              for (let i = 0; i < allTracks.length; i++) {
+                if (!allTracks[i].isrc) {
+                  // No ISRC - mark as skipped
+                  allTracks[i].chartmetricStatus = "skipped";
+                  continue;
+                }
+                
+                const tempId = `temp_${resultIndex}`;
+                resultIndex++;
+                
+                const result = batchResult.results[tempId];
+                if (result) {
+                  // Preserve the actual status from batch result
+                  allTracks[i].chartmetricStatus = result.status;
+                  
+                  if (result.status === "success" && result.track) {
+                    allTracks[i].chartmetricId = result.track.id;
+                  } else if (result.status === "error" && result.error) {
+                    // Could log the specific error if needed
+                    console.log(`  ⚠️  Chartmetric lookup failed for ${allTracks[i].trackName}: ${result.error}`);
+                  }
+                }
+              }
+              
+              console.log(`✅ Chartmetric prefetch complete: ${chartmetricStats.succeeded} succeeded, ${chartmetricStats.failed} failed, ${chartmetricStats.skipped} skipped`);
+            } else {
+              chartmetricStats.skipped = allTracks.length;
+              console.log(`⚠️  No tracks with ISRCs - skipping Chartmetric prefetch`);
+            }
+          } catch (chartmetricError: any) {
+            console.error(`⚠️  Chartmetric prefetch failed (non-blocking):`, chartmetricError.message);
+            // Leave tracks as "pending" status (default) so they can be enriched later
+            // Do not mark as "error" since this was a batch operation failure, not per-track failure
+          }
+        } else {
+          // No API key - leave as "pending" (default) for later enrichment
+          chartmetricStats.skipped = allTracks.length;
+          console.log(`ℹ️  CHARTMETRIC_API_KEY not configured - skipping prefetch`);
+        }
+        
         await storage.insertTracks(allTracks);
         console.log(`Successfully saved ${allTracks.length} new tracks for ${today}`);
       }
