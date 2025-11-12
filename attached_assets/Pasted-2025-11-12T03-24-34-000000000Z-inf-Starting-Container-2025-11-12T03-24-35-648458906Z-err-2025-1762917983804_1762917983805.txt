@@ -1,0 +1,133 @@
+2025-11-12T03:24:34.000000000Z [inf]  Starting Container
+2025-11-12T03:24:35.648458906Z [err]  
+2025-11-12T03:24:35.648474478Z [err]  OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+2025-11-12T03:24:35.648482411Z [err]      at new OpenAI (file:///app/node_modules/openai/client.mjs:89:19)
+2025-11-12T03:24:35.648489248Z [err]      at file:///app/dist/index.js:2456:14
+2025-11-12T03:24:35.648494278Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:24:35.648500923Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:24:35.648507029Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:24:35.648513211Z [err]  
+2025-11-12T03:24:35.648519373Z [err]  Node.js v20.19.5
+2025-11-12T03:24:35.648651267Z [err]  file:///app/node_modules/openai/client.mjs:89
+2025-11-12T03:24:35.648662367Z [err]              throw new Errors.OpenAIError('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+2025-11-12T03:24:35.648669481Z [err]                    ^
+2025-11-12T03:24:36.665388324Z [err]  file:///app/node_modules/openai/client.mjs:89
+2025-11-12T03:24:36.665406900Z [err]              throw new Errors.OpenAIError('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+2025-11-12T03:24:36.665416819Z [err]                    ^
+2025-11-12T03:24:36.665433400Z [err]  
+2025-11-12T03:24:36.665442844Z [err]  OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+2025-11-12T03:24:36.665452907Z [err]      at new OpenAI (file:///app/node_modules/openai/client.mjs:89:19)
+2025-11-12T03:24:36.665463198Z [err]      at file:///app/dist/index.js:2456:14
+2025-11-12T03:24:36.665483711Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:24:36.665494462Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:24:36.665504949Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:24:36.665546171Z [err]  
+2025-11-12T03:24:36.665555637Z [err]  Node.js v20.19.5
+2025-11-12T03:24:38.724768481Z [err]  Node.js v20.19.5
+2025-11-12T03:24:38.724777948Z [err]  file:///app/node_modules/openai/client.mjs:89
+2025-11-12T03:24:38.724783874Z [err]              throw new Errors.OpenAIError('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+2025-11-12T03:24:38.724789487Z [err]                    ^
+2025-11-12T03:24:38.724796207Z [err]  
+2025-11-12T03:24:38.724803347Z [err]  OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+2025-11-12T03:24:38.724817645Z [err]      at new OpenAI (file:///app/node_modules/openai/client.mjs:89:19)
+2025-11-12T03:24:38.724830340Z [err]      at file:///app/dist/index.js:2456:14
+2025-11-12T03:24:38.724839042Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:24:38.724845947Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:24:38.724852202Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:24:38.724860191Z [err]  
+2025-11-12T03:24:39.925903579Z [err]  file:///app/node_modules/openai/client.mjs:89
+2025-11-12T03:24:39.925914355Z [err]              throw new Errors.OpenAIError('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+2025-11-12T03:24:39.925921506Z [err]                    ^
+2025-11-12T03:24:39.925930966Z [err]  
+2025-11-12T03:24:39.925939810Z [err]  OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+2025-11-12T03:24:39.925943245Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:24:39.925947204Z [err]      at new OpenAI (file:///app/node_modules/openai/client.mjs:89:19)
+2025-11-12T03:24:39.925957295Z [err]      at file:///app/dist/index.js:2456:14
+2025-11-12T03:24:39.925963468Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:24:39.925970618Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:24:39.925985906Z [err]  
+2025-11-12T03:24:39.925994063Z [err]  Node.js v20.19.5
+2025-11-12T03:24:41.783889913Z [err]  file:///app/node_modules/openai/client.mjs:89
+2025-11-12T03:24:41.783902717Z [err]              throw new Errors.OpenAIError('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+2025-11-12T03:24:41.783909012Z [err]                    ^
+2025-11-12T03:24:41.783916544Z [err]  
+2025-11-12T03:24:41.783923437Z [err]  OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+2025-11-12T03:24:41.783931194Z [err]      at new OpenAI (file:///app/node_modules/openai/client.mjs:89:19)
+2025-11-12T03:24:41.783941137Z [err]      at file:///app/dist/index.js:2456:14
+2025-11-12T03:24:41.783948491Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:24:41.783955398Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:24:41.783961888Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:24:41.783969964Z [err]  
+2025-11-12T03:24:41.783975964Z [err]  Node.js v20.19.5
+2025-11-12T03:24:43.088146311Z [err]  file:///app/node_modules/openai/client.mjs:89
+2025-11-12T03:24:43.088157217Z [err]              throw new Errors.OpenAIError('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+2025-11-12T03:24:43.088163625Z [err]                    ^
+2025-11-12T03:24:43.088170823Z [err]  
+2025-11-12T03:24:43.088176519Z [err]  OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+2025-11-12T03:24:43.088182760Z [err]      at new OpenAI (file:///app/node_modules/openai/client.mjs:89:19)
+2025-11-12T03:24:43.088188544Z [err]      at file:///app/dist/index.js:2456:14
+2025-11-12T03:24:43.088195419Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:24:43.088202525Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:24:43.088214311Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:24:43.088224733Z [err]  
+2025-11-12T03:24:43.088243865Z [err]  Node.js v20.19.5
+2025-11-12T03:24:44.796435573Z [err]      at new OpenAI (file:///app/node_modules/openai/client.mjs:89:19)
+2025-11-12T03:24:44.796447215Z [err]      at file:///app/dist/index.js:2456:14
+2025-11-12T03:24:44.796455398Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:24:44.796462794Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:24:44.796469193Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:24:44.796477757Z [err]  
+2025-11-12T03:24:44.796484911Z [err]  Node.js v20.19.5
+2025-11-12T03:24:44.796495313Z [err]  file:///app/node_modules/openai/client.mjs:89
+2025-11-12T03:24:44.796501644Z [err]              throw new Errors.OpenAIError('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+2025-11-12T03:24:44.796507260Z [err]                    ^
+2025-11-12T03:24:44.796512256Z [err]  
+2025-11-12T03:24:44.796518111Z [err]  OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+2025-11-12T03:24:46.828017335Z [err]  
+2025-11-12T03:24:46.828030409Z [err]  file:///app/node_modules/openai/client.mjs:89
+2025-11-12T03:24:46.828032030Z [err]  Node.js v20.19.5
+2025-11-12T03:24:46.828040006Z [err]              throw new Errors.OpenAIError('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+2025-11-12T03:24:46.828054532Z [err]                    ^
+2025-11-12T03:24:46.828063746Z [err]  
+2025-11-12T03:24:46.828071581Z [err]  OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+2025-11-12T03:24:46.828078821Z [err]      at new OpenAI (file:///app/node_modules/openai/client.mjs:89:19)
+2025-11-12T03:24:46.828085835Z [err]      at file:///app/dist/index.js:2456:14
+2025-11-12T03:24:46.828095254Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:24:46.828100241Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:24:46.828105636Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:24:47.806794184Z [err]  file:///app/node_modules/openai/client.mjs:89
+2025-11-12T03:24:47.806800815Z [err]              throw new Errors.OpenAIError('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+2025-11-12T03:24:47.806806425Z [err]                    ^
+2025-11-12T03:24:47.806811334Z [err]  
+2025-11-12T03:24:47.806815809Z [err]  OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+2025-11-12T03:24:47.806821326Z [err]      at new OpenAI (file:///app/node_modules/openai/client.mjs:89:19)
+2025-11-12T03:24:47.806827508Z [err]      at file:///app/dist/index.js:2456:14
+2025-11-12T03:24:47.806831577Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:24:47.806835694Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:24:47.806840970Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:24:47.806845526Z [err]  
+2025-11-12T03:24:47.806850653Z [err]  Node.js v20.19.5
+2025-11-12T03:24:49.829191185Z [err]  file:///app/node_modules/openai/client.mjs:89
+2025-11-12T03:24:49.829202441Z [err]              throw new Errors.OpenAIError('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+2025-11-12T03:24:49.829211549Z [err]                    ^
+2025-11-12T03:24:49.829222650Z [err]  
+2025-11-12T03:24:49.829231426Z [err]  OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+2025-11-12T03:24:49.829240058Z [err]      at new OpenAI (file:///app/node_modules/openai/client.mjs:89:19)
+2025-11-12T03:24:49.829247284Z [err]      at file:///app/dist/index.js:2456:14
+2025-11-12T03:24:49.829256607Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:24:49.829262977Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:24:49.829269063Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:24:49.829275414Z [err]  
+2025-11-12T03:24:49.829282935Z [err]  Node.js v20.19.5
+2025-11-12T03:24:51.255757140Z [err]  file:///app/node_modules/openai/client.mjs:89
+2025-11-12T03:24:51.255770213Z [err]              throw new Errors.OpenAIError('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+2025-11-12T03:24:51.255778239Z [err]                    ^
+2025-11-12T03:24:51.255787883Z [err]  
+2025-11-12T03:24:51.255795446Z [err]  OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+2025-11-12T03:24:51.255802658Z [err]      at new OpenAI (file:///app/node_modules/openai/client.mjs:89:19)
+2025-11-12T03:24:51.255809596Z [err]      at file:///app/dist/index.js:2456:14
+2025-11-12T03:24:51.255816970Z [err]      at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+2025-11-12T03:24:51.255825907Z [err]      at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+2025-11-12T03:24:51.255836709Z [err]      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2025-11-12T03:24:51.255856471Z [err]  
+2025-11-12T03:24:51.255864134Z [err]  Node.js v20.19.5
