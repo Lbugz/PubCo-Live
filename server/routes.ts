@@ -1001,6 +1001,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manual Phase 2 enrichment endpoint for already-inserted tracks
+  app.post("/api/enrich-credits", async (req, res) => {
+    try {
+      const { playlistId, limit = 50 } = req.body;
+      
+      console.log(`\n🎭 Manual Phase 2 Credits Enrichment Started`);
+      console.log(`   Playlist ID: ${playlistId || 'all'}`);
+      console.log(`   Limit: ${limit}`);
+      
+      // Get tracks that need Phase 2 enrichment (missing credits/streams)
+      const today = new Date().toISOString().split('T')[0];
+      let allTracks = await storage.getTracksByWeek(today);
+      
+      // Filter by playlist if specified
+      if (playlistId) {
+        allTracks = allTracks.filter(t => t.playlistId === playlistId);
+      }
+      
+      // Filter to only tracks missing Phase 2 data
+      const unenrichedTracks = allTracks.filter(t => 
+        !t.songwriter && !t.producer && !t.publisher && !t.spotifyStreams
+      ).slice(0, limit);
+      
+      if (unenrichedTracks.length === 0) {
+        console.log(`ℹ️  No tracks need Phase 2 enrichment`);
+        return res.json({
+          success: true,
+          tracksProcessed: 0,
+          tracksEnriched: 0,
+          message: "All tracks already enriched or no tracks found"
+        });
+      }
+      
+      console.log(`📋 Found ${unenrichedTracks.length} tracks needing enrichment`);
+      
+      // Import and run Phase 2 enrichment
+      const { enrichTracksWithCredits } = await import("./enrichment/spotifyCreditsScaper");
+      const phase2Result = await enrichTracksWithCredits(unenrichedTracks);
+      
+      // Update tracks with enriched data
+      for (const enrichedTrack of phase2Result.enrichedTracks) {
+        await storage.updateTrackMetadata(enrichedTrack.trackId, {
+          songwriter: enrichedTrack.songwriter ?? undefined,
+          producer: enrichedTrack.producer ?? undefined,
+          publisher: enrichedTrack.publisher ?? undefined,
+          label: enrichedTrack.label ?? undefined,
+          spotifyStreams: enrichedTrack.spotifyStreams ?? undefined,
+        });
+      }
+      
+      // Log activity
+      if (phase2Result.tracksEnriched > 0) {
+        // Get internal playlist ID if provided
+        let internalPlaylistId = null;
+        if (playlistId) {
+          const playlist = await storage.getTrackedPlaylistBySpotifyId(playlistId);
+          internalPlaylistId = playlist?.id || null;
+        }
+        
+        await storage.logActivity({
+          entityType: 'track',
+          trackId: null,
+          playlistId: internalPlaylistId,
+          eventType: 'manual_enrichment',
+          eventDescription: `Manual Phase 2: Enriched ${phase2Result.tracksEnriched}/${phase2Result.tracksProcessed} tracks`,
+          metadata: JSON.stringify({
+            phase: 2,
+            manual: true,
+            spotifyPlaylistId: playlistId || null,
+            tracksProcessed: phase2Result.tracksProcessed,
+            tracksEnriched: phase2Result.tracksEnriched,
+            errors: phase2Result.errors,
+          })
+        });
+      }
+      
+      // Broadcast update
+      broadcastEnrichmentUpdate({
+        type: 'batch_complete',
+        enrichedCount: phase2Result.tracksEnriched,
+        totalCount: phase2Result.tracksProcessed,
+      });
+      
+      console.log(`✅ Manual Phase 2 Complete: ${phase2Result.tracksEnriched}/${phase2Result.tracksProcessed} tracks enriched`);
+      
+      res.json({
+        success: true,
+        tracksProcessed: phase2Result.tracksProcessed,
+        tracksEnriched: phase2Result.tracksEnriched,
+        errors: phase2Result.errors,
+        errorDetails: phase2Result.errorDetails.slice(0, 10), // First 10 errors
+      });
+      
+    } catch (error: any) {
+      console.error("Manual Phase 2 enrichment failed:", error);
+      res.status(500).json({ 
+        error: error.message || "Failed to enrich tracks" 
+      });
+    }
+  });
+
   app.post("/api/enrich-metadata", async (req, res) => {
     try {
       const { mode = 'all', trackId, playlistName, limit = 50 } = req.body;
