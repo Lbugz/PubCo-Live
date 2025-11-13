@@ -271,14 +271,13 @@ export default function PlaylistsView() {
         throw new Error("Invalid Spotify playlist URL or ID");
       }
 
-      // ALWAYS use Puppeteer scraping - never use Spotify API
-      // Backend will fetch metadata via scraping during the fetch process
+      // Backend will try Chartmetric metadata lookup first, then Spotify API
+      // Puppeteer scraping is auto-triggered during fetch if needed
       const res = await apiRequest("POST", "/api/tracked-playlists", {
         name: "Loading...", // Placeholder until metadata is fetched
         playlistId: playlistId,
         spotifyUrl: `https://open.spotify.com/playlist/${playlistId}`,
         chartmetricUrl: chartmetricUrl || null,
-        useScraping: true,
       });
       
       const playlist: TrackedPlaylist = await res.json();
