@@ -22,10 +22,10 @@ The frontend is a single-page React application built with a modular component a
 - **Automatic Enrichment**: Background enrichment triggers automatically after playlist fetch operations via `scheduleMetricsUpdate`.
 - **Unified Enrichment Pipeline**: Multi-phase enrichment system that runs after track insertion:
     - **Phase 1 (Spotify API Batch Enrichment)**: Runs FIRST to maximize ISRC coverage. Batches 50 tracks per API call to recover ISRCs, popularity, duration, explicit flags, release dates, album labels, album images, audio features (energy, valence, danceability, tempo), artist genres, and artist followers. Includes retry logic with exponential backoff for rate limits. Selective processing skips tracks with complete metadata. Achieves 90-99% ISRC recovery rate, enabling downstream Chartmetric matching.
-    - **Phase 2 (Spotify Credits & Stream Count Scraping)**: [Planned] Uses Puppeteer queue with concurrency controls to scrape songwriter credits and stream counts from Spotify track pages, handling various stream count formats (numeric, 1.2M, 1.2B) with timeout protection.
+    - **Phase 2 (Spotify Credits & Stream Count Scraping)**: Production-ready Puppeteer-based scraping with background job queue architecture. Scrapes songwriter credits (songwriter, producer, publisher, label) and stream counts from Spotify track pages. Features: reduced concurrency (maxConcurrency: 1, browserPoolSize: 1) to prevent OOM crashes, 45s timeout per track, chunk-based processing (2 tracks/chunk), graceful error handling, and WebSocket progress updates. Handles various stream count formats (numeric, 1.2M, 1.2B).
+    - **Tier 2 (MLC Publisher Status)**: Integrated with The MLC (Mechanical Licensing Collective) Public Search API using OAuth authentication. Searches tracks by ISRC and title/writers to retrieve publisher ownership information. Enriches tracks with publisher names, publisher status (published/unknown), MLC song codes, and ISWC identifiers. Implements rate limiting (500ms delay between requests) and comprehensive error handling.
     - **Chartmetric ISRC Matching**: Runs after Phase 1 to leverage recovered ISRCs for Chartmetric ID lookup via playlist-level batch matching and per-track ISRC lookups.
-    - **Tier 2 (MLC Publisher Status)**: Designed for MLC API integration.
-    - **Tier 3 (MusicBrainz Social Links)**: Queries MusicBrainz API for songwriter social profiles.
+    - **Tier 3 (MusicBrainz Social Links)**: [Planned] Queries MusicBrainz API for songwriter social profiles.
     - **Tier 4 (Chartmetric Analytics)**: Fetches cross-platform metrics, track stage, moods, and activities.
 - **Artist Normalization**: Separate `artists` table with unique MusicBrainz IDs and a `artist_songwriters` junction table.
 - **Real-time Enrichment Updates**: WebSocket integration broadcasts `track_enriched` events, updating the UI dynamically.
@@ -48,7 +48,8 @@ The frontend is a single-page React application built with a modular component a
 ## External Dependencies
 - **Spotify API**: For fetching playlist and track data, utilizing a custom OAuth 2.0 implementation for authentication and token refresh. Editorial playlists require Puppeteer scraping due to API limitations.
 - **MusicBrainz API**: For enriching tracks with publisher and songwriter metadata via ISRC, adhering to rate limiting and proper user-agent identification.
+- **The MLC (Mechanical Licensing Collective) Public Search API**: OAuth-based API for querying publisher ownership information. Credentials stored in environment variables (MLC_USERNAME, MLC_PASSWORD). Supports ISRC-based recording search and title/writer-based work search. Returns publisher names, IPI numbers, collection shares, and songwriter details.
 - **Chartmetric API**: Used for cross-platform analytics and industry insights, including ISRC lookup, Chartmetric ID retrieval, and track metadata. Enterprise tier is required for certain streaming stats endpoints.
 - **Neon (PostgreSQL)**: Managed PostgreSQL database for persistent data storage.
 - **GPT-4o-mini (via Replit AI Integrations)**: For AI-powered lead prioritization and insights generation.
-- **Puppeteer + Chromium**: Used for web scraping Spotify track credits and editorial playlist data, with Chromium installed as a system dependency.
+- **Puppeteer + Chromium**: Used for web scraping Spotify track credits and editorial playlist data, with Chromium installed as a system dependency. Configured with reduced concurrency (1 browser, 1 concurrent operation) to prevent memory crashes during batch processing.

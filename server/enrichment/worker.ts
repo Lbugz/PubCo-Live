@@ -2,6 +2,7 @@ import type { JobQueue } from "./jobQueue";
 import type { IStorage } from "../storage";
 import type { EnrichmentJob, PlaylistSnapshot } from "@shared/schema";
 import { enrichTracksWithCredits } from "./spotifyCreditsScaper";
+import { enrichTracksWithMLC } from "./mlcApi";
 import type { WebSocket } from "ws";
 
 export interface WorkerOptions {
@@ -152,7 +153,7 @@ export class EnrichmentWorker {
       const result = await enrichTracksWithCredits(tracksForEnrichment);
 
       await this.jobQueue.updateJobProgress(job.id, {
-        progress: 80,
+        progress: 60,
         enrichedTracks: result.tracksEnriched,
         errorCount: result.errors,
         logs: [
@@ -162,8 +163,8 @@ export class EnrichmentWorker {
 
       this.broadcastProgress(job.id, {
         status: 'running',
-        progress: 80,
-        message: `Enriched ${result.tracksEnriched}/${result.tracksProcessed} tracks, saving to database...`,
+        progress: 60,
+        message: `Phase 2 complete, starting MLC publisher lookup...`,
       });
 
       for (const enrichedTrack of result.enrichedTracks) {
@@ -175,19 +176,95 @@ export class EnrichmentWorker {
           spotifyStreams: enrichedTrack.spotifyStreams || undefined,
           enrichedAt: new Date(),
         });
+      }
 
-        await this.storage.logActivity({
-          entityType: 'track',
-          trackId: enrichedTrack.trackId,
-          playlistId: null,
-          eventType: 'enrichment_completed',
-          eventDescription: 'Phase 2 enrichment completed via background job',
-          metadata: JSON.stringify({
-            songwriter: enrichedTrack.songwriter,
-            producer: enrichedTrack.producer,
-            publisher: enrichedTrack.publisher,
-            spotifyStreams: enrichedTrack.spotifyStreams,
-          }),
+      await this.jobQueue.updateJobProgress(job.id, {
+        progress: 70,
+        logs: [`[${new Date().toISOString()}] Starting Tier 2 enrichment (MLC publisher status)...`],
+      });
+
+      this.broadcastProgress(job.id, {
+        status: 'running',
+        progress: 70,
+        message: 'Checking publisher status with MLC API...',
+      });
+
+      let mlcResults: Array<{
+        trackId: string;
+        hasPublisher: boolean;
+        publisherNames: string[];
+        mlcSongCode?: string;
+        error?: string;
+      }> = [];
+
+      try {
+        const updatedTracks = await this.storage.getTracksByIds(job.trackIds);
+        const tracksForMLC = updatedTracks.map((t: PlaylistSnapshot) => ({
+          id: t.id,
+          isrc: t.isrc,
+          trackName: t.trackName,
+          artistName: t.artistName,
+          songwriter: t.songwriter,
+        }));
+
+        mlcResults = await enrichTracksWithMLC(tracksForMLC);
+
+        await this.jobQueue.updateJobProgress(job.id, {
+          progress: 85,
+          logs: [
+            `[${new Date().toISOString()}] MLC enrichment complete: ${mlcResults.filter(r => r.hasPublisher).length}/${mlcResults.length} tracks have publishers`,
+          ],
+        });
+
+        this.broadcastProgress(job.id, {
+          status: 'running',
+          progress: 85,
+          message: `MLC enrichment complete, saving results...`,
+        });
+
+        for (const mlcResult of mlcResults) {
+          const publisherName = mlcResult.publisherNames.join(', ') || undefined;
+          const publisherStatus = mlcResult.error 
+            ? undefined 
+            : (mlcResult.hasPublisher ? 'published' : 'unknown');
+
+          await this.storage.updateTrackMetadata(mlcResult.trackId, {
+            publisher: publisherName,
+            publisherStatus,
+            mlcSongCode: mlcResult.mlcSongCode || undefined,
+          });
+
+          await this.storage.logActivity({
+            entityType: 'track',
+            trackId: mlcResult.trackId,
+            playlistId: null,
+            eventType: 'enrichment_completed',
+            eventDescription: 'Full enrichment pipeline completed via background job',
+            metadata: JSON.stringify({
+              phase2: result.enrichedTracks.find(t => t.trackId === mlcResult.trackId) ? 'completed' : 'skipped',
+              mlc: {
+                hasPublisher: mlcResult.hasPublisher,
+                publisherNames: mlcResult.publisherNames,
+                mlcSongCode: mlcResult.mlcSongCode,
+                error: mlcResult.error,
+              },
+            }),
+          });
+        }
+      } catch (mlcError) {
+        console.error("[Worker] MLC enrichment failed, continuing job:", mlcError);
+        
+        await this.jobQueue.updateJobProgress(job.id, {
+          progress: 85,
+          logs: [
+            `[${new Date().toISOString()}] MLC enrichment failed: ${mlcError instanceof Error ? mlcError.message : String(mlcError)}. Continuing with Phase 2 results only.`,
+          ],
+        });
+
+        this.broadcastProgress(job.id, {
+          status: 'running',
+          progress: 85,
+          message: 'MLC enrichment failed, continuing with Phase 2 results...',
         });
       }
 

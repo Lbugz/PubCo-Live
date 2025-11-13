@@ -1,0 +1,344 @@
+🚀 MLC API Integration — Architecture & Implementation Plan (NO CODE YET)
+1. Purpose of MLC Integration
+
+The MLC (Mechanical Licensing Collective) provides the most authoritative U.S. publishing metadata.
+
+This data tells you:
+
+✔ Who owns the copyright
+✔ Whether a track is signed or self-published
+✔ All publishers attached to a work
+✔ ISWC (composition ID)
+✔ IPI numbers for writers
+✔ Royalty collection splits
+✔ Work registration status (huge for A&R)
+
+This is higher-value than Chartmetric writer names — this is copyright ownership.
+
+Your Phase 2 scraping now identifies:
+
+Writer names
+
+Publishers (from Spotify credits, inconsistent)
+
+Stream counts
+
+But MLC gives:
+
+Official publishers
+
+Share percentages
+
+Writer IPIs
+
+ISWC
+
+True copyright holders
+
+Ownership conflicts
+
+This is gold.
+
+💾 2. Configuration Needed
+
+You already received:
+
+MLC API Username
+
+concierge@createsafe.io
+
+MLC API Password
+
+L*u^LCadTgQ!%*9Q
+
+MLC Public API Docs
+
+https://public-api.themlc.com/public-api/
+
+Swagger: https://public-api.themlc.com/api/doc
+
+These will be stored in Replit Secrets:
+
+MLC_API_USERNAME="...”
+MLC_API_PASSWORD="...”
+
+🧱 3. Data Model Updates (No schema changes yet)
+
+You will want to store:
+
+publisherStatus        // 'signed', 'unsigned', 'split', 'disputed'
+publisherList          // array of publisher names
+collectionShare        // % publisher ownership
+ipiNumber              // IPI of primary writer (or all writers)
+iswc                   // composition ID
+mlcSongCode            // Internal MLC song code
+workRegistrationStatus // 'registered' / 'unregistered'
+
+
+ALL OF THESE FIELDS FIT into your existing enrichment metadata object.
+
+No schema updates necessary — you already store:
+
+songwriter
+
+publisher
+
+publisherStatus
+
+ipiNumber
+
+iswc
+
+mlcSongCode
+
+collectionShare
+
+This is perfect.
+
+⚙️ 4. MLC Workflow — Tier 3 Enrichment (exact steps)
+
+MLC must happen AFTER Phase 2 (Spotify credits), because Phase 2 gives the MOST reliable writer names for fallback, and Spotify ISRC recovery gives the ISRC needed for onboarding.
+
+Tier 0 — Spotify API ISRC + Metadata
+
+› Recovers ISRC (if missing)
+› Recovers writer names (if missing)
+
+Tier 1 — Spotify Scrape
+
+› Credits (writers, composers, publishers)
+› Stream counts
+
+→ Tier 2 — Phase 2 finishes
+
+We now have ISRC, writer names, and track metadata.
+
+Tier 3 — MLC STARTS HERE
+Step 1: Query MLC by ISRC
+GET /works?isrc=<ISRC>
+
+
+This returns:
+
+All matching works
+
+Work codes (MLC Song Code)
+
+Associated musical works
+
+Registration status
+
+Linked recordings
+
+Step 2: If empty, fallback to writer name search
+GET /works?writerName=<WriterName>
+
+
+Useful when:
+
+ISRC mismatch
+
+Old catalog
+
+Unregistered works
+
+International releases missing U.S. ISRC
+
+Step 3: For each work:
+
+Call:
+
+GET /works/{mlcSongCode}
+
+
+This returns:
+
+Writer names
+
+IPI numbers
+
+Roles (composer, lyricist)
+
+Publishers
+
+Administrators
+
+Collection share %
+
+Work registration status
+
+ISWC
+
+Step 4: Map MLC → Your Track Fields
+
+publisherStatus
+
+if no publishers → ‘unsigned’
+else if one publisher → 'signed'
+else if multiple → 'split'
+
+
+collectionShare
+Sum % from MLC’s split tree.
+
+ipiNumber
+Use primary writer’s IPI or best match to Spotify writer name.
+
+iswc
+Taken directly from the work record.
+
+publisherList
+Simply join all publishers returned.
+
+mlcSongCode
+Returned from the initial lookup.
+
+Step 5: Save to DB
+
+This completes the authoritative publishing profile.
+
+🛡 5. Error Handling Strategy
+
+404 Not Found
+→ mark publisherStatus = “unregistered”
+
+403 / 401
+→ credentials failure (surface to logs, not UI)
+
+5xx API down
+→ retry with backoff
+
+Multiple works returned
+→ pick the top-ranked result by:
+
+exact title match
+
+writer overlap
+
+share percentage
+
+Name mismatch between Spotify writers and MLC
+→ fallback to ISRC-only lookups
+
+🔁 6. Integration Into Worker (Background Queue)
+
+Once Phase 2 stabilizes (which you’re doing now), integrate MLC:
+
+Worker logic:
+
+for (each track) {
+    // Tier 0: Spotify API
+    // Tier 1: Credits
+    // Tier 2: MLC API
+    // Tier 3: MusicBrainz
+    // Tier 4: Chartmetric
+}
+
+
+The worker ensures:
+
+sequential execution
+
+no concurrency issues
+
+no server crash
+
+long-running jobs don’t tie to Express
+
+This is the PERFECT place to put MLC.
+
+🧪 7. Testing Plan (No code yet)
+Test Set A — Known tracks with heavy MLC presence
+
+Major label releases
+
+Beyoncé, Drake, etc.
+
+Expected:
+
+Work registration
+
+Publishers returned
+
+ISWC present
+
+IPI present
+
+Test Set B — Indie artists
+
+Expected:
+
+publisherStatus = “unsigned”
+
+No IPI
+
+No ISWC
+
+Test Set C — Writer-only searches
+
+Remove ISRC
+Search MLC by writer name only
+
+Expected:
+
+fallback logic catches work
+
+Test Set D — Multi-writer works
+
+Expected:
+
+publisherList length > 1
+
+publisherStatus = “split”
+
+🎨 8. UI Integration Plan (On Track Details Drawer)
+
+Add a new section:
+
+Publishing Data (MLC)
+
+Copyright Ownership
+
+Publisher Status
+
+Primary Publisher
+
+Collection Share
+
+IPI Numbers
+
+ISWC
+
+MLC Song Code
+
+Work Registration Status
+
+You already have the drawer UI patterns — this fits perfectly.
+
+🌟 9. Why NOW Is the Perfect Time to Add MLC
+
+Phase 2 stable
+
+Background queue ACTIVE and reliable
+
+Memory-concurrency fixed
+
+Puppeteer no longer crashes server
+
+You need accurate publishing metadata ASAP
+
+Strong strategic move for CreateSafe:
+
+This is your real differentiator.
+
+MLC enrichments make your platform surpass:
+
+Chartmetric (limited publishing)
+
+Soundcharts
+
+Luminate
+
+Spotify for Artists
+
+Only YOU have this dataset integrated
