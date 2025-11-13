@@ -92,6 +92,7 @@ export async function fetchEditorialTracksViaNetwork(
     const seenOffsets = new Set<number>();
     const allItems: any[] = [];
     const capturedTracks = new Set<string>(); // Track duplicate tracks from GraphQL
+    let graphQLMetadata: any = null; // Store playlist metadata from GraphQL
     
     // Intercept network responses - capture ALL JSON to see what Spotify uses
     let responseCount = 0;
@@ -122,8 +123,20 @@ export async function fetchEditorialTracksViaNetwork(
         
         // Check for Spotify's NEW GraphQL pathfinder API format
         if (url.includes('pathfinder') && json?.data?.playlistV2?.content?.items) {
-          const graphqlItems = json.data.playlistV2.content.items;
+          const playlistV2 = json.data.playlistV2;
+          const graphqlItems = playlistV2.content.items;
           console.log(`[Network Capture] ✅ Found ${graphqlItems.length} tracks in pathfinder GraphQL response!`);
+          
+          // Extract playlist metadata from GraphQL (only if not already captured)
+          if (!graphQLMetadata) {
+            graphQLMetadata = {
+              name: playlistV2.name,
+              curator: playlistV2.ownerV2?.data?.name || playlistV2.owner?.name,
+              followers: playlistV2.followers?.totalCount || null,
+              imageUrl: playlistV2.images?.items?.[0]?.sources?.[0]?.url || playlistV2.images?.[0]?.url,
+            };
+            console.log(`[Network Capture] 📊 Extracted GraphQL metadata: name="${graphQLMetadata.name}", curator="${graphQLMetadata.curator}", followers=${graphQLMetadata.followers}`);
+          }
           
           // Parse GraphQL pathfinder format: data.playlistV2.content.items[]
           for (const item of graphqlItems) {
@@ -260,54 +273,63 @@ export async function fetchEditorialTracksViaNetwork(
     await wait(2000);
     
     // Extract playlist metadata (name, curator, followers, artwork)
-    let playlistName: string | null = null;
-    let curator: string | null = null;
-    let followers: number | null = null;
-    let imageUrl: string | null = null;
+    // PRIORITY 1: Use GraphQL metadata if available (most reliable)
+    let playlistName: string | null = graphQLMetadata?.name || null;
+    let curator: string | null = graphQLMetadata?.curator || null;
+    let followers: number | null = graphQLMetadata?.followers || null;
+    let imageUrl: string | null = graphQLMetadata?.imageUrl || null;
     
-    try {
-      const metadata = await page.evaluate(() => {
-        // Extract playlist name - be specific to avoid sidebar elements
-        const nameElement = document.querySelector('[data-testid="playlist-page"] h1[data-encore-id="type"]')
-                           || document.querySelector('main h1[data-encore-id="type"]')
-                           || document.querySelector('h1[data-encore-id="type"]');
-        let name = nameElement?.textContent?.trim() || null;
+    // FALLBACK: Try DOM extraction if GraphQL didn't provide complete metadata
+    if (!playlistName || !curator || !followers || !imageUrl) {
+      console.log(`[Network Capture] GraphQL metadata incomplete, trying DOM fallback...`);
+      try {
+        const metadata = await page.evaluate(() => {
+          // Extract playlist name - be specific to avoid sidebar elements
+          const nameElement = document.querySelector('[data-testid="playlist-page"] h1[data-encore-id="type"]')
+                             || document.querySelector('main h1[data-encore-id="type"]')
+                             || document.querySelector('h1[data-encore-id="type"]');
+          let name = nameElement?.textContent?.trim() || null;
+          
+          // Fallback to page title if element not found or contains "null"
+          if (!name || name === "null" || name === "Your Library") {
+            const titleMatch = document.title.match(/^([^|]+)/);
+            name = titleMatch ? titleMatch[1].trim() : null;
+          }
+          
+          const curatorElement = document.querySelector('[data-testid="entityHeaderSubtitle"] a')
+                                || document.querySelector('[data-testid="entityHeaderSubtitle"] span')
+                                || document.querySelector('div[data-testid="entity-subtitle"]');
+          const curator = curatorElement?.textContent?.trim() || null;
+          
+          const followerElement = document.querySelector('button[data-testid="followers-count"]')
+                                  || document.querySelector('[data-testid="entity-subtitle-more-button"]')
+                                  || document.querySelector('[aria-label*="followers"]');
+          const followerText = followerElement?.textContent?.trim() || null;
+          
+          // Extract playlist artwork - look for the cover image
+          const imageElement = document.querySelector('[data-testid="playlist-image"] img')
+                              || document.querySelector('[data-testid="entity-image"] img')
+                              || document.querySelector('img[alt*="playlist"]')
+                              || document.querySelector('main img');
+          const imageUrl = imageElement?.getAttribute('src') || null;
+          
+          return { name, curator, followerText, imageUrl };
+        });
         
-        // Fallback to page title if element not found or contains "null"
-        if (!name || name === "null" || name === "Your Library") {
-          const titleMatch = document.title.match(/^([^|]+)/);
-          name = titleMatch ? titleMatch[1].trim() : null;
-        }
+        // Use DOM values only if GraphQL didn't provide them
+        playlistName = playlistName || metadata.name;
+        curator = curator || metadata.curator;
+        followers = followers || (metadata.followerText ? parseFollowerCount(metadata.followerText) : null);
+        imageUrl = imageUrl || metadata.imageUrl;
         
-        const curatorElement = document.querySelector('[data-testid="entityHeaderSubtitle"] a')
-                              || document.querySelector('[data-testid="entityHeaderSubtitle"] span')
-                              || document.querySelector('div[data-testid="entity-subtitle"]');
-        const curator = curatorElement?.textContent?.trim() || null;
-        
-        const followerElement = document.querySelector('button[data-testid="followers-count"]')
-                                || document.querySelector('[data-testid="entity-subtitle-more-button"]')
-                                || document.querySelector('[aria-label*="followers"]');
-        const followerText = followerElement?.textContent?.trim() || null;
-        
-        // Extract playlist artwork - look for the cover image
-        const imageElement = document.querySelector('[data-testid="playlist-image"] img')
-                            || document.querySelector('[data-testid="entity-image"] img')
-                            || document.querySelector('img[alt*="playlist"]')
-                            || document.querySelector('main img');
-        const imageUrl = imageElement?.getAttribute('src') || null;
-        
-        return { name, curator, followerText, imageUrl };
-      });
-      
-      playlistName = metadata.name;
-      curator = metadata.curator;
-      followers = metadata.followerText ? parseFollowerCount(metadata.followerText) : null;
-      imageUrl = metadata.imageUrl;
-      
-      console.log(`[Network Capture] Metadata: name="${playlistName}", curator="${curator}", followers=${followers}, artwork=${imageUrl ? 'yes' : 'no'}`);
-    } catch (err) {
-      console.warn('[Network Capture] Failed to extract metadata:', err);
+        console.log(`[Network Capture] DOM metadata: name="${metadata.name}", curator="${metadata.curator}", followers=${followers}`);
+      } catch (err) {
+        console.warn('[Network Capture] Failed to extract DOM metadata:', err);
+      }
     }
+    
+    console.log(`[Network Capture] Final metadata: name="${playlistName}", curator="${curator}", followers=${followers}, artwork=${imageUrl ? 'yes' : 'no'}`);
+    console.log(`[Network Capture] Metadata source: ${graphQLMetadata ? 'GraphQL (primary)' : 'DOM (fallback)'}`);
     
     // Save cookies for future use with microservice
     try {

@@ -589,7 +589,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tracked-playlists", async (req, res) => {
     try {
       const playlists = await storage.getTrackedPlaylists();
-      res.json(playlists);
+      
+      // Normalize snake_case DB fields to camelCase for frontend compatibility
+      const normalized = playlists.map(p => ({
+        id: p.id,
+        name: p.name,
+        playlistId: (p as any).playlist_id || p.playlistId,
+        spotifyUrl: (p as any).spotify_url || p.spotifyUrl,
+        totalTracks: (p as any).total_tracks || p.totalTracks,
+        lastFetchCount: (p as any).last_fetch_count || p.lastFetchCount,
+        isComplete: (p as any).is_complete || p.isComplete,
+        fetchMethod: (p as any).fetch_method || p.fetchMethod,
+        lastChecked: (p as any).last_checked || p.lastChecked,
+        isEditorial: (p as any).is_editorial || p.isEditorial,
+        createdAt: (p as any).created_at || p.createdAt,
+        curator: p.curator,
+        source: p.source,
+        genre: p.genre,
+        region: p.region,
+        followers: p.followers,
+        imageUrl: (p as any).image_url || p.imageUrl, // Critical: Map snake_case to camelCase
+      }));
+      
+      res.json(normalized);
     } catch (error) {
       console.error("Error fetching tracked playlists:", error);
       res.status(500).json({ error: "Failed to fetch tracked playlists" });
@@ -770,6 +792,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isComplete: 0,
         lastFetchCount: 0,
       });
+      
+      // Log activity history for playlist addition
+      try {
+        await storage.logActivity({
+          playlistId: playlist.playlistId,
+          entityType: 'playlist',
+          eventType: 'playlist_added',
+          eventDescription: `Playlist "${playlist.name}" added to tracking`,
+          metadata: JSON.stringify({
+            playlistId: playlist.playlistId,
+            playlistName: playlist.name,
+            totalTracks,
+            curator,
+            followers,
+            isEditorial,
+            fetchMethod,
+          }),
+        });
+      } catch (activityError: any) {
+        console.error('Failed to log playlist addition activity:', activityError);
+        // Don't block response if activity logging fails
+      }
+      
       res.json(playlist);
     } catch (error: any) {
       console.error("Error adding tracked playlist:", error);
