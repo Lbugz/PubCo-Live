@@ -3607,6 +3607,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enrichment job endpoints
+  app.post("/api/enrichment-jobs", async (req, res) => {
+    try {
+      const { trackIds, playlistId } = req.body;
+      
+      if (!trackIds || !Array.isArray(trackIds) || trackIds.length === 0) {
+        return res.status(400).json({ error: "trackIds array is required" });
+      }
+
+      const { getJobQueue } = await import("./enrichment/jobQueueManager");
+      const jobQueue = getJobQueue();
+
+      if (!jobQueue) {
+        return res.status(503).json({ error: "Job queue not initialized" });
+      }
+
+      const job = await jobQueue.enqueue({
+        type: 'enrich-tracks',
+        playlistId: playlistId || null,
+        trackIds,
+        status: 'queued',
+        progress: 0,
+        totalTracks: trackIds.length,
+        enrichedTracks: 0,
+        errorCount: 0,
+        logs: [],
+      });
+
+      res.json({ 
+        jobId: job.id,
+        status: job.status,
+        trackCount: trackIds.length,
+        message: `Job created for ${trackIds.length} tracks`
+      });
+    } catch (error: any) {
+      console.error("Error creating enrichment job:", error);
+      res.status(500).json({ error: error.message || "Failed to create enrichment job" });
+    }
+  });
+
+  app.get("/api/enrichment-jobs/:jobId", async (req, res) => {
+    try {
+      const { jobId } = req.params;
+
+      const { getJobQueue } = await import("./enrichment/jobQueueManager");
+      const jobQueue = getJobQueue();
+
+      if (!jobQueue) {
+        return res.status(503).json({ error: "Job queue not initialized" });
+      }
+
+      const job = await jobQueue.getJob(jobId);
+
+      if (!job) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+
+      res.json({
+        id: job.id,
+        type: job.type,
+        status: job.status,
+        progress: job.progress,
+        totalTracks: job.totalTracks,
+        enrichedTracks: job.enrichedTracks,
+        errorCount: job.errorCount,
+        logs: job.logs || [],
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+        completedAt: job.completedAt,
+      });
+    } catch (error: any) {
+      console.error("Error fetching enrichment job:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch enrichment job" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
