@@ -156,12 +156,34 @@ export async function fetchEditorialTracksViaNetwork(
               const artistNames = trackData.artists?.items?.map((a: any) => a.profile?.name).filter(Boolean) || [];
               const albumName = trackData.albumOfTrack?.name || null;
               
+              // CRITICAL FIX: Extract ISRC from GraphQL response
+              // DEBUG: Log structure for first track to understand ISRC location
+              if (allItems.length === 0) {
+                console.log('[Network Capture] 🔍 DEBUG - First track structure:');
+                console.log('trackData keys:', Object.keys(trackData));
+                console.log('trackData.trackUnion:', trackData.trackUnion);
+                console.log('trackData.externalIds:', trackData.externalIds);
+                console.log('trackData.isrc:', trackData.isrc);
+              }
+              
+              const isrc = trackData.trackUnion?.isrc || 
+                          trackData.externalIds?.isrc || 
+                          trackData.isrc || 
+                          null;
+              
+              if (allItems.length === 0 && isrc) {
+                console.log(`[Network Capture] ✅ Found ISRC: ${isrc}`);
+              } else if (allItems.length === 0 && !isrc) {
+                console.warn('[Network Capture] ⚠️  ISRC not found in trackData! Need to check GraphQL structure.');
+              }
+              
               allItems.push({
                 id: trackId,
                 name: trackName,
                 artists: artistNames,
                 album: albumName,
                 uri: trackUri,
+                external_ids: { isrc }, // Add ISRC so line 357 can find it
               });
             } catch (err) {
               console.error('[Network Capture] Error parsing pathfinder track:', err);
