@@ -19,10 +19,11 @@ The frontend is a single-page React application built with a modular component a
 - **Data Fetching**: Utilizes TanStack Query.
 - **Scoring Algorithm**: Proprietary algorithm ranks tracks based on Fresh Finds appearance, independent label status, and missing publisher/writer data.
 - **Playlist Metadata Timing**: Ensures playlist metadata is persisted to `tracked_playlists` before track insertion, with a backfill endpoint for retroactive updates.
-- **Automatic Enrichment**: Background enrichment triggers automatically after playlist fetch operations.
-- **Unified Enrichment Pipeline**: A 5-tier pipeline:
-    - **Tier 0 (ISRC Recovery)**: Uses Spotify API for missing ISRCs.
-    - **Tier 1 (Spotify Credits & Stream Count Scraping)**: Uses Puppeteer to scrape songwriter credits and stream counts from Spotify track pages, handling various stream count formats and ensuring robust execution with timeout protection.
+- **Automatic Enrichment**: Background enrichment triggers automatically after playlist fetch operations via `scheduleMetricsUpdate`.
+- **Unified Enrichment Pipeline**: Multi-phase enrichment system that runs after track insertion:
+    - **Phase 1 (Spotify API Batch Enrichment)**: Runs FIRST to maximize ISRC coverage. Batches 50 tracks per API call to recover ISRCs, popularity, duration, explicit flags, release dates, album labels, album images, audio features (energy, valence, danceability, tempo), artist genres, and artist followers. Includes retry logic with exponential backoff for rate limits. Selective processing skips tracks with complete metadata. Achieves 90-99% ISRC recovery rate, enabling downstream Chartmetric matching.
+    - **Phase 2 (Spotify Credits & Stream Count Scraping)**: [Planned] Uses Puppeteer queue with concurrency controls to scrape songwriter credits and stream counts from Spotify track pages, handling various stream count formats (numeric, 1.2M, 1.2B) with timeout protection.
+    - **Chartmetric ISRC Matching**: Runs after Phase 1 to leverage recovered ISRCs for Chartmetric ID lookup via playlist-level batch matching and per-track ISRC lookups.
     - **Tier 2 (MLC Publisher Status)**: Designed for MLC API integration.
     - **Tier 3 (MusicBrainz Social Links)**: Queries MusicBrainz API for songwriter social profiles.
     - **Tier 4 (Chartmetric Analytics)**: Fetches cross-platform metrics, track stage, moods, and activities.

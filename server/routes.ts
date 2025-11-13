@@ -2897,6 +2897,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.insertTracks(allTracks);
         console.log(`Successfully saved ${allTracks.length} new tracks for ${today}`);
         
+        // PHASE 1: Spotify API Batch Enrichment (ISRC Recovery + Metadata)
+        // This runs FIRST to maximize ISRC coverage before Chartmetric matching
+        console.log(`\n🎵 Starting enrichment pipeline for ${allTracks.length} tracks...`);
+        
+        try {
+          const { enrichTracksWithSpotifyAPI } = await import("./enrichment/spotifyBatchEnrichment");
+          const spotify = await getUncachableSpotifyClient();
+          
+          const insertedTracks = await storage.getTracksByWeek(today);
+          const newlyInsertedTracks = insertedTracks.filter(track => 
+            allTracks.some(t => t.spotifyUrl === track.spotifyUrl && t.playlistId === track.playlistId)
+          );
+          
+          const phase1Result = await enrichTracksWithSpotifyAPI(
+            spotify,
+            newlyInsertedTracks,
+            storage.updateTrackMetadata.bind(storage)
+          );
+          
+          if (phase1Result.tracksEnriched > 0) {
+            console.log(`✅ Phase 1 Complete: ${phase1Result.tracksEnriched} tracks enriched, ${phase1Result.isrcRecovered} ISRCs recovered`);
+            
+            await storage.logActivity({
+              entityType: 'track',
+              trackId: null,
+              playlistId: null,
+              eventType: 'batch_enrichment',
+              eventDescription: `Phase 1: Spotify API enriched ${phase1Result.tracksEnriched} tracks (${phase1Result.isrcRecovered} ISRCs recovered)`,
+              metadata: JSON.stringify({
+                phase: 1,
+                tracksProcessed: phase1Result.tracksProcessed,
+                tracksEnriched: phase1Result.tracksEnriched,
+                isrcRecovered: phase1Result.isrcRecovered,
+                fieldStats: phase1Result.fieldStats,
+                apiCalls: phase1Result.apiCalls,
+              })
+            });
+          }
+        } catch (phase1Error: any) {
+          console.warn(`⚠️  Phase 1 enrichment failed (non-blocking): ${phase1Error.message}`);
+        }
+        
+        console.log(`\n📊 Starting Chartmetric enrichment (ISRC matching)...`);
+        
         // OPTIMIZATION: Trigger async Chartmetric enrichment (non-blocking)
         // Consolidates playlist-level ISRC matching + per-track lookups in background
         if (process.env.CHARTMETRIC_API_KEY) {
@@ -2905,9 +2949,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           console.log(`🚀 Triggering async Chartmetric enrichment for ${allTracks.length} tracks (non-blocking)`);
           
-          // Run in background without blocking response
-          // Capture fresh track data for immediate enrichment
-          const freshTracks = allTracks.map(t => ({ ...t }));
+          // Refetch tracks after Phase 1 to get enriched data (ISRCs, metadata)
+          const insertedTracks = await storage.getTracksByWeek(today);
+          const freshTracks = insertedTracks.filter(track => 
+            allTracks.some(t => t.spotifyUrl === track.spotifyUrl && t.playlistId === track.playlistId)
+          );
           
           (async () => {
             try {
