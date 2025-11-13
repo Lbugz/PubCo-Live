@@ -201,6 +201,14 @@ export class EnrichmentWorker {
             spotifyStreams: enrichedTrack.spotifyStreams,
           }),
         });
+
+        if (this.wsBroadcast) {
+          this.wsBroadcast('track_enriched', {
+            type: 'track_enriched',
+            trackId: enrichedTrack.trackId,
+            phase: 2,
+          });
+        }
       }
 
       await this.jobQueue.updateJobProgress(job.id, {
@@ -279,6 +287,14 @@ export class EnrichmentWorker {
               error: mlcResult.error,
             }),
           });
+
+          if (this.wsBroadcast) {
+            this.wsBroadcast('track_enriched', {
+              type: 'track_enriched',
+              trackId: mlcResult.trackId,
+              phase: 'mlc',
+            });
+          }
         }
       } catch (mlcError) {
         console.error("[Worker] MLC enrichment failed, continuing job:", mlcError);
