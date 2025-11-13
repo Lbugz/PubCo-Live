@@ -150,6 +150,36 @@ export async function enrichTracksWithSpotifyAPI(
         }
       }
 
+      const artistDataMap = new Map<string, any>();
+      const artistIdsToFetch = new Set<string>();
+      for (const trackData of tracksData) {
+        if (trackData.artists && trackData.artists.length > 0) {
+          const primaryArtistId = trackData.artists[0].id;
+          const dbTrack = trackIdMap.get(trackData.id);
+          if (dbTrack && (!dbTrack.artistGenres || !dbTrack.artistFollowers)) {
+            artistIdsToFetch.add(primaryArtistId);
+          }
+        }
+      }
+
+      if (artistIdsToFetch.size > 0) {
+        try {
+          const artistIds = Array.from(artistIdsToFetch);
+          const artistsData = await retryWithBackoff(() => 
+            spotify.artists.get(artistIds)
+          );
+          result.apiCalls++;
+
+          for (const artistData of artistsData) {
+            if (artistData && artistData.id) {
+              artistDataMap.set(artistData.id, artistData);
+            }
+          }
+        } catch (artistBatchError: any) {
+          console.warn(`[Phase 1] Batch artist fetch failed, falling back to individual requests: ${artistBatchError.message}`);
+        }
+      }
+
       for (const trackData of tracksData) {
         if (!trackData || !trackData.id) continue;
 
@@ -228,13 +258,21 @@ export async function enrichTracksWithSpotifyAPI(
 
         if (trackData.artists && trackData.artists.length > 0) {
           const primaryArtist = trackData.artists[0];
-          
-          try {
-            const artistData = await retryWithBackoff(() => 
-              spotify.artists.get(primaryArtist.id)
-            );
-            result.apiCalls++;
+          let artistData = artistDataMap.get(primaryArtist.id);
 
+          if (!artistData && (!dbTrack.artistGenres || !dbTrack.artistFollowers)) {
+            try {
+              artistData = await retryWithBackoff(() => 
+                spotify.artists.get(primaryArtist.id)
+              );
+              result.apiCalls++;
+              artistDataMap.set(primaryArtist.id, artistData);
+            } catch (artistError: any) {
+              console.warn(`[Phase 1] Failed to fetch artist data for ${primaryArtist.name}: ${artistError.message}`);
+            }
+          }
+
+          if (artistData) {
             if (!dbTrack.artistGenres && artistData.genres?.length) {
               update.artistGenres = artistData.genres;
               result.fieldStats.artistGenres++;
@@ -246,8 +284,6 @@ export async function enrichTracksWithSpotifyAPI(
               result.fieldStats.artistFollowers++;
               hasUpdates = true;
             }
-          } catch (artistError: any) {
-            console.warn(`[Phase 1] Failed to fetch artist data for ${primaryArtist.name}: ${artistError.message}`);
           }
         }
 
