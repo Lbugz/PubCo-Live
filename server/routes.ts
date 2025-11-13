@@ -1054,6 +1054,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           label: enrichedTrack.label ?? undefined,
           spotifyStreams: enrichedTrack.spotifyStreams ?? undefined,
         });
+        
+        // Log per-track activity
+        const creditsFound = [];
+        if (enrichedTrack.songwriter) creditsFound.push('songwriter');
+        if (enrichedTrack.producer) creditsFound.push('producer');
+        if (enrichedTrack.publisher) creditsFound.push('publisher');
+        if (enrichedTrack.label) creditsFound.push('label');
+        
+        const streamsText = enrichedTrack.spotifyStreams 
+          ? `, ${enrichedTrack.spotifyStreams.toLocaleString()} streams` 
+          : '';
+        
+        await storage.logActivity({
+          entityType: 'track',
+          trackId: enrichedTrack.trackId,
+          eventType: 'credits_enriched',
+          eventDescription: `Phase 2: Scraped ${creditsFound.length > 0 ? creditsFound.join(', ') : 'no credits'}${streamsText}`,
+          metadata: JSON.stringify({
+            phase: 2,
+            songwriter: enrichedTrack.songwriter,
+            producer: enrichedTrack.producer,
+            publisher: enrichedTrack.publisher,
+            label: enrichedTrack.label,
+            spotifyStreams: enrichedTrack.spotifyStreams,
+          })
+        });
       }
       
       // Log activity
@@ -3071,6 +3097,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 publisher: enrichedTrack.publisher ?? undefined,
                 label: enrichedTrack.label ?? undefined,
                 spotifyStreams: enrichedTrack.spotifyStreams ?? undefined,
+              });
+              
+              // Log per-track activity
+              const creditsFound = [];
+              if (enrichedTrack.songwriter) creditsFound.push('songwriter');
+              if (enrichedTrack.producer) creditsFound.push('producer');
+              if (enrichedTrack.publisher) creditsFound.push('publisher');
+              if (enrichedTrack.label) creditsFound.push('label');
+              
+              const streamsText = enrichedTrack.spotifyStreams 
+                ? `, ${enrichedTrack.spotifyStreams.toLocaleString()} streams` 
+                : '';
+              
+              await storage.logActivity({
+                entityType: 'track',
+                trackId: enrichedTrack.trackId,
+                eventType: 'credits_enriched',
+                eventDescription: `Phase 2: Scraped ${creditsFound.length > 0 ? creditsFound.join(', ') : 'no credits'}${streamsText}`,
+                metadata: JSON.stringify({
+                  phase: 2,
+                  songwriter: enrichedTrack.songwriter,
+                  producer: enrichedTrack.producer,
+                  publisher: enrichedTrack.publisher,
+                  label: enrichedTrack.label,
+                  spotifyStreams: enrichedTrack.spotifyStreams,
+                })
               });
             }
             
