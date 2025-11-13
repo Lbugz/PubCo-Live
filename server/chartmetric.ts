@@ -333,19 +333,36 @@ export async function enrichTrackWithChartmetric(track: PlaylistSnapshot): Promi
 
     // Step 2: Get streaming stats (gracefully handle 401 for basic tier)
     const stats = await getTrackStreamingStats(chartmetricTrack.id);
+    
+    // DEBUG: Log what Chartmetric actually returns
+    console.log('[Chartmetric DEBUG] Stats object:', JSON.stringify(stats, null, 2));
+    if (stats?.spotify) {
+      console.log('[Chartmetric DEBUG] Spotify stats keys:', Object.keys(stats.spotify));
+    }
 
     // Step 3: Get full track metadata for songwriter IDs and additional context
     const metadata = await getTrackMetadata(chartmetricTrack.id);
 
-    // Determine track stage based on Spotify popularity (0-100 scale)
+    // Extract Spotify streams - try multiple possible field names
+    let spotifyStreams: number | undefined;
+    if (stats?.spotify) {
+      // Try different field names that Chartmetric might use
+      const spotifyStats = stats.spotify as any;
+      spotifyStreams = spotifyStats.current_streams 
+        || spotifyStats.streams 
+        || spotifyStats.total_streams
+        || spotifyStats.stream_count;
+    }
+    
+    // Determine track stage based on Spotify streams
     let trackStage: string | undefined;
-    const popularity = stats?.spotify?.current_streams;
-    if (popularity !== undefined) {
-      // Spotify popularity is 0-100
-      if (popularity >= 75) trackStage = "Superstar";
-      else if (popularity >= 50) trackStage = "Mainstream";
-      else if (popularity >= 25) trackStage = "Mid-Level";
-      else trackStage = "Developing";
+    if (spotifyStreams !== undefined) {
+      // Classify based on stream count
+      if (spotifyStreams >= 10000000) trackStage = "Superstar";        // 10M+
+      else if (spotifyStreams >= 1000000) trackStage = "Mainstream";   // 1M+
+      else if (spotifyStreams >= 100000) trackStage = "Mid-Level";     // 100K+
+      else if (spotifyStreams >= 10000) trackStage = "Developing";     // 10K+
+      else trackStage = "Emerging";                                     // <10K
     }
 
     // Extract songwriter IDs and metadata fields
@@ -382,7 +399,7 @@ export async function enrichTrackWithChartmetric(track: PlaylistSnapshot): Promi
 
     const result: ChartmetricEnrichmentResult = {
       chartmetricId: chartmetricTrack.id,
-      spotifyStreams: stats?.spotify?.current_streams,
+      spotifyStreams: spotifyStreams,
       streamingVelocity: stats?.spotify?.velocity,
       youtubeViews: stats?.youtube?.views,
       trackStage,

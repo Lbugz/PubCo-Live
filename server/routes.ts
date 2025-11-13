@@ -815,6 +815,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Don't block response if activity logging fails
       }
       
+      // Trigger automatic fetch in background (non-blocking)
+      (async () => {
+        try {
+          console.log(`🚀 Auto-triggering fetch for newly added playlist: ${playlist.name}`);
+          
+          // Small delay to ensure response is sent first
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Trigger fetch for this specific playlist
+          const fetchResponse = await fetch(`http://localhost:5000/api/fetch-playlists`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              mode: 'specific',
+              playlistId: playlist.playlistId
+            })
+          });
+          
+          if (fetchResponse.ok) {
+            console.log(`✅ Auto-fetch completed for: ${playlist.name}`);
+          } else {
+            console.warn(`⚠️ Auto-fetch failed for ${playlist.name}: ${fetchResponse.status}`);
+          }
+        } catch (autoFetchError: any) {
+          console.error(`Auto-fetch error for ${playlist.name}:`, autoFetchError.message);
+        }
+      })();
+      
       res.json(playlist);
     } catch (error: any) {
       console.error("Error adding tracked playlist:", error);
