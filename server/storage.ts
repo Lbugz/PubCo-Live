@@ -40,7 +40,7 @@ export interface IStorage {
   updateArtistLinks(artistId: string, links: { instagram?: string; twitter?: string; facebook?: string; bandcamp?: string; linkedin?: string; youtube?: string; discogs?: string; website?: string }): Promise<void>;
   getTracksNeedingChartmetricEnrichment(limit?: number): Promise<PlaylistSnapshot[]>;
   updateTrackChartmetric(id: string, data: { chartmetricId?: string; chartmetricStatus?: string; spotifyStreams?: number; streamingVelocity?: string; trackStage?: string; playlistFollowers?: number; youtubeViews?: number; chartmetricEnrichedAt?: Date; songwriterIds?: string[]; composerName?: string; moods?: string[]; activities?: string[] }): Promise<void>;
-  updateTrackChartmetricIdByIsrc(updates: Array<{ isrc: string; chartmetricId: string }>): Promise<number>;
+  updateTrackChartmetricIdByIsrc(updates: Array<{ isrc: string; chartmetricId: string }>): Promise<{ updated: number; skipped: number; errors: string[] }>;
   getStaleChartmetricTracks(daysOld: number, limit?: number): Promise<PlaylistSnapshot[]>;
   getDataCounts(): Promise<{ playlists: number; tracks: number; songwriters: number; tags: number; activities: number }>;
   deleteAllData(): Promise<void>;
@@ -468,25 +468,43 @@ export class DatabaseStorage implements IStorage {
       .where(eq(playlistSnapshots.id, id));
   }
 
-  async updateTrackChartmetricIdByIsrc(updates: Array<{ isrc: string; chartmetricId: string }>): Promise<number> {
-    if (updates.length === 0) return 0;
-    
-    let updatedCount = 0;
-    
-    for (const { isrc, chartmetricId } of updates) {
-      const result = await db.update(playlistSnapshots)
-        .set({ chartmetricId })
-        .where(
-          and(
-            eq(playlistSnapshots.isrc, isrc),
-            sql`${playlistSnapshots.chartmetricId} IS NULL`
-          )
-        );
-      
-      updatedCount += result.rowCount || 0;
+  async updateTrackChartmetricIdByIsrc(updates: Array<{ isrc: string; chartmetricId: string }>): Promise<{ updated: number; skipped: number; errors: string[] }> {
+    if (updates.length === 0) {
+      return { updated: 0, skipped: 0, errors: [] };
     }
     
-    return updatedCount;
+    const errors: string[] = [];
+    
+    try {
+      // Use parameterized CTE for safe bulk update (prevents SQL injection)
+      // WITH mapping AS (VALUES ('ISRC1', 'CM_ID1'), ('ISRC2', 'CM_ID2'))
+      // UPDATE playlist_snapshots SET chartmetric_id = mapping.cm_id_val
+      // FROM mapping WHERE isrc = mapping.isrc_val AND chartmetric_id IS NULL
+      
+      const tableName = playlistSnapshots._.name;
+      const valuesList = updates.map(({ isrc, chartmetricId }) => 
+        sql`(${isrc}, ${chartmetricId})`
+      );
+      
+      const result = await db.execute(sql`
+        WITH mapping (isrc_val, cm_id_val) AS (VALUES ${sql.join(valuesList, sql`, `)})
+        UPDATE ${sql.raw(tableName)}
+        SET chartmetric_id = mapping.cm_id_val
+        FROM mapping
+        WHERE ${sql.raw(tableName)}.isrc = mapping.isrc_val
+          AND ${sql.raw(tableName)}.chartmetric_id IS NULL
+      `);
+      
+      const updatedCount = result.rowCount || 0;
+      const skippedCount = updates.length - updatedCount;
+      
+      console.log(`📊 Chartmetric ID bulk update: ${updatedCount} tracks updated, ${skippedCount} skipped`);
+      return { updated: updatedCount, skipped: skippedCount, errors };
+    } catch (error: any) {
+      errors.push(`Bulk update failed: ${error.message}`);
+      console.error(`❌ Chartmetric ID bulk update failed:`, error.message);
+      return { updated: 0, skipped: updates.length, errors };
+    }
   }
 
   async getStaleChartmetricTracks(daysOld: number = 7, limit: number = 50): Promise<PlaylistSnapshot[]> {

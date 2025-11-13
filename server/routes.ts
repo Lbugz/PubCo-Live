@@ -616,7 +616,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const chartmetricMetadata = await getPlaylistMetadata(validatedPlaylist.playlistId);
           
-          if (chartmetricMetadata) {
+          // Validate that Chartmetric actually returned meaningful data
+          if (chartmetricMetadata && chartmetricMetadata.name && chartmetricMetadata.trackCount !== undefined) {
             totalTracks = chartmetricMetadata.trackCount || null;
             curator = chartmetricMetadata.curator || null;
             followers = chartmetricMetadata.followerCount || null;
@@ -629,11 +630,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`✅ Chartmetric: Detected editorial playlist (curator=Spotify): ${validatedPlaylist.playlistId}`);
             }
             
-            console.log(`✅ Chartmetric metadata: ${totalTracks} tracks, curator="${curator}", followers=${followers}`);
+            console.log(`✅ Chartmetric metadata success: ${totalTracks} tracks, curator="${curator}", followers=${followers}`);
             metadataFetched = true;
+          } else {
+            console.log(`⚠️  Chartmetric returned incomplete metadata for ${validatedPlaylist.playlistId}, will try Spotify API`);
           }
         } catch (chartmetricError: any) {
-          console.log(`Chartmetric metadata failed for ${validatedPlaylist.playlistId}: ${chartmetricError.message}`);
+          console.log(`❌ Chartmetric metadata error for ${validatedPlaylist.playlistId}: ${chartmetricError.message}`);
         }
         
         // FALLBACK: Use Spotify API if Chartmetric failed
@@ -2682,6 +2685,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         await storage.insertTracks(allTracks);
         console.log(`Successfully saved ${allTracks.length} new tracks for ${today}`);
+        
+        // OPTIMIZATION: Trigger async Chartmetric playlist matching (non-blocking)
+        // Only process playlists that actually had new tracks inserted
+        if (process.env.CHARTMETRIC_API_KEY && allTracks.length > 0) {
+          const playlistsWithNewTracks = new Set(allTracks.map(t => t.playlistId));
+          const playlistsToMatch = trackedPlaylists.filter(p => playlistsWithNewTracks.has(p.playlistId));
+          
+          if (playlistsToMatch.length > 0) {
+            console.log(`🚀 Triggering async Chartmetric ISRC matching for ${playlistsToMatch.length} playlists (non-blocking)`);
+            
+            // Run in background without blocking response
+            (async () => {
+              try {
+                let totalMatched = 0;
+                for (const playlist of playlistsToMatch) {
+                  try {
+                    const chartmetricTracks = await getPlaylistTracks(playlist.playlistId);
+                    
+                    if (chartmetricTracks && chartmetricTracks.length > 0) {
+                      const updates = chartmetricTracks
+                        .filter(t => t.isrc && t.chartmetricId)
+                        .map(t => ({
+                          isrc: t.isrc!,
+                          chartmetricId: t.chartmetricId
+                        }));
+                      
+                      if (updates.length > 0) {
+                        const result = await storage.updateTrackChartmetricIdByIsrc(updates);
+                        totalMatched += result.updated;
+                        
+                        if (result.updated > 0) {
+                          console.log(`  ✅ ${playlist.name}: Matched ${result.updated} tracks by ISRC`);
+                        }
+                      }
+                    }
+                  } catch (playlistError: any) {
+                    console.log(`  ⚠️  Skipping ${playlist.name}: ${playlistError.message}`);
+                  }
+                }
+                
+                if (totalMatched > 0) {
+                  console.log(`✅ Background Chartmetric ISRC matching complete: ${totalMatched} tracks pre-enriched`);
+                }
+              } catch (error: any) {
+                console.warn(`⚠️  Background Chartmetric matching failed: ${error.message}`);
+              }
+            })().catch(err => console.error('Background Chartmetric matching error:', err));
+          }
+        }
         
         // Trigger enrichment and metrics update for newly added tracks
         scheduleMetricsUpdate({ source: "fetch_playlists" });

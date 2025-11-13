@@ -752,6 +752,7 @@ export async function searchPlaylists(
 
 export interface ChartmetricPlaylistTrack {
   chartmetricId: string;
+  spotifyId?: string;
   name: string;
   artists: Array<{ id?: string; name: string }>;
   isrc?: string;
@@ -772,34 +773,77 @@ export async function getPlaylistTracks(
       return null;
     }
 
-    console.log(`🎵 Chartmetric: Fetching tracks for playlist ${chartmetricId}`);
+    console.log(`🎵 Chartmetric: Fetching tracks for playlist ${chartmetricId} (with pagination)`);
     
-    const tracks = await makeChartmetricRequest<any>(
-      `/playlist/${chartmetricId}/current/tracks`
-    );
+    const allTracks: any[] = [];
+    let offset = 0;
+    const limit = 100; // Chartmetric default is 20, max is 100
+    let hasMore = true;
     
-    if (!tracks || !Array.isArray(tracks)) {
-      console.log(`⚠️  Chartmetric: No tracks returned for playlist ${chartmetricId}`);
-      return null;
+    // Pagination loop
+    while (hasMore) {
+      const endpoint = `/playlist/${chartmetricId}/current/tracks?limit=${limit}&offset=${offset}`;
+      const response = await makeChartmetricRequest<any>(endpoint);
+      
+      if (!response) {
+        hasMore = false;
+        break;
+      }
+      
+      // Handle both array response and object response with tracks array
+      let tracks: any[] = [];
+      if (Array.isArray(response)) {
+        tracks = response;
+      } else if (response.tracks && Array.isArray(response.tracks)) {
+        tracks = response.tracks;
+      } else if (response.obj && Array.isArray(response.obj.tracks)) {
+        tracks = response.obj.tracks;
+      }
+      
+      if (tracks.length === 0) {
+        hasMore = false;
+      } else {
+        allTracks.push(...tracks);
+        offset += tracks.length;
+        
+        // Stop if we got fewer tracks than requested (last page)
+        if (tracks.length < limit) {
+          hasMore = false;
+        }
+      }
     }
     
-    const formattedTracks: ChartmetricPlaylistTrack[] = tracks.map((track: any) => ({
-      chartmetricId: track.id?.toString() || track.cm_track?.toString(),
-      name: track.name || '',
-      artists: Array.isArray(track.artists) 
-        ? track.artists.map((a: any) => ({
-            id: a.id?.toString(),
-            name: a.name || ''
-          }))
-        : [],
-      isrc: track.isrc,
-      album: track.album ? {
-        name: track.album.name || '',
-        image_url: track.album.image_url || track.album.images?.[0]?.url
-      } : undefined
-    }));
+    if (allTracks.length === 0) {
+      console.log(`⚠️  Chartmetric: No tracks returned for playlist ${chartmetricId}`);
+      return [];
+    }
     
-    console.log(`✅ Chartmetric: Retrieved ${formattedTracks.length} tracks with Chartmetric IDs`);
+    // Normalize track data
+    const formattedTracks: ChartmetricPlaylistTrack[] = allTracks
+      .map((track: any) => {
+        const chartmetricId = track.id?.toString() || track.cm_track?.toString();
+        if (!chartmetricId) return null; // Skip tracks without IDs
+        
+        return {
+          chartmetricId,
+          spotifyId: track.spotify_id || track.spotify_track_id,
+          name: track.name || '',
+          artists: Array.isArray(track.artists) 
+            ? track.artists.map((a: any) => ({
+                id: a.id?.toString() || a.cm_artist?.toString(),
+                name: a.name || ''
+              }))
+            : [],
+          isrc: track.isrc || undefined,
+          album: track.album ? {
+            name: track.album.name || '',
+            image_url: track.album.image_url || track.album.images?.[0]?.url
+          } : undefined
+        };
+      })
+      .filter((track): track is ChartmetricPlaylistTrack => track !== null);
+    
+    console.log(`✅ Chartmetric: Retrieved ${formattedTracks.length} tracks with Chartmetric IDs (${formattedTracks.filter(t => t.isrc).length} have ISRCs)`);
     return formattedTracks;
   } catch (error: any) {
     if (error.message?.includes('401')) {
