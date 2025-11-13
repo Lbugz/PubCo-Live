@@ -142,6 +142,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  app.get("/api/spotify/search-playlists", async (req, res) => {
+    try {
+      // Validate query parameter
+      const query = req.query.q as string;
+      if (!query || query.trim().length === 0) {
+        return res.status(400).json({ error: "Query parameter 'q' is required and cannot be empty" });
+      }
+      
+      const trimmedQuery = query.trim();
+      if (trimmedQuery.length > 120) {
+        return res.status(400).json({ error: "Query parameter 'q' must be 120 characters or less" });
+      }
+      
+      // Parse and validate limit parameter
+      const limitParam = req.query.limit as string | undefined;
+      const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10) || 10, 1), 25) : 10;
+      
+      // Get authenticated Spotify client
+      let spotify;
+      try {
+        spotify = await getUncachableSpotifyClient();
+      } catch (error: any) {
+        return res.status(401).json({ 
+          error: "Spotify authentication required",
+          message: error.message,
+          authRequired: true
+        });
+      }
+      
+      // Search for playlists
+      try {
+        const searchResults = await spotify.search(trimmedQuery, ["playlist"], undefined, limit);
+        
+        const results = searchResults.playlists.items.map((p: any) => ({
+          id: p.id,
+          name: decodeHTMLEntities(p.name),
+          owner: {
+            displayName: decodeHTMLEntities(p.owner?.display_name || p.owner?.id || "Unknown"),
+            id: p.owner?.id || "unknown"
+          },
+          totalTracks: p.tracks?.total || 0,
+          images: (p.images || []).map((img: any) => ({
+            url: img.url,
+            width: img.width ?? null,
+            height: img.height ?? null
+          })),
+          description: p.description ? decodeHTMLEntities(p.description) : undefined
+        }));
+        
+        res.json({ results });
+      } catch (searchError: any) {
+        // Distinguish rate limit vs other errors
+        if (searchError.status === 429 || searchError.message?.includes("rate limit")) {
+          return res.status(429).json({ 
+            error: "Spotify API rate limit exceeded. Please try again later.",
+            rateLimited: true
+          });
+        }
+        
+        console.error("Spotify search error:", searchError);
+        return res.status(500).json({ 
+          error: "Failed to search playlists",
+          message: searchError.message || "Unknown error"
+        });
+      }
+    } catch (error: any) {
+      console.error("Unexpected search error:", error);
+      res.status(500).json({ 
+        error: "Internal server error",
+        message: error.message || "Unknown error"
+      });
+    }
+  });
+
   app.get("/api/spotify/playlist/:playlistId", async (req, res) => {
     try {
       let spotify;
@@ -594,22 +668,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if frontend requested scraping mode (bypasses Spotify API)
       const useScraping = req.body.useScraping === true;
       
-      // Remove useScraping and isEditorial from body before validation
-      const { useScraping: _unused1, isEditorial: _unused2, ...requestBody } = req.body;
+      // Extract optional metadata fields provided by frontend (e.g., from search results)
+      const providedMetadata = {
+        totalTracks: req.body.totalTracks ?? null,
+        curator: req.body.curator ?? null,
+        followers: req.body.followers ?? null,
+        imageUrl: req.body.imageUrl ?? null,
+      };
+      
+      // Check if frontend provided complete metadata (skip API calls)
+      const hasProvidedMetadata = providedMetadata.totalTracks !== null;
+      
+      if (hasProvidedMetadata) {
+        console.log(`✅ Received metadata from frontend (search result): totalTracks=${providedMetadata.totalTracks}, curator="${providedMetadata.curator}", skip API fetch`);
+      }
+      
+      // Remove useScraping, isEditorial, and metadata fields from body before validation
+      const { useScraping: _unused1, isEditorial: _unused2, totalTracks: _t, curator: _c, followers: _f, imageUrl: _i, ...requestBody } = req.body;
       
       const validatedPlaylist = insertTrackedPlaylistSchema.parse(requestBody);
       
       // Determine if editorial (either explicit flag or scraping mode requested)
       let isEditorial = useScraping ? 1 : 0;
-      let totalTracks = null;
+      let totalTracks = providedMetadata.totalTracks;
       let fetchMethod = useScraping ? 'scraping' : 'api';
-      let curator = null;
-      let followers = null;
+      let curator = providedMetadata.curator;
+      let followers = providedMetadata.followers;
       let source = 'spotify';
-      let imageUrl = null;
+      let imageUrl = providedMetadata.imageUrl;
       
-      // For non-editorial playlists, try to fetch metadata
-      if (!useScraping) {
+      // For non-editorial playlists without provided metadata, try to fetch metadata
+      if (!useScraping && !hasProvidedMetadata) {
         let metadataFetched = false;
         
         // PRIORITY 1: Try Chartmetric metadata first (works for all playlists including editorial)

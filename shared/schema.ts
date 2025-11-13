@@ -112,6 +112,30 @@ export const insertTrackedPlaylistSchema = createInsertSchema(trackedPlaylists).
 export type InsertTrackedPlaylist = z.infer<typeof insertTrackedPlaylistSchema>;
 export type TrackedPlaylist = typeof trackedPlaylists.$inferSelect;
 
+// Playlist search types
+export const playlistSearchResultSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  owner: z.object({
+    displayName: z.string(),
+    id: z.string(),
+  }),
+  totalTracks: z.number(),
+  images: z.array(z.object({
+    url: z.string(),
+    width: z.number().nullable(),
+    height: z.number().nullable(),
+  })),
+  description: z.string().optional(),
+});
+
+export const playlistSearchResponseSchema = z.object({
+  results: z.array(playlistSearchResultSchema),
+});
+
+export type PlaylistSearchResult = z.infer<typeof playlistSearchResultSchema>;
+export type PlaylistSearchResponse = z.infer<typeof playlistSearchResponseSchema>;
+
 export const entityTypeEnum = pgEnum('entity_type', ['track', 'playlist']);
 
 export const activityHistory = pgTable("activity_history", {

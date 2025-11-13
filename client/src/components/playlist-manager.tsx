@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Trash2, ListMusic, CheckCircle2, XCircle, HelpCircle, Download, Upload } from "lucide-react";
+import { Plus, Trash2, ListMusic, CheckCircle2, XCircle, HelpCircle, Download, Upload, Search, Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { type TrackedPlaylist } from "@shared/schema";
+import { type TrackedPlaylist, type PlaylistSearchResult, type PlaylistSearchResponse } from "@shared/schema";
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 
 interface PlaylistManagerProps {
   open?: boolean;
@@ -193,6 +194,57 @@ export function PlaylistManager({ open: controlledOpen, onOpenChange }: Playlist
     return response.json();
   };
 
+  // Detect if input is URL/ID or name-based search
+  const isUrlOrId = extractPlaylistId(playlistUrl.trim()) !== null;
+  const isSearchMode = !isUrlOrId && playlistUrl.trim().length >= 3;
+  
+  // Search query for name-based playlist search  
+  const { data: searchResults, isLoading: isSearching } = useQuery<PlaylistSearchResponse>({
+    queryKey: ["/api/spotify/search-playlists", playlistUrl],
+    queryFn: async () => {
+      const response = await fetch(`/api/spotify/search-playlists?q=${encodeURIComponent(playlistUrl)}&limit=10`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Search failed");
+      }
+      return response.json();
+    },
+    enabled: isSearchMode,
+    staleTime: 30000, // Cache for 30 seconds
+  });
+
+  // Handle adding playlist from search result (bypasses re-fetch)
+  const addPlaylistFromSearchMutation = useMutation({
+    mutationFn: async (result: PlaylistSearchResult): Promise<TrackedPlaylist> => {
+      const res = await apiRequest("POST", "/api/tracked-playlists", {
+        name: result.name,
+        playlistId: result.id,
+        spotifyUrl: `https://open.spotify.com/playlist/${result.id}`,
+        // Include metadata from search result to skip backend API calls
+        totalTracks: result.totalTracks,
+        curator: result.owner.displayName,
+        imageUrl: result.images.length > 0 ? result.images[0].url : null,
+      });
+      return await res.json();
+    },
+    onSuccess: (data: TrackedPlaylist) => {
+      const totalTracksInfo = data.totalTracks ? ` (${data.totalTracks} tracks)` : '';
+      toast({
+        title: "Playlist Added!",
+        description: `Now tracking "${data.name}"${totalTracksInfo}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
+      setPlaylistUrl(""); // Clear input
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add playlist",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAddPlaylist = () => {
     if (!playlistUrl.trim()) {
       toast({
@@ -353,8 +405,69 @@ export function PlaylistManager({ open: controlledOpen, onOpenChange }: Playlist
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Example: https://open.spotify.com/playlist/37i9dQZF1DWWjGdmeTyeJ6
+              {isSearchMode 
+                ? "Type 3+ characters to search playlists by name (e.g., 'Fresh Finds')"
+                : "Example: https://open.spotify.com/playlist/37i9dQZF1DWWjGdmeTyeJ6"
+              }
             </p>
+            
+            {/* Search Results */}
+            {isSearchMode && (
+              <Card className="p-3 mt-2" data-testid="search-results-container">
+                {isSearching ? (
+                  <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Searching playlists...
+                  </div>
+                ) : searchResults?.results && searchResults.results.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Search className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">
+                        {searchResults.results.length} playlist{searchResults.results.length !== 1 ? 's' : ''} found
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      {searchResults.results.map((result) => (
+                        <button
+                          key={result.id}
+                          onClick={() => addPlaylistFromSearchMutation.mutate(result)}
+                          disabled={addPlaylistFromSearchMutation.isPending}
+                          className="w-full flex items-center gap-3 p-2 rounded-md hover-elevate active-elevate-2 text-left"
+                          data-testid={`search-result-${result.id}`}
+                        >
+                          {result.images.length > 0 && result.images[0].url ? (
+                            <img
+                              src={result.images[0].url}
+                              alt={result.name}
+                              className="w-12 h-12 rounded object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
+                              <ListMusic className="w-6 h-6 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate" data-testid={`result-name-${result.id}`}>
+                              {result.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              by {result.owner.displayName} • {result.totalTracks} tracks
+                            </p>
+                          </div>
+                          <Plus className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground">No playlists found</p>
+                    <p className="text-xs text-muted-foreground mt-1">Try a different search term</p>
+                  </div>
+                )}
+              </Card>
+            )}
           </div>
 
           <Separator />
