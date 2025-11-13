@@ -2329,6 +2329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               if (networkResult.success && networkTrackCount >= 50) {
                 console.log(`Local network capture successful: ${networkTrackCount} tracks`);
+                console.log(`Scraper returned metadata: name="${networkResult.playlistName}", curator="${networkResult.curator}", followers=${networkResult.followers}`);
                 fetchMethod = 'network-capture';
                 capturedTracks = networkResult.tracks ?? [];
                 
