@@ -1004,18 +1004,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Manual Phase 2 enrichment endpoint for already-inserted tracks
   app.post("/api/enrich-credits", async (req, res) => {
     try {
-      const { playlistId, limit = 50 } = req.body;
+      const { playlistId, trackIds, limit = 50 } = req.body;
       
       console.log(`\n🎭 Manual Phase 2 Credits Enrichment Started`);
-      console.log(`   Playlist ID: ${playlistId || 'all'}`);
+      console.log(`   Playlist ID: ${playlistId || 'N/A'}`);
+      console.log(`   Track IDs: ${trackIds ? `${trackIds.length} specified` : 'N/A'}`);
       console.log(`   Limit: ${limit}`);
       
       // Get tracks that need Phase 2 enrichment (missing credits/streams)
       const today = new Date().toISOString().split('T')[0];
       let allTracks = await storage.getTracksByWeek(today);
       
-      // Filter by playlist if specified
-      if (playlistId) {
+      // Filter by track IDs if specified (highest priority)
+      if (trackIds && Array.isArray(trackIds) && trackIds.length > 0) {
+        allTracks = allTracks.filter(t => trackIds.includes(t.id));
+      }
+      // Otherwise filter by playlist if specified
+      else if (playlistId) {
         allTracks = allTracks.filter(t => t.playlistId === playlistId);
       }
       

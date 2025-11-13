@@ -241,27 +241,36 @@ export default function Dashboard() {
   });
 
   const enrichMutation = useMutation({
-    mutationFn: async ({ trackId }: { trackId: string }) => {
-      console.log("Starting unified enrichment for track:", trackId);
-      const response = await apiRequest("POST", `/api/enrich-track/${trackId}`, {});
+    mutationFn: async ({ trackId, trackIds }: { trackId?: string; trackIds?: string[] }) => {
+      console.log("Starting Phase 2 credits enrichment:", { trackId, trackIds });
+      
+      // Determine which track IDs to enrich
+      const idsToEnrich = trackIds || (trackId ? [trackId] : []);
+      
+      const response = await apiRequest("POST", "/api/enrich-credits", { 
+        trackIds: idsToEnrich,
+        limit: 50 
+      });
       const data = await response.json();
-      console.log("Unified enrichment response:", data);
+      console.log("Phase 2 enrichment response:", data);
       return data;
     },
     onSuccess: (data: any) => {
-      console.log("Unified enrichment success:", data);
-      const successfulTiers = data.tierResults?.filter((t: any) => t.success).length || 0;
+      console.log("Phase 2 enrichment success:", data);
+      const enrichedCount = data.tracksEnriched || 0;
+      const processedCount = data.tracksProcessed || 0;
+      
       toast({
-        title: "Track Enrichment Complete!",
-        description: data.summary || `Completed ${successfulTiers} enrichment tiers`,
+        title: "Credits Enrichment Complete!",
+        description: `Enriched ${enrichedCount}/${processedCount} tracks with Spotify credits data`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
     },
     onError: (error: any) => {
-      console.error("Unified enrichment error:", error);
+      console.error("Phase 2 enrichment error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to enrich track",
+        description: error.message || "Failed to enrich track credits",
         variant: "destructive",
       });
     },
@@ -378,13 +387,12 @@ export default function Dashboard() {
       ? Array.from(selectedTrackIds)
       : filteredTracks.map(t => t.id);
     
-    trackIds.forEach(trackId => {
-      enrichMutation.mutate({ trackId });
-    });
+    // Call Phase 2 enrichment with all track IDs at once
+    enrichMutation.mutate({ trackIds });
     
     toast({
       title: "Enriching tracks",
-      description: `Started unified enrichment for ${trackIds.length} ${mode === "selected" ? "selected" : "filtered"} tracks`,
+      description: `Started Phase 2 credits enrichment for ${trackIds.length} ${mode === "selected" ? "selected" : "filtered"} tracks`,
     });
   }, [selectedTrackIds, filteredTracks, enrichMutation, toast]);
 
