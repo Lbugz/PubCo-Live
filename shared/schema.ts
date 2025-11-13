@@ -268,6 +268,34 @@ export const insertSpotifyTokenSchema = createInsertSchema(spotifyTokens).omit({
 export type InsertSpotifyToken = z.infer<typeof insertSpotifyTokenSchema>;
 export type SpotifyToken = typeof spotifyTokens.$inferSelect;
 
+export const jobTypeEnum = pgEnum('job_type', ['enrich-playlist', 'enrich-tracks']);
+export const jobStatusEnum = pgEnum('job_status', ['queued', 'running', 'completed', 'failed']);
+
+export const enrichmentJobs = pgTable("enrichment_jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: jobTypeEnum("type").notNull(),
+  playlistId: varchar("playlist_id").references(() => trackedPlaylists.id, { onDelete: "cascade" }),
+  trackIds: text("track_ids").array().notNull(),
+  status: jobStatusEnum("status").notNull().default('queued'),
+  progress: integer("progress").notNull().default(0),
+  totalTracks: integer("total_tracks").notNull().default(0),
+  enrichedTracks: integer("enriched_tracks").notNull().default(0),
+  errorCount: integer("error_count").notNull().default(0),
+  logs: text("logs").array().default(sql`ARRAY[]::text[]`),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertEnrichmentJobSchema = createInsertSchema(enrichmentJobs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertEnrichmentJob = z.infer<typeof insertEnrichmentJobSchema>;
+export type EnrichmentJob = typeof enrichmentJobs.$inferSelect;
+
 export const playlists = [
   {
     name: "Fresh Finds",

@@ -1,0 +1,330 @@
+Perfect, 1sthexagram — here is the **full Background Job Queue architecture**, written as a **clean design document** you can hand directly to the agent **once you approve implementation**.
+
+No changes will be made.
+This is **architecture-only**, exactly as you requested.
+
+---
+
+# 🔧 **BACKGROUND JOB QUEUE ARCHITECTURE (FINAL DESIGN)**
+
+### *Production-ready, scalable, Puppeteer-safe, and fully compatible with MLC Phase 3*
+
+---
+
+# 1️⃣ **Core Problem We Are Solving**
+
+Your logs prove:
+
+* Phase 2 scraping is now **functionally correct**
+* Memory leaks + concurrency issues are **fixed**
+* BUT running Puppeteer **inside an HTTP route** still causes:
+
+  * Server restarts
+  * OOM kills
+  * Lost logs
+  * Partial enrichments
+  * No way to scale to 30, 50, 100, 500 tracks
+
+### ❗ The ONLY correct architecture:
+
+Move enrichment *off the request thread* into a **background job worker**.
+
+---
+
+# 2️⃣ **High-Level Architecture Diagram**
+
+```
+                        ┌───────────────────────────┐
+User clicks “Enrich” →  │ POST /api/enrichment-jobs │
+                        └──────────────┬────────────┘
+                                       │
+                                       ▼
+                           ┌──────────────────┐
+                           │  Job Queue (JS)  │
+                           │  jobs[], status  │
+                           │  rate limiter    │
+                           └───────┬──────────┘
+                                   │
+                                   ▼
+                      ┌──────────────────────────┐
+                      │ Background Worker (Node) │
+                      │  - Puppeteer (max 1)     │
+                      │  - MLC API               │
+                      │  - Chartmetric           │
+                      │  - MusicBrainz           │
+                      └───────┬──────────────────┘
+                               │
+                               ▼
+                      ┌──────────────────┐
+                      │ PostgreSQL (DB) │
+                      └──────────────────┘
+                               │
+                               ▼
+                      ┌───────────────────────────┐
+                      │  WebSocket Status Updates │
+                      └───────────────────────────┘
+                               │
+                               ▼
+                UI shows live % done, enriched track results
+```
+
+---
+
+# 3️⃣ **TECH COMPONENTS**
+
+### **A) Job Queue (in-memory first)**
+
+We’ll start with a simple in-memory queue:
+
+```ts
+class JobQueue {
+  jobs = [];
+  workers = 1; // max concurrency
+  isRunning = false;
+}
+```
+
+Later you can swap this for BullMQ or Redis.
+
+---
+
+### **B) Background Worker**
+
+A separate loop that:
+
+* Pulls 1 job at a time
+* Processes tasks sequentially
+* Ensures **only 1 Chromium browser** runs at a time
+* Publishes progress via WebSocket
+
+This is the heart of the system.
+
+---
+
+### **C) Job Record Structure**
+
+```ts
+{
+  id: 'uuid',
+  type: 'enrich-playlist' | 'enrich-tracks',
+  playlistId: string,
+  trackIds: string[],
+  status: 'queued' | 'running' | 'completed' | 'failed',
+  progress: number,
+  createdAt: Date,
+  updatedAt: Date,
+  logs: string[],
+}
+```
+
+---
+
+### **D) New API Endpoints (no implementation yet)**
+
+#### **POST /api/enrichment-jobs**
+
+Submit a new job:
+
+```
+{
+  "playlistId": "...",
+  "trackIds": ["...", "..."]
+}
+```
+
+Response:
+
+```
+{ jobId: "abc123", status: "queued" }
+```
+
+---
+
+#### **GET /api/enrichment-jobs/:jobId**
+
+Return job status:
+
+```
+{
+  "status": "running",
+  "progress": 47,
+  "logs": [...]
+}
+```
+
+---
+
+#### **WS: enrichment-progress**
+
+Background worker pushes events:
+
+```
+{
+  "jobId": "abc123",
+  "progress": 62,
+  "message": "Scraped credits for 10/16 tracks"
+}
+```
+
+---
+
+# 4️⃣ **WORKER EXECUTION FLOW**
+
+### **1. Acquire job**
+
+```
+job = queue.next()
+job.status = "running"
+```
+
+---
+
+### **2. For each track:**
+
+#### **Tier 0: Spotify API ISRC Recovery**
+
+* Always run with batch API helper
+* Recovers missing ISRC
+* Updates DB
+* Updates progress
+
+#### **Tier 1: Spotify Credits Scraping**
+
+* Uses Puppeteer
+* Concurrency = 1
+* Selector-based waits (no networkidle2)
+* Extracts:
+
+  * writers
+  * composers
+  * producers
+  * publishers
+  * stream count
+
+#### **Tier 2: MLC API**
+
+* Uses your new MLC access
+* ISRC-based lookup
+* Returns:
+
+  * publisherStatus
+  * collectionShare
+  * ipi
+  * iswc
+  * songCode
+
+#### **Tier 3: MusicBrainz**
+
+* Searches top 3 writers
+* Stores external links
+* Links artists to track
+
+#### **Tier 4: Chartmetric Analytics**
+
+* If `chartmetricId` exists
+* Enrich track with:
+
+  * streamingVelocity
+  * moods
+  * activities
+  * composerName
+
+#### **Update DB per track**
+
+Guarantees no data loss.
+
+---
+
+# 5️⃣ **ADVANCED BEHAVIOR**
+
+### **A) Crash Protection**
+
+If worker crashes:
+
+* Job remains `failed`
+* Partial data persists
+* System auto-resets
+
+### **B) Restart Safety**
+
+When server restarts:
+
+* Pending jobs reload
+* Worker resumes queue
+
+### **C) Batch Size**
+
+Track processing chunked into:
+
+* 5–10 tracks max
+* Sequential processing to avoid OOM
+
+---
+
+# 6️⃣ **BENEFITS**
+
+### ✔ No more server crashes
+
+### ✔ Unlimited scalability
+
+### ✔ MLC integration becomes safe
+
+### ✔ Works for 10 tracks or 10,000
+
+### ✔ UI gets live enrichment progress
+
+### ✔ Phase 2 scraping remains stable
+
+### ✔ Fetch Data stays fast & lightweight
+
+### ✔ Full enrichment pipeline becomes production-grade
+
+---
+
+# 7️⃣ **THE CORRECT IMPLEMENTATION ORDER (SAFE)**
+
+### **Step 1 — Build Job Queue skeleton**
+
+(no Puppeteer yet)
+
+### **Step 2 — Move Phase 2 scraping into job worker**
+
+(1 browser at a time)
+
+### **Step 3 — Add MLC API integration inside worker**
+
+### **Step 4 — Add Chartmetric + MusicBrainz inside worker**
+
+### **Step 5 — Connect Track “Enrich Data” button → queue submit**
+
+### **Step 6 — Add UI progress bar to playlist/track view**
+
+### **Step 7 — Enable Auto-Enrich toggle per playlist**
+
+---
+
+# 8️⃣ **WHAT THIS MEANS FOR YOU IMMEDIATELY**
+
+You’re now ready to:
+
+### ✔ integrate MLC
+
+### ✔ get stable enrichment
+
+### ✔ scale enrichment
+
+### ✔ remove scraper crashes
+
+### ✔ eventually do FULL AUTOMATION safely
+
+Your platform will now behave like a real A&R intelligence engine.
+
+---
+
+# 🔮 READY TO IMPLEMENT WHEN YOU ARE
+
+Just say:
+
+**“Approve background job queue implementation — Begin Phase 1.”**
+
+And I’ll prepare the implementation task list for the agent.
