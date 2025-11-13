@@ -175,6 +175,7 @@ export class EnrichmentWorker {
           label: enrichedTrack.label || undefined,
           spotifyStreams: enrichedTrack.spotifyStreams || undefined,
           enrichedAt: new Date(),
+          enrichmentStatus: 'enriched',
         });
 
         const creditsFound = [];
@@ -265,6 +266,7 @@ export class EnrichmentWorker {
             publisher: publisherName,
             publisherStatus,
             mlcSongCode: mlcResult.mlcSongCode || undefined,
+            enrichmentStatus: 'enriched',
           });
 
           const mlcDescription = mlcResult.error

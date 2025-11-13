@@ -12,7 +12,7 @@ export interface IStorage {
   getAllPlaylists(): Promise<string[]>;
   insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<void>;
   deleteTracksByWeek(week: string): Promise<void>;
-  updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; publisherStatus?: string; mlcSongCode?: string; songwriter?: string; producer?: string; spotifyStreams?: number; enrichedAt?: Date }): Promise<void>;
+  updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; publisherStatus?: string; mlcSongCode?: string; songwriter?: string; producer?: string; spotifyStreams?: number; enrichedAt?: Date; enrichmentStatus?: string; enrichmentTier?: string }): Promise<void>;
   getUnenrichedTracks(limit?: number): Promise<PlaylistSnapshot[]>;
   getAllTags(): Promise<Tag[]>;
   createTag(tag: InsertTag): Promise<Tag>;
