@@ -59,17 +59,25 @@ export class JobQueue {
     const allJobs = Array.from(this.jobs.values());
     for (const job of allJobs) {
       if (job.status === 'queued') {
-        this.activeJobId = job.id;
-        
-        await this.storage.updateEnrichmentJob(job.id, {
-          status: 'running',
-          updatedAt: new Date(),
-        });
+        try {
+          await this.storage.updateEnrichmentJob(job.id, {
+            status: 'running',
+            updatedAt: new Date(),
+          });
 
-        const updatedJob = await this.storage.getEnrichmentJobById(job.id);
-        if (updatedJob) {
-          this.jobs.set(job.id, updatedJob);
-          return updatedJob;
+          const updatedJob = await this.storage.getEnrichmentJobById(job.id);
+          if (updatedJob) {
+            this.jobs.set(job.id, updatedJob);
+            this.activeJobId = job.id;
+            return updatedJob;
+          }
+        } catch (error) {
+          console.error(`❌ Failed to claim job ${job.id}:`, error);
+          await this.storage.updateEnrichmentJob(job.id, {
+            status: 'queued',
+            logs: [...(job.logs || []), `[${new Date().toISOString()}] Failed to claim job: ${error instanceof Error ? error.message : String(error)}`],
+            updatedAt: new Date(),
+          }).catch(() => {});
         }
       }
     }
@@ -167,5 +175,30 @@ export class JobQueue {
 
   getActiveJobId(): string | null {
     return this.activeJobId;
+  }
+
+  async cleanupOldJobs(retentionDays: number = 7): Promise<number> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+
+    const allJobs = Array.from(this.jobs.values());
+    let cleanedCount = 0;
+
+    for (const job of allJobs) {
+      if (
+        (job.status === 'completed' || job.status === 'failed') &&
+        job.completedAt &&
+        job.completedAt < cutoffDate
+      ) {
+        this.jobs.delete(job.id);
+        cleanedCount++;
+      }
+    }
+
+    if (cleanedCount > 0) {
+      console.log(`🧹 Cleaned up ${cleanedCount} old jobs (>${retentionDays} days)`);
+    }
+
+    return cleanedCount;
   }
 }

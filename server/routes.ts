@@ -3613,7 +3613,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { trackIds, playlistId } = req.body;
       
       if (!trackIds || !Array.isArray(trackIds) || trackIds.length === 0) {
-        return res.status(400).json({ error: "trackIds array is required" });
+        return res.status(400).json({ 
+          error: "trackIds is required and must be a non-empty array" 
+        });
+      }
+
+      if (!trackIds.every(id => typeof id === 'string' && id.length > 0)) {
+        return res.status(400).json({ 
+          error: "All trackIds must be non-empty strings" 
+        });
+      }
+
+      if (trackIds.length > 500) {
+        return res.status(400).json({ 
+          error: "Maximum 500 tracks per job. Please split into smaller batches." 
+        });
       }
 
       const { getJobQueue } = await import("./enrichment/jobQueueManager");

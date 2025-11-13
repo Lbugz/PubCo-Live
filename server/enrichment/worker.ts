@@ -16,6 +16,7 @@ export class EnrichmentWorker {
   private wsBroadcast?: (event: string, data: any) => void;
   private isRunning: boolean = false;
   private processingInterval: NodeJS.Timeout | null = null;
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(options: WorkerOptions) {
     this.jobQueue = options.jobQueue;
@@ -32,9 +33,17 @@ export class EnrichmentWorker {
     this.isRunning = true;
     console.log("🚀 Enrichment worker started");
 
-    this.processingInterval = setInterval(async () => {
-      await this.processNextJob();
+    this.processingInterval = setInterval(() => {
+      this.processNextJob().catch((error) => {
+        console.error("❌ Fatal worker error:", error);
+      });
     }, 2000);
+
+    this.cleanupInterval = setInterval(() => {
+      this.jobQueue.cleanupOldJobs(7).catch((error) => {
+        console.error("❌ Error during job cleanup:", error);
+      });
+    }, 3600000);
   }
 
   stop() {
@@ -42,6 +51,10 @@ export class EnrichmentWorker {
     if (this.processingInterval) {
       clearInterval(this.processingInterval);
       this.processingInterval = null;
+    }
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
     }
     console.log("🛑 Enrichment worker stopped");
   }
@@ -51,6 +64,8 @@ export class EnrichmentWorker {
       return;
     }
 
+    let jobId: string | null = null;
+
     try {
       const job = await this.jobQueue.getNextJob();
       
@@ -58,6 +73,7 @@ export class EnrichmentWorker {
         return;
       }
 
+      jobId = job.id;
       console.log(`🔄 Processing job ${job.id} (${job.trackIds.length} tracks)`);
       
       this.broadcastProgress(job.id, {
@@ -69,6 +85,22 @@ export class EnrichmentWorker {
       await this.executeJob(job);
     } catch (error) {
       console.error("❌ Worker error:", error);
+      
+      if (jobId) {
+        try {
+          await this.jobQueue.completeJob(jobId, false, [
+            `[${new Date().toISOString()}] Fatal worker error: ${error instanceof Error ? error.message : String(error)}`,
+          ]);
+          
+          this.broadcastProgress(jobId, {
+            status: 'failed',
+            progress: 0,
+            message: `Fatal error: ${error instanceof Error ? error.message : String(error)}`,
+          });
+        } catch (cleanupError) {
+          console.error("❌ Error during job cleanup:", cleanupError);
+        }
+      }
     }
   }
 
