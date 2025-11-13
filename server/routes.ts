@@ -697,10 +697,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // If both APIs failed and this is an editorial playlist, try scraping
+      if (!spotifySucceeded && !chartmetricSucceeded && targetPlaylist.isEditorial) {
+        console.log(`APIs failed for editorial playlist "${targetPlaylist.name}", attempting scraping fallback...`);
+        try {
+          const { fetchEditorialTracksViaNetwork } = await import("./scrapers/spotifyEditorialNetwork");
+          const scrapeResult = await fetchEditorialTracksViaNetwork(targetPlaylist.spotifyUrl);
+          
+          if (scrapeResult.success && scrapeResult.playlistName) {
+            // Use scraped metadata
+            const name = scrapeResult.playlistName;
+            curator = scrapeResult.curator || null;
+            followers = scrapeResult.followers || null;
+            imageUrl = scrapeResult.imageUrl || null;
+            totalTracks = scrapeResult.totalCaptured || null;
+            
+            // Update with name too since scraping provides it
+            await storage.updateTrackedPlaylistMetadata(req.params.id, {
+              name,
+              curator,
+              followers,
+              totalTracks,
+              imageUrl,
+            });
+            
+            console.log(`Scraping successful for "${name}": curator="${curator}", followers=${followers}, totalTracks=${totalTracks}`);
+            
+            return res.json({ 
+              success: true, 
+              name,
+              curator,
+              followers,
+              totalTracks,
+              imageUrl,
+              method: 'scraping'
+            });
+          } else {
+            console.error(`Scraping failed: ${scrapeResult.error || 'No metadata extracted'}`);
+          }
+        } catch (scrapeError: any) {
+          console.error(`Scraping fallback error: ${scrapeError.message}`);
+        }
+      }
+      
       // Only update storage if we got data from at least one source
       if (!spotifySucceeded && !chartmetricSucceeded) {
         return res.status(500).json({ 
-          error: "Both Spotify and Chartmetric APIs failed. Cannot refresh metadata." 
+          error: "All metadata sources failed (Spotify API, Chartmetric API, and scraping). Please try again later." 
         });
       }
       
