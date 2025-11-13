@@ -109,6 +109,14 @@ export function DetailsDrawer({
     setIsEnriching(false);
   }, [track?.id]);
 
+  // Auto-reset enriching state if track is already enriched
+  useEffect(() => {
+    const currentTrack = fullTrack || track;
+    if (currentTrack?.enrichmentStatus === 'enriched' && isEnriching) {
+      setIsEnriching(false);
+    }
+  }, [fullTrack?.enrichmentStatus, track?.enrichmentStatus, isEnriching]);
+
   if (!track) return null;
 
   // Use fullTrack data if available, otherwise fall back to track prop
