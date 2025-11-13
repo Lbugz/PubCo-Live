@@ -4,7 +4,8 @@ import { log } from "./logger";
 import { serveStatic } from "./static-assets";
 import { storage } from "./storage";
 import { initializeScheduler } from "./scheduler";
-import { initializeWebSocket } from "./websocket";
+import { initializeWebSocket, broadcast } from "./websocket";
+import { initializeJobQueue } from "./enrichment/jobQueueManager";
 
 process.on("uncaughtException", (err) => {
   if (err.message.includes("PostCSS")) {
@@ -84,6 +85,9 @@ app.use((req, res, next) => {
 
   // Initialize WebSocket server for real-time updates
   initializeWebSocket(server);
+
+  // Initialize background job queue for enrichment
+  await initializeJobQueue({ wsBroadcast: broadcast });
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.

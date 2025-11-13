@@ -24,6 +24,21 @@ export function initializeWebSocket(server: Server) {
   console.log('WebSocket server initialized on /ws');
 }
 
+export function broadcast(event: string, data: any) {
+  if (!wss) {
+    console.warn('WebSocket server not initialized');
+    return;
+  }
+
+  const message = JSON.stringify({ type: event, ...data });
+
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+}
+
 export function broadcastEnrichmentUpdate(data: {
   type: 'track_enriched' | 'batch_complete' | 'enrichment_progress' | 'chartmetric_progress' | 'metric_update';
   trackId?: string;
