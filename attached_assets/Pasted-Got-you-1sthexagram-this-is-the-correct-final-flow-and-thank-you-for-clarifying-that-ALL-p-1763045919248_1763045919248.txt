@@ -1,0 +1,262 @@
+Got you, 1sthexagram — **this is the correct final flow**, and thank you for clarifying that **ALL playlists (editorial + user)** must begin with **Chartmetric-first track fetch**.
+
+Below is the **clean, authoritative spec + code blueprint** the agent should implement.
+Use this directly with the Replit agent — it’s unambiguous, complete, and enforceable.
+
+---
+
+# ✅ **FINAL CONFIRMED FLOW (ALL PLAYLISTS BEGIN WITH CHARTMETRIC)**
+
+This is the final and only correct ingestion architecture:
+
+---
+
+# **PHASE 1 — ADD PLAYLIST (Metadata Ingestion)**
+
+### **Step 1 — Parse Spotify Playlist ID**
+
+Extract from any format:
+
+* `https://open.spotify.com/playlist/...`
+* `spotify:playlist:...`
+* raw ID
+
+---
+
+### **Step 2 — Chartmetric Metadata Lookup (always first)**
+
+```ts
+try {
+  const cmMeta = await getChartmetricPlaylistMetadataBySpotifyId(spotifyId);
+  metadataSource = "chartmetric";
+} catch (err) {
+  // fallback below
+}
+```
+
+---
+
+### **Step 3 — Spotify API Metadata Fallback**
+
+```ts
+const spMeta = await getSpotifyPlaylistMetadata(spotifyId);
+metadataSource = "spotify_api";
+```
+
+---
+
+### **Step 4 — Determine Editorial Status**
+
+```ts
+isEditorial = (curator === "Spotify") || overrideCheckbox === true;
+```
+
+---
+
+### **Step 5 — Save Base Playlist Record**
+
+Store:
+
+* name
+* artwork
+* curator
+* followers
+* metadataSource
+* isEditorial
+* spotifyPlaylistId
+* chartmetricPlaylistId (if found)
+
+---
+
+# **PHASE 2 — FETCH TRACKS (ALL PLAYLISTS BEGIN WITH CHARTMETRIC)**
+
+**This is the corrected, final rule:**
+
+> **Every playlist — editorial OR non-editorial — MUST begin with Chartmetric track lookup.**
+
+This guarantees:
+
+* consistency
+* speed
+* reduced scraping
+* metadata integrity
+
+---
+
+## **Step 1 — Chartmetric Playlist Track Lookup (always first)**
+
+```ts
+try {
+  const cmTracks = await getChartmetricPlaylistTracksBySpotifyId(spotifyPlaylistId);
+  fetchMethod = "chartmetric";
+  saveTracks(cmTracks);
+  return;
+} catch (err) {
+  log("[Tracks] Chartmetric failed", err);
+  // fallback next
+}
+```
+
+**Chartmetric error categories that trigger fallback:**
+
+* 401 (token session expired / internal endpoint)
+* 404 (playlist not found)
+* timeout
+* network error
+
+---
+
+## **Step 2 — Fallback Based on Playlist Type**
+
+### **Fallback for Editorial**
+
+```ts
+const scraped = await scrapeSpotifyPlaylistWithPuppeteer(spotifyUrl);
+fetchMethod = "network_capture";
+saveTracks(scraped);
+return;
+```
+
+---
+
+### **Fallback for Non-Editorial**
+
+```ts
+try {
+  const spTracks = await getSpotifyPlaylistTracks(spotifyId);
+  fetchMethod = "spotify_api";
+  saveTracks(spTracks);
+  return;
+} catch (err) {
+  log("[Tracks] Spotify API failed — fallback to scraping", err);
+}
+```
+
+#### **If Spotify ALSO fails → last resort: Puppeteer**
+
+```ts
+const scraped = await scrapeSpotifyPlaylistWithPuppeteer(spotifyUrl);
+fetchMethod = "network_capture";
+saveTracks(scraped);
+```
+
+---
+
+# **PHASE 3 — ENRICHMENT (Background)**
+
+For every track saved:
+
+```ts
+try {
+  const cmTrack = await getChartmetricTrackBySpotifyId(track.spotifyId);
+  updateTrack(record.id, cmTrack);
+} catch (err) {
+  markTrackAsEnrichmentFailed(track.id);
+}
+```
+
+Enrichment pulls:
+
+* songwriter IDs
+* streams
+* mood
+* genre
+* velocity
+* rank movement
+* audience stats
+
+---
+
+# 🚨 **MANDATORY LOGGING** (for debugging & user clarity)
+
+### **Metadata:**
+
+```
+[Metadata] Trying Chartmetric metadata for 37i9...
+[Metadata] CM failed (401)
+[Metadata] Falling back to Spotify API
+[Metadata] Metadata source = chartmetric|spotify_api
+```
+
+### **Track Fetch:**
+
+```
+[Tracks] Starting fetch for Fresh Finds
+[Tracks] Trying Chartmetric track lookup
+[Tracks] CM failed (401)
+[Tracks] Editorial fallback → Puppeteer scraping
+[Tracks] Fetch Method = chartmetric|spotify_api|network_capture
+```
+
+### **Enrichment:**
+
+```
+[Enrich] Track 12345 — Chartmetric enrichment success
+[Enrich] Track 98765 — CM enrichment failed (404)
+```
+
+---
+
+# 🧱 **CODE BLUEPRINT FOR THE AGENT**
+
+Paste this to the agent as instructions for safe execution.
+
+```ts
+// ALWAYS START WITH CHARTMETRIC FOR TRACKS — editorial or not
+
+async function fetchTracksForPlaylist(playlist) {
+  const { spotifyId, isEditorial, spotifyUrl } = playlist;
+
+  // 1. CHARTMETRIC FIRST
+  try {
+    const cmTracks = await getChartmetricPlaylistTracksBySpotifyId(spotifyId);
+    await saveTracks(playlist.id, cmTracks, "chartmetric");
+    return { method: "chartmetric", count: cmTracks.length };
+  } catch (err) {
+    log("[Tracks] Chartmetric failed", err);
+  }
+
+  // 2. FALLBACKS (depends on editorial status)
+  if (isEditorial) {
+    const scraped = await scrapeSpotifyPlaylistWithPuppeteer(spotifyUrl);
+    await saveTracks(playlist.id, scraped, "network_capture");
+    return { method: "network_capture", count: scraped.length };
+  }
+
+  // non-editorial
+  try {
+    const spTracks = await getSpotifyPlaylistTracks(spotifyId);
+    await saveTracks(playlist.id, spTracks, "spotify_api");
+    return { method: "spotify_api", count: spTracks.length };
+  } catch (err) {
+    log("[Tracks] Spotify API failed", err);
+  }
+
+  // last resort
+  const scraped = await scrapeSpotifyPlaylistWithPuppeteer(spotifyUrl);
+  await saveTracks(playlist.id, scraped, "network_capture");
+  return { method: "network_capture", count: scraped.length };
+}
+```
+
+---
+
+# 🔥 **YES — This Is the Correct Final Flow**
+
+With your correction:
+
+> **Phase 2 all playlists (editorial or non editorial) need to start with Chartmetric.**
+
+We are now perfectly aligned.
+
+If you want, I can next:
+
+### 📌 produce a PR-ready summary
+
+### 📌 generate tests for editorial + non-editorial playlists
+
+### 📌 generate a `/docs/playlist-ingestion.md` file for your repo
+
+### 📌 prepare agent-safe, step-by-step instructions for safe refactor
+
+Just tell me what you want next.

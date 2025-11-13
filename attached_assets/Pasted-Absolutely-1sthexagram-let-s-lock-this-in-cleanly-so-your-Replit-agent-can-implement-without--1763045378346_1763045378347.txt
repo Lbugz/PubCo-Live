@@ -1,0 +1,206 @@
+Absolutely, 1sthexagram — let’s lock this in **cleanly** so your Replit agent can implement without drifting or improvising.
+
+Below is the **exact task list** your agent needs to follow to implement the *true* Chartmetric-first flow for both **adding** a playlist and **fetching** playlist tracks.
+
+Use this as a copy-paste prompt for the agent.
+This will prevent all the confusion you’ve been dealing with.
+
+---
+
+# ✅ **TASK LIST: Implement True Chartmetric-First Flow**
+
+This is the authoritative set of tasks required to fix the “Add Playlist” and “Fetch Tracks” logic.
+
+## **1. Fix Playlist Metadata Fetching (POST /api/tracked-playlists)**
+
+### **Task 1.1 – Remove all logic that blocks Chartmetric unless a Chartmetric URL is provided**
+
+We must use **Spotify playlist ID** as primary input to Chartmetric.
+
+Delete lines or conditions that say:
+
+* “if no Chartmetric URL, skip Chartmetric”
+* “Chartmetric requires user-provided URL”
+* or any equivalent.
+
+### **Task 1.2 – Add Chartmetric-first Metadata Lookup**
+
+Implement the following sequence:
+
+```ts
+try {
+  const cmMeta = await getChartmetricPlaylistMetadataBySpotifyId(playlistId);
+  // extract: name, curator, followers, artwork
+  metadataSource = 'chartmetric';
+} catch (err) {
+  // fall back to Spotify API
+  const spMeta = await getSpotifyPlaylistMetadata(playlistId);
+  metadataSource = 'spotify';
+}
+```
+
+### **Task 1.3 – Determine editorial status**
+
+```ts
+isEditorial = (curator === 'Spotify') || isEditorialOverride;
+```
+
+### **Task 1.4 – Save metadata to DB**
+
+Store:
+
+* name
+* artwork
+* curator
+* follower count
+* metadata source
+* is_editorial
+* any CM playlist ID you discover
+
+Log the chosen metadata source.
+
+---
+
+# **2. Fix Track Fetching (GET /api/fetch-playlists OR /api/playlists/:id/fetch)**
+
+### ❌ **Task 2.0 – DELETE the immediate “throw error for editorial playlists”**
+
+This is the bug.
+Remove code like:
+
+```ts
+if (playlist.isEditorial) {
+  throw new Error("Editorial playlist, use scraping");
+}
+```
+
+This must be removed entirely.
+
+---
+
+### **Task 2.1 – Implement Chartmetric-first Track Lookup for editorial playlists**
+
+```ts
+if (playlist.isEditorial) {
+  try {
+    const cmTracks = await getChartmetricPlaylistTracksBySpotifyId(playlist.spotifyId);
+    fetchMethod = 'chartmetric';
+    saveTracks(cmTracks);
+    return;
+  } catch (err) {
+    log("Chartmetric track fetch failed", err);
+    // fallback below
+  }
+}
+```
+
+### **Task 2.2 – Spotify API for user playlists**
+
+```ts
+try {
+  const spTracks = await getSpotifyPlaylistTracks(playlist.spotifyId);
+  fetchMethod = 'spotify_api';
+  saveTracks(spTracks);
+  return;
+} catch (err) {
+  log("Spotify API track fetch failed", err);
+}
+```
+
+### **Task 2.3 – Puppeteer fallback**
+
+Use Puppeteer only if CM AND Spotify fail:
+
+```ts
+const scraped = await scrapeSpotifyPlaylistWithPuppeteer(playlist.spotifyUrl);
+fetchMethod = 'network_capture';
+saveTracks(scraped);
+```
+
+---
+
+## **3. Auto-Fetch and Auto-Enrich Behavior**
+
+### **Task 3.1 – Auto-fetch**
+
+If playlist.autoFetch === true, automatically run the track ingestion job after metadata.
+
+### **Task 3.2 – Auto-enrich**
+
+If playlist.autoEnrich === true, enqueue enrichment for each track:
+
+```ts
+await getChartmetricTrackBySpotifyId(track.spotifyId)
+```
+
+---
+
+# **4. Logging Requirements**
+
+Add clean, unambiguous logs:
+
+### **4.1 – Metadata logs**
+
+```
+[Metadata] Trying Chartmetric metadata lookup for playlist 37i9...
+[Metadata] Chartmetric success OR
+[Metadata] Chartmetric failed (401 / 404 / timeout)
+[Metadata] Falling back to Spotify API
+[Metadata] Metadata source: chartmetric|spotify
+```
+
+### **4.2 – Track fetching logs**
+
+```
+[Tracks] Starting ingestion for Fresh Finds
+[Tracks] Editorial: Trying Chartmetric track lookup
+[Tracks] Chartmetric failed (401)
+[Tracks] Falling back to Puppeteer scraping
+[Tracks] Fetch Method = chartmetric|spotify_api|network_capture
+[Tracks] Saved 75 tracks
+```
+
+---
+
+# **5. Acceptance Tests (Smoke Test Scenarios)**
+
+Your agent must test:
+
+### **Test A – Editorial Playlist (Fresh Finds / RapCaviar)**
+
+Expected:
+
+* CM metadata first
+* CM tracks first
+* If CM fails → Puppeteer
+
+### **Test B – Non-editorial Playlist (user playlist)**
+
+Expected:
+
+* CM metadata first
+* Spotify tracks (NOT Puppeteer)
+
+### **Test C – Both CM and Spotify Offline**
+
+Expected:
+
+* Puppeteer fallback fetchMethod = "network_capture"
+
+---
+
+# **6. Deliverables Your Agent Should Produce**
+
+1. Updated backend code
+2. Updated log messages
+3. Short PR description summarizing implementation
+4. Smoke test results for at least 2 editorial + 1 user playlist
+
+---
+
+If you'd like, I can also generate:
+
+✅ A GitHub-ready PR description
+✅ A `/docs/add-playlist-flow.md` spec for your repo
+✅ A scaffolded test suite
+Just tell me.
