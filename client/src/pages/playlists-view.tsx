@@ -7,6 +7,7 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { type TrackedPlaylist, type ActivityHistory } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { useFetchPlaylistsMutation } from "@/hooks/use-fetch-playlists-mutation";
+import { useForm } from "react-hook-form";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +39,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useLocation } from "wouter";
@@ -49,13 +51,21 @@ export default function PlaylistsView() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<TrackedPlaylist | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [newPlaylistUrl, setNewPlaylistUrl] = useState("");
-  const [newChartmetricUrl, setNewChartmetricUrl] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [selectedPlaylistIds, setSelectedPlaylistIds] = useState<Set<string>>(new Set());
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  
+  const form = useForm({
+    defaultValues: {
+      playlistUrl: "",
+      chartmetricUrl: "",
+      isEditorial: false,
+      autoFetch: true,
+      autoEnrich: true,
+    }
+  });
   
   // Fetch playlists mutation
   const fetchPlaylistsMutation = useFetchPlaylistsMutation();
@@ -260,9 +270,6 @@ export default function PlaylistsView() {
     },
   });
 
-  const [autoFetchOnAdd, setAutoFetchOnAdd] = useState(true);
-  const [autoEnrichOnFetch, setAutoEnrichOnFetch] = useState(true);
-  const [isEditorialOverride, setIsEditorialOverride] = useState(false);
 
   const addPlaylistMutation = useMutation({
     mutationFn: async ({ url, chartmetricUrl, isEditorial }: { url: string; chartmetricUrl?: string; isEditorial?: boolean }): Promise<TrackedPlaylist> => {
@@ -284,21 +291,21 @@ export default function PlaylistsView() {
       return playlist;
     },
     onSuccess: async (data: TrackedPlaylist) => {
+      // Snapshot form values before resetting
+      const submittedValues = form.getValues();
       const totalTracksInfo = data.totalTracks ? ` (${data.totalTracks} tracks)` : '';
-      console.log(`[Add Playlist] Success! Playlist ID: ${data.playlistId}, autoFetchOnAdd: ${autoFetchOnAdd}`);
+      console.log(`[Add Playlist] Success! Playlist ID: ${data.playlistId}, autoFetch: ${submittedValues.autoFetch}`);
       
       toast({
         title: "Playlist Added!",
-        description: `Now tracking "${data.name}"${totalTracksInfo}${autoFetchOnAdd ? ' - Fetching tracks...' : ''}`,
+        description: `Now tracking "${data.name}"${totalTracksInfo}${submittedValues.autoFetch ? ' - Fetching tracks...' : ''}`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
-      setNewPlaylistUrl("");
-      setNewChartmetricUrl("");
-      setIsEditorialOverride(false);
+      form.reset();
       setAddDialogOpen(false);
 
       // Auto-fetch if enabled
-      if (autoFetchOnAdd) {
+      if (submittedValues.autoFetch) {
         console.log(`[Auto-Fetch] Scheduling fetch for playlist ${data.playlistId} in 500ms...`);
         setTimeout(() => {
           console.log(`[Auto-Fetch] Triggering fetch now for ${data.playlistId}`);
@@ -343,8 +350,18 @@ export default function PlaylistsView() {
     return response.json();
   };
 
-  const handleAddPlaylist = () => {
-    if (!newPlaylistUrl.trim()) {
+  const handleAddPlaylist = (values: {
+    playlistUrl: string;
+    chartmetricUrl: string;
+    isEditorial: boolean;
+    autoFetch: boolean;
+    autoEnrich: boolean;
+  }) => {
+    if (addPlaylistMutation.isPending) {
+      return;
+    }
+    
+    if (!values.playlistUrl.trim()) {
       toast({
         title: "Error",
         description: "Please enter a Spotify playlist URL or ID",
@@ -352,10 +369,11 @@ export default function PlaylistsView() {
       });
       return;
     }
+    
     addPlaylistMutation.mutate({ 
-      url: newPlaylistUrl,
-      chartmetricUrl: newChartmetricUrl.trim() || undefined,
-      isEditorial: isEditorialOverride || undefined
+      url: values.playlistUrl,
+      chartmetricUrl: values.chartmetricUrl.trim() || undefined,
+      isEditorial: values.isEditorial || undefined
     });
   };
 
@@ -718,97 +736,123 @@ export default function PlaylistsView() {
                 Enter a Spotify playlist URL or ID to start tracking it
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="playlist-url">Playlist URL or ID</Label>
-                <Input
-                  id="playlist-url"
-                  placeholder="https://open.spotify.com/playlist/..."
-                  value={newPlaylistUrl}
-                  onChange={(e) => setNewPlaylistUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleAddPlaylist();
-                    }
-                  }}
-                  data-testid="input-new-playlist-url"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleAddPlaylist)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="playlistUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Playlist URL or ID</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://open.spotify.com/playlist/..."
+                          {...field}
+                          data-testid="input-new-playlist-url"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div>
-                <Label htmlFor="chartmetric-url">Chartmetric URL (Optional)</Label>
-                <Input
-                  id="chartmetric-url"
-                  placeholder="https://app.chartmetric.com/playlist/spotify/..."
-                  value={newChartmetricUrl}
-                  onChange={(e) => setNewChartmetricUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleAddPlaylist();
-                    }
-                  }}
-                  data-testid="input-chartmetric-url"
+                
+                <FormField
+                  control={form.control}
+                  name="chartmetricUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Chartmetric URL (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://app.chartmetric.com/playlist/spotify/..."
+                          {...field}
+                          data-testid="input-chartmetric-url"
+                        />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground">
+                        Add a Chartmetric link for easier tracking
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Add a Chartmetric link for easier tracking
-                </p>
-              </div>
 
-              {/* Editorial Playlist Override */}
-              <div className="flex items-center justify-between pt-2 border-t">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="is-editorial"
-                    checked={isEditorialOverride}
-                    onCheckedChange={(checked) => setIsEditorialOverride(checked === true)}
-                    data-testid="checkbox-editorial-override"
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <FormField
+                    control={form.control}
+                    name="isEditorial"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center gap-2 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-editorial-override"
+                          />
+                        </FormControl>
+                        <FormLabel className="text-sm font-normal cursor-pointer">
+                          This is an editorial playlist (use web scraping)
+                        </FormLabel>
+                      </FormItem>
+                    )}
                   />
-                  <Label htmlFor="is-editorial" className="text-sm font-normal cursor-pointer">
-                    This is an editorial playlist (use web scraping)
-                  </Label>
                 </div>
-              </div>
 
-              {/* Automation Options */}
-              <div className="space-y-3 pt-2 border-t">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="auto-fetch"
-                      checked={autoFetchOnAdd}
-                      onCheckedChange={(checked) => setAutoFetchOnAdd(checked as boolean)}
+                <div className="space-y-3 pt-2 border-t">
+                  <div className="flex items-center justify-between">
+                    <FormField
+                      control={form.control}
+                      name="autoFetch"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center gap-2 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm font-normal cursor-pointer">
+                            Auto-fetch tracks after adding
+                          </FormLabel>
+                        </FormItem>
+                      )}
                     />
-                    <Label htmlFor="auto-fetch" className="text-sm font-normal cursor-pointer">
-                      Auto-fetch tracks after adding
-                    </Label>
+                    <Badge variant="outline" className="text-xs">Recommended</Badge>
                   </div>
-                  <Badge variant="outline" className="text-xs">Recommended</Badge>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="auto-enrich"
-                    checked={autoEnrichOnFetch}
-                    onCheckedChange={(checked) => setAutoEnrichOnFetch(checked as boolean)}
-                    disabled={!autoFetchOnAdd}
+                  
+                  <FormField
+                    control={form.control}
+                    name="autoEnrich"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center gap-2 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            disabled={!form.watch("autoFetch")}
+                          />
+                        </FormControl>
+                        <FormLabel className="text-sm font-normal cursor-pointer">
+                          Auto-enrich tracks after fetching
+                        </FormLabel>
+                      </FormItem>
+                    )}
                   />
-                  <Label htmlFor="auto-enrich" className="text-sm font-normal cursor-pointer">
-                    Auto-enrich tracks after fetching
-                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Automatic enrichment pulls songwriter credits, streaming stats, and MusicBrainz data
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Automatic enrichment pulls songwriter credits, streaming stats, and MusicBrainz data
-                </p>
-              </div>
-              <Button 
-                onClick={handleAddPlaylist} 
-                disabled={addPlaylistMutation.isPending}
-                className="w-full"
-                data-testid="button-submit-add-playlist"
-              >
-                {addPlaylistMutation.isPending ? "Adding..." : "Add Playlist"}
-              </Button>
-            </div>
+                
+                <Button 
+                  type="submit"
+                  disabled={addPlaylistMutation.isPending}
+                  className="w-full"
+                  data-testid="button-submit-add-playlist"
+                >
+                  {addPlaylistMutation.isPending ? "Adding..." : "Add Playlist"}
+                </Button>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
         </div>
