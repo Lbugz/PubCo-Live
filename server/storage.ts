@@ -1,4 +1,4 @@
-import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, artists, artistSongwriters, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory, type Artist, type InsertArtist } from "@shared/schema";
+import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, artists, artistSongwriters, enrichmentJobs, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory, type Artist, type InsertArtist, type EnrichmentJob, type InsertEnrichmentJob } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, inArray, and } from "drizzle-orm";
 
@@ -45,6 +45,10 @@ export interface IStorage {
   getDataCounts(): Promise<{ playlists: number; tracks: number; songwriters: number; tags: number; activities: number }>;
   deleteAllData(): Promise<void>;
   deletePlaylistCascade(playlistId: string, options: { deleteSongwriters?: boolean }): Promise<{ tracksDeleted: number; songwritersDeleted: number }>;
+  createEnrichmentJob(job: InsertEnrichmentJob): Promise<EnrichmentJob>;
+  getEnrichmentJobById(id: string): Promise<EnrichmentJob | null>;
+  getEnrichmentJobsByStatus(statuses: Array<'queued' | 'running' | 'completed' | 'failed'>): Promise<EnrichmentJob[]>;
+  updateEnrichmentJob(id: string, updates: Partial<Omit<EnrichmentJob, 'id' | 'createdAt'>>): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -609,6 +613,34 @@ export class DatabaseStorage implements IStorage {
       
       return { tracksDeleted, songwritersDeleted };
     });
+  }
+
+  async createEnrichmentJob(job: InsertEnrichmentJob): Promise<EnrichmentJob> {
+    const [created] = await db.insert(enrichmentJobs)
+      .values(job)
+      .returning();
+    return created;
+  }
+
+  async getEnrichmentJobById(id: string): Promise<EnrichmentJob | null> {
+    const [job] = await db.select()
+      .from(enrichmentJobs)
+      .where(eq(enrichmentJobs.id, id))
+      .limit(1);
+    return job || null;
+  }
+
+  async getEnrichmentJobsByStatus(statuses: Array<'queued' | 'running' | 'completed' | 'failed'>): Promise<EnrichmentJob[]> {
+    return db.select()
+      .from(enrichmentJobs)
+      .where(inArray(enrichmentJobs.status, statuses))
+      .orderBy(enrichmentJobs.createdAt);
+  }
+
+  async updateEnrichmentJob(id: string, updates: Partial<Omit<EnrichmentJob, 'id' | 'createdAt'>>): Promise<void> {
+    await db.update(enrichmentJobs)
+      .set(updates)
+      .where(eq(enrichmentJobs.id, id));
   }
 }
 
