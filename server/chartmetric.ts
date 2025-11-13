@@ -750,6 +750,67 @@ export async function searchPlaylists(
   }
 }
 
+export interface ChartmetricPlaylistTrack {
+  chartmetricId: string;
+  name: string;
+  artists: Array<{ id?: string; name: string }>;
+  isrc?: string;
+  album?: {
+    name: string;
+    image_url?: string;
+  };
+}
+
+export async function getPlaylistTracks(
+  playlistId: string,
+  platform: string = 'spotify'
+): Promise<ChartmetricPlaylistTrack[] | null> {
+  try {
+    const chartmetricId = await resolvePlaylistId(playlistId, platform);
+    if (!chartmetricId) {
+      console.log(`⚠️  Chartmetric: Could not resolve playlist ID ${playlistId}`);
+      return null;
+    }
+
+    console.log(`🎵 Chartmetric: Fetching tracks for playlist ${chartmetricId}`);
+    
+    const tracks = await makeChartmetricRequest<any>(
+      `/playlist/${chartmetricId}/current/tracks`
+    );
+    
+    if (!tracks || !Array.isArray(tracks)) {
+      console.log(`⚠️  Chartmetric: No tracks returned for playlist ${chartmetricId}`);
+      return null;
+    }
+    
+    const formattedTracks: ChartmetricPlaylistTrack[] = tracks.map((track: any) => ({
+      chartmetricId: track.id?.toString() || track.cm_track?.toString(),
+      name: track.name || '',
+      artists: Array.isArray(track.artists) 
+        ? track.artists.map((a: any) => ({
+            id: a.id?.toString(),
+            name: a.name || ''
+          }))
+        : [],
+      isrc: track.isrc,
+      album: track.album ? {
+        name: track.album.name || '',
+        image_url: track.album.image_url || track.album.images?.[0]?.url
+      } : undefined
+    }));
+    
+    console.log(`✅ Chartmetric: Retrieved ${formattedTracks.length} tracks with Chartmetric IDs`);
+    return formattedTracks;
+  } catch (error: any) {
+    if (error.message?.includes('401')) {
+      console.log(`ℹ️  Chartmetric: Playlist tracks endpoint requires Enterprise tier (playlist: ${playlistId})`);
+    } else {
+      console.error(`❌ Chartmetric: Error fetching playlist tracks:`, error.message);
+    }
+    return null;
+  }
+}
+
 export async function getPlaylistStats(playlistId: string, platform: string = 'spotify', startDate?: string, endDate?: string): Promise<ChartmetricPlaylistStats | null> {
   try {
     const chartmetricId = await resolvePlaylistId(playlistId, platform);
