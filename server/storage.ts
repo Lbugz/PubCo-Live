@@ -6,6 +6,7 @@ export interface IStorage {
   getTracksByWeek(week: string): Promise<PlaylistSnapshot[]>;
   getTracksByPlaylist(playlistId: string, week?: string): Promise<PlaylistSnapshot[]>;
   getTrackById(id: string): Promise<PlaylistSnapshot | null>;
+  getTracksByIds(ids: string[]): Promise<PlaylistSnapshot[]>;
   getLatestWeek(): Promise<string | null>;
   getAllWeeks(): Promise<string[]>;
   getAllPlaylists(): Promise<string[]>;
@@ -94,6 +95,14 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     
     return track || null;
+  }
+
+  async getTracksByIds(ids: string[]): Promise<PlaylistSnapshot[]> {
+    if (ids.length === 0) return [];
+    
+    return db.select()
+      .from(playlistSnapshots)
+      .where(inArray(playlistSnapshots.id, ids));
   }
 
   async getLatestWeek(): Promise<string | null> {
