@@ -13,7 +13,7 @@ import { fetchEditorialTracksViaNetwork } from "./scrapers/spotifyEditorialNetwo
 import { harvestVirtualizedRows } from "./scrapers/spotifyEditorialDom";
 import { broadcastEnrichmentUpdate } from "./websocket";
 import { getAuthStatus, isAuthHealthy } from "./auth-monitor";
-import { enrichTrackWithChartmetric, getSongwriterProfile, getSongwriterCollaborators, getSongwriterPublishers } from "./chartmetric";
+import { enrichTrackWithChartmetric, getSongwriterProfile, getSongwriterCollaborators, getSongwriterPublishers, getPlaylistMetadata, getPlaylistTracks, searchPlaylists } from "./chartmetric";
 import { getPlaylistMetrics, getTrackMetrics, invalidateMetricsCache } from "./metricsService";
 import { triggerMetricsUpdate, scheduleMetricsUpdate, flushMetricsUpdate } from "./metricsUpdateManager";
 
@@ -608,30 +608,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let source = 'spotify';
       let imageUrl = null;
       
-      // For non-editorial playlists, try to fetch metadata via API
+      // For non-editorial playlists, try to fetch metadata
       if (!useScraping) {
+        let metadataFetched = false;
+        
+        // PRIORITY 1: Try Chartmetric metadata first (works for all playlists including editorial)
         try {
-          const spotify = await getUncachableSpotifyClient();
-          const playlistData = await spotify.playlists.getPlaylist(validatedPlaylist.playlistId, "from_token" as any);
+          const chartmetricMetadata = await getPlaylistMetadata(validatedPlaylist.playlistId);
           
-          totalTracks = playlistData.tracks?.total || null;
-          curator = playlistData.owner?.display_name || null;
-          followers = playlistData.followers?.total || null;
-          imageUrl = playlistData.images?.[0]?.url || null;
-          
-          // Detect if actually editorial based on owner
-          if (playlistData.owner?.id === 'spotify') {
+          if (chartmetricMetadata) {
+            totalTracks = chartmetricMetadata.trackCount || null;
+            curator = chartmetricMetadata.curator || null;
+            followers = chartmetricMetadata.followerCount || null;
+            imageUrl = chartmetricMetadata.imageUrl || null;
+            
+            // Detect editorial based on curator
+            if (curator?.toLowerCase() === 'spotify') {
+              isEditorial = 1;
+              fetchMethod = 'scraping';
+              console.log(`✅ Chartmetric: Detected editorial playlist (curator=Spotify): ${validatedPlaylist.playlistId}`);
+            }
+            
+            console.log(`✅ Chartmetric metadata: ${totalTracks} tracks, curator="${curator}", followers=${followers}`);
+            metadataFetched = true;
+          }
+        } catch (chartmetricError: any) {
+          console.log(`Chartmetric metadata failed for ${validatedPlaylist.playlistId}: ${chartmetricError.message}`);
+        }
+        
+        // FALLBACK: Use Spotify API if Chartmetric failed
+        if (!metadataFetched) {
+          try {
+            const spotify = await getUncachableSpotifyClient();
+            const playlistData = await spotify.playlists.getPlaylist(validatedPlaylist.playlistId, "from_token" as any);
+            
+            totalTracks = playlistData.tracks?.total || null;
+            curator = playlistData.owner?.display_name || null;
+            followers = playlistData.followers?.total || null;
+            imageUrl = playlistData.images?.[0]?.url || null;
+            
+            // Detect if actually editorial based on owner
+            if (playlistData.owner?.id === 'spotify') {
+              isEditorial = 1;
+              fetchMethod = 'scraping';
+              console.log(`Detected editorial playlist (owner=spotify): ${validatedPlaylist.playlistId}`);
+            }
+            
+            console.log(`✅ Spotify API metadata: ${totalTracks} tracks, curator="${curator}"`);
+          } catch (apiError: any) {
+            // Both Chartmetric and Spotify failed - likely editorial playlist
+            console.log(`⚠️  Both Chartmetric and Spotify API failed for ${validatedPlaylist.playlistId}, will use scraping: ${apiError.message}`);
             isEditorial = 1;
             fetchMethod = 'scraping';
-            console.log(`Detected editorial playlist (owner=spotify): ${validatedPlaylist.playlistId}`);
           }
-          
-          console.log(`API metadata for ${playlistData.name}: ${totalTracks} tracks, curator="${curator}"`);
-        } catch (apiError: any) {
-          // API failed - likely editorial playlist
-          console.log(`API failed for ${validatedPlaylist.playlistId}, will use scraping: ${apiError.message}`);
-          isEditorial = 1;
-          fetchMethod = 'scraping';
         }
       } else {
         console.log(`Playlist ${validatedPlaylist.playlistId} added with scraping mode - metadata will be fetched during track fetch`);
