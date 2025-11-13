@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown, Music2, Users, Music, Target, TrendingUp, Activity, Search, Filter } from "lucide-react";
+import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown, Music2, Users, Music, Target, TrendingUp, Activity, Search, Filter, Loader2, X } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { Progress } from "@/components/ui/progress";
 import { StatsCard } from "@/components/stats-card";
 import {
   Select,
@@ -74,6 +75,7 @@ export default function Dashboard() {
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const [recentEnrichments, setRecentEnrichments] = useState<Array<{ trackName: string; artistName: string; timestamp: number }>>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [enrichmentProgress, setEnrichmentProgress] = useState<{ message: string; progress?: number } | null>(null);
   const { toast} = useToast();
   const isMobile = useMobile(768);
   
@@ -101,6 +103,15 @@ export default function Dashboard() {
       toast({
         title: "Track Enriched!",
         description: `${data.trackName} by ${data.artistName}`,
+      });
+    },
+    onEnrichmentProgress: (data) => {
+      console.log('Enrichment progress:', data);
+      setEnrichmentProgress({
+        message: data.message || 'Processing...',
+        progress: data.enrichedCount && data.totalCount 
+          ? Math.round((data.enrichedCount / data.totalCount) * 100)
+          : undefined
       });
     },
     onMessage: (message) => {
@@ -509,6 +520,38 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Enrichment Progress Notification */}
+      {enrichmentProgress && (
+        <div className="fixed top-4 right-4 z-50 max-w-md">
+          <Card className="glass-panel backdrop-blur-xl border-primary/20 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 flex-1">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium mb-1">{enrichmentProgress.message}</p>
+                    {enrichmentProgress.progress !== undefined && (
+                      <div className="space-y-1">
+                        <Progress value={enrichmentProgress.progress} className="h-2" />
+                        <p className="text-xs text-muted-foreground">{enrichmentProgress.progress}% complete</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setEnrichmentProgress(null)}
+                  data-testid="button-dismiss-enrichment-progress"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
       {/* Live Enrichment Indicator */}
       {recentEnrichments.length > 0 && (
         <div className="fixed bottom-4 right-4 z-50 space-y-2 max-w-sm">
