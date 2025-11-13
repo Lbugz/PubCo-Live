@@ -713,7 +713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Determine if editorial (either explicit flag or scraping mode requested)
       let isEditorial = useScraping ? 1 : 0;
       let totalTracks = providedMetadata.totalTracks;
-      let fetchMethod = useScraping ? 'scraping' : 'api';
+      let fetchMethod = null; // Set to null - will be populated when actual fetch completes
       let curator = providedMetadata.curator;
       let followers = providedMetadata.followers;
       let source = 'spotify';
@@ -737,7 +737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Detect editorial based on curator
             if (curator?.toLowerCase() === 'spotify') {
               isEditorial = 1;
-              fetchMethod = 'scraping';
+              // fetchMethod stays null until actual fetch completes
               console.log(`✅ Chartmetric: Detected editorial playlist (curator=Spotify): ${validatedPlaylist.playlistId}`);
             }
             
@@ -764,7 +764,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Detect if actually editorial based on owner
             if (playlistData.owner?.id === 'spotify') {
               isEditorial = 1;
-              fetchMethod = 'scraping';
+              // fetchMethod stays null until actual fetch completes
               console.log(`Detected editorial playlist (owner=spotify): ${validatedPlaylist.playlistId}`);
             }
             
@@ -773,7 +773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Both Chartmetric and Spotify failed - likely editorial playlist
             console.log(`⚠️  Both Chartmetric and Spotify API failed for ${validatedPlaylist.playlistId}, will use scraping: ${apiError.message}`);
             isEditorial = 1;
-            fetchMethod = 'scraping';
+            // fetchMethod stays null until actual fetch completes
           }
         }
       } else {
@@ -2396,8 +2396,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let playlistTotalTracks = playlist.totalTracks;
           let skippedCount = 0;
           
-          // Use API for non-editorial, scraping for editorial
-          let fetchMethod = playlist.fetchMethod || (playlist.isEditorial === 1 ? 'scraping' : 'api');
+          // fetchMethod will be set based on which tier actually succeeds
+          let fetchMethod = null;
           let chartmetricAttempted = false;
           
           // PHASE 1: Try Chartmetric FIRST for ALL playlists (editorial AND non-editorial)
@@ -3027,13 +3027,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const totalTracks = playlistData.tracks?.total || null;
           const isEditorial = playlistData.owner?.id === 'spotify' ? 1 : 0;
-          const fetchMethod = isEditorial === 1 ? 'scraping' : 'api';
+          // fetchMethod not updated during metadata refresh - only during actual fetch
           
           // Update the playlist with metadata
           await storage.updatePlaylistMetadata(playlist.id, {
             totalTracks,
             isEditorial,
-            fetchMethod,
           });
           
           backfilledCount++;
