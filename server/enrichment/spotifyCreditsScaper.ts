@@ -1,5 +1,28 @@
 import { Browser, Page } from "puppeteer";
-import { addToQueue, getQueue } from "./puppeteerQueue";
+import { addToQueue, getQueue, cleanupQueue, waitForQueueIdle } from "./puppeteerQueue";
+
+// Safety net: cleanup on process exit
+let exitHandlerRegistered = false;
+function registerExitHandler() {
+  if (exitHandlerRegistered) return;
+  exitHandlerRegistered = true;
+  
+  process.on('exit', () => {
+    console.log('[Phase 2] Process exit detected, emergency cleanup');
+  });
+  
+  process.on('SIGINT', async () => {
+    console.log('[Phase 2] SIGINT detected, cleanup...');
+    await cleanupQueue();
+    process.exit(0);
+  });
+  
+  process.on('SIGTERM', async () => {
+    console.log('[Phase 2] SIGTERM detected, cleanup...');
+    await cleanupQueue();
+    process.exit(0);
+  });
+}
 
 interface TrackCredits {
   writers: string[];
@@ -158,12 +181,28 @@ async function handleCookieConsent(page: Page): Promise<void> {
  */
 async function extractStreamCount(page: Page): Promise<number | null> {
   try {
+    // Try selector-based extraction first (more reliable)
     const streamCountScript = `
       (function() {
+        // Try data-testid selector
+        const playcountEl = document.querySelector('[data-testid="playcount"]');
+        if (playcountEl) {
+          return playcountEl.textContent || playcountEl.innerText;
+        }
+        
+        // Try aria-label containing "streams"
+        const ariaEl = document.querySelector('[aria-label*="streams" i]');
+        if (ariaEl) {
+          const ariaLabel = ariaEl.getAttribute('aria-label');
+          if (ariaLabel) {
+            const match = ariaLabel.match(/([\\d,.]+)\\s*(K|M|B)?\\s*streams?/i);
+            if (match) return match[0];
+          }
+        }
+        
+        // Fallback: Look for stream count near track duration (M:SS pattern)
         const bodyText = document.body.innerText;
         const lines = bodyText.split('\\n').map(l => l.trim());
-        
-        // Look for stream count near track duration (M:SS pattern)
         const durationPattern = /\\d{1,2}:\\d{2}/;
         
         for (let i = 0; i < lines.length; i++) {
@@ -173,20 +212,13 @@ async function extractStreamCount(page: Page): Promise<number | null> {
             // Match numeric format: "3:15 • 13,343"
             const streamMatch = line.match(/\\d{1,2}:\\d{2}[^\\d]*?([\\d,]+)/);
             if (streamMatch && streamMatch[1]) {
-              const num = parseInt(streamMatch[1].replace(/,/g, ''), 10);
-              if (num >= 100 && num < 1e12) {
-                return num;
-              }
+              return streamMatch[1];
             }
             
             // Match abbreviated format: "3:15 • 1.2M"
-            const shortMatch = line.match(/\\d{1,2}:\\d{2}[^\\d]*?([\\d.]+)\\s*([KMB])/i);
+            const shortMatch = line.match(/\\d{1,2}:\\d{2}[^\\d]*?([\\d.]+\\s*[KMB])/i);
             if (shortMatch) {
-              const value = parseFloat(shortMatch[1]);
-              const suffix = shortMatch[2].toUpperCase();
-              if (suffix === 'M') return Math.round(value * 1e6);
-              if (suffix === 'K') return Math.round(value * 1e3);
-              if (suffix === 'B') return Math.round(value * 1e9);
+              return shortMatch[1];
             }
           }
         }
@@ -195,8 +227,14 @@ async function extractStreamCount(page: Page): Promise<number | null> {
       })();
     `;
     
-    const result = await page.evaluate(streamCountScript);
-    return result as number | null;
+    const rawText = await page.evaluate(streamCountScript);
+    
+    // Parse the extracted text using parseStreamCount
+    if (rawText) {
+      return parseStreamCount(rawText as string);
+    }
+    
+    return null;
   } catch (error) {
     return null;
   }
@@ -409,52 +447,97 @@ export async function enrichTracksWithCredits(
 
   console.log(`[Phase 2] Enriching ${batch.length} tracks with credits and stream counts...`);
 
+  // Register exit handlers for safety
+  registerExitHandler();
+
   // Initialize queue
-  getQueue({
+  const queue = getQueue({
     maxConcurrency: 2,
     minDelay: 500,
     browserPoolSize: 2,
   });
 
-  // Process each track through the queue and await all promises
-  await Promise.all(
-    batch.map(async (track) => {
-      try {
-        const enrichedData = await addToQueue(
-          `track-${track.id}`,
-          async (browser) => {
-            return await scrapeTrackCredits(browser, track.id, track.spotifyUrl);
-          },
-          0 // Default priority
-        );
+  const TRACK_TIMEOUT = 45000; // 45s timeout per track
+  const CHUNK_SIZE = 8; // Process 8 tracks at a time (maxConcurrency * 4)
 
-        result.tracksProcessed++;
-        
-        // Only count as enriched if we got new data
-        if (
-          enrichedData.songwriter ||
-          enrichedData.producer ||
-          enrichedData.publisher ||
-          enrichedData.label ||
-          enrichedData.spotifyStreams
-        ) {
-          result.tracksEnriched++;
-          result.enrichedTracks.push(enrichedData);
-        }
-      } catch (error: any) {
-        result.errors++;
-        result.errorDetails.push({
-          trackId: track.id,
-          error: error.message || "Unknown error",
-        });
-        console.error(`[Phase 2] Error enriching track ${track.id}:`, error.message);
-      }
-    })
-  );
+  try {
+    // Process tracks in chunks to limit memory pressure
+    for (let i = 0; i < batch.length; i += CHUNK_SIZE) {
+      const chunk = batch.slice(i, i + CHUNK_SIZE);
+      console.log(`[Phase 2] Processing chunk ${Math.floor(i / CHUNK_SIZE) + 1}/${Math.ceil(batch.length / CHUNK_SIZE)} (${chunk.length} tracks)`);
 
-  console.log(
-    `[Phase 2] Complete: ${result.tracksEnriched}/${result.tracksProcessed} tracks enriched, ${result.errors} errors`
-  );
+      // Process chunk in parallel with timeout guards
+      await Promise.all(
+        chunk.map(async (track) => {
+          let timeoutId: NodeJS.Timeout | null = null;
+          try {
+            // Wrap scrape in timeout guard
+            const scrapePromise = addToQueue(
+              `track-${track.id}`,
+              async (browser) => {
+                return await scrapeTrackCredits(browser, track.id, track.spotifyUrl);
+              },
+              0 // Default priority
+            );
+
+            // Attach catch handler to absorb late rejections
+            scrapePromise.catch((err) => {
+              console.warn(`[Phase 2] Late rejection for track ${track.id}:`, err.message);
+            });
+
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              timeoutId = setTimeout(() => reject(new Error(`Timeout after ${TRACK_TIMEOUT}ms`)), TRACK_TIMEOUT);
+            });
+
+            const enrichedData = await Promise.race([scrapePromise, timeoutPromise]);
+
+            // Clear timeout on success
+            if (timeoutId) clearTimeout(timeoutId);
+
+            result.tracksProcessed++;
+            
+            // Only count as enriched if we got new data
+            if (
+              enrichedData.songwriter ||
+              enrichedData.producer ||
+              enrichedData.publisher ||
+              enrichedData.label ||
+              enrichedData.spotifyStreams
+            ) {
+              result.tracksEnriched++;
+              result.enrichedTracks.push(enrichedData);
+            }
+          } catch (error: any) {
+            // Clear timeout on error
+            if (timeoutId) clearTimeout(timeoutId);
+            
+            result.errors++;
+            result.errorDetails.push({
+              trackId: track.id,
+              error: error.message || "Unknown error",
+            });
+            console.error(`[Phase 2] Error enriching track ${track.id}:`, error.message);
+          }
+        })
+      );
+    }
+
+    console.log(
+      `[Phase 2] Complete: ${result.tracksEnriched}/${result.tracksProcessed} tracks enriched, ${result.errors} errors`
+    );
+  } finally {
+    // CRITICAL: Wait for queue to drain before cleanup
+    const startDrain = Date.now();
+    console.log(`[Phase 2] Waiting for queue to drain...`);
+    await waitForQueueIdle();
+    console.log(`[Phase 2] Queue drained in ${Date.now() - startDrain}ms`);
+    
+    // Cleanup browsers AND reset singleton
+    const startCleanup = Date.now();
+    console.log(`[Phase 2] Cleaning up Puppeteer queue...`);
+    await cleanupQueue();
+    console.log(`[Phase 2] Cleanup complete in ${Date.now() - startCleanup}ms`);
+  }
 
   return result;
 }

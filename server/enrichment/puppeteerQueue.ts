@@ -96,6 +96,15 @@ class PuppeteerQueue {
   }
 
   /**
+   * Wait for queue to become idle (no pending or active tasks)
+   */
+  public async waitForIdle(): Promise<void> {
+    while (this.queue.length > 0 || this.activeTasks > 0) {
+      await this.wait(100);
+    }
+  }
+
+  /**
    * Get or create a browser instance from the pool
    */
   private async getBrowser(): Promise<Browser> {
@@ -315,6 +324,15 @@ export async function addToQueue<T>(
 export function getQueueStatus(): QueueStats {
   const queue = getQueue();
   return queue.getStats();
+}
+
+/**
+ * Wait for queue to drain (all tasks complete)
+ */
+export async function waitForQueueIdle(): Promise<void> {
+  if (queueInstance) {
+    await queueInstance.waitForIdle();
+  }
 }
 
 /**
