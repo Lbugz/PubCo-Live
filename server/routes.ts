@@ -2614,91 +2614,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (allTracks.length > 0) {
-        // Prefetch Chartmetric data for tracks with ISRCs
-        let chartmetricStats = { requested: 0, succeeded: 0, failed: 0, skipped: 0 };
-        
-        if (process.env.CHARTMETRIC_API_KEY) {
-          try {
-            console.log(`\n🎵 Prefetching Chartmetric data for ${allTracks.length} tracks...`);
-            
-            // Filter tracks that have ISRCs and build batch input
-            const tracksWithIsrc = allTracks
-              .filter(t => t.isrc)
-              .map((t, idx) => ({
-                isrc: t.isrc!,
-                trackId: `temp_${idx}`, // Temporary ID since tracks not inserted yet
-                trackName: t.trackName,
-              }));
-            
-            if (tracksWithIsrc.length > 0) {
-              const { lookupIsrcBatch } = await import("./chartmetric");
-              const batchResult = await lookupIsrcBatch(tracksWithIsrc);
-              
-              chartmetricStats = {
-                requested: batchResult.stats.requested,
-                succeeded: batchResult.stats.succeeded,
-                failed: batchResult.stats.failed,
-                skipped: allTracks.length - tracksWithIsrc.length,
-              };
-              
-              // Map Chartmetric IDs back to tracks
-              let resultIndex = 0;
-              for (let i = 0; i < allTracks.length; i++) {
-                if (!allTracks[i].isrc) {
-                  // No ISRC - mark as skipped
-                  allTracks[i].chartmetricStatus = "skipped";
-                  continue;
-                }
-                
-                const tempId = `temp_${resultIndex}`;
-                resultIndex++;
-                
-                const result = batchResult.results[tempId];
-                if (result) {
-                  // Preserve the actual status from batch result
-                  allTracks[i].chartmetricStatus = result.status;
-                  
-                  if (result.status === "success" && result.track) {
-                    allTracks[i].chartmetricId = result.track.id;
-                  } else if (result.status === "error" && result.error) {
-                    // Could log the specific error if needed
-                    console.log(`  ⚠️  Chartmetric lookup failed for ${allTracks[i].trackName}: ${result.error}`);
-                  }
-                }
-              }
-              
-              console.log(`✅ Chartmetric prefetch complete: ${chartmetricStats.succeeded} succeeded, ${chartmetricStats.failed} failed, ${chartmetricStats.skipped} skipped`);
-            } else {
-              chartmetricStats.skipped = allTracks.length;
-              console.log(`⚠️  No tracks with ISRCs - skipping Chartmetric prefetch`);
-            }
-          } catch (chartmetricError: any) {
-            console.error(`⚠️  Chartmetric prefetch failed (non-blocking):`, chartmetricError.message);
-            // Leave tracks as "pending" status (default) so they can be enriched later
-            // Do not mark as "error" since this was a batch operation failure, not per-track failure
-          }
-        } else {
-          // No API key - leave as "pending" (default) for later enrichment
-          chartmetricStats.skipped = allTracks.length;
-          console.log(`ℹ️  CHARTMETRIC_API_KEY not configured - skipping prefetch`);
+        // Force all tracks to chartmetricStatus="pending" and clear any stale Chartmetric IDs
+        // This ensures background enrichment processes them correctly
+        for (const track of allTracks) {
+          track.chartmetricStatus = "pending";
+          track.chartmetricId = null;
         }
         
+        // Insert tracks immediately without blocking on Chartmetric
         await storage.insertTracks(allTracks);
         console.log(`Successfully saved ${allTracks.length} new tracks for ${today}`);
         
-        // OPTIMIZATION: Trigger async Chartmetric playlist matching (non-blocking)
-        // Only process playlists that actually had new tracks inserted
-        if (process.env.CHARTMETRIC_API_KEY && allTracks.length > 0) {
+        // OPTIMIZATION: Trigger async Chartmetric enrichment (non-blocking)
+        // Consolidates playlist-level ISRC matching + per-track lookups in background
+        if (process.env.CHARTMETRIC_API_KEY) {
           const playlistsWithNewTracks = new Set(allTracks.map(t => t.playlistId));
           const playlistsToMatch = trackedPlaylists.filter(p => playlistsWithNewTracks.has(p.playlistId));
           
-          if (playlistsToMatch.length > 0) {
-            console.log(`🚀 Triggering async Chartmetric ISRC matching for ${playlistsToMatch.length} playlists (non-blocking)`);
-            
-            // Run in background without blocking response
-            (async () => {
-              try {
-                let totalMatched = 0;
+          console.log(`🚀 Triggering async Chartmetric enrichment for ${allTracks.length} tracks (non-blocking)`);
+          
+          // Run in background without blocking response
+          // Capture fresh track data for immediate enrichment
+          const freshTracks = allTracks.map(t => ({ ...t }));
+          
+          (async () => {
+            try {
+              let totalMatched = 0;
+              
+              // Step 1: Playlist-level ISRC matching (batch fetching from Chartmetric playlists)
+              if (playlistsToMatch.length > 0) {
+                console.log(`  📋 Matching Chartmetric IDs from ${playlistsToMatch.length} playlists...`);
+                
                 for (const playlist of playlistsToMatch) {
                   try {
                     const chartmetricTracks = await getPlaylistTracks(playlist.playlistId);
@@ -2726,13 +2672,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
                 
                 if (totalMatched > 0) {
-                  console.log(`✅ Background Chartmetric ISRC matching complete: ${totalMatched} tracks pre-enriched`);
+                  console.log(`  ✅ Playlist ISRC matching: ${totalMatched} tracks enriched`);
                 }
-              } catch (error: any) {
-                console.warn(`⚠️  Background Chartmetric matching failed: ${error.message}`);
               }
-            })().catch(err => console.error('Background Chartmetric matching error:', err));
-          }
+              
+              // Step 2: Per-track Chartmetric ID lookup for newly inserted tracks with ISRCs
+              try {
+                const tracksWithIsrc = freshTracks
+                  .filter(t => t.isrc && !t.chartmetricId)
+                  .slice(0, 200); // Limit batch size for API rate limits
+                
+                if (tracksWithIsrc.length > 0) {
+                  console.log(`  🎵 Looking up Chartmetric IDs for ${tracksWithIsrc.length} tracks via ISRC batch...`);
+                  
+                  const batchInput = tracksWithIsrc.map((t, idx) => ({
+                    isrc: t.isrc!,
+                    trackId: `temp_${idx}`,
+                    trackName: t.trackName,
+                  }));
+                  
+                  const { lookupIsrcBatch } = await import("./chartmetric");
+                  const batchResult = await lookupIsrcBatch(batchInput);
+                  
+                  // Build updates array from successful lookups
+                  const updates: Array<{ isrc: string; chartmetricId: string }> = [];
+                  let resultIndex = 0;
+                  for (const track of tracksWithIsrc) {
+                    const tempId = `temp_${resultIndex++}`;
+                    const result = batchResult.results[tempId];
+                    
+                    if (result?.status === "success" && result.track && track.isrc) {
+                      updates.push({
+                        isrc: track.isrc,
+                        chartmetricId: result.track.id
+                      });
+                    }
+                  }
+                  
+                  if (updates.length > 0) {
+                    const result = await storage.updateTrackChartmetricIdByIsrc(updates);
+                    console.log(`  ✅ Per-track lookup: ${result.updated}/${tracksWithIsrc.length} tracks enriched`);
+                    totalMatched += result.updated;
+                  }
+                }
+              } catch (lookupError: any) {
+                console.warn(`  ⚠️  Per-track Chartmetric lookup failed (non-blocking): ${lookupError.message}`);
+              }
+              
+              console.log(`✅ Background Chartmetric enrichment complete: ${totalMatched} total tracks enriched`);
+            } catch (error: any) {
+              console.warn(`⚠️  Background Chartmetric enrichment failed: ${error.message}`);
+            }
+          })().catch(err => console.error('Background Chartmetric error:', err));
         }
         
         // Trigger enrichment and metrics update for newly added tracks
