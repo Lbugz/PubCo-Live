@@ -313,6 +313,22 @@ export class EnrichmentWorker {
           progress: 85,
           message: 'MLC enrichment failed, continuing with Phase 2 results...',
         });
+
+        for (const trackId of job.trackIds) {
+          await this.storage.updateTrackMetadata(trackId, {
+            enrichmentStatus: 'enriched',
+            publisherStatus: 'unknown',
+            enrichedAt: new Date(),
+          });
+
+          if (this.wsBroadcast) {
+            this.wsBroadcast('track_enriched', {
+              type: 'track_enriched',
+              trackId,
+              phase: 'mlc_fallback',
+            });
+          }
+        }
       }
 
       await this.jobQueue.updateJobProgress(job.id, {
