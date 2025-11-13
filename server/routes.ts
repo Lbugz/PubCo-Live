@@ -2334,26 +2334,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 capturedTracks = networkResult.tracks ?? [];
                 
                 // Update playlist metadata (name, curator, followers, artwork) BEFORE processing tracks
-                if (networkResult.playlistName || networkResult.curator || networkResult.followers !== null || networkResult.imageUrl) {
-                  const updates: any = {
-                    totalTracks: networkTrackCount
-                  };
-                  
-                  if (networkResult.playlistName) {
-                    updates.name = networkResult.playlistName;
-                  }
-                  if (networkResult.curator) {
-                    updates.curator = networkResult.curator;
-                  }
-                  if (networkResult.followers !== undefined && networkResult.followers !== null) {
-                    updates.followers = networkResult.followers;
-                  }
-                  if (networkResult.imageUrl) {
-                    updates.imageUrl = networkResult.imageUrl;
-                  }
-                  
-                  await storage.updateTrackedPlaylistMetadata(playlist.id, updates);
-                  console.log(`Updated playlist metadata: name="${networkResult.playlistName}", curator="${networkResult.curator}", followers=${networkResult.followers}, artwork=${networkResult.imageUrl ? 'yes' : 'no'}`);
+                // Build updates object with only non-empty values
+                const updates: any = {
+                  totalTracks: networkTrackCount
+                };
+                
+                if (networkResult.playlistName?.trim()) {
+                  updates.name = networkResult.playlistName.trim();
+                }
+                if (networkResult.curator?.trim()) {
+                  updates.curator = networkResult.curator.trim();
+                }
+                if (networkResult.followers !== undefined && networkResult.followers !== null) {
+                  updates.followers = networkResult.followers;
+                }
+                if (networkResult.imageUrl?.trim()) {
+                  updates.imageUrl = networkResult.imageUrl.trim();
+                }
+                
+                // Always update totalTracks, and update other fields if present
+                await storage.updateTrackedPlaylistMetadata(playlist.id, updates);
+                console.log(`Updated playlist metadata: name="${updates.name || 'not set'}", curator="${updates.curator || 'not set'}", followers=${updates.followers ?? 'not set'}, artwork=${updates.imageUrl ? 'yes' : 'no'}`);
+                
+                // Verify the name was actually updated
+                const verifyPlaylist = await storage.getPlaylistById(playlist.id);
+                if (verifyPlaylist && verifyPlaylist.name === 'Loading...') {
+                  console.error(`⚠️ WARNING: Playlist name still "Loading..." after update attempt. Scraper returned: "${networkResult.playlistName}"`);
                 }
               } else {
                 const networkErrorDetails = networkResult.error ? ` Error: ${networkResult.error}.` : '';
