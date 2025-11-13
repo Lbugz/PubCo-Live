@@ -1,0 +1,160 @@
+✅ Review of Proposed Task List
+
+Here is a structured evaluation of each proposed task, plus my guidance on what should be adjusted before you hit “Start building.”
+
+🔍 1. Add Phase 1 to workflow
+
+✔ APPROVE
+This is the correct first task.
+
+Phase 1 = Spotify API Batch Enrichment
+
+ISRC recovery
+
+popularity, label, release date
+
+audio features (optional)
+
+enables 90–99% Chartmetric match rate
+
+Risk: Low
+Impact: Very high
+
+🔍 2. Control web page grabbing speed
+
+⚠ NEEDS ADJUSTMENT
+This task title is too vague.
+
+Your real requirement is:
+
+“Add Puppeteer queue + concurrency control for credit scraping”
+
+Because:
+
+Phase 2 will greatly increase Puppeteer operations
+
+You need concurrency limits (e.g., 2 sessions max)
+
+You need rate-limiting to avoid browser crashes
+
+Replace with:
+➡ “Add Puppeteer scraping queue + concurrency limits (for Phase 2 credits)”
+
+🔍 3. Add Spotify credits, get counts
+
+⚠ NEEDS ADJUSTMENT
+
+This task mixes two ideas:
+
+Songwriter / publisher / composer credits from track credits modal
+
+Stream count parsing from track page
+
+This is Phase 2 and should ONLY be started after Phase 1 is complete + tested.
+
+Replace with:
+➡ “Implement Spotify Credits Scraper (writers/composers/publishers) + stream count extractor”
+
+🔍 4. Add Phase 2 after Phase 1
+
+✔ APPROVE — but should be rewritten for clarity
+
+Replace with:
+➡ “Integrate Phase 2 (Credits + Stream Count) after Phase 1 ISRC batch is implemented + validated”
+
+🔍 5. Add detailed logs for all steps
+
+✔ APPROVE
+
+This is important for debugging:
+
+Track-level logs
+
+Phase-level logs
+
+Retry / fail logs
+
+EnrichmentStatus transitions
+
+Should be done in parallel with Phase 1+2.
+
+🔍 6. Test Phase 1 with playlists
+
+✔ APPROVE
+
+Tests should include:
+
+Non-editorial playlist
+
+Editorial playlist
+
+Mixed track data
+
+Tracks missing ISRC
+
+Tracks already enriched
+
+🔍 7. Test credit scraping with controls
+
+✔ APPROVE — but clarify the scope:
+
+Replace with:
+➡ “Test Phase 2 credits scraping with concurrency control + fallback logic”
+
+Tests should include:
+
+Tracks with credits
+
+Tracks without credits
+
+Private/unavailable tracks
+
+Regional-restricted tracks
+
+Tracks with unusually long credit lists
+
+🔍 8. Test whole process with tracks
+
+✔ APPROVE
+
+This is the full end-to-end test:
+
+Playlist added → Tracks fetched → 
+Phase 1 (API) → Phase 2 (Credits) → 
+Chartmetric → MLC → MusicBrainz → 
+DB write → Metrics update → UI refresh
+
+
+This ensures all pieces connect.
+
+📌 FINAL RECOMMENDED TASK LIST (CLEAN FORMAT)
+
+Use this version for the Replit agent:
+
+Phase 1 — Spotify API Batch Enrichment
+
+Add Phase 1 (Spotify API batch enrichment) to workflow
+
+Add selective enrichment checks
+
+Add phase-level error isolation
+
+Add detailed logs for all steps
+
+Test Phase 1 on both editorial and non-editorial playlists
+
+Phase 2 — Spotify Credits Scraping (writers + streams)
+
+Add Puppeteer scraping queue + concurrency controls
+
+Add Spotify credits scraper (writers, composers, publishers)
+
+Add Spotify stream-count scraper
+
+Integrate Phase 2 after Phase 1 validation
+
+Test credit scraping with controls
+
+End-to-End Validation
+
+Test full enrichment pipeline with various playlists/tracks

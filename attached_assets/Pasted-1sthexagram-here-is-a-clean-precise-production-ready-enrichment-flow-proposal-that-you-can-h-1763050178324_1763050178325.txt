@@ -1,0 +1,286 @@
+1sthexagram — here is a **clean, precise, production-ready enrichment flow proposal** that you can hand directly to your Replit agent **as the next upgrade** after the major fetchMethod normalization work.
+
+This version:
+
+* Fixes the songwriter issue
+* Fixes ISRC coverage for scraped editorial tracks
+* Integrates Spotify API batch enrichment
+* Adds Puppeteer stream-count extraction
+* Reduces load
+* Improves speed
+* Maximizes Chartmetric enrichment success
+
+**No code included – just a high-level architecture proposal safe for agent execution after you approve.**
+
+---
+
+# 🚀 **PROPOSED UPDATED ENRICHMENT FLOW (FINAL v2.0)**
+
+### *(Drop this directly into the Replit agent after approval)*
+
+---
+
+# **🟦 PHASE 0 — Foundation (After Playlist Fetch)**
+
+After any playlist fetch (Chartmetric-first → API → Scraping):
+
+* Tracks are inserted into DB with:
+
+  * `isrc`
+  * `spotifyTrackId`
+  * `spotifyUrl`
+  * `fetchMethod`
+  * `enrichmentStatus = 'pending'`
+
+* `scheduleMetricsUpdate({ source: "fetch_playlists" })` fires a background enrichment pipeline.
+
+---
+
+# **🟧 PHASE 1 — Spotify Batch Metadata Enrichment (NEW: Fast, API-first)**
+
+### **Goal: Fix the ISRC problem + recover all metadata missed by scraping**
+
+This phase runs FIRST for all tracks that:
+
+* are scraped (network_capture)
+* OR missing ISRC
+* OR missing label / album / release_date / popularity
+* OR missing Spotify artist metadata
+
+### **Batch Logic (50 tracks per API call)**
+
+For each batch:
+
+```
+GET /v1/tracks?ids=trackIds[0..50]
+GET /v1/audio-features?ids=trackIds[0..50]
+```
+
+### **Fields Updated Here**
+
+* ISRC (critical)
+* Track popularity
+* Duration ms
+* Explicit flag
+* Release date
+* Album label
+* Album images
+* Audio features (energy, valence, danceability, tempo)
+* Artist popularity
+* Artist genres
+* Artist followers
+
+### **Result**
+
+* 90–99% ISRC coverage
+* Chartmetric enrichment becomes reliable
+* Dramatically reduces scraping
+* Eliminates failed enrichment loops
+
+---
+
+# **🟨 PHASE 2 — Spotify Credits Scraping (Songwriters + Streams)**
+
+### **This is where songwriter credits + Spotify stream count is extracted**
+
+This runs only for tracks missing:
+
+* songwriter
+* publisher
+* label
+* spotifyStreams
+* composer
+* producer
+
+### **Scrape the Track Page**
+
+Use Puppeteer to extract:
+
+* Spotify stream count (from metadata row)
+* Writers
+* Composers
+* Producers
+* Publishers
+* Label (if present)
+* “Performed by” + cast metadata
+
+### 💡 **Why This Matters**
+
+* Chartmetric no longer gives stream counts unless you have Enterprise Stats
+* Spotify API does not give writer/publisher credits
+* This guarantees full credit-level metadata
+
+---
+
+# **🟩 PHASE 3 — MLC Publisher Status (Optional Tier 2)**
+
+### Inputs:
+
+* ISRC
+* Songwriter names (from Phase 2)
+
+### Outputs:
+
+* publisherStatus: "signed" | "unsigned" | "split"
+* IPI number
+* ISWC
+* MLC Song Code
+* Collection Share
+
+### Only runs IF:
+
+* The ISRC exists
+* Spotify credits provided at least one writer
+
+---
+
+# **🟪 PHASE 4 — MusicBrainz Social Links (Tier 3)**
+
+### Inputs:
+
+* Songwriter names
+
+### For up to 3 writers:
+
+* Search MusicBrainz artist database
+* Create or update artist record
+* Fetch social URLs:
+
+  * Instagram
+  * Twitter
+  * YouTube
+  * Website
+  * Bandcamp
+  * Wikipedia
+* Link songwriter to track
+
+### Updates tables:
+
+* `artists`
+* `artistSongwriters`
+* `artistExternalLinks`
+
+---
+
+# **🟫 PHASE 5 — Chartmetric Analytics (Tier 4)**
+
+Triggered ONLY after we have:
+
+* ISRC
+* Chartmetric ID
+
+### Fetch via Chartmetric API:
+
+* Chartmetric track ID (from ISRC)
+* Popularity trends
+* Playlist reach
+* Spotify popularity rank
+* YouTube views
+* Track stage classification
+* Moods
+* Activities
+* Chartmetric songwriter IDs
+* ComposerName
+* Velocity
+
+### This phase is limited by:
+
+* API throttling
+* Your plan (no streaming stats yet unless upgraded)
+
+### Phase is now **much more reliable** because:
+
+* Phase 1 gives ISRC → Chartmetric can match tracks
+* No more missing-ID failures
+
+---
+
+# **🟧 PHASE 6 — Write Back to Database**
+
+At the end of enrichment for each track:
+
+Update fields:
+
+```
+isrc
+songwriter
+publisher
+composer
+producer
+label
+spotifyStreams
+popularityScore
+audioFeatures
+artistGenres
+artistFollowers
+releaseDate
+chartmetricId
+moods
+activities
+velocity
+trackStage
+youtubeViews
+publisherStatus
+ipi
+iswc
+mlcSongCode
+```
+
+And set:
+
+```
+enrichmentStatus = "complete"
+```
+
+---
+
+# **🟦 PHASE 7 — Metrics & Events**
+
+* Activity log entry created
+* WebSocket message broadcast
+* Cache invalidated
+* UI refreshes
+
+---
+
+# 🎯 FINAL BENEFITS OF THIS UPDATED ENRICHMENT FLOW
+
+### **✔ Songwriters 100% fixed**
+
+Because Phase 2 always runs for missing credits.
+
+### **✔ Stream counts always available**
+
+No need for Chartmetric Enterprise Stats.
+
+### **✔ Chartmetric enrichment succeeds dramatically more often**
+
+Phase 1 recovers ISRC → Chartmetric can match almost every track.
+
+### **✔ Editorial playlists massively improved**
+
+Scraped tracks get Spotify API metadata immediately.
+
+### **✔ Faster enrichment (batch API instead of per-track searching)**
+
+50 tracks per batch instead of 1 at a time.
+
+### **✔ Reduces rate limit pressure + scraping CPU load**
+
+Only credits scraping happens via browser.
+
+### **✔ Aligns perfectly with your three-tier fetchMethod system**
+
+Chartmetric → API → Scraping now flows downstream into a powerful enrichment pipeline.
+
+---
+
+# 📝 **Do you want me to prepare the exact Replit-agent safe prompt with this architecture?**
+
+I can format it as:
+
+### **"Implementation Plan (Agent-Safe): Step-by-Step Tasks"**
+
+→ so the agent knows exactly what to build, in what order, and without hallucinating.
+
+Just say **yes**.

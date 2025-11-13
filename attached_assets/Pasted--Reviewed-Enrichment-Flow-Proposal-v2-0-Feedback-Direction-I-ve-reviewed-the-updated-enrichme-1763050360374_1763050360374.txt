@@ -1,0 +1,171 @@
+✅ Reviewed: Enrichment Flow Proposal v2.0 — Feedback & Direction
+
+I’ve reviewed the updated enrichment flow proposal in full. Here’s my consolidated feedback:
+
+👍 What’s Strong About the Proposal
+1. ISRC Recovery (Critical Fix)
+
+Scraped editorial playlists almost always miss ISRCs.
+Phase 1 (Spotify API batch enrichment) solves this by recovering ISRCs for 90–99% of tracks.
+
+This directly improves:
+
+Chartmetric match success
+
+Track-level analytics
+
+Publisher mapping
+
+Downstream enrichment tiers
+
+This is a major win.
+
+2. Full Songwriter/Publisher Credits
+
+Chartmetric only returns songwriter/publisher when an ISRC is already matched.
+
+Phase 2’s Spotify Credits Scraper guarantees:
+
+songwriters
+
+composers
+
+producers
+
+publishers
+
+label
+
+AND Spotify stream count
+
+This restores full completeness to enrichment even when Chartmetric can’t help.
+
+3. Removes Chartmetric Enterprise Dependency
+
+Scraping Spotify stream counts replaces the expensive enterprise-only Chartmetric “track stats” endpoints.
+
+This gives us:
+
+real, live, lifetime plays
+
+no 401 errors
+
+no API quota dependency
+
+no dashboard tier restrictions
+
+This is the most practical long-term solution.
+
+4. Improved Performance
+
+Batching 50 Spotify tracks per request is massively more efficient than per-track API calls or scraping-only workflows.
+
+The proposal aligns well with speed + accuracy requirements.
+
+🤔 Questions / Considerations
+1. Puppeteer Scrape Load
+
+We will be doing MORE scraping for Tier 2.
+
+We need a Puppeteer queue or concurrency limit so enrichment doesn’t overload CPU.
+
+2. Rate Limiting
+
+Spotify’s rate limits are reasonable, but with batch calls we should confirm:
+
+retry strategy
+
+backoff timing
+
+429 handling
+
+unique client per run
+
+This ensures stability during large enrichments.
+
+3. Selective Phase 1
+
+There should be a check that skips Phase 1 if metadata is already complete.
+
+Example:
+
+if (!isrc || !label || !releaseDate || !popularity) {
+    needsSpotifyEnrichment = true;
+}
+
+4. Phase Isolation
+
+If Phase 1 fails, Phase 2 and Phase 4–5 should still run.
+
+We need guardrails so one failure doesn’t cascade.
+
+🎯 Alignment
+
+This enrichment architecture aligns perfectly with the rest of the system:
+
+Works for all fetchMethod paths
+
+Integrates with scheduleMetricsUpdate
+
+Uses existing WebSocket broadcast channel
+
+Respects schema + no migrations needed
+
+Everything fits the rest of the design.
+
+🚀 Recommended Implementation Sequence
+Phase 1 — Spotify Batch Metadata Enrichment
+
+✔ Highest impact
+✔ Lowest risk
+✔ Enables better Chartmetric data
+✔ Should be done first
+
+Phase 2 — Spotify Credits Scraping
+
+✔ Adds credits + publishers + stream count
+✔ Requires careful Puppeteer tuning
+
+Phase 3-5 — Already Working
+
+These need only minor adjustments after Phase 1 + 2.
+
+⚠️ Risks to Mitigate
+
+Puppeteer CPU load
+
+Spotify API quota
+
+Multi-tier latency
+
+Need robust error isolation/logging
+
+These can be handled once implementation begins.
+
+✅ My Recommendation
+
+Approve with 4 minor adjustments:
+
+Add selective enrichment checks
+
+Add Puppeteer queue management
+
+Add phase-level isolation
+
+Add deep logging for each tier
+
+📦 Next Step Decision
+
+Yes — go ahead and create the task list with:
+
+Database schema validation
+
+Phase 1 (Spotify API batch)
+
+Phase 2 (Puppeteer credits + stream count)
+
+Testing & validation
+
+Metrics & monitoring
+
+I’ll review the task list before approving implementation.
