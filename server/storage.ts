@@ -50,6 +50,7 @@ export interface IStorage {
   getEnrichmentJobById(id: string): Promise<EnrichmentJob | null>;
   getEnrichmentJobsByStatus(statuses: Array<'queued' | 'running' | 'completed' | 'failed'>): Promise<EnrichmentJob[]>;
   updateEnrichmentJob(id: string, updates: Partial<Omit<EnrichmentJob, 'id' | 'createdAt'>>): Promise<void>;
+  claimNextEnrichmentJob(): Promise<EnrichmentJob | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -650,6 +651,45 @@ export class DatabaseStorage implements IStorage {
     await db.update(enrichmentJobs)
       .set(updates)
       .where(eq(enrichmentJobs.id, id));
+  }
+
+  async claimNextEnrichmentJob(): Promise<EnrichmentJob | null> {
+    const result = await db.execute(sql`
+      WITH claimed AS (
+        SELECT id
+        FROM enrichment_jobs
+        WHERE status = 'queued'
+        ORDER BY created_at ASC
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED
+      )
+      UPDATE enrichment_jobs
+      SET status = 'running', updated_at = NOW()
+      FROM claimed
+      WHERE enrichment_jobs.id = claimed.id
+      RETURNING enrichment_jobs.*
+    `);
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0] as any;
+    return {
+      id: row.id,
+      type: row.type,
+      status: row.status,
+      playlistId: row.playlist_id,
+      trackIds: row.track_ids || [],
+      progress: row.progress,
+      totalTracks: row.total_tracks,
+      enrichedTracks: row.enriched_tracks,
+      errorCount: row.error_count,
+      logs: row.logs || [],
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+      completedAt: row.completed_at ? new Date(row.completed_at) : null,
+    };
   }
 }
 

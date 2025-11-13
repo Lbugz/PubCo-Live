@@ -41,29 +41,10 @@ export class JobQueue {
   }
 
   async getNextJob(): Promise<EnrichmentJob | null> {
-    const queuedJobs = await this.storage.getEnrichmentJobsByStatus(['queued']);
-    
-    if (queuedJobs.length === 0) {
-      return null;
-    }
-
-    const job = queuedJobs[0];
-    
     try {
-      await this.storage.updateEnrichmentJob(job.id, {
-        status: 'running',
-        updatedAt: new Date(),
-      });
-
-      const updatedJob = await this.storage.getEnrichmentJobById(job.id);
-      return updatedJob;
+      return await this.storage.claimNextEnrichmentJob();
     } catch (error) {
-      console.error(`❌ Failed to claim job ${job.id}:`, error);
-      await this.storage.updateEnrichmentJob(job.id, {
-        status: 'queued',
-        logs: [...(job.logs || []), `[${new Date().toISOString()}] Failed to claim job: ${error instanceof Error ? error.message : String(error)}`],
-        updatedAt: new Date(),
-      }).catch(() => {});
+      console.error(`❌ Failed to claim next job:`, error);
       return null;
     }
   }
