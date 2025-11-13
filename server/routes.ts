@@ -2901,14 +2901,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // This runs FIRST to maximize ISRC coverage before Chartmetric matching
         console.log(`\n🎵 Starting enrichment pipeline for ${allTracks.length} tracks...`);
         
+        // Fetch newly inserted tracks (shared across enrichment phases)
+        const insertedTracks = await storage.getTracksByWeek(today);
+        const newlyInsertedTracks = insertedTracks.filter(track => 
+          allTracks.some(t => t.spotifyUrl === track.spotifyUrl && t.playlistId === track.playlistId)
+        );
+        
         try {
           const { enrichTracksWithSpotifyAPI } = await import("./enrichment/spotifyBatchEnrichment");
           const spotify = await getUncachableSpotifyClient();
-          
-          const insertedTracks = await storage.getTracksByWeek(today);
-          const newlyInsertedTracks = insertedTracks.filter(track => 
-            allTracks.some(t => t.spotifyUrl === track.spotifyUrl && t.playlistId === track.playlistId)
-          );
           
           const phase1Result = await enrichTracksWithSpotifyAPI(
             spotify,
@@ -2937,6 +2938,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } catch (phase1Error: any) {
           console.warn(`⚠️  Phase 1 enrichment failed (non-blocking): ${phase1Error.message}`);
+        }
+        
+        // PHASE 2: Puppeteer Credits Scraping (Songwriter + Stream Counts)
+        // This runs AFTER Phase 1 to enrich tracks with credits and stream data
+        console.log(`\n🎭 Starting Phase 2: Credits & stream count enrichment...`);
+        
+        try {
+          // Guard: Only run Phase 2 if there are tracks to enrich
+          if (newlyInsertedTracks.length === 0) {
+            console.log(`ℹ️  Phase 2: No tracks to enrich (skipping)`);
+          } else {
+            const { enrichTracksWithCredits } = await import("./enrichment/spotifyCreditsScaper");
+            
+            // Use the already-tracked newly inserted tracks (don't refetch from DB to avoid reprocessing)
+            const phase2Result = await enrichTracksWithCredits(newlyInsertedTracks);
+          
+          if (phase2Result.tracksEnriched > 0) {
+            console.log(`✅ Phase 2 Complete: ${phase2Result.tracksEnriched}/${phase2Result.tracksProcessed} tracks enriched`);
+            
+            // Update tracks with enriched data
+            for (const enrichedTrack of phase2Result.enrichedTracks) {
+              await storage.updateTrackMetadata(enrichedTrack.trackId, {
+                songwriter: enrichedTrack.songwriter ?? undefined,
+                producer: enrichedTrack.producer ?? undefined,
+                publisher: enrichedTrack.publisher ?? undefined,
+                label: enrichedTrack.label ?? undefined,
+                spotifyStreams: enrichedTrack.spotifyStreams ?? undefined,
+              });
+            }
+            
+            await storage.logActivity({
+              entityType: 'track',
+              trackId: null,
+              playlistId: null,
+              eventType: 'batch_enrichment',
+              eventDescription: `Phase 2: Puppeteer enriched ${phase2Result.tracksEnriched} tracks with credits and streams`,
+              metadata: JSON.stringify({
+                phase: 2,
+                tracksProcessed: phase2Result.tracksProcessed,
+                tracksEnriched: phase2Result.tracksEnriched,
+                errors: phase2Result.errors,
+                errorSample: phase2Result.errorDetails.slice(0, 5),
+              })
+            });
+            } else {
+              console.log(`ℹ️  Phase 2: No tracks needed credits enrichment`);
+            }
+          }
+        } catch (phase2Error: any) {
+          console.warn(`⚠️  Phase 2 enrichment failed (non-blocking): ${phase2Error.message}`);
         }
         
         console.log(`\n📊 Starting Chartmetric enrichment (ISRC matching)...`);

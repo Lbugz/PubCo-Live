@@ -11,7 +11,7 @@ export interface IStorage {
   getAllPlaylists(): Promise<string[]>;
   insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<void>;
   deleteTracksByWeek(week: string): Promise<void>;
-  updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; songwriter?: string; enrichedAt?: Date }): Promise<void>;
+  updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; songwriter?: string; producer?: string; spotifyStreams?: number; enrichedAt?: Date }): Promise<void>;
   getUnenrichedTracks(limit?: number): Promise<PlaylistSnapshot[]>;
   getAllTags(): Promise<Tag[]>;
   createTag(tag: InsertTag): Promise<Tag>;
@@ -165,7 +165,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(playlistSnapshots).where(eq(playlistSnapshots.week, week));
   }
 
-  async updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; songwriter?: string; enrichedAt?: Date; enrichmentStatus?: string; enrichmentTier?: string }): Promise<void> {
+  async updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; songwriter?: string; producer?: string; spotifyStreams?: number; enrichedAt?: Date; enrichmentStatus?: string; enrichmentTier?: string }): Promise<void> {
     await db.update(playlistSnapshots)
       .set(metadata)
       .where(eq(playlistSnapshots.id, id));
