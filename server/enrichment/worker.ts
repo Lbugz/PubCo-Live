@@ -176,6 +176,31 @@ export class EnrichmentWorker {
           spotifyStreams: enrichedTrack.spotifyStreams || undefined,
           enrichedAt: new Date(),
         });
+
+        const creditsFound = [];
+        if (enrichedTrack.songwriter) creditsFound.push('songwriter');
+        if (enrichedTrack.producer) creditsFound.push('producer');
+        if (enrichedTrack.label) creditsFound.push('label');
+        
+        const streamsText = enrichedTrack.spotifyStreams 
+          ? `, ${enrichedTrack.spotifyStreams.toLocaleString()} streams` 
+          : '';
+        
+        await this.storage.logActivity({
+          entityType: 'track',
+          trackId: enrichedTrack.trackId,
+          playlistId: null,
+          eventType: 'credits_enriched',
+          eventDescription: `Phase 2: Scraped ${creditsFound.length > 0 ? creditsFound.join(', ') : 'no credits'}${streamsText}`,
+          metadata: JSON.stringify({
+            phase: 2,
+            songwriter: enrichedTrack.songwriter,
+            producer: enrichedTrack.producer,
+            publisher: enrichedTrack.publisher,
+            label: enrichedTrack.label,
+            spotifyStreams: enrichedTrack.spotifyStreams,
+          }),
+        });
       }
 
       await this.jobQueue.updateJobProgress(job.id, {
@@ -234,20 +259,24 @@ export class EnrichmentWorker {
             mlcSongCode: mlcResult.mlcSongCode || undefined,
           });
 
+          const mlcDescription = mlcResult.error
+            ? `MLC: Error - ${mlcResult.error}`
+            : mlcResult.hasPublisher
+              ? `MLC: Publisher found - ${mlcResult.publisherNames.join(', ')}`
+              : 'MLC: No publisher found (unsigned/unknown)';
+
           await this.storage.logActivity({
             entityType: 'track',
             trackId: mlcResult.trackId,
             playlistId: null,
-            eventType: 'enrichment_completed',
-            eventDescription: 'Full enrichment pipeline completed via background job',
+            eventType: 'mlc_enrichment_completed',
+            eventDescription: mlcDescription,
             metadata: JSON.stringify({
-              phase2: result.enrichedTracks.find(t => t.trackId === mlcResult.trackId) ? 'completed' : 'skipped',
-              mlc: {
-                hasPublisher: mlcResult.hasPublisher,
-                publisherNames: mlcResult.publisherNames,
-                mlcSongCode: mlcResult.mlcSongCode,
-                error: mlcResult.error,
-              },
+              hasPublisher: mlcResult.hasPublisher,
+              publisherNames: mlcResult.publisherNames,
+              mlcSongCode: mlcResult.mlcSongCode,
+              publisherStatus,
+              error: mlcResult.error,
             }),
           });
         }
