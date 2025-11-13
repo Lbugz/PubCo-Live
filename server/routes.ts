@@ -2398,18 +2398,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // fetchMethod will be set based on which tier actually succeeds
           let fetchMethod = null;
-          let chartmetricAttempted = false;
+          let chartmetricSucceeded = false;
+          let spotifyApiSucceeded = false;
+          let puppeteerSucceeded = false;
           
           // PHASE 1: Try Chartmetric FIRST for ALL playlists (editorial AND non-editorial)
           try {
             console.log(`[Tracks] Starting fetch for ${playlist.name} (isEditorial=${playlist.isEditorial})`);
             console.log(`[Tracks] Trying Chartmetric track lookup for ${playlist.playlistId}...`);
-            chartmetricAttempted = true;
             
             const cmTracks = await getPlaylistTracks(playlist.playlistId, 'spotify');
             
             if (cmTracks && cmTracks.length > 0) {
               console.log(`[Tracks] ✅ Chartmetric success: ${cmTracks.length} tracks`);
+              
+              // Set success flag immediately after capturing Chartmetric data
+              chartmetricSucceeded = true;
+              fetchMethod = 'chartmetric';
               
               // Convert Chartmetric tracks to our format
               for (const cmTrack of cmTracks) {
@@ -2465,7 +2470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 totalTracks: playlistTotalTracks,
                 lastFetchCount: cmTracks.length - skippedCount,
                 isComplete: 1,
-                fetchMethod: 'chartmetric',
+                fetchMethod: fetchMethod,
                 lastChecked: new Date(),
               });
               
@@ -2480,22 +2485,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
           
-          // PHASE 2: Chartmetric failed - use fallback based on playlist type
-          try {
-            if (playlist.isEditorial === 1) {
-              // Editorial fallback → Puppeteer scraping
-              console.log(`[Tracks] Editorial fallback → Puppeteer scraping`);
-              throw new Error('Editorial playlist - using Puppeteer scraper');
-            }
-            
-            // Non-editorial fallback → Spotify API
-            if (!spotify) {
-              console.log(`[Tracks] Spotify OAuth not configured, fallback to scraping for: ${playlist.name}`);
-              throw new Error('Spotify client not available (not authenticated)');
-            }
-            
-            console.log(`[Tracks] Non-editorial fallback → Spotify API for: ${playlist.name}`);
-            const allPlaylistItems = await fetchAllPlaylistTracks(spotify, playlist.playlistId);
+          // PHASE 2: Chartmetric didn't succeed - use fallback based on playlist type
+          // Non-editorial → try Spotify API; Editorial → skip to Puppeteer
+          let useSpotifyApi = !playlist.isEditorial && !chartmetricSucceeded;
+          
+          if (useSpotifyApi) {
+            try {
+              // Non-editorial fallback → Spotify API
+              if (!spotify) {
+                console.log(`[Tracks] Spotify OAuth not configured, fallback to scraping for: ${playlist.name}`);
+                throw new Error('Spotify client not available (not authenticated)');
+              }
+              
+              console.log(`[Tracks] Non-editorial fallback → Spotify API for: ${playlist.name}`);
+              const allPlaylistItems = await fetchAllPlaylistTracks(spotify, playlist.playlistId);
             
             // Get playlist metadata for total track count
             const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId, "from_token" as any);
@@ -2551,17 +2554,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
               existingTrackKeys.add(trackKey);
             }
             
-            playlistTracks = allPlaylistItems;
-            fetchMethod = 'spotify_api';
-            console.log(`[Tracks] Fetch Method = spotify_api (${allPlaylistItems.length} tracks, ${skippedCount} skipped)`);
-          } catch (apiError: any) {
-            // API/editorial fallback - use Puppeteer scraping
-            if (playlist.isEditorial === 1) {
-              console.log(`[Tracks] Editorial playlist - using Puppeteer scraping`);
-            } else {
+              playlistTracks = allPlaylistItems;
+              spotifyApiSucceeded = true;
+              fetchMethod = 'spotify_api';
+              console.log(`[Tracks] Fetch Method = spotify_api (${allPlaylistItems.length} tracks, ${skippedCount} skipped)`);
+            } catch (apiError: any) {
+              // Spotify API failed - fall through to Puppeteer
               console.log(`[Tracks] Spotify API failed: ${apiError.message}`);
               console.log(`[Tracks] Last resort fallback → Puppeteer scraping`);
             }
+          }
+          
+          // PHASE 3: Editorial playlists OR Spotify API failed → Puppeteer scraping
+          // Only reach here if neither Chartmetric nor Spotify API succeeded
+          if (!chartmetricSucceeded && !spotifyApiSucceeded) {
+            console.log(`[Tracks] ${playlist.isEditorial ? 'Editorial' : 'Non-editorial'} fallback → Puppeteer scraping`);
             
             const scraperApiUrl = process.env.SCRAPER_API_URL;
             let capturedTracks: any[] = [];
@@ -2806,6 +2813,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             
             playlistTracks = capturedTracks;
+            puppeteerSucceeded = true;
+            fetchMethod = 'network_capture';
             console.log(`[Tracks] Fetch Method = network_capture (${capturedTracks.length} tracks, ${skippedCount} skipped)`);
           }
           
@@ -2819,6 +2828,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             playlistTotalTracks, 
             new Date()
           );
+          
+          // Final sanity check: ensure fetchMethod is set when tracks were captured
+          // This should only trigger if there's a bug in the success flag logic
+          if (!fetchMethod && fetchCount > 0) {
+            fetchMethod = 'network_capture';
+            console.error(`🚨 BUG: fetchMethod was null despite capturing ${fetchCount} tracks - this indicates a logic error in success flag tracking`);
+          }
           
           // Update fetch method - keep activity logging separate to ensure it runs even if this fails
           try {
