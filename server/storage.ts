@@ -40,6 +40,7 @@ export interface IStorage {
   updateArtistLinks(artistId: string, links: { instagram?: string; twitter?: string; facebook?: string; bandcamp?: string; linkedin?: string; youtube?: string; discogs?: string; website?: string }): Promise<void>;
   getTracksNeedingChartmetricEnrichment(limit?: number): Promise<PlaylistSnapshot[]>;
   updateTrackChartmetric(id: string, data: { chartmetricId?: string; chartmetricStatus?: string; spotifyStreams?: number; streamingVelocity?: string; trackStage?: string; playlistFollowers?: number; youtubeViews?: number; chartmetricEnrichedAt?: Date; songwriterIds?: string[]; composerName?: string; moods?: string[]; activities?: string[] }): Promise<void>;
+  updateTrackChartmetricIdByIsrc(updates: Array<{ isrc: string; chartmetricId: string }>): Promise<number>;
   getStaleChartmetricTracks(daysOld: number, limit?: number): Promise<PlaylistSnapshot[]>;
   getDataCounts(): Promise<{ playlists: number; tracks: number; songwriters: number; tags: number; activities: number }>;
   deleteAllData(): Promise<void>;
@@ -465,6 +466,27 @@ export class DatabaseStorage implements IStorage {
     await db.update(playlistSnapshots)
       .set(data)
       .where(eq(playlistSnapshots.id, id));
+  }
+
+  async updateTrackChartmetricIdByIsrc(updates: Array<{ isrc: string; chartmetricId: string }>): Promise<number> {
+    if (updates.length === 0) return 0;
+    
+    let updatedCount = 0;
+    
+    for (const { isrc, chartmetricId } of updates) {
+      const result = await db.update(playlistSnapshots)
+        .set({ chartmetricId })
+        .where(
+          and(
+            eq(playlistSnapshots.isrc, isrc),
+            sql`${playlistSnapshots.chartmetricId} IS NULL`
+          )
+        );
+      
+      updatedCount += result.rowCount || 0;
+    }
+    
+    return updatedCount;
   }
 
   async getStaleChartmetricTracks(daysOld: number = 7, limit: number = 50): Promise<PlaylistSnapshot[]> {
