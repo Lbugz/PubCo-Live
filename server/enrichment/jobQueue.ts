@@ -7,10 +7,8 @@ export interface JobQueueOptions {
 }
 
 export class JobQueue {
-  private jobs: Map<string, EnrichmentJob> = new Map();
   private maxConcurrency: number;
   private storage: IStorage;
-  private activeJobId: string | null = null;
 
   constructor(options: JobQueueOptions) {
     this.maxConcurrency = options.maxConcurrency || 1;
@@ -18,25 +16,18 @@ export class JobQueue {
   }
 
   async initialize() {
-    const pendingJobs = await this.storage.getEnrichmentJobsByStatus(['queued', 'running']);
+    const runningJobs = await this.storage.getEnrichmentJobsByStatus(['running']);
     
-    for (const job of pendingJobs) {
-      this.jobs.set(job.id, job);
-      
-      if (job.status === 'running') {
-        await this.storage.updateEnrichmentJob(job.id, {
-          status: 'queued',
-          logs: [...(job.logs || []), `[${new Date().toISOString()}] Job reset to queued after server restart`],
-          updatedAt: new Date(),
-        });
-        const updatedJob = await this.storage.getEnrichmentJobById(job.id);
-        if (updatedJob) {
-          this.jobs.set(job.id, updatedJob);
-        }
-      }
+    for (const job of runningJobs) {
+      await this.storage.updateEnrichmentJob(job.id, {
+        status: 'queued',
+        logs: [...(job.logs || []), `[${new Date().toISOString()}] Job reset to queued after process restart`],
+        updatedAt: new Date(),
+      });
     }
 
-    console.log(`📦 JobQueue initialized with ${this.jobs.size} pending jobs`);
+    const queuedJobs = await this.storage.getEnrichmentJobsByStatus(['queued']);
+    console.log(`📦 JobQueue initialized with ${queuedJobs.length} pending jobs`);
   }
 
   async enqueue(jobData: InsertEnrichmentJob): Promise<EnrichmentJob> {
@@ -45,44 +36,36 @@ export class JobQueue {
       totalTracks: jobData.trackIds.length,
     });
 
-    this.jobs.set(job.id, job);
     console.log(`✅ Job ${job.id} enqueued (${job.trackIds.length} tracks)`);
-
     return job;
   }
 
   async getNextJob(): Promise<EnrichmentJob | null> {
-    if (this.activeJobId !== null) {
+    const queuedJobs = await this.storage.getEnrichmentJobsByStatus(['queued']);
+    
+    if (queuedJobs.length === 0) {
       return null;
     }
 
-    const allJobs = Array.from(this.jobs.values());
-    for (const job of allJobs) {
-      if (job.status === 'queued') {
-        try {
-          await this.storage.updateEnrichmentJob(job.id, {
-            status: 'running',
-            updatedAt: new Date(),
-          });
+    const job = queuedJobs[0];
+    
+    try {
+      await this.storage.updateEnrichmentJob(job.id, {
+        status: 'running',
+        updatedAt: new Date(),
+      });
 
-          const updatedJob = await this.storage.getEnrichmentJobById(job.id);
-          if (updatedJob) {
-            this.jobs.set(job.id, updatedJob);
-            this.activeJobId = job.id;
-            return updatedJob;
-          }
-        } catch (error) {
-          console.error(`❌ Failed to claim job ${job.id}:`, error);
-          await this.storage.updateEnrichmentJob(job.id, {
-            status: 'queued',
-            logs: [...(job.logs || []), `[${new Date().toISOString()}] Failed to claim job: ${error instanceof Error ? error.message : String(error)}`],
-            updatedAt: new Date(),
-          }).catch(() => {});
-        }
-      }
+      const updatedJob = await this.storage.getEnrichmentJobById(job.id);
+      return updatedJob;
+    } catch (error) {
+      console.error(`❌ Failed to claim job ${job.id}:`, error);
+      await this.storage.updateEnrichmentJob(job.id, {
+        status: 'queued',
+        logs: [...(job.logs || []), `[${new Date().toISOString()}] Failed to claim job: ${error instanceof Error ? error.message : String(error)}`],
+        updatedAt: new Date(),
+      }).catch(() => {});
+      return null;
     }
-
-    return null;
   }
 
   async updateJobProgress(
@@ -94,9 +77,9 @@ export class JobQueue {
       logs?: string[];
     }
   ): Promise<void> {
-    const currentJob = this.jobs.get(jobId);
+    const currentJob = await this.storage.getEnrichmentJobById(jobId);
     if (!currentJob) {
-      console.warn(`⚠️ Job ${jobId} not found in queue`);
+      console.warn(`⚠️ Job ${jobId} not found`);
       return;
     }
 
@@ -111,17 +94,12 @@ export class JobQueue {
       logs: newLogs,
       updatedAt: new Date(),
     });
-
-    const updatedJob = await this.storage.getEnrichmentJobById(jobId);
-    if (updatedJob) {
-      this.jobs.set(jobId, updatedJob);
-    }
   }
 
   async completeJob(jobId: string, success: boolean, finalLogs?: string[]): Promise<void> {
-    const currentJob = this.jobs.get(jobId);
+    const currentJob = await this.storage.getEnrichmentJobById(jobId);
     if (!currentJob) {
-      console.warn(`⚠️ Job ${jobId} not found in queue`);
+      console.warn(`⚠️ Job ${jobId} not found`);
       return;
     }
 
@@ -137,68 +115,15 @@ export class JobQueue {
       updatedAt: new Date(),
     });
 
-    const updatedJob = await this.storage.getEnrichmentJobById(jobId);
-    if (updatedJob) {
-      this.jobs.set(jobId, updatedJob);
-    }
-
-    if (this.activeJobId === jobId) {
-      this.activeJobId = null;
-    }
-
     console.log(`${success ? '✅' : '❌'} Job ${jobId} ${success ? 'completed' : 'failed'}`);
   }
 
   async getJob(jobId: string): Promise<EnrichmentJob | null> {
-    const cachedJob = this.jobs.get(jobId);
-    if (cachedJob) {
-      return cachedJob;
-    }
-
     return await this.storage.getEnrichmentJobById(jobId);
   }
 
-  getQueueSize(): number {
-    let queuedCount = 0;
-    const allJobs = Array.from(this.jobs.values());
-    for (const job of allJobs) {
-      if (job.status === 'queued') {
-        queuedCount++;
-      }
-    }
-    return queuedCount;
-  }
-
-  isRunning(): boolean {
-    return this.activeJobId !== null;
-  }
-
-  getActiveJobId(): string | null {
-    return this.activeJobId;
-  }
-
-  async cleanupOldJobs(retentionDays: number = 7): Promise<number> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
-
-    const allJobs = Array.from(this.jobs.values());
-    let cleanedCount = 0;
-
-    for (const job of allJobs) {
-      if (
-        (job.status === 'completed' || job.status === 'failed') &&
-        job.completedAt &&
-        job.completedAt < cutoffDate
-      ) {
-        this.jobs.delete(job.id);
-        cleanedCount++;
-      }
-    }
-
-    if (cleanedCount > 0) {
-      console.log(`🧹 Cleaned up ${cleanedCount} old jobs (>${retentionDays} days)`);
-    }
-
-    return cleanedCount;
+  async getQueueSize(): Promise<number> {
+    const queuedJobs = await this.storage.getEnrichmentJobsByStatus(['queued']);
+    return queuedJobs.length;
   }
 }
