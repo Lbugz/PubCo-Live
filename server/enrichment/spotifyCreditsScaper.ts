@@ -98,38 +98,63 @@ async function scrapeTrackCredits(
   const page = await queue.createPage(browser);
   
   try {
+    const telemetry = { step: '', elapsed: 0, startTime: Date.now() };
+    
     // Set default timeouts
     page.setDefaultTimeout(30000);
     page.setDefaultNavigationTimeout(30000);
 
-    // Navigate to track page
-    try {
-      await page.goto(trackUrl, { 
-        waitUntil: "networkidle2", 
-        timeout: 30000 
-      });
-    } catch (error: any) {
-      if (error.name === 'TimeoutError') {
-        await page.goto(trackUrl, { 
-          waitUntil: "domcontentloaded", 
-          timeout: 15000 
-        });
-      } else {
-        throw error;
-      }
-    }
+    // Navigate to track page (FAST: domcontentloaded instead of networkidle2)
+    telemetry.step = 'navigate';
+    console.log(`[Scraper] ${trackId}: Navigating to ${trackUrl}`);
+    await page.goto(trackUrl, { 
+      waitUntil: "domcontentloaded", 
+      timeout: 15000 
+    });
+    telemetry.elapsed = Date.now() - telemetry.startTime;
+    console.log(`[Scraper] ${trackId}: ✓ Page loaded (${telemetry.elapsed}ms)`);
 
     // Handle cookie consent banner
+    telemetry.step = 'cookies';
     await handleCookieConsent(page);
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    telemetry.elapsed = Date.now() - telemetry.startTime;
+    console.log(`[Scraper] ${trackId}: ✓ Cookies handled (${telemetry.elapsed}ms)`);
+
+    // Wait for critical selectors with early bailout
+    telemetry.step = 'selectors';
+    const selectorTimeout = 10000; // 10s early bailout
+    try {
+      await Promise.race([
+        page.waitForSelector('body', { timeout: selectorTimeout }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Critical selectors timeout')), selectorTimeout)
+        )
+      ]);
+      telemetry.elapsed = Date.now() - telemetry.startTime;
+      console.log(`[Scraper] ${trackId}: ✓ Critical selectors loaded (${telemetry.elapsed}ms)`);
+    } catch (error: any) {
+      telemetry.elapsed = Date.now() - telemetry.startTime;
+      console.warn(`[Scraper] ${trackId}: ⚠ Selector wait failed after ${telemetry.elapsed}ms, proceeding anyway`);
+    }
+
+    // Short delay for dynamic content
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // PHASE 1: Extract stream count from main page
+    telemetry.step = 'streams';
     const spotifyStreams = await extractStreamCount(page);
+    telemetry.elapsed = Date.now() - telemetry.startTime;
+    console.log(`[Scraper] ${trackId}: ${spotifyStreams ? `✓ Streams found: ${spotifyStreams.toLocaleString()}` : '⚠ No streams found'} (${telemetry.elapsed}ms)`);
 
     // PHASE 2: Extract credits
-    const credits = await extractCredits(page);
+    telemetry.step = 'credits';
+    const credits = await extractCredits(page, trackId, telemetry);
+    telemetry.elapsed = Date.now() - telemetry.startTime;
+    const creditsCount = credits.writers.length + credits.producers.length + credits.publishers.length + credits.labels.length;
+    console.log(`[Scraper] ${trackId}: ${creditsCount > 0 ? `✓ Found ${creditsCount} credits` : '⚠ No credits found'} (${telemetry.elapsed}ms)`);
 
     await page.close();
+    console.log(`[Scraper] ${trackId}: ✅ Complete in ${telemetry.elapsed}ms`);
 
     // Convert arrays to comma-separated strings
     return {
@@ -243,7 +268,11 @@ async function extractStreamCount(page: Page): Promise<number | null> {
 /**
  * Extract credits from track page
  */
-async function extractCredits(page: Page): Promise<TrackCredits> {
+async function extractCredits(
+  page: Page, 
+  trackId: string, 
+  telemetry: { step: string; elapsed: number; startTime: number }
+): Promise<TrackCredits> {
   // Check if Credits section is visible
   let creditsFound = await page.evaluate(() => {
     const allElements = document.querySelectorAll('div, section');
@@ -256,6 +285,7 @@ async function extractCredits(page: Page): Promise<TrackCredits> {
   // If not visible, try opening via 3-dot menu
   if (!creditsFound) {
     try {
+      console.log(`[Scraper] ${trackId}: Searching for credits menu...`);
       const menuButton = await page.$('button[aria-label*="More options"], button[data-testid="more-button"]');
       if (menuButton) {
         await menuButton.click();
@@ -276,16 +306,32 @@ async function extractCredits(page: Page): Promise<TrackCredits> {
         });
         
         if (creditsClicked) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          creditsFound = true;
+          console.log(`[Scraper] ${trackId}: Credits menu opened, waiting for modal...`);
+          
+          // Wait for credits modal with early bailout
+          try {
+            await Promise.race([
+              page.waitForSelector('.credits__modal, [role="dialog"]', { timeout: 10000 }),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Credits modal timeout')), 10000)
+              )
+            ]);
+            creditsFound = true;
+            console.log(`[Scraper] ${trackId}: ✓ Credits modal loaded`);
+          } catch (error) {
+            console.warn(`[Scraper] ${trackId}: ⚠ Credits modal failed to load, proceeding with page scan`);
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
-    } catch (error) {
-      // Continue without credits
+    } catch (error: any) {
+      console.warn(`[Scraper] ${trackId}: ⚠ Credits menu interaction failed: ${error.message}`);
     }
   }
 
   if (!creditsFound) {
+    console.log(`[Scraper] ${trackId}: ⚠ No credits section found`);
     return {
       writers: [],
       composers: [],
