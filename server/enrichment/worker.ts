@@ -40,11 +40,6 @@ export class EnrichmentWorker {
       });
     }, 2000);
 
-    this.cleanupInterval = setInterval(() => {
-      this.jobQueue.cleanupOldJobs(7).catch((error) => {
-        console.error("❌ Error during job cleanup:", error);
-      });
-    }, 3600000);
   }
 
   stop() {
