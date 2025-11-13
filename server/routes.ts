@@ -2398,20 +2398,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Use API for non-editorial, scraping for editorial
           let fetchMethod = playlist.fetchMethod || (playlist.isEditorial === 1 ? 'scraping' : 'api');
+          let chartmetricAttempted = false;
           
+          // PHASE 1: Try Chartmetric FIRST for ALL playlists (editorial AND non-editorial)
+          try {
+            console.log(`[Tracks] Starting fetch for ${playlist.name} (isEditorial=${playlist.isEditorial})`);
+            console.log(`[Tracks] Trying Chartmetric track lookup for ${playlist.playlistId}...`);
+            chartmetricAttempted = true;
+            
+            const cmTracks = await getPlaylistTracks(playlist.playlistId, 'spotify');
+            
+            if (cmTracks && cmTracks.length > 0) {
+              console.log(`[Tracks] ✅ Chartmetric success: ${cmTracks.length} tracks`);
+              
+              // Convert Chartmetric tracks to our format
+              for (const cmTrack of cmTracks) {
+                const trackKey = `${playlist.playlistId}_https://open.spotify.com/track/${cmTrack.spotifyId}`;
+                
+                if (existingTrackKeys.has(trackKey)) {
+                  skippedCount++;
+                  continue;
+                }
+                
+                const score = calculateUnsignedScore({
+                  playlistName: playlist.name,
+                  label: null,
+                  publisher: null,
+                  writer: null,
+                });
+                
+                const newTrack: InsertPlaylistSnapshot = {
+                  week: today,
+                  playlistName: playlist.name,
+                  playlistId: playlist.playlistId,
+                  trackName: cmTrack.name,
+                  artistName: cmTrack.artists.map(a => a.name).join(", "),
+                  spotifyUrl: `https://open.spotify.com/track/${cmTrack.spotifyId}`,
+                  albumArt: cmTrack.album?.image_url || null,
+                  isrc: cmTrack.isrc || null,
+                  label: null,
+                  unsignedScore: score,
+                  addedAt: new Date(),
+                  dataSource: "chartmetric",
+                  chartmetricId: parseInt(cmTrack.chartmetricId),
+                  chartmetricStatus: "completed",
+                };
+                
+                allTracks.push(newTrack);
+                existingTrackKeys.add(trackKey);
+              }
+              
+              fetchMethod = 'chartmetric';
+              playlistTotalTracks = cmTracks.length;
+              console.log(`[Tracks] Fetch Method = chartmetric (${cmTracks.length} tracks, ${skippedCount} skipped)`);
+              
+              // Successfully got tracks from Chartmetric - skip to next playlist
+              completenessResults.push({
+                name: playlist.name,
+                fetchCount: cmTracks.length - skippedCount,
+                totalTracks: playlistTotalTracks,
+                isComplete: true,
+                skipped: skippedCount,
+              });
+              
+              await storage.updatePlaylistAfterFetch(playlist.id, {
+                totalTracks: playlistTotalTracks,
+                lastFetchCount: cmTracks.length - skippedCount,
+                isComplete: 1,
+                fetchMethod: 'chartmetric',
+                lastChecked: new Date(),
+              });
+              
+              continue; // Move to next playlist
+            } else {
+              console.log(`[Tracks] Chartmetric returned no tracks`);
+            }
+          } catch (cmError: any) {
+            console.log(`[Tracks] Chartmetric failed: ${cmError.message}`);
+            if (cmError.message?.includes('401')) {
+              console.log(`[Tracks] Chartmetric requires Enterprise tier for playlist endpoints`);
+            }
+          }
+          
+          // PHASE 2: Chartmetric failed - use fallback based on playlist type
           try {
             if (playlist.isEditorial === 1) {
-              // Editorial playlist - skip OAuth/API, use scraping directly
-              console.log(`Editorial playlist detected: ${playlist.name}. Skipping API, using scraper microservice...`);
-              throw new Error('Editorial playlist - using scraper');
+              // Editorial fallback → Puppeteer scraping
+              console.log(`[Tracks] Editorial fallback → Puppeteer scraping`);
+              throw new Error('Editorial playlist - using Puppeteer scraper');
             }
             
+            // Non-editorial fallback → Spotify API
             if (!spotify) {
-              console.log(`Spotify OAuth not configured, falling back to scraping for: ${playlist.name}`);
+              console.log(`[Tracks] Spotify OAuth not configured, fallback to scraping for: ${playlist.name}`);
               throw new Error('Spotify client not available (not authenticated)');
             }
             
-            console.log(`Using Spotify API for: ${playlist.name} (isEditorial=${playlist.isEditorial})`);
+            console.log(`[Tracks] Non-editorial fallback → Spotify API for: ${playlist.name}`);
             const allPlaylistItems = await fetchAllPlaylistTracks(spotify, playlist.playlistId);
             
             // Get playlist metadata for total track count
@@ -2424,7 +2507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               throw new Error('No tracks returned from API');
             }
             
-            console.log(`API fetch successful: ${allPlaylistItems.length} tracks`);
+            console.log(`[Tracks] ✅ Spotify API success: ${allPlaylistItems.length} tracks`);
             
             for (const item of allPlaylistItems) {
               if (!item.track || item.track.type !== "track") continue;
@@ -2469,9 +2552,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             
             playlistTracks = allPlaylistItems;
+            fetchMethod = 'spotify_api';
+            console.log(`[Tracks] Fetch Method = spotify_api (${allPlaylistItems.length} tracks, ${skippedCount} skipped)`);
           } catch (apiError: any) {
-            // API failed (likely 404 for editorial playlist), call scraper microservice
-            console.log(`API fetch failed for ${playlist.name}: ${apiError.message}. Calling scraper microservice...`);
+            // API/editorial fallback - use Puppeteer scraping
+            if (playlist.isEditorial === 1) {
+              console.log(`[Tracks] Editorial playlist - using Puppeteer scraping`);
+            } else {
+              console.log(`[Tracks] Spotify API failed: ${apiError.message}`);
+              console.log(`[Tracks] Last resort fallback → Puppeteer scraping`);
+            }
             
             const scraperApiUrl = process.env.SCRAPER_API_URL;
             let capturedTracks: any[] = [];
@@ -2514,8 +2604,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const scraperData = await scraperResponse.json();
                 
                 if (scraperData.success && scraperData.tracks.length > 0) {
-                  console.log(`✅ Scraper API success: ${scraperData.tracks.length} tracks`);
-                  fetchMethod = scraperData.method || 'microservice-scraper';
+                  console.log(`[Tracks] ✅ Puppeteer (microservice) success: ${scraperData.tracks.length} tracks`);
+                  fetchMethod = 'network-capture';
                   capturedTracks = scraperData.tracks;
                   
                   // Update playlist metadata (totalTracks, curator, followers)
@@ -2548,8 +2638,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const networkTrackCount = networkResult.tracks?.length ?? 0;
 
               if (networkResult.success && networkTrackCount >= 50) {
-                console.log(`Local network capture successful: ${networkTrackCount} tracks`);
-                console.log(`Scraper returned metadata: name="${networkResult.playlistName}", curator="${networkResult.curator}", followers=${networkResult.followers}`);
+                console.log(`[Tracks] ✅ Puppeteer (local) success: ${networkTrackCount} tracks`);
+                console.log(`[Tracks] Scraper metadata: name="${networkResult.playlistName}", curator="${networkResult.curator}", followers=${networkResult.followers}`);
                 fetchMethod = 'network-capture';
                 capturedTracks = networkResult.tracks ?? [];
                 
@@ -2588,11 +2678,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const domTrackCount = domResult.tracks?.length ?? 0;
 
                 if (domResult.success && domTrackCount > networkTrackCount) {
-                  console.log(`DOM fallback successful: ${domTrackCount} tracks`);
-                  fetchMethod = 'dom-capture';
+                  console.log(`[Tracks] ✅ Puppeteer (DOM fallback) success: ${domTrackCount} tracks`);
+                  fetchMethod = 'network-capture';
                   capturedTracks = domResult.tracks ?? [];
                 } else if (networkResult.success && networkTrackCount > 0) {
-                  console.log(`Using local network capture results: ${networkTrackCount} tracks`);
+                  console.log(`[Tracks] ✅ Using Puppeteer (local) results: ${networkTrackCount} tracks`);
                   fetchMethod = 'network-capture';
                   capturedTracks = networkResult.tracks ?? [];
                 } else {
@@ -2716,6 +2806,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             
             playlistTracks = capturedTracks;
+            console.log(`[Tracks] Fetch Method = network_capture (${capturedTracks.length} tracks, ${skippedCount} skipped)`);
           }
           
           // Update completeness status
