@@ -365,13 +365,18 @@ export async function enrichTrackWithChartmetric(track: PlaylistSnapshot): Promi
         composerName = metadata.composer_name;
       }
       
-      // moods and activities are arrays (added Jan 2025)
+      // moods and activities are arrays of objects {name: string} (added Jan 2025)
+      // Extract the name field from each mood/activity object
       if (metadata.moods && Array.isArray(metadata.moods)) {
-        moods = metadata.moods;
+        moods = metadata.moods
+          .map((mood: any) => typeof mood === 'string' ? mood : mood?.name || mood?.mood || String(mood))
+          .filter(Boolean);
       }
       
       if (metadata.activities && Array.isArray(metadata.activities)) {
-        activities = metadata.activities;
+        activities = metadata.activities
+          .map((activity: any) => typeof activity === 'string' ? activity : activity?.name || activity?.activity || String(activity))
+          .filter(Boolean);
       }
     }
 

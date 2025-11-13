@@ -208,10 +208,11 @@ export function DetailsDrawer({
                     {displayTrack.isrc ? (
                       <Badge
                         variant="outline"
-                        className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
+                        className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 font-mono"
+                        data-testid={`badge-isrc-${displayTrack.id}`}
                       >
                         <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
-                        ISRC
+                        {displayTrack.isrc}
                       </Badge>
                     ) : (
                       <Badge
