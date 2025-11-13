@@ -129,6 +129,11 @@ export async function fetchEditorialTracksViaNetwork(
           
           // Extract playlist metadata from GraphQL (only if not already captured)
           if (!graphQLMetadata) {
+            // DEBUG: Log full playlistV2 structure to understand followers field
+            console.log('[Network Capture] 🔍 DEBUG - playlistV2 keys:', Object.keys(playlistV2));
+            console.log('[Network Capture] 🔍 DEBUG - playlistV2.followers:', JSON.stringify(playlistV2.followers, null, 2));
+            console.log('[Network Capture] 🔍 DEBUG - playlistV2.ownerV2:', JSON.stringify(playlistV2.ownerV2, null, 2));
+            
             graphQLMetadata = {
               name: playlistV2.name,
               curator: playlistV2.ownerV2?.data?.name || playlistV2.owner?.name,
