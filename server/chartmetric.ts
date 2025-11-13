@@ -691,6 +691,65 @@ export async function getPlaylistMetadata(playlistId: string, platform: string =
   }
 }
 
+export interface ChartmetricPlaylistSearchResult {
+  id: string;
+  name: string;
+  platform: string;
+  curator?: string;
+  followerCount?: number;
+  trackCount?: number;
+  imageUrl?: string;
+  platformId?: string;
+}
+
+export async function searchPlaylists(
+  query: string,
+  platform: string = 'spotify',
+  limit: number = 10
+): Promise<ChartmetricPlaylistSearchResult[]> {
+  try {
+    console.log(`🔍 Chartmetric: Searching for playlists - query="${query}", platform=${platform}, limit=${limit}`);
+    
+    // Try the search endpoint with query parameter
+    const searchResults = await makeChartmetricRequest<any>(
+      `/search?q=${encodeURIComponent(query)}&type=playlists&platform=${platform}&limit=${limit}`
+    );
+    
+    if (!searchResults || !searchResults.playlists || !Array.isArray(searchResults.playlists)) {
+      console.log(`⚠️  Chartmetric: No playlists found for query "${query}"`);
+      return [];
+    }
+    
+    const playlists: ChartmetricPlaylistSearchResult[] = searchResults.playlists.map((p: any) => {
+      // Extract image URL
+      let imageUrl: string | undefined;
+      if (p.images && Array.isArray(p.images) && p.images.length > 0) {
+        const firstImage = p.images[0];
+        imageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url;
+      } else if (p.image_url) {
+        imageUrl = p.image_url;
+      }
+      
+      return {
+        id: p.id?.toString() || p.chartmetric_id?.toString(),
+        name: p.name || '',
+        platform: p.platform || platform,
+        curator: p.curator_name || p.curator || p.owner,
+        followerCount: p.follower_count || p.followers,
+        trackCount: p.track_count || p.tracks,
+        imageUrl,
+        platformId: p.platform_id || p.spotify_id || p.playlist_id,
+      };
+    });
+    
+    console.log(`✅ Chartmetric: Found ${playlists.length} playlists for "${query}"`);
+    return playlists;
+  } catch (error: any) {
+    console.error(`❌ Chartmetric: Error searching playlists for "${query}":`, error.message);
+    return [];
+  }
+}
+
 export async function getPlaylistStats(playlistId: string, platform: string = 'spotify', startDate?: string, endDate?: string): Promise<ChartmetricPlaylistStats | null> {
   try {
     const chartmetricId = await resolvePlaylistId(playlistId, platform);

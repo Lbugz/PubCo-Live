@@ -290,6 +290,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/chartmetric/search/playlists", async (req, res) => {
+    try {
+      const { q: query, platform = 'spotify', limit = '10' } = req.query;
+      
+      if (!query || typeof query !== 'string') {
+        res.status(400).json({ error: "Query parameter 'q' is required" });
+        return;
+      }
+      
+      const { searchPlaylists } = await import("./chartmetric");
+      const results = await searchPlaylists(
+        query,
+        platform as string,
+        parseInt(limit as string, 10)
+      );
+      
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error searching Chartmetric playlists:", error);
+      res.status(500).json({ error: error.message || "Failed to search playlists" });
+    }
+  });
+
   app.get("/api/export", async (req, res) => {
     try {
       const week = req.query.week as string || "latest";
