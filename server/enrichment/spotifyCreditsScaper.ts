@@ -496,15 +496,15 @@ export async function enrichTracksWithCredits(
   // Register exit handlers for safety
   registerExitHandler();
 
-  // Initialize queue
+  // Initialize queue with reduced concurrency to prevent memory crashes
   const queue = getQueue({
-    maxConcurrency: 2,
-    minDelay: 500,
-    browserPoolSize: 2,
+    maxConcurrency: 1,  // Single browser at a time to prevent OOM
+    minDelay: 1000,     // Increased delay between operations
+    browserPoolSize: 1, // Single browser pool
   });
 
   const TRACK_TIMEOUT = 45000; // 45s timeout per track
-  const CHUNK_SIZE = 8; // Process 8 tracks at a time (maxConcurrency * 4)
+  const CHUNK_SIZE = 2; // Process 2 tracks at a time to limit memory usage
 
   try {
     // Process tracks in chunks to limit memory pressure
