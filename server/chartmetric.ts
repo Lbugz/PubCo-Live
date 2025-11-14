@@ -642,7 +642,12 @@ async function resolvePlaylistId(platformIdOrChartmetricId: string, platform: st
 
   try {
     console.log(`🔍 Chartmetric: Looking up numeric ID for platform playlist ${platform}:${platformIdOrChartmetricId}`);
-    const lookupData = await makeChartmetricRequest<any>(`/playlist/${platform}:${platformIdOrChartmetricId}`);
+    
+    // URL-encode the platform playlist ID to handle special characters
+    const encodedId = encodeURIComponent(platformIdOrChartmetricId);
+    
+    // Use correct Chartmetric endpoint format: /playlist/{platform}/{id} (not /playlist/{platform}:{id})
+    const lookupData = await makeChartmetricRequest<any>(`/playlist/${platform}/${encodedId}`);
     
     if (lookupData && lookupData.id) {
       const chartmetricId = lookupData.id.toString();
@@ -841,8 +846,8 @@ export async function getPlaylistTracks(
     }
     
     // Normalize track data
-    const formattedTracks: ChartmetricPlaylistTrack[] = allTracks
-      .map((track: any) => {
+    const formattedTracks = allTracks
+      .map((track: any): ChartmetricPlaylistTrack | null => {
         const chartmetricId = track.id?.toString() || track.cm_track?.toString();
         if (!chartmetricId) return null; // Skip tracks without IDs
         
