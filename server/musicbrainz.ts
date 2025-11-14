@@ -343,7 +343,8 @@ export async function searchArtistByName(artistName: string): Promise<{ id: stri
   try {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const searchUrl = `${MUSICBRAINZ_API}/artist?query=artist:"${encodeURIComponent(artistName)}"&fmt=json&limit=1`;
+    const queryClause = `artist:"${artistName}"`;
+    const searchUrl = `${MUSICBRAINZ_API}/artist?query=${encodeURIComponent(queryClause)}&fmt=json&limit=1`;
     
     const searchResponse = await fetch(searchUrl, {
       headers: {
