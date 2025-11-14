@@ -2820,8 +2820,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 
                 // Verify the name was actually updated
                 const verifyPlaylist = await storage.getPlaylistById(playlist.id);
-                if (verifyPlaylist && verifyPlaylist.name === 'Loading...') {
-                  console.error(`⚠️ WARNING: Playlist name still "Loading..." after update attempt. Scraper returned: "${networkResult.playlistName}"`);
+                if (verifyPlaylist && (verifyPlaylist.name === 'Loading...' || verifyPlaylist.name === 'Untitled Playlist')) {
+                  console.error(`⚠️ WARNING: Playlist name still "${verifyPlaylist.name}" after update attempt. Scraper returned: "${networkResult.playlistName}"`);
                 }
               } else {
                 const networkErrorDetails = networkResult.error ? ` Error: ${networkResult.error}.` : '';
