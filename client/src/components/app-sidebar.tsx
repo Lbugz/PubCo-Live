@@ -202,8 +202,7 @@ export function AppSidebar() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col items-start gap-0.5 text-left flex-1 min-w-0">
-                    <span className="text-sm font-medium">A&R Manager</span>
-                    <span className="text-xs text-muted-foreground">PubCo Live</span>
+                    <span className="text-sm font-medium">PubCo Live</span>
                   </div>
                 </div>
               </DropdownMenuTrigger>
