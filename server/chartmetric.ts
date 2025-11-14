@@ -643,11 +643,11 @@ async function resolvePlaylistId(platformIdOrChartmetricId: string, platform: st
   try {
     console.log(`🔍 Chartmetric: Looking up numeric ID for platform playlist ${platform}:${platformIdOrChartmetricId}`);
     
-    // URL-encode the platform playlist ID to handle special characters
-    const encodedId = encodeURIComponent(platformIdOrChartmetricId);
-    
-    // Use correct Chartmetric endpoint format: /playlist/{platform}/{id} (not /playlist/{platform}:{id})
-    const lookupData = await makeChartmetricRequest<any>(`/playlist/${platform}/${encodedId}`);
+    // Use Chartmetric /playlist/url endpoint to resolve platform playlist URLs to numeric IDs
+    // Format: GET /playlist/url?url=spotify:playlist:{id}
+    const spotifyUri = `spotify:playlist:${platformIdOrChartmetricId}`;
+    const encodedUri = encodeURIComponent(spotifyUri);
+    const lookupData = await makeChartmetricRequest<any>(`/playlist/url?url=${encodedUri}`);
     
     if (lookupData && lookupData.id) {
       const chartmetricId = lookupData.id.toString();
