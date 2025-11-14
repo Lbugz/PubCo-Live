@@ -310,12 +310,21 @@ export function DetailsDrawer({
 
               return (
                 <div className="space-y-6 py-2">
-                  {/* Songwriters Section */}
-                  <section className="space-y-4">
-                    <h3 className="text-sm font-semibold font-heading flex items-center gap-2">
-                      <Music2 className="h-4 w-4" />
-                      SONGWRITERS ({songwriterEntries.length})
-                    </h3>
+                  {/* Songwriters & Producers Tabs */}
+                  <Tabs defaultValue="songwriters" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="songwriters" data-testid="tab-songwriters">
+                        Songwriters ({songwriterEntries.length})
+                      </TabsTrigger>
+                      <TabsTrigger value="producers" data-testid="tab-producers">
+                        Producers ({(() => {
+                          const producerNames = displayTrack.producer?.split(",").map((name) => name.trim()).filter(Boolean) ?? [];
+                          return producerNames.length;
+                        })()})
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="songwriters" className="space-y-4 mt-4"  data-testid="content-songwriters">
                     
                     {trackLoading ? (
                       <div className="space-y-3">
@@ -474,17 +483,9 @@ export function DetailsDrawer({
                         <p className="text-xs text-muted-foreground mt-1">Enrich this track to discover songwriters</p>
                       </Card>
                     )}
-                  </section>
+                    </TabsContent>
 
-                  {/* Producers Section */}
-                  <section className="space-y-4">
-                    <h3 className="text-sm font-semibold font-heading flex items-center gap-2">
-                      <Music2 className="h-4 w-4" />
-                      PRODUCERS ({(() => {
-                        const producerNames = displayTrack.producer?.split(",").map((name) => name.trim()).filter(Boolean) ?? [];
-                        return producerNames.length;
-                      })()})
-                    </h3>
+                    <TabsContent value="producers" className="space-y-4 mt-4" data-testid="content-producers">
                     
                     {trackLoading ? (
                       <div className="space-y-2">
@@ -518,7 +519,8 @@ export function DetailsDrawer({
                         <p className="text-xs text-muted-foreground mt-1">Enrich this track to discover producers</p>
                       </Card>
                     )}
-                  </section>
+                    </TabsContent>
+                  </Tabs>
 
                   {/* Track Analytics Section */}
                   <section className="space-y-4">

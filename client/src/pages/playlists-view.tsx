@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Clock } from "lucide-react";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, EyeOff, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Clock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -54,8 +54,17 @@ export default function PlaylistsView() {
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [selectedPlaylistIds, setSelectedPlaylistIds] = useState<Set<string>>(new Set());
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  const [showMetrics, setShowMetrics] = useState(() => {
+    const stored = localStorage.getItem('playlistsMetricsVisible');
+    return stored !== null ? stored === 'true' : true;
+  });
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  
+  // Persist metrics visibility to localStorage
+  useEffect(() => {
+    localStorage.setItem('playlistsMetricsVisible', showMetrics.toString());
+  }, [showMetrics]);
   
   const form = useForm({
     defaultValues: {
@@ -679,8 +688,7 @@ export default function PlaylistsView() {
     <PageContainer className="space-y-6 fade-in">
 
       {/* Header with Add Button */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Playlists</h1>
+      <div className="flex items-center justify-end">
         <div className="flex gap-2">
           {/* Fetch Data Dropdown */}
           <DropdownMenu>
@@ -865,34 +873,52 @@ export default function PlaylistsView() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 slide-in-right">
-        <StatsCard
-          title="Total Tracked"
-          value={playlistMetrics?.totalPlaylists ?? 0}
-          icon={Music2}
-          variant="blue"
-          tooltip="Total number of Spotify playlists being monitored for unsigned talent discovery"
-          testId="stats-total-playlists"
-        />
-        <StatsCard
-          title="Unique Songwriters"
-          value={playlistMetrics?.uniqueSongwriters ?? 0}
-          icon={UserCheck}
-          variant="green"
-          tooltip="Total unique songwriters discovered across all tracked playlists this week"
-          change={playlistMetrics?.changeSongwriters}
-          testId="stats-unique-songwriters"
-        />
-        <StatsCard
-          title="High-Impact Playlists"
-          value={playlistMetrics?.highImpactPlaylists ?? 0}
-          icon={Trophy}
-          variant="gold"
-          tooltip="Playlists with average unsigned score of 7 or higher, indicating strong publishing opportunities"
-          change={playlistMetrics?.changeHighImpact}
-          testId="stats-high-impact-playlists"
-        />
+      {/* Stats Cards with Toggle */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-muted-foreground">TOP METRICS</h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowMetrics(!showMetrics)}
+            data-testid="button-toggle-playlist-metrics"
+            className="h-8 w-8"
+          >
+            {showMetrics ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+        </div>
+        <Collapsible open={showMetrics}>
+          <CollapsibleContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 slide-in-right">
+              <StatsCard
+                title="Total Tracked"
+                value={playlistMetrics?.totalPlaylists ?? 0}
+                icon={Music2}
+                variant="blue"
+                tooltip="Total number of Spotify playlists being monitored for unsigned talent discovery"
+                testId="stats-total-playlists"
+              />
+              <StatsCard
+                title="Unique Songwriters"
+                value={playlistMetrics?.uniqueSongwriters ?? 0}
+                icon={UserCheck}
+                variant="green"
+                tooltip="Total unique songwriters discovered across all tracked playlists this week"
+                change={playlistMetrics?.changeSongwriters}
+                testId="stats-unique-songwriters"
+              />
+              <StatsCard
+                title="High-Impact Playlists"
+                value={playlistMetrics?.highImpactPlaylists ?? 0}
+                icon={Trophy}
+                variant="gold"
+                tooltip="Playlists with average unsigned score of 7 or higher, indicating strong publishing opportunities"
+                change={playlistMetrics?.changeHighImpact}
+                testId="stats-high-impact-playlists"
+              />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {/* Filters */}
@@ -1424,38 +1450,15 @@ export default function PlaylistsView() {
                       </div>
                     )}
 
-                    {/* 3. Fetch Details */}
+                    {/* 3. Additional Details */}
                     <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-3">Fetch Details</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-3">Additional Details</p>
                       <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <p className="text-xs text-muted-foreground">Tracks in DB</p>
-                            <p className="font-medium" data-testid="text-tracks-in-db">{formatNumber((selectedPlaylist as any).tracksInDb)}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Last Fetch Count</p>
-                            <p className="font-medium" data-testid="text-last-fetch-count">{formatNumber(selectedPlaylist.lastFetchCount)}</p>
-                          </div>
-                        </div>
-                        
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">Fetch Method</p>
-                          <Badge 
-                            variant={
-                              selectedPlaylist.fetchMethod === 'network-capture' ? 'default' :
-                              selectedPlaylist.fetchMethod === 'dom-capture' ? 'outline' :
-                              'secondary'
-                            }
-                            data-testid="badge-fetch-method"
-                          >
-                            {
-                              selectedPlaylist.fetchMethod === 'network-capture' ? 'Network Capture' :
-                              selectedPlaylist.fetchMethod === 'dom-capture' ? 'DOM Capture' :
-                              selectedPlaylist.fetchMethod === 'scraping' ? 'Basic Scraping' :
-                              'API'
-                            }
-                          </Badge>
+                          <p className="text-xs text-muted-foreground mb-1">Playlist ID</p>
+                          <code className="text-xs bg-muted px-2 py-1 rounded block truncate font-mono" data-testid="code-playlist-id">
+                            {selectedPlaylist.playlistId}
+                          </code>
                         </div>
 
                         {selectedPlaylist.genre && (
@@ -1489,24 +1492,6 @@ export default function PlaylistsView() {
                         )}
                       </div>
                     </div>
-
-                    {/* 4. Advanced - Collapsible */}
-                    <Collapsible>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="w-full justify-between" data-testid="button-toggle-advanced">
-                          <span className="text-xs font-medium text-muted-foreground">Advanced Info</span>
-                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="pt-2">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Playlist ID</p>
-                          <code className="text-xs bg-muted px-2 py-1 rounded block truncate" data-testid="code-playlist-id">
-                            {selectedPlaylist.playlistId}
-                          </code>
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
 
                   </AccordionContent>
                 </AccordionItem>

@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown, Music2, Users, Music, Target, TrendingUp, Activity, Search, Filter, Loader2, X } from "lucide-react";
+import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown, Music2, Users, Music, Target, TrendingUp, Activity, Search, Filter, Loader2, X, Eye, EyeOff } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -44,6 +44,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 
 type ViewMode = "table" | "card" | "kanban";
 
@@ -78,8 +79,17 @@ export default function Dashboard() {
   const [recentEnrichments, setRecentEnrichments] = useState<Array<{ trackName: string; artistName: string; timestamp: number }>>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [enrichmentProgress, setEnrichmentProgress] = useState<{ message: string; progress?: number } | null>(null);
+  const [showMetrics, setShowMetrics] = useState(() => {
+    const stored = localStorage.getItem('tracksMetricsVisible');
+    return stored !== null ? stored === 'true' : true;
+  });
   const { toast} = useToast();
   const isMobile = useMobile(768);
+  
+  // Persist metrics visibility to localStorage
+  useEffect(() => {
+    localStorage.setItem('tracksMetricsVisible', showMetrics.toString());
+  }, [showMetrics]);
   
   // Auto-switch to card view on mobile (from table or kanban)
   useEffect(() => {
@@ -604,16 +614,7 @@ export default function Dashboard() {
       <PageContainer>
         <div className="space-y-6 fade-in">
           {/* Header with Enrich Data Button */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold">Tracks</h1>
-              {enrichArtistsMutation.isPending && (
-                <Badge variant="outline" className="gap-2 animate-pulse">
-                  <Sparkles className="h-3 w-3" />
-                  Enriching in background...
-                </Badge>
-              )}
-            </div>
+          <div className="flex items-center justify-end">
             <Button
               onClick={() => enrichArtistsMutation.mutate({ limit: 50 })}
               variant="gradient"
@@ -629,43 +630,61 @@ export default function Dashboard() {
             </Button>
           </div>
 
-          {/* Enhanced Stats Cards with Trends */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            <StatsCard
-              title="Deal-Ready Tracks"
-              value={trackMetrics?.dealReady?.toLocaleString() || "0"}
-              icon={Target}
-              variant="green"
-              tooltip="Tracks with contact info (email) and high unsigned score (7+). Click to filter the table below."
-              change={trackMetrics?.changeDealReady}
-              onClick={() => {
-                setActiveFilters(['has-email']);
-                setScoreRange([7, 10]);
-                toast({
-                  title: "Filtered to deal-ready tracks",
-                  description: "Showing tracks with score 7+ and contact email",
-                });
-              }}
-              testId="stats-deal-ready"
-            />
-            <StatsCard
-              title="Avg Unsigned Score"
-              value={trackMetrics?.avgScore?.toFixed(1) || "0.0"}
-              icon={Activity}
-              variant="default"
-              tooltip="Average unsigned score across all tracks in the current week"
-              change={trackMetrics?.changeAvgScore}
-              testId="stats-avg-score"
-            />
-            <StatsCard
-              title="Enriched Tracks"
-              value={`${trackMetrics?.enrichedPercent?.toFixed(0) || "0"}%`}
-              icon={Sparkles}
-              variant="blue"
-              tooltip="Percentage of tracks that have been enriched with songwriter/publisher metadata"
-              change={trackMetrics?.changeEnriched}
-              testId="stats-enriched"
-            />
+          {/* Enhanced Stats Cards with Trends and Toggle */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-muted-foreground">TOP METRICS</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowMetrics(!showMetrics)}
+                data-testid="button-toggle-track-metrics"
+                className="h-8 w-8"
+              >
+                {showMetrics ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+            <Collapsible open={showMetrics}>
+              <CollapsibleContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <StatsCard
+                    title="Deal-Ready Tracks"
+                    value={trackMetrics?.dealReady?.toLocaleString() || "0"}
+                    icon={Target}
+                    variant="green"
+                    tooltip="Tracks with contact info (email) and high unsigned score (7+). Click to filter the table below."
+                    change={trackMetrics?.changeDealReady}
+                    onClick={() => {
+                      setActiveFilters(['has-email']);
+                      setScoreRange([7, 10]);
+                      toast({
+                        title: "Filtered to deal-ready tracks",
+                        description: "Showing tracks with score 7+ and contact email",
+                      });
+                    }}
+                    testId="stats-deal-ready"
+                  />
+                  <StatsCard
+                    title="Avg Unsigned Score"
+                    value={trackMetrics?.avgScore?.toFixed(1) || "0.0"}
+                    icon={Activity}
+                    variant="default"
+                    tooltip="Average unsigned score across all tracks in the current week"
+                    change={trackMetrics?.changeAvgScore}
+                    testId="stats-avg-score"
+                  />
+                  <StatsCard
+                    title="Enriched Tracks"
+                    value={`${trackMetrics?.enrichedPercent?.toFixed(0) || "0"}%`}
+                    icon={Sparkles}
+                    variant="blue"
+                    tooltip="Percentage of tracks that have been enriched with songwriter/publisher metadata"
+                    change={trackMetrics?.changeEnriched}
+                    testId="stats-enriched"
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
 
           {/* Filters Row */}
