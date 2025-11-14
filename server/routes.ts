@@ -891,6 +891,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const chartmetricTime = chartmetricResult.status === 'fulfilled' ? 'success' : 'failed';
         const spotifyTime = spotifyResult.status === 'fulfilled' ? 'success' : 'failed';
         console.log(`📊 [Parallel Performance] Chartmetric: ${chartmetricTime}, Spotify: ${spotifyTime}, Used: ${metadataSource}`);
+        
+        // Set fetchMethod based on metadata source for provenance tracking
+        if (metadataSource === 'chartmetric') {
+          fetchMethod = 'chartmetric_metadata';
+        } else if (metadataSource === 'spotify') {
+          fetchMethod = 'spotify_metadata';
+        }
       } else {
         console.log(`Playlist ${validatedPlaylist.playlistId} added with scraping mode - metadata will be fetched during track fetch`);
       }
