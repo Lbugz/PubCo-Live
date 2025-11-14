@@ -328,10 +328,43 @@ export async function fetchEditorialTracksViaNetwork(
                                 || document.querySelector('div[data-testid="entity-subtitle"]');
           const curator = curatorElement?.textContent?.trim() || null;
           
-          const followerElement = document.querySelector('button[data-testid="followers-count"]')
-                                  || document.querySelector('[data-testid="entity-subtitle-more-button"]')
-                                  || document.querySelector('[aria-label*="followers"]');
-          const followerText = followerElement?.textContent?.trim() || null;
+          // Try multiple selectors for followers - Spotify UI changes frequently
+          let followerText: string | null = null;
+          const followerSelectors = [
+            'button[data-testid="followers-count"]', // Old format
+            '[data-testid="entity-subtitle-more-button"]', // Button with likes/followers
+            '[aria-label*="followers"]',
+            '[aria-label*="follower"]',
+            'button:has-text("followers")', // Contains "followers" text
+            '[data-testid="playlist-followers"]',
+            'span:has-text("followers")', // Span containing "followers"
+          ];
+          
+          // Try each selector
+          for (const selector of followerSelectors) {
+            try {
+              const element = document.querySelector(selector);
+              if (element?.textContent) {
+                const text = element.textContent.trim();
+                // Check if it contains follower info (number + "follower")
+                if (text.match(/\d+.*follow/i)) {
+                  followerText = text;
+                  break;
+                }
+              }
+            } catch (e) {
+              // Continue to next selector
+            }
+          }
+          
+          // Fallback: Search all text nodes for follower count
+          if (!followerText) {
+            const allText = document.body.innerText;
+            const followerMatch = allText.match(/(\d+[,\d]*\s*[KMB]?\s*followers?)/i);
+            if (followerMatch) {
+              followerText = followerMatch[1];
+            }
+          }
           
           // Extract playlist artwork - look for the cover image
           const imageElement = document.querySelector('[data-testid="playlist-image"] img')
@@ -346,10 +379,17 @@ export async function fetchEditorialTracksViaNetwork(
         // Use DOM values only if GraphQL didn't provide them
         playlistName = playlistName || metadata.name;
         curator = curator || metadata.curator;
-        followers = followers || (metadata.followerText ? parseFollowerCount(metadata.followerText) : null);
+        
+        // Parse follower count if we have the text
+        if (metadata.followerText && !followers) {
+          const parsed = parseFollowerCount(metadata.followerText);
+          console.log(`[Network Capture] Parsing follower text: "${metadata.followerText}" → ${parsed}`);
+          followers = parsed;
+        }
+        
         imageUrl = imageUrl || metadata.imageUrl;
         
-        console.log(`[Network Capture] DOM metadata: name="${metadata.name}", curator="${metadata.curator}", followers=${followers}`);
+        console.log(`[Network Capture] DOM metadata: name="${metadata.name}", curator="${metadata.curator}", followerText="${metadata.followerText}", parsedFollowers=${followers}`);
       } catch (err) {
         console.warn('[Network Capture] Failed to extract DOM metadata:', err);
       }
