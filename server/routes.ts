@@ -173,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Search for playlists
       try {
-        const searchResults = await spotify.search(trimmedQuery, ["playlist"], undefined, limit);
+        const searchResults = await spotify.search(trimmedQuery, ["playlist"], undefined, limit as any);
         
         const results = searchResults.playlists.items.map((p: any) => ({
           id: p.id,
@@ -2696,7 +2696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   unsignedScore: score,
                   addedAt: new Date(),
                   dataSource: "chartmetric",
-                  chartmetricId: parseInt(cmTrack.chartmetricId),
+                  chartmetricId: cmTrack.chartmetricId ? String(cmTrack.chartmetricId) : null,
                   chartmetricStatus: "completed",
                 };
                 
@@ -2717,13 +2717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 skipped: skippedCount,
               });
               
-              await storage.updatePlaylistAfterFetch(playlist.id, {
-                totalTracks: playlistTotalTracks,
-                lastFetchCount: cmTracks.length - skippedCount,
-                isComplete: 1,
-                fetchMethod: fetchMethod,
-                lastChecked: new Date(),
-              });
+              await storage.updatePlaylistCompleteness(playlist.playlistId, cmTracks.length - skippedCount, playlistTotalTracks, new Date());
               
               continue; // Move to next playlist
             } else {
@@ -3128,7 +3122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 label: mergedLabel,
                 unsignedScore: score,
                 addedAt: capturedTrack.addedAt ? new Date(capturedTrack.addedAt) : new Date(),
-                dataSource: enrichedData ? `${fetchMethod}+api` : fetchMethod,
+                dataSource: enrichedData ? `${fetchMethod}+api` : (fetchMethod || undefined),
                 chartmetricId: null,
                 chartmetricStatus: "pending",
               };
