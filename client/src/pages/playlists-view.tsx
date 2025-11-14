@@ -1173,9 +1173,14 @@ export default function PlaylistsView() {
                     </div>
 
                     {/* Enrichment Timeline */}
-                    {qualityMetrics && qualityMetrics.totalTracks > 0 && (
+                    {qualityMetrics && (
                       <div>
                         <p className="text-xs font-medium text-muted-foreground mb-3">Enrichment Pipeline Status</p>
+                        {qualityMetrics.totalTracks === 0 ? (
+                          <div className="p-4 text-center text-sm text-muted-foreground bg-background/40 rounded-lg">
+                            Click "Fetch Data" to import tracks and begin enrichment
+                          </div>
+                        ) : (
                         <div className="space-y-2">
                           {/* Phase 1: Spotify API */}
                           <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-1">
@@ -1278,6 +1283,7 @@ export default function PlaylistsView() {
                             </div>
                           </div>
                         </div>
+                        )}
                       </div>
                     )}
 
