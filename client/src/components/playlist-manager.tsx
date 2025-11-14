@@ -47,12 +47,10 @@ export function PlaylistManager({ open: controlledOpen, onOpenChange }: Playlist
         throw new Error("Invalid Spotify playlist URL or ID");
       }
 
-      const playlistData = await fetchPlaylistInfo(playlistId);
-      
       const res = await apiRequest("POST", "/api/tracked-playlists", {
-        name: playlistData.name,
-        playlistId: playlistData.foundViaSearch ? playlistData.id : playlistId,
-        spotifyUrl: `https://open.spotify.com/playlist/${playlistData.foundViaSearch ? playlistData.id : playlistId}`,
+        name: "Untitled Playlist",
+        playlistId: playlistId,
+        spotifyUrl: `https://open.spotify.com/playlist/${playlistId}`,
       });
       
       const playlist: TrackedPlaylist = await res.json();
@@ -183,15 +181,6 @@ export function PlaylistManager({ open: controlledOpen, onOpenChange }: Playlist
     }
     
     return null;
-  };
-
-  const fetchPlaylistInfo = async (playlistId: string) => {
-    const response = await fetch(`/api/spotify/playlist/${playlistId}`);
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || "Failed to fetch playlist info from Spotify");
-    }
-    return response.json();
   };
 
   // Detect if input is URL/ID or name-based search

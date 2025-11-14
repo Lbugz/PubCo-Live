@@ -357,15 +357,6 @@ export default function PlaylistsView() {
     return null;
   };
 
-  const fetchPlaylistInfo = async (playlistId: string) => {
-    const response = await fetch(`/api/spotify/playlist/${playlistId}`);
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || "Failed to fetch playlist info from Spotify");
-    }
-    return response.json();
-  };
-
   const handleAddPlaylist = (values: {
     playlistUrl: string;
     chartmetricUrl: string;
