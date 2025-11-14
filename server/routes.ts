@@ -783,6 +783,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Playlist ${validatedPlaylist.playlistId} added with scraping mode - metadata will be fetched during track fetch`);
       }
       
+      // Abort if metadata fetch completely failed AND playlist is not editorial
+      // Editorial playlists will get metadata via Puppeteer scraping, so allow them through
+      if (name === "Untitled Playlist" && !isEditorial) {
+        throw new Error(
+          `Failed to fetch playlist metadata for ${validatedPlaylist.playlistId}. ` +
+          `Both Chartmetric and Spotify API are unavailable. Please try again later.`
+        );
+      }
+      
       const playlist = await storage.addTrackedPlaylist({
         ...validatedPlaylist,
         name, // ← CRITICAL: Override placeholder with fetched name
