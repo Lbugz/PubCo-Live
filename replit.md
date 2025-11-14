@@ -40,6 +40,7 @@ The frontend is a single-page React application with a modular component archite
     - **Code Updates**: Fixed all insertion paths (Chartmetric, Spotify API, Puppeteer) to use `playlist.id` instead of `playlist.playlistId`
     - **Validation**: Achieved 100% ISRC recovery rate (150/150 tracks) through enrichment Phase 1 (Spotify API batch)
     - **Result**: Tracks now properly join to playlists via FK, enrichment pipeline fully functional
+- **Album Artwork Fix (Nov 14, 2025)**: Fixed missing album art display by extracting medium-sized (300px) image URLs from `album_images` JSON and storing in dedicated `album_art` field. Backfilled all 375 existing tracks. Future enrichments automatically populate both fields.
 - **Lead Tagging System**: Custom, color-coded tags for tracks with filtering.
 - **Custom Playlist Tracking**: Supports adding, managing, and bulk importing Spotify playlists with automatic metadata fetching and duplicate prevention.
 - **Advanced Editorial Playlist Capture**: Robust fallback system with browser-sharing architecture for editorial playlists:
