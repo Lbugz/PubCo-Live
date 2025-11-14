@@ -3,6 +3,8 @@ import type { IStorage } from "../storage";
 import type { EnrichmentJob, PlaylistSnapshot } from "@shared/schema";
 import { enrichTracksWithCredits } from "./spotifyCreditsScaper";
 import { enrichTracksWithMLC } from "./mlcApi";
+import { enrichTracksWithSpotifyAPI } from "./spotifyBatchEnrichment";
+import { getUncachableSpotifyClient } from "../spotify";
 import type { WebSocket } from "ws";
 
 export interface WorkerOptions {
