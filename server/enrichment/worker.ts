@@ -265,9 +265,9 @@ export class EnrichmentWorker {
           });
         }
 
-        console.log(`[Phase 1] ✅ Complete: ${phase1Result.tracksEnriched}/${phase1Result.tracksProcessed} tracks enriched, ${persistedCount} persisted`);
-        console.log(`[Phase 1] ISRC Recovery: ${phase1Result.isrcRecovered} tracks`);
-        console.log(`[Phase 1] Field Stats:`, phase1Result.fieldStats);
+        console.log(`[Phase 1: Spotify API] ✅ Complete: ${phase1Result.tracksEnriched}/${phase1Result.tracksProcessed} tracks enriched, ${persistedCount} persisted`);
+        console.log(`[Phase 1: Spotify API] ISRC Recovery: ${phase1Result.isrcRecovered} tracks`);
+        console.log(`[Phase 1: Spotify API] Field Stats:`, phase1Result.fieldStats);
       } catch (phase1Error) {
         console.error("[Worker] Phase 1 (Spotify API) failed, continuing to Phase 2:", phase1Error);
 
@@ -383,9 +383,17 @@ export class EnrichmentWorker {
         });
       }
 
+      console.log(`[Phase 2: Credits Scraping] ✅ Complete: ${result.tracksEnriched}/${result.tracksProcessed} tracks enriched, ${phase2Persisted} persisted`);
+
+      // Phase 3: MusicBrainz (artist social links) - Currently embedded in Phase 2
+      console.log(`[Phase 3: MusicBrainz] Artist link extraction embedded in Phase 2 workflow`);
+      
+      // Phase 4: Chartmetric (streaming analytics) - Not yet implemented in worker
+      console.log(`[Phase 4: Chartmetric] ⚠️ Not yet implemented in background job queue`);
+
       await this.jobQueue.updateJobProgress(job.id, {
         progress: 70,
-        logs: [`[${new Date().toISOString()}] Starting Tier 2 enrichment (MLC publisher status)...`],
+        logs: [`[${new Date().toISOString()}] Starting Phase 5 enrichment (MLC publisher status)...`],
       });
 
       this.broadcastProgress(job.id, {
@@ -429,17 +437,19 @@ export class EnrichmentWorker {
 
         const { persistedCount: mlcPersisted, failedTrackIds: mlcFailed } = await this.persistPhaseUpdates(ctx, job.id, 'MLC');
 
+        console.log(`[Phase 5: MLC] ✅ Complete: ${mlcResults.filter(r => r.hasPublisher).length}/${mlcResults.length} tracks have publishers, ${mlcPersisted} persisted`);
+
         await this.jobQueue.updateJobProgress(job.id, {
           progress: 85,
           logs: [
-            `[${new Date().toISOString()}] MLC enrichment complete: ${mlcResults.filter(r => r.hasPublisher).length}/${mlcResults.length} tracks have publishers, ${mlcPersisted} persisted`,
+            `[${new Date().toISOString()}] Phase 5 (MLC) enrichment complete: ${mlcResults.filter(r => r.hasPublisher).length}/${mlcResults.length} tracks have publishers, ${mlcPersisted} persisted`,
           ],
         });
 
         this.broadcastProgress(job.id, {
           status: 'running',
           progress: 85,
-          message: `MLC complete: ${mlcPersisted} tracks persisted`,
+          message: `Phase 5 complete: ${mlcPersisted} tracks persisted`,
         });
 
         for (const mlcResult of mlcResults) {

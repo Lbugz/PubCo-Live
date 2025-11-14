@@ -1223,15 +1223,47 @@ export default function PlaylistsView() {
                             </div>
                           </div>
 
-                          {/* Phase 3: MLC Publisher Lookup */}
+                          {/* Phase 3: MusicBrainz Artist Links */}
                           <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-3">
+                            <div className={cn(
+                              "h-2 w-2 rounded-full transition-all duration-300",
+                              "bg-muted animate-pulse"
+                            )} />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium">Phase 3: MusicBrainz</p>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Pending artist social links
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Phase 4: Chartmetric Analytics */}
+                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-4">
+                            <div className={cn(
+                              "h-2 w-2 rounded-full transition-all duration-300",
+                              "bg-muted animate-pulse"
+                            )} />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium">Phase 4: Chartmetric</p>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Pending analytics data
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Phase 5: MLC Publisher Lookup */}
+                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-5">
                             <div className={cn(
                               "h-2 w-2 rounded-full transition-all duration-300",
                               (qualityMetrics.publishedCount || 0) > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
                             )} />
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium">Phase 3: MLC Lookup</p>
+                                <p className="text-sm font-medium">Phase 5: MLC Lookup</p>
                                 {(qualityMetrics.publishedCount || 0) > 0 && qualityMetrics.totalTracks > 0 && (
                                   <Badge variant="secondary" className="text-xs">
                                     {Math.round(((qualityMetrics.publishedCount || 0) / qualityMetrics.totalTracks) * 100)}%
