@@ -278,6 +278,62 @@ async function fetchSinglePlaylist(
           playlistTotalTracks = puppeteerTracks.length;
           console.log(`[Playlist ${playlist.playlistId}] ✅ Puppeteer: ${puppeteerTracks.length} tracks`);
           
+          // CRITICAL FIX: Batch enrich editorial tracks via Spotify API to recover ISRCs
+          if (spotify && newTracks.length > 0) {
+            console.log(`[Playlist ${playlist.playlistId}] 🔄 Batch enriching ${newTracks.length} editorial tracks via Spotify API...`);
+            
+            try {
+              const { enrichTracksWithSpotifyAPI } = await import("../enrichment/spotifyBatchEnrichment");
+              
+              // Create temporary track objects for enrichment
+              const tracksForEnrichment = newTracks.map(track => ({
+                id: track.spotifyUrl, // Use URL as temporary ID
+                spotifyUrl: track.spotifyUrl,
+                trackName: track.trackName,
+                artistName: track.artistName,
+                isrc: track.isrc,
+                label: track.label,
+                releaseDate: track.releaseDate,
+                popularity: track.popularity,
+                duration: track.duration,
+                explicit: track.explicit,
+                albumImages: track.albumImages,
+                audioFeatures: track.audioFeatures,
+                artistGenres: track.artistGenres,
+                artistFollowers: track.artistFollowers,
+              }));
+              
+              // Update tracks in-place via callback
+              const updateTrackMetadata = async (trackUrl: string, metadata: any) => {
+                const track = newTracks.find(t => t.spotifyUrl === trackUrl);
+                if (track) {
+                  if (metadata.spotifyTrackId) track.spotifyTrackId = metadata.spotifyTrackId;
+                  if (metadata.isrc) track.isrc = metadata.isrc;
+                  if (metadata.label) track.label = metadata.label;
+                  if (metadata.releaseDate) track.releaseDate = metadata.releaseDate;
+                  if (metadata.popularity !== undefined) track.popularity = metadata.popularity;
+                  if (metadata.duration) track.duration = metadata.duration;
+                  if (metadata.explicit !== undefined) track.explicit = metadata.explicit;
+                  if (metadata.albumImages) track.albumImages = metadata.albumImages;
+                  if (metadata.audioFeatures) track.audioFeatures = metadata.audioFeatures;
+                  if (metadata.artistGenres) track.artistGenres = metadata.artistGenres;
+                  if (metadata.artistFollowers !== undefined) track.artistFollowers = metadata.artistFollowers;
+                }
+              };
+              
+              const enrichmentResult = await enrichTracksWithSpotifyAPI(
+                spotify,
+                tracksForEnrichment as any,
+                updateTrackMetadata
+              );
+              
+              console.log(`[Playlist ${playlist.playlistId}] ✅ Batch enrichment: ${enrichmentResult.isrcRecovered} ISRCs recovered, ${enrichmentResult.tracksEnriched} tracks enriched`);
+            } catch (enrichError: any) {
+              console.error(`[Playlist ${playlist.playlistId}] ⚠️ Batch enrichment failed:`, enrichError.message);
+              // Continue even if enrichment fails - tracks are still valid
+            }
+          }
+          
           await storage.updatePlaylistCompleteness(playlist.id, puppeteerTracks.length - skippedCount, playlistTotalTracks, new Date());
           
           return {

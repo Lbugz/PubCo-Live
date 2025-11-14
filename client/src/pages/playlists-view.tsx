@@ -1142,6 +1142,62 @@ export default function PlaylistsView() {
                         <p className="text-xs text-muted-foreground">Quality metrics unavailable. Fetch playlist data to calculate.</p>
                       )}
                     </div>
+                    
+                    {/* Enrichment Timeline */}
+                    {qualityMetrics && qualityMetrics.totalTracks > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-3">Enrichment Pipeline Status</p>
+                        <div className="space-y-2">
+                          {/* Phase 1: Spotify API */}
+                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg" data-testid="enrichment-phase-1">
+                            <div className={cn(
+                              "h-2 w-2 rounded-full",
+                              qualityMetrics.isrcCount > 0 ? "bg-green-500" : "bg-muted"
+                            )} />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">Phase 1: Spotify API</p>
+                              <p className="text-xs text-muted-foreground">
+                                {qualityMetrics.isrcCount > 0 
+                                  ? `✓ ${qualityMetrics.isrcCount} ISRCs recovered` 
+                                  : "Pending ISRC recovery"}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Phase 2: Credits Scraping */}
+                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg" data-testid="enrichment-phase-2">
+                            <div className={cn(
+                              "h-2 w-2 rounded-full",
+                              qualityMetrics.enrichedCount > 0 ? "bg-green-500" : "bg-muted"
+                            )} />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">Phase 2: Credits Scraping</p>
+                              <p className="text-xs text-muted-foreground">
+                                {qualityMetrics.enrichedCount > 0 
+                                  ? `✓ ${qualityMetrics.enrichedCount} tracks enriched` 
+                                  : "Pending credit scraping"}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Phase 3: MLC Publisher Lookup */}
+                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg" data-testid="enrichment-phase-3">
+                            <div className={cn(
+                              "h-2 w-2 rounded-full",
+                              qualityMetrics.enrichedCount > 0 ? "bg-green-500" : "bg-muted"
+                            )} />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">Phase 3: MLC Publisher Status</p>
+                              <p className="text-xs text-muted-foreground">
+                                {qualityMetrics.enrichedCount > 0 
+                                  ? "✓ Publisher lookup complete" 
+                                  : "Pending publisher lookup"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* 2. Chartmetric Insights */}
                     {selectedPlaylist.chartmetricUrl && (

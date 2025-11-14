@@ -253,6 +253,17 @@ export class EnrichmentWorker {
             });
           }
         }
+        
+        // Broadcast quality metric update for UI refresh
+        if (this.wsBroadcast && job.playlistId) {
+          this.wsBroadcast('playlist_quality_updated', {
+            type: 'playlist_quality_updated',
+            playlistId: job.playlistId,
+            phase: 1,
+            isrcRecovered: phase1Result.isrcRecovered,
+            tracksEnriched: phase1Result.tracksEnriched,
+          });
+        }
 
         console.log(`[Phase 1] ✅ Complete: ${phase1Result.tracksEnriched}/${phase1Result.tracksProcessed} tracks enriched, ${persistedCount} persisted`);
         console.log(`[Phase 1] ISRC Recovery: ${phase1Result.isrcRecovered} tracks`);
@@ -359,6 +370,16 @@ export class EnrichmentWorker {
           }
         }
       }
+      
+      // Broadcast quality metric update after Phase 2
+      if (this.wsBroadcast && job.playlistId) {
+        this.wsBroadcast('playlist_quality_updated', {
+          type: 'playlist_quality_updated',
+          playlistId: job.playlistId,
+          phase: 2,
+          tracksEnriched: phase2Persisted,
+        });
+      }
 
       await this.jobQueue.updateJobProgress(job.id, {
         progress: 70,
@@ -452,6 +473,17 @@ export class EnrichmentWorker {
               });
             }
           }
+        }
+        
+        // Broadcast final quality metric update after MLC
+        if (this.wsBroadcast && job.playlistId) {
+          this.wsBroadcast('playlist_quality_updated', {
+            type: 'playlist_quality_updated',
+            playlistId: job.playlistId,
+            phase: 'mlc',
+            tracksWithPublisher: mlcResults.filter(r => r.hasPublisher).length,
+            totalTracks: mlcResults.length,
+          });
         }
       } catch (mlcError) {
         console.error("[Worker] MLC enrichment failed, continuing job:", mlcError);
