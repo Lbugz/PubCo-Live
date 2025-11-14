@@ -164,28 +164,12 @@ export function DetailsDrawer({
 
                 {/* Title + Artist */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <SheetTitle className="font-heading text-lg leading-tight line-clamp-1">
-                        {displayTrack.trackName}
-                      </SheetTitle>
-                      <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
-                        {displayTrack.artistName}
-                      </p>
-                    </div>
-
-                    {/* Close Button */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={onClose}
-                      className="flex-shrink-0"
-                      data-testid="button-close-drawer"
-                      aria-label="Close drawer"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <SheetTitle className="font-heading text-lg leading-tight line-clamp-1">
+                    {displayTrack.trackName}
+                  </SheetTitle>
+                  <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
+                    {displayTrack.artistName}
+                  </p>
 
                   {/* Metadata Chips */}
                   <div className="flex flex-wrap gap-1.5 mt-2">
