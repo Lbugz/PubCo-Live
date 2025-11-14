@@ -11,7 +11,7 @@ import { playlists, playlistSnapshots, type InsertPlaylistSnapshot, type Playlis
 import { scrapeSpotifyPlaylist, scrapeTrackCredits, scrapeTrackCreditsWithTimeout } from "./scraper";
 import { fetchEditorialTracksViaNetwork } from "./scrapers/spotifyEditorialNetwork";
 import { harvestVirtualizedRows } from "./scrapers/spotifyEditorialDom";
-import { broadcastEnrichmentUpdate } from "./websocket";
+import { broadcastEnrichmentUpdate, broadcast } from "./websocket";
 import { getAuthStatus, isAuthHealthy } from "./auth-monitor";
 import { enrichTrackWithChartmetric, getSongwriterProfile, getSongwriterCollaborators, getSongwriterPublishers, getPlaylistMetadata, getPlaylistTracks, searchPlaylists } from "./chartmetric";
 import { getPlaylistMetrics, getTrackMetrics, invalidateMetricsCache } from "./metricsService";
@@ -2712,15 +2712,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 await storage.deleteTrackedPlaylist(playlist.id);
                 
                 // Broadcast error to frontend
-                if (wss) {
-                  broadcastToClients({
-                    type: 'playlist_error',
-                    data: {
-                      playlistId: playlist.playlistId,
-                      error: 'Playlist not found or deleted from Spotify',
-                    },
-                  });
-                }
+                broadcast('playlist_error', {
+                  playlistId: playlist.playlistId,
+                  error: 'Playlist not found or deleted from Spotify',
+                });
                 
                 continue; // Skip to next playlist
               }
@@ -2838,6 +2833,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Always update totalTracks, and update other fields if present
                 await storage.updateTrackedPlaylistMetadata(playlist.id, updates);
                 console.log(`Updated playlist metadata: name="${updates.name || 'not set'}", curator="${updates.curator || 'not set'}", followers=${updates.followers ?? 'not set'}, artwork=${updates.imageUrl ? 'yes' : 'no'}`);
+                
+                // Broadcast metadata update to frontend via WebSocket
+                broadcast('playlist_updated', {
+                  playlistId: playlist.playlistId,
+                  id: playlist.id,
+                  updates,
+                });
                 
                 // Verify the name was actually updated
                 const verifyPlaylist = await storage.getPlaylistById(playlist.id);

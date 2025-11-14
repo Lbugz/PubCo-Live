@@ -110,6 +110,15 @@ export default function PlaylistsView() {
       // Refresh playlists to remove deleted playlist
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
     },
+    onPlaylistUpdated: (data) => {
+      // Refresh playlist list to show updated metadata (name, artwork, curator, followers)
+      queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
+      
+      // Also refresh individual playlist if it's currently being viewed
+      if (data.playlistId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/playlists", data.playlistId] });
+      }
+    },
   });
 
   // Fetch Chartmetric analytics for selected playlist
