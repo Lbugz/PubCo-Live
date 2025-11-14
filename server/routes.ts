@@ -828,6 +828,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Don't block response if activity logging fails
       }
       
+      // Broadcast playlist addition to frontend
+      broadcast('playlist_updated', {
+        playlistId: playlist.playlistId,
+        id: playlist.id,
+        updates: {
+          name: playlist.name,
+          totalTracks: playlist.totalTracks,
+          curator: playlist.curator,
+          followers: playlist.followers,
+          imageUrl: playlist.imageUrl,
+        },
+      });
+      
       // Trigger automatic fetch in background (fire-and-forget, non-blocking)
       setImmediate(() => {
         (async () => {
@@ -2448,7 +2461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
             
-            await storage.addTrackedPlaylist({
+            const newPlaylist = await storage.addTrackedPlaylist({
               name: title,
               playlistId: playlistId,
               spotifyUrl: link,
@@ -2457,6 +2470,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               fetchMethod: isEditorial ? 'scraping' : 'api',
               isComplete: 0,
               lastFetchCount: 0,
+            });
+            
+            // Broadcast playlist addition to frontend
+            broadcast('playlist_updated', {
+              playlistId: newPlaylist.playlistId,
+              id: newPlaylist.id,
+              updates: {
+                name: newPlaylist.name,
+                totalTracks: newPlaylist.totalTracks,
+                imageUrl: newPlaylist.imageUrl,
+              },
             });
           }
           results.successful++;
