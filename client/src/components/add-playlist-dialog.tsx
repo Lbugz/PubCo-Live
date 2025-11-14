@@ -34,7 +34,7 @@ export function AddPlaylistDialog({ open, onOpenChange, onPlaylistsAdded }: AddP
     }> => {
       const successes: TrackedPlaylist[] = [];
       const failures: Array<{ url: string; error: string }> = [];
-      
+
       for (const url of urls) {
         try {
           const playlistId = extractPlaylistId(url);
@@ -48,28 +48,28 @@ export function AddPlaylistDialog({ open, onOpenChange, onPlaylistsAdded }: AddP
             playlistId: playlistId,
             spotifyUrl: `https://open.spotify.com/playlist/${playlistId}`,
           });
-          
+
           const playlist: TrackedPlaylist = await res.json();
           successes.push(playlist);
         } catch (error: any) {
           failures.push({ url, error: error.message || "Failed to add playlist" });
         }
       }
-      
+
       return { successes, failures };
     },
     onSuccess: (result) => {
       const { successes, failures } = result;
-      
+
       // Always invalidate queries to show newly added playlists
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
-      
+
       // Trigger automatic fetch/enrichment for successful additions
       if (successes.length > 0 && onPlaylistsAdded) {
         const spotifyPlaylistIds = successes.map(p => p.playlistId);
         onPlaylistsAdded(spotifyPlaylistIds);
       }
-      
+
       if (successes.length > 0 && failures.length === 0) {
         // All succeeded
         toast({
@@ -108,12 +108,12 @@ export function AddPlaylistDialog({ open, onOpenChange, onPlaylistsAdded }: AddP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const urls = playlistInput
       .split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0);
-    
+
     if (urls.length === 0) {
       toast({
         title: "Error",
@@ -122,7 +122,7 @@ export function AddPlaylistDialog({ open, onOpenChange, onPlaylistsAdded }: AddP
       });
       return;
     }
-    
+
     addPlaylistsMutation.mutate(urls);
   };
 

@@ -88,6 +88,14 @@ export default function PlaylistsView() {
           queryKey: ['/api/playlists', message.playlistId, 'quality'] 
         });
       }
+      
+      // Handle playlist_fetch_complete to show toast
+      if (message.type === 'playlist_fetch_complete') {
+        toast({
+          title: "Track data fetched",
+          description: `${message.playlistName}: ${message.tracksInserted || 0} new tracks added`,
+        });
+      }
     },
     onPlaylistError: (data) => {
       // Handle playlist errors (e.g., deleted from Spotify)

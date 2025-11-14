@@ -23,11 +23,11 @@ async function fetchAllPlaylistTracks(spotify: any, playlistId: string): Promise
   let offset = 0;
   const limit = 100;
   let hasMore = true;
-  
+
   while (hasMore) {
     try {
       const response = await spotify.playlists.getPlaylistItems(playlistId, undefined, undefined, limit, offset);
-      
+
       if (response.items && response.items.length > 0) {
         allTracks.push(...response.items);
         offset += response.items.length;
@@ -40,7 +40,7 @@ async function fetchAllPlaylistTracks(spotify: any, playlistId: string): Promise
       throw new Error(`Failed to fetch all tracks: ${error.message}`);
     }
   }
-  
+
   console.log(`Fetched ${allTracks.length} total tracks via API pagination`);
   return allTracks;
 }
@@ -55,16 +55,16 @@ function decodeHTMLEntities(text: string): string {
     '&#39;': "'",
     '&apos;': "'",
   };
-  
+
   let decoded = text;
   for (const [entity, char] of Object.entries(entities)) {
     decoded = decoded.split(entity).join(char);
   }
-  
+
   // Handle numeric entities like &#123;
   decoded = decoded.replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec));
   decoded = decoded.replace(/&#x([0-9a-f]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
-  
+
   return decoded;
 }
 
@@ -80,7 +80,7 @@ async function fetchSpotifyPlaylistMetadata(playlistId: string): Promise<{
   try {
     const spotify = await getUncachableSpotifyClient();
     const playlistData = await spotify.playlists.getPlaylist(playlistId, "from_token" as any);
-    
+
     return {
       name: playlistData.name,
       totalTracks: playlistData.tracks?.total || null,
@@ -91,7 +91,7 @@ async function fetchSpotifyPlaylistMetadata(playlistId: string): Promise<{
     };
   } catch (error: any) {
     console.log(`Failed to fetch Spotify API metadata: ${error.message}`);
-    
+
     // If API returns 404 (common for editorial playlists with client credentials),
     // fall back to Puppeteer scraping which can extract metadata from the web page
     if (error.message?.includes('404') || error.status === 404) {
@@ -100,7 +100,7 @@ async function fetchSpotifyPlaylistMetadata(playlistId: string): Promise<{
         const { scrapeSpotifyPlaylist } = await import('./scraper');
         const playlistUrl = `https://open.spotify.com/playlist/${playlistId}`;
         const scrapeResult = await scrapeSpotifyPlaylist(playlistUrl);
-        
+
         if (scrapeResult.success && scrapeResult.playlistName) {
           console.log(`✅ Puppeteer fallback succeeded: ${scrapeResult.playlistName} (${scrapeResult.tracks?.length || 0} tracks)`);
           return {
@@ -112,13 +112,13 @@ async function fetchSpotifyPlaylistMetadata(playlistId: string): Promise<{
             isEditorial: scrapeResult.curator?.toLowerCase() === 'spotify',
           };
         }
-        
+
         console.log(`❌ Puppeteer fallback failed: ${scrapeResult.error || 'Unknown error'}`);
       } catch (scrapeError: any) {
         console.error(`❌ Puppeteer scraper threw error: ${scrapeError.message}`);
       }
     }
-    
+
     return null;
   }
 }
@@ -136,7 +136,7 @@ async function handlePlaylistFetch(options: PlaylistFetchOptions) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register the fetch handler with the service (enables direct invocation)
   registerFetchHandler(handlePlaylistFetch);
-  
+
   // Spotify OAuth endpoints
   app.get("/api/spotify/auth", (req, res) => {
     try {
@@ -149,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/spotify/callback", async (req, res) => {
     const code = req.query.code as string;
-    
+
     if (!code) {
       res.status(400).send("No authorization code provided");
       return;
@@ -198,7 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/spotify/cookie-status", (req, res) => {
     const authStatus = getAuthStatus();
     const isHealthy = isAuthHealthy();
-    
+
     res.json({
       healthy: isHealthy,
       lastSuccessfulAuth: authStatus.lastSuccessfulAuth,
@@ -217,16 +217,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!query || query.trim().length === 0) {
         return res.status(400).json({ error: "Query parameter 'q' is required and cannot be empty" });
       }
-      
+
       const trimmedQuery = query.trim();
       if (trimmedQuery.length > 120) {
         return res.status(400).json({ error: "Query parameter 'q' must be 120 characters or less" });
       }
-      
+
       // Parse and validate limit parameter
       const limitParam = req.query.limit as string | undefined;
       const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10) || 10, 1), 25) : 10;
-      
+
       // Get authenticated Spotify client
       let spotify;
       try {
@@ -238,11 +238,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           authRequired: true
         });
       }
-      
+
       // Search for playlists
       try {
         const searchResults = await spotify.search(trimmedQuery, ["playlist"], undefined, limit as any);
-        
+
         const results = searchResults.playlists.items.map((p: any) => ({
           id: p.id,
           name: decodeHTMLEntities(p.name),
@@ -258,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })),
           description: p.description ? decodeHTMLEntities(p.description) : undefined
         }));
-        
+
         res.json({ results });
       } catch (searchError: any) {
         // Distinguish rate limit vs other errors
@@ -268,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             rateLimited: true
           });
         }
-        
+
         console.error("Spotify search error:", searchError);
         return res.status(500).json({ 
           error: "Failed to search playlists",
@@ -292,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error: any) {
         return res.status(401).json({ error: error.message });
       }
-      
+
       try {
         // Try with market parameter first
         const playlistData = await spotify.playlists.getPlaylist(req.params.playlistId, "from_token" as any);
@@ -313,18 +313,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Handle 404 errors with search fallback
           if (finalError?.message?.includes("404")) {
             console.log(`Playlist ${req.params.playlistId} returned 404. Attempting search fallback...`);
-            
+
             try {
               // Try to search for the playlist by ID
               const searchResults = await spotify.search(req.params.playlistId, ["playlist"], undefined, 5);
-              
+
               if (searchResults.playlists.items.length > 0) {
                 // Find exact match by ID or use first result
                 const matchedPlaylist = searchResults.playlists.items.find((p: any) => p.id === req.params.playlistId) 
                   || searchResults.playlists.items[0];
-                
+
                 console.log(`Found playlist via search: "${matchedPlaylist.name}" (${matchedPlaylist.id})`);
-                
+
                 // Verify we can actually access this playlist
                 try {
                   const verifiedPlaylist = await spotify.playlists.getPlaylist(matchedPlaylist.id);
@@ -342,7 +342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   console.log("Search result playlist also inaccessible");
                 }
               }
-              
+
               // If search didn't work, return detailed error
               return res.status(404).json({ 
                 error: "This playlist is not accessible through the Spotify API. It may be region-restricted, editorial-only, or require special access.",
@@ -405,11 +405,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const week = req.query.week as string || "latest";
       const tagId = req.query.tagId as string | undefined;
       const playlistId = req.query.playlist as string | undefined;
-      
+
       // Parse and validate pagination parameters
       let limit: number | undefined = undefined;
       let offset = 0;
-      
+
       if (req.query.limit) {
         const parsedLimit = parseInt(req.query.limit as string, 10);
         if (isNaN(parsedLimit) || parsedLimit <= 0) {
@@ -417,7 +417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         limit = parsedLimit;
       }
-      
+
       if (req.query.offset) {
         const parsedOffset = parseInt(req.query.offset as string, 10);
         if (isNaN(parsedOffset) || parsedOffset < 0) {
@@ -425,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         offset = parsedOffset;
       }
-      
+
       // Backward compatible: return plain array if no pagination requested
       if (limit === undefined) {
         let tracks;
@@ -439,7 +439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(tracks);
         return;
       }
-      
+
       // Paginated response - use SQL COUNT and fetch paginated data
       const [totalTracks, paginatedTracks] = await Promise.all([
         // Get total count using SQL COUNT
@@ -455,7 +455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ? storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined, { limit, offset })
           : storage.getTracksByWeek(week, { limit, offset })
       ]);
-      
+
       res.json({
         tracks: paginatedTracks,
         total: totalTracks,
@@ -482,19 +482,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/chartmetric/search/playlists", async (req, res) => {
     try {
       const { q: query, platform = 'spotify', limit = '10' } = req.query;
-      
+
       if (!query || typeof query !== 'string') {
         res.status(400).json({ error: "Query parameter 'q' is required" });
         return;
       }
-      
+
       const { searchPlaylists } = await import("./chartmetric");
       const results = await searchPlaylists(
         query,
         platform as string,
         parseInt(limit as string, 10)
       );
-      
+
       res.json(results);
     } catch (error: any) {
       console.error("Error searching Chartmetric playlists:", error);
@@ -506,9 +506,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const week = req.query.week as string || "latest";
       const format = req.query.format as string || "csv";
-      
+
       const tracks = await storage.getTracksByWeek(week);
-      
+
       if (format === "csv") {
         const headers = ["Track Name", "Artist", "Playlist", "Label", "Publisher", "Songwriter", "ISRC", "Unsigned Score", "Instagram", "Twitter", "TikTok", "Email", "Contact Notes", "Spotify URL"];
         const rows = tracks.map(t => [
@@ -527,12 +527,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           t.contactNotes || "",
           t.spotifyUrl,
         ]);
-        
+
         const csv = [
           headers.join(","),
           ...rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(","))
         ].join("\n");
-        
+
         res.setHeader("Content-Type", "text/csv");
         res.setHeader("Content-Disposition", `attachment; filename="pub-leads-${week}.csv"`);
         res.send(csv);
@@ -590,11 +590,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tracks/tags/batch", async (req, res) => {
     try {
       const { trackIds } = req.body;
-      
+
       if (!Array.isArray(trackIds)) {
         return res.status(400).json({ error: "trackIds must be an array" });
       }
-      
+
       // Fetch tags for all tracks in parallel
       const tagResults = await Promise.all(
         trackIds.map(async (trackId) => {
@@ -607,13 +607,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         })
       );
-      
+
       // Convert array to map for easier lookup
       const tagsMap = tagResults.reduce((acc, { trackId, tags }) => {
         acc[trackId] = tags;
         return acc;
       }, {} as Record<string, any[]>);
-      
+
       res.json(tagsMap);
     } catch (error) {
       console.error("Error fetching batch track tags:", error);
@@ -651,7 +651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         contactNotes,
       });
-      
+
       // Log activity
       await storage.logActivity({
         trackId: req.params.trackId,
@@ -659,7 +659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         eventDescription: "Contact information updated",
         metadata: JSON.stringify({ instagram, twitter, tiktok, email, contactNotes }),
       });
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error("Error updating track contact:", error);
@@ -710,7 +710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tracks/:trackId/full", async (req, res) => {
     try {
       const trackId = req.params.trackId;
-      
+
       // Fetch all track data in parallel
       const [track, tags, activity, artists] = await Promise.all([
         storage.getTrackById(trackId),
@@ -739,7 +739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tracked-playlists", async (req, res) => {
     try {
       const playlists = await storage.getTrackedPlaylists();
-      
+
       // Normalize snake_case DB fields to camelCase for frontend compatibility
       const normalized = playlists.map(p => ({
         id: p.id,
@@ -760,7 +760,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         followers: p.followers,
         imageUrl: (p as any).image_url || p.imageUrl, // Critical: Map snake_case to camelCase
       }));
-      
+
       res.json(normalized);
     } catch (error) {
       console.error("Error fetching tracked playlists:", error);
@@ -771,7 +771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tracked-playlists/:id/chartmetric-analytics", async (req, res) => {
     try {
       const enterpriseEnabled = process.env.CHARTMETRIC_ENTERPRISE_ENABLED === 'true';
-      
+
       if (!enterpriseEnabled) {
         return res.status(501).json({
           error: "Enterprise Access Required",
@@ -797,7 +797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const playlists = await storage.getTrackedPlaylists();
       const playlist = playlists.find(p => p.id === req.params.id);
-      
+
       if (!playlist) {
         return res.status(404).json({ error: "Playlist not found" });
       }
@@ -807,7 +807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { parseChartmetricPlaylistUrl, getPlaylistMetadata, getPlaylistStats } = await import("./chartmetric");
-      
+
       const parsed = parseChartmetricPlaylistUrl(playlist.chartmetricUrl);
       if (!parsed) {
         return res.status(400).json({ error: "Invalid Chartmetric URL format" });
@@ -839,7 +839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Check if frontend requested scraping mode (bypasses Spotify API)
       const useScraping = req.body.useScraping === true;
-      
+
       // Extract optional metadata fields provided by frontend (e.g., from search results)
       const providedMetadata = {
         totalTracks: req.body.totalTracks ?? null,
@@ -847,19 +847,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         followers: req.body.followers ?? null,
         imageUrl: req.body.imageUrl ?? null,
       };
-      
+
       // Check if frontend provided complete metadata (skip API calls)
       const hasProvidedMetadata = providedMetadata.totalTracks !== null;
-      
+
       if (hasProvidedMetadata) {
         console.log(`✅ Received metadata from frontend (search result): totalTracks=${providedMetadata.totalTracks}, curator="${providedMetadata.curator}", skip API fetch`);
       }
-      
+
       // Remove useScraping, isEditorial, and metadata fields from body before validation
       const { useScraping: _unused1, isEditorial: _unused2, totalTracks: _t, curator: _c, followers: _f, imageUrl: _i, ...requestBody } = req.body;
-      
+
       const validatedPlaylist = insertTrackedPlaylistSchema.parse(requestBody);
-      
+
       // Determine if editorial (either explicit flag or scraping mode requested)
       let isEditorial = useScraping ? 1 : 0;
       let name = validatedPlaylist.name; // Will be overridden with fetched name
@@ -869,17 +869,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let followers = providedMetadata.followers;
       let source = 'spotify';
       let imageUrl = providedMetadata.imageUrl;
-      
+
       // For non-editorial playlists without provided metadata, fetch metadata ASYNC (non-blocking)
       // This ensures the dialog closes immediately and updates arrive via WebSocket
       const shouldFetchMetadataAsync = !useScraping && !hasProvidedMetadata;
-      
+
       if (shouldFetchMetadataAsync) {
         console.log(`⚡ Metadata fetch will run ASYNC (non-blocking) for ${validatedPlaylist.playlistId}`);
       } else {
         console.log(`Playlist ${validatedPlaylist.playlistId} added with ${hasProvidedMetadata ? 'provided metadata' : 'scraping mode'} - ${hasProvidedMetadata ? 'using frontend data' : 'metadata will be fetched during track fetch'}`);
       }
-      
+
       const playlist = await storage.addTrackedPlaylist({
         ...validatedPlaylist,
         name, // ← CRITICAL: Override placeholder with fetched name
@@ -893,7 +893,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isComplete: 0,
         lastFetchCount: 0,
       });
-      
+
       // Log activity history for playlist addition
       try {
         await storage.logActivity({
@@ -915,7 +915,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Failed to log playlist addition activity:', activityError);
         // Don't block response if activity logging fails
       }
-      
+
       // Broadcast playlist addition to frontend
       broadcast('playlist_updated', {
         playlistId: playlist.playlistId,
@@ -928,7 +928,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           imageUrl: playlist.imageUrl,
         },
       });
-      
+
       // Trigger async metadata fetch + track fetch in background (fire-and-forget, non-blocking)
       // Clone closure-specific variables to avoid race conditions between concurrent requests
       const asyncPayload = {
@@ -937,22 +937,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         playlistName: playlist.name,
         shouldFetchMetadata: shouldFetchMetadataAsync,
       };
-      
+
       setImmediate(() => {
         (async () => {
           try {
             // Step 1: Fetch metadata if needed (async, updates DB + broadcasts to frontend)
             if (asyncPayload.shouldFetchMetadata) {
               console.log(`🔄 [Async] Fetching metadata for ${asyncPayload.playlistName} (${asyncPayload.playlistId})`);
-              
+
               const [chartmetricResult, spotifyResult] = await Promise.allSettled([
                 getPlaylistMetadata(asyncPayload.playlistId),
                 fetchSpotifyPlaylistMetadata(asyncPayload.playlistId),
               ]);
-              
+
               let metadataUpdates: any = {};
               let metadataSource: 'chartmetric' | 'spotify' | 'none' = 'none';
-              
+
               if (chartmetricResult.status === 'fulfilled' && chartmetricResult.value?.name && chartmetricResult.value?.trackCount !== undefined) {
                 const chartmetricMetadata = chartmetricResult.value;
                 metadataUpdates = {
@@ -984,10 +984,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 };
                 metadataSource = 'none';
               }
-              
+
               if (Object.keys(metadataUpdates).length > 0) {
                 console.log(`✅ [Async] Metadata fetch success (${metadataSource}): updating ${asyncPayload.playlistName}`);
-                
+
                 // Use the correct storage method for metadata updates
                 const metadataOnly = {
                   name: metadataUpdates.name,
@@ -997,7 +997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   imageUrl: metadataUpdates.imageUrl,
                 };
                 await storage.updateTrackedPlaylistMetadata(asyncPayload.playlistDbId, metadataOnly);
-                
+
                 // Update additional fields if present
                 if (metadataUpdates.fetchMethod || metadataUpdates.isEditorial !== undefined) {
                   await storage.updatePlaylistMetadata(asyncPayload.playlistDbId, {
@@ -1005,7 +1005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     isEditorial: metadataUpdates.isEditorial,
                   });
                 }
-                
+
                 // Broadcast metadata updates to frontend via WebSocket
                 broadcast('playlist_updated', {
                   playlistId: asyncPayload.playlistId,
@@ -1014,19 +1014,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 });
               }
             }
-            
+
             // Step 2: Auto-trigger track fetch
             console.log(`🚀 Auto-triggering fetch for newly added playlist: ${asyncPayload.playlistName}`);
-            
+
             const { triggerPlaylistFetch } = await import("./services/playlistFetchService");
-            
+
             const result = await triggerPlaylistFetch({ 
               mode: 'specific',
               playlistId: asyncPayload.playlistId
             });
-            
+
             console.log(`✅ Auto-fetch completed for: ${asyncPayload.playlistName} (${result.tracksInserted} tracks inserted)`);
-            
+
             // Broadcast final completion
             broadcast('playlist_fetch_complete', {
               playlistId: asyncPayload.playlistId,
@@ -1044,7 +1044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         })();
       });
-      
+
       res.json(playlist);
     } catch (error: any) {
       console.error("Error adding tracked playlist:", error);
@@ -1058,23 +1058,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const playlist = await storage.getTrackedPlaylists();
       const targetPlaylist = playlist.find(p => p.id === req.params.id);
-      
+
       if (!targetPlaylist) {
         return res.status(404).json({ error: "Playlist not found" });
       }
-      
+
       let curator = null;
       let followers = null;
       let totalTracks = null;
       let imageUrl = null;
       let spotifySucceeded = false;
       let chartmetricSucceeded = false;
-      
+
       // Try to fetch from Spotify API first (works for most playlists)
       try {
         const spotify = await getUncachableSpotifyClient();
         const playlistData = await spotify.playlists.getPlaylist(targetPlaylist.playlistId, "from_token" as any);
-        
+
         curator = playlistData.owner?.display_name || null;
         followers = playlistData.followers?.total || null;
         totalTracks = playlistData.tracks?.total || null;
@@ -1083,16 +1083,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error: any) {
         console.log(`Spotify API failed for "${targetPlaylist.name}": ${error.message}`);
       }
-      
+
       // For editorial playlists with Chartmetric URL, use it as fallback for missing data
       if (targetPlaylist.isEditorial && targetPlaylist.chartmetricUrl) {
         const { parseChartmetricPlaylistUrl, getPlaylistMetadata } = await import("./chartmetric");
         const parsed = parseChartmetricPlaylistUrl(targetPlaylist.chartmetricUrl);
-        
+
         if (parsed) {
           try {
             const chartmetricData = await getPlaylistMetadata(parsed.id, parsed.platform);
-            
+
             if (chartmetricData) {
               chartmetricSucceeded = true;
               // Use Chartmetric data as fallback only for missing fields
@@ -1115,14 +1115,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
-      
+
       // If both APIs failed and this is an editorial playlist, try scraping
       if (!spotifySucceeded && !chartmetricSucceeded && targetPlaylist.isEditorial) {
         console.log(`APIs failed for editorial playlist "${targetPlaylist.name}", attempting scraping fallback...`);
         try {
           const { fetchEditorialTracksViaNetwork } = await import("./scrapers/spotifyEditorialNetwork");
           const scrapeResult = await fetchEditorialTracksViaNetwork(targetPlaylist.spotifyUrl);
-          
+
           if (scrapeResult.success && scrapeResult.playlistName) {
             // Use scraped metadata
             const name = scrapeResult.playlistName;
@@ -1130,7 +1130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             followers = scrapeResult.followers || null;
             imageUrl = scrapeResult.imageUrl || null;
             totalTracks = scrapeResult.totalCaptured || null;
-            
+
             // Update with name too since scraping provides it
             await storage.updateTrackedPlaylistMetadata(req.params.id, {
               name,
@@ -1139,9 +1139,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               totalTracks,
               imageUrl,
             });
-            
+
             console.log(`Scraping successful for "${name}": curator="${curator}", followers=${followers}, totalTracks=${totalTracks}`);
-            
+
             return res.json({ 
               success: true, 
               name,
@@ -1158,25 +1158,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error(`Scraping fallback error: ${scrapeError.message}`);
         }
       }
-      
+
       // Only update storage if we got data from at least one source
       if (!spotifySucceeded && !chartmetricSucceeded) {
         return res.status(500).json({ 
           error: "All metadata sources failed (Spotify API, Chartmetric API, and scraping). Please try again later." 
         });
       }
-      
+
       // Build update object with only non-null values to avoid overwriting existing data
       const updateData: { curator?: string | null; followers?: number | null; totalTracks?: number | null; imageUrl?: string | null } = {};
       if (curator !== null) updateData.curator = curator;
       if (followers !== null) updateData.followers = followers;
       if (totalTracks !== null) updateData.totalTracks = totalTracks;
       if (imageUrl !== null) updateData.imageUrl = imageUrl;
-      
+
       await storage.updateTrackedPlaylistMetadata(req.params.id, updateData);
-      
+
       console.log(`Refreshed metadata for "${targetPlaylist.name}": curator="${curator}", followers=${followers}, totalTracks=${totalTracks}, imageUrl=${imageUrl ? 'yes' : 'no'}`);
-      
+
       res.json({ 
         success: true, 
         curator,
@@ -1204,16 +1204,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/enrich-credits", async (req, res) => {
     try {
       const { playlistId, trackIds, limit = 50 } = req.body;
-      
+
       console.log(`\n🎭 Manual Phase 2 Credits Enrichment Started`);
       console.log(`   Playlist ID: ${playlistId || 'N/A'}`);
       console.log(`   Track IDs: ${trackIds ? `${trackIds.length} specified` : 'N/A'}`);
       console.log(`   Limit: ${limit}`);
-      
+
       // Get tracks that need Phase 2 enrichment (missing credits/streams)
       const today = new Date().toISOString().split('T')[0];
       let allTracks = await storage.getTracksByWeek(today);
-      
+
       // Filter by track IDs if specified (highest priority)
       if (trackIds && Array.isArray(trackIds) && trackIds.length > 0) {
         allTracks = allTracks.filter(t => trackIds.includes(t.id));
@@ -1222,12 +1222,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       else if (playlistId) {
         allTracks = allTracks.filter(t => t.playlistId === playlistId);
       }
-      
+
       // Filter to only tracks missing Phase 2 data
       const unenrichedTracks = allTracks.filter(t => 
         !t.songwriter && !t.producer && !t.publisher && !t.spotifyStreams
       ).slice(0, limit);
-      
+
       if (unenrichedTracks.length === 0) {
         console.log(`ℹ️  No tracks need Phase 2 enrichment`);
         return res.json({
@@ -1237,13 +1237,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "All tracks already enriched or no tracks found"
         });
       }
-      
+
       console.log(`📋 Found ${unenrichedTracks.length} tracks needing enrichment`);
-      
+
       // Import and run Phase 2 enrichment
       const { enrichTracksWithCredits } = await import("./enrichment/spotifyCreditsScaper");
       const phase2Result = await enrichTracksWithCredits(unenrichedTracks);
-      
+
       // Update tracks with enriched data
       for (const enrichedTrack of phase2Result.enrichedTracks) {
         await storage.updateTrackMetadata(enrichedTrack.trackId, {
@@ -1253,34 +1253,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           label: enrichedTrack.label ?? undefined,
           spotifyStreams: enrichedTrack.spotifyStreams ?? undefined,
         });
-        
+
         // Log per-track activity
         const creditsFound = [];
         if (enrichedTrack.songwriter) creditsFound.push('songwriter');
         if (enrichedTrack.producer) creditsFound.push('producer');
         if (enrichedTrack.publisher) creditsFound.push('publisher');
         if (enrichedTrack.label) creditsFound.push('label');
-        
+
         const streamsText = enrichedTrack.spotifyStreams 
           ? `, ${enrichedTrack.spotifyStreams.toLocaleString()} streams` 
           : '';
-        
+
         await storage.logActivity({
           entityType: 'track',
           trackId: enrichedTrack.trackId,
           eventType: 'credits_enriched',
           eventDescription: `Phase 2: Scraped ${creditsFound.length > 0 ? creditsFound.join(', ') : 'no credits'}${streamsText}`,
-          metadata: JSON.stringify({
-            phase: 2,
-            songwriter: enrichedTrack.songwriter,
-            producer: enrichedTrack.producer,
-            publisher: enrichedTrack.publisher,
-            label: enrichedTrack.label,
-            spotifyStreams: enrichedTrack.spotifyStreams,
-          })
         });
       }
-      
+
       // Log activity
       if (phase2Result.tracksEnriched > 0) {
         // Get internal playlist ID if provided
@@ -1289,7 +1281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const playlist = await storage.getTrackedPlaylistBySpotifyId(playlistId);
           internalPlaylistId = playlist?.id || null;
         }
-        
+
         await storage.logActivity({
           entityType: 'track',
           trackId: null,
@@ -1306,16 +1298,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
         });
       }
-      
+
       // Broadcast update
       broadcastEnrichmentUpdate({
         type: 'batch_complete',
         enrichedCount: phase2Result.tracksEnriched,
         totalCount: phase2Result.tracksProcessed,
       });
-      
+
       console.log(`✅ Manual Phase 2 Complete: ${phase2Result.tracksEnriched}/${phase2Result.tracksProcessed} tracks enriched`);
-      
+
       res.json({
         success: true,
         tracksProcessed: phase2Result.tracksProcessed,
@@ -1323,7 +1315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         errors: phase2Result.errors,
         errorDetails: phase2Result.errorDetails.slice(0, 10), // First 10 errors
       });
-      
+
     } catch (error: any) {
       console.error("Manual Phase 2 enrichment failed:", error);
       res.status(500).json({ 
@@ -1335,16 +1327,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/enrich-metadata", async (req, res) => {
     try {
       const { mode = 'all', trackId, playlistName, limit = 50 } = req.body;
-      
+
       let unenrichedTracks = await storage.getUnenrichedTracks(limit);
-      
+
       // Filter based on mode
       if (mode === 'track' && trackId) {
         unenrichedTracks = unenrichedTracks.filter(t => t.id === trackId);
       } else if (mode === 'playlist' && playlistName) {
         unenrichedTracks = unenrichedTracks.filter(t => t.playlistName === playlistName);
       }
-      
+
       if (unenrichedTracks.length === 0) {
         return res.json({ 
           success: true, 
@@ -1360,7 +1352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let skippedNoIsrc = 0;
       let nameBasedCount = 0;
       let artistLinksCount = 0;
-      
+
       for (const track of unenrichedTracks) {
         let enrichmentTier = "none";
         let trackMetadata: any = {};
@@ -1370,7 +1362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             console.log(`[Tier 1] Using existing ISRC: ${track.isrc}`);
             const metadata = await searchByISRC(track.isrc);
-            
+
             if (metadata.publisher || metadata.songwriter) {
               trackMetadata = {
                 publisher: metadata.publisher,
@@ -1383,7 +1375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } else {
               trackMetadata.enrichedAt = new Date();
             }
-            
+
             await new Promise(resolve => setTimeout(resolve, 1000));
           } catch (error) {
             console.error(`Error enriching track ${track.id}:`, error);
@@ -1395,19 +1387,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const spotify = await getUncachableSpotifyClient();
             console.log(`[Tier 2] No ISRC, searching Spotify: ${track.trackName} by ${track.artistName}`);
             const spotifyData = await searchTrackByNameAndArtist(track.trackName, track.artistName);
-            
+
             if (spotifyData && spotifyData.isrc) {
               trackMetadata.isrc = spotifyData.isrc;
               trackMetadata.label = spotifyData.label || track.label || undefined;
               trackMetadata.spotifyUrl = spotifyData.spotifyUrl || track.spotifyUrl;
-              
+
               console.log(`✅ Found ISRC via Spotify: ${spotifyData.isrc}`);
               spotifyEnrichedCount++;
-              
+
               await new Promise(resolve => setTimeout(resolve, 500));
-              
+
               const metadata = await searchByISRC(spotifyData.isrc);
-              
+
               if (metadata.publisher || metadata.songwriter) {
                 trackMetadata.publisher = metadata.publisher;
                 trackMetadata.songwriter = metadata.songwriter;
@@ -1416,20 +1408,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 enrichedCount++;
                 enrichmentTier = "spotify-isrc";
               }
-              
+
               await new Promise(resolve => setTimeout(resolve, 1000));
             }
           } catch (error) {
             console.log('Spotify not available for enrichment, skipping...');
           }
         }
-        
+
         // TIER 3: Name-Based MusicBrainz Fallback (score ≥ 90)
         if (enrichmentTier === "none") {
           try {
             console.log(`[Tier 3] Trying name-based search: ${track.trackName} by ${track.artistName}`);
             const metadata = await searchRecordingByName(track.trackName, track.artistName, 90);
-            
+
             if (metadata.songwriter) {
               trackMetadata.songwriter = metadata.songwriter;
               trackMetadata.enrichedAt = new Date();
@@ -1449,38 +1441,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
             skippedNoIsrc++;
           }
         }
-        
+
         if (!trackMetadata.enrichedAt && enrichmentTier === "none") {
           skippedNoIsrc++;
         }
-        
+
         if (Object.keys(trackMetadata).length > 0) {
           await storage.updateTrackMetadata(track.id, trackMetadata);
           // Schedule debounced metrics update
           scheduleMetricsUpdate({ source: "metadata_enrichment" });
         }
-        
+
         // Artist Link Extraction (if we got songwriters)
         if (trackMetadata.songwriter) {
           try {
             const songwriters = trackMetadata.songwriter.split(',').map((s: string) => s.trim());
-            
+
             for (const songwriterName of songwriters) {
               if (!songwriterName) continue;
-              
+
               const artistResult = await searchArtistByName(songwriterName);
-              
+
               if (artistResult && artistResult.score >= 90) {
                 const links = await getArtistExternalLinks(artistResult.id);
-                
+
                 const artist = await storage.createOrUpdateArtist({
                   name: songwriterName,
                   musicbrainzId: artistResult.id,
                   ...links,
                 });
-                
+
                 await storage.linkArtistToTrack(artist.id, track.id);
-                
+
                 if (Object.keys(links).length > 0) {
                   artistLinksCount++;
                   console.log(`✅ Found ${Object.keys(links).length} social links for ${songwriterName}`);
@@ -1492,7 +1484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
-      
+
       let message = `Enriched ${enrichedCount} tracks`;
       if (nameBasedCount > 0) {
         message += ` (${nameBasedCount} via name-based fallback)`;
@@ -1526,9 +1518,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/enrich-artists", async (req, res) => {
     try {
       const { limit = 50 } = req.body;
-      
+
       const tracksNeedingArtists = await storage.getTracksNeedingArtistEnrichment(limit);
-      
+
       if (tracksNeedingArtists.length === 0) {
         return res.json({
           success: true,
@@ -1540,33 +1532,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`Starting artist enrichment for ${tracksNeedingArtists.length} tracks...`);
-      
+
       let artistsCreated = 0;
       let linksFound = 0;
-      
+
       for (const track of tracksNeedingArtists) {
         if (!track.songwriter) continue;
-        
+
         try {
           const songwriters = track.songwriter.split(',').map(s => s.trim());
-          
+
           for (const songwriterName of songwriters) {
             if (!songwriterName) continue;
-            
+
             const artistResult = await searchArtistByName(songwriterName);
-            
+
             if (artistResult && artistResult.score >= 90) {
               const links = await getArtistExternalLinks(artistResult.id);
-              
+
               const artist = await storage.createOrUpdateArtist({
                 name: songwriterName,
                 musicbrainzId: artistResult.id,
                 ...links,
               });
-              
+
               await storage.linkArtistToTrack(artist.id, track.id);
               artistsCreated++;
-              
+
               if (Object.keys(links).length > 0) {
                 linksFound++;
                 console.log(`✅ Found ${Object.keys(links).length} social links for ${songwriterName}`);
@@ -1577,7 +1569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error(`Error enriching artists for track ${track.id}:`, error);
         }
       }
-      
+
       res.json({
         success: true,
         artistsCreated,
@@ -1594,9 +1586,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/enrich-chartmetric", async (req, res) => {
     try {
       const { limit = 50 } = req.body;
-      
+
       const tracksNeedingEnrichment = await storage.getTracksNeedingChartmetricEnrichment(limit);
-      
+
       if (tracksNeedingEnrichment.length === 0) {
         return res.json({
           success: true,
@@ -1609,12 +1601,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`\n🎵 Starting Chartmetric enrichment for ${tracksNeedingEnrichment.length} tracks...`);
-      
+
       let enrichedCount = 0;
       let failedNoIsrc = 0;
       let failedApi = 0;
       let processedCount = 0;
-      
+
       // Process tracks sequentially to respect rate limiting
       for (const track of tracksNeedingEnrichment) {
         try {
@@ -1629,16 +1621,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           console.log(`\n📊 [${processedCount + 1}/${tracksNeedingEnrichment.length}] Enriching: ${track.trackName} by ${track.artistName}`);
-          
+
           // Attempt enrichment with retry logic
           let retries = 0;
           let success = false;
           let lastError: Error | null = null;
-          
+
           while (retries < 3 && !success) {
             try {
               const chartmetricData = await enrichTrackWithChartmetric(track);
-              
+
               if (chartmetricData) {
                 // Update track with Chartmetric data
                 await storage.updateTrackChartmetric(track.id, {
@@ -1655,7 +1647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   moods: chartmetricData.moods,
                   activities: chartmetricData.activities
                 });
-                
+
                 // Log main enrichment activity
                 const streamsText = chartmetricData.spotifyStreams !== null && chartmetricData.spotifyStreams !== undefined
                   ? `${chartmetricData.spotifyStreams.toLocaleString()} streams` 
@@ -1664,13 +1656,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const velocityText = chartmetricData.streamingVelocity !== null && chartmetricData.streamingVelocity !== undefined
                   ? `, ${chartmetricData.streamingVelocity} velocity` 
                   : '';
-                
+
                 await storage.logActivity({
                   trackId: track.id,
                   eventType: "chartmetric_enriched",
                   eventDescription: `Chartmetric analytics: ${streamsText}, ${stageText}${velocityText}`
                 });
-                
+
                 // Log songwriter IDs if found
                 if (chartmetricData.songwriterIds && chartmetricData.songwriterIds.length > 0) {
                   await storage.logActivity({
@@ -1679,7 +1671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     eventDescription: `Found ${chartmetricData.songwriterIds.length} songwriter Chartmetric ID${chartmetricData.songwriterIds.length > 1 ? 's' : ''}`
                   });
                 }
-                
+
                 // Log moods if found
                 if (chartmetricData.moods && chartmetricData.moods.length > 0) {
                   await storage.logActivity({
@@ -1688,7 +1680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     eventDescription: `Moods: ${chartmetricData.moods.slice(0, 3).join(', ')}${chartmetricData.moods.length > 3 ? `, +${chartmetricData.moods.length - 3} more` : ''}`
                   });
                 }
-                
+
                 // Log activities if found
                 if (chartmetricData.activities && chartmetricData.activities.length > 0) {
                   await storage.logActivity({
@@ -1697,10 +1689,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     eventDescription: `Activities: ${chartmetricData.activities.slice(0, 3).join(', ')}${chartmetricData.activities.length > 3 ? `, +${chartmetricData.activities.length - 3} more` : ''}`
                   });
                 }
-                
+
                 enrichedCount++;
                 success = true;
-                
+
                 const songwriterInfo = chartmetricData.songwriterIds?.length ? `, ${chartmetricData.songwriterIds.length} songwriter IDs` : '';
                 console.log(`✅ Enriched with Chartmetric: ${chartmetricData.spotifyStreams?.toLocaleString()} streams, stage: ${chartmetricData.trackStage}${songwriterInfo}`);
               } else {
@@ -1709,14 +1701,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   chartmetricStatus: "failed_api",
                   chartmetricEnrichedAt: new Date()
                 });
-                
+
                 // Log failed enrichment
                 await storage.logActivity({
                   trackId: track.id,
                   eventType: "chartmetric_failed",
                   eventDescription: "No Chartmetric data found for this track"
                 });
-                
+
                 failedApi++;
                 success = true;
                 console.log(`⚠️  No Chartmetric data found for track`);
@@ -1724,7 +1716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } catch (error: any) {
               lastError = error;
               retries++;
-              
+
               if (retries < 3) {
                 // Exponential backoff: 2s, 4s, 8s
                 const backoffMs = Math.pow(2, retries) * 1000;
@@ -1733,7 +1725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
           }
-          
+
           // If all retries failed, mark as failed
           if (!success && lastError) {
             await storage.updateTrackChartmetric(track.id, {
@@ -1743,7 +1735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             failedApi++;
             console.error(`❌ Failed after 3 retries: ${lastError.message}`);
           }
-          
+
         } catch (error: any) {
           console.error(`❌ Error processing track ${track.id}:`, error.message);
           await storage.updateTrackChartmetric(track.id, {
@@ -1752,9 +1744,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           failedApi++;
         }
-        
+
         processedCount++;
-        
+
         // Send WebSocket progress update every 5 tracks
         if (processedCount % 5 === 0 || processedCount === tracksNeedingEnrichment.length) {
           broadcastEnrichmentUpdate({
@@ -1766,12 +1758,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       const message = `Enriched ${enrichedCount} tracks with Chartmetric analytics`;
       const details: string[] = [];
       if (failedNoIsrc > 0) details.push(`${failedNoIsrc} skipped (no ISRC)`);
       if (failedApi > 0) details.push(`${failedApi} failed (API errors)`);
-      
+
       res.json({
         success: true,
         enrichedCount,
@@ -1789,9 +1781,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/enrich-credits", async (req, res) => {
     try {
       const { mode = 'all', trackId, playlistName, limit = 10 } = req.body;
-      
+
       let tracks: PlaylistSnapshot[] = [];
-      
+
       // Handle different modes
       if (mode === 'track' && trackId) {
         // For single track, fetch it directly
@@ -1802,13 +1794,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // For 'all' or 'playlist', get unenriched tracks first
         tracks = await storage.getUnenrichedTracks(limit);
-        
+
         // Filter by playlist if needed
         if (mode === 'playlist' && playlistName) {
           tracks = tracks.filter(t => t.playlistName === playlistName);
         }
       }
-      
+
       if (tracks.length === 0) {
         return res.json({ 
           success: true, 
@@ -1820,43 +1812,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`Starting credits enrichment for ${tracks.length} tracks...`);
-      
+
       let enrichedCount = 0;
       let failedCount = 0;
-      
+
       for (const track of tracks) {
         try {
           console.log(`Scraping credits for: ${track.trackName} by ${track.artistName}`);
-          
+
           const creditsResult = await scrapeTrackCreditsWithTimeout(track.spotifyUrl, 45000);
-          
+
           if (creditsResult.success && creditsResult.credits) {
             const { writers, composers, labels, publishers } = creditsResult.credits;
-            
+
             // Combine writers and composers into songwriter field
             const songwriters = [...writers, ...composers].filter(Boolean);
             const songwriterString = songwriters.length > 0 ? songwriters.join(", ") : undefined;
             const publisherString = publishers.length > 0 ? publishers.join(", ") : undefined;
             const labelString = labels.length > 0 ? labels.join(", ") : undefined;
-            
+
             const updateData: any = {
               songwriter: songwriterString,
               publisher: publisherString,
               label: labelString,
               enrichedAt: new Date(),
             };
-            
+
             // Also capture Spotify stream count if available
             if (creditsResult.spotifyStreams) {
               updateData.spotifyStreams = creditsResult.spotifyStreams;
               console.log(`✅ Captured Spotify streams: ${creditsResult.spotifyStreams.toLocaleString()}`);
             }
-            
+
             await storage.updateTrackMetadata(track.id, updateData);
-            
+
             console.log(`✅ Enriched: ${track.trackName} - ${songwriters.length} songwriters, ${labels.length} labels, ${publishers.length} publishers`);
             enrichedCount++;
-            
+
             // Broadcast real-time update
             broadcastEnrichmentUpdate({
               type: 'track_enriched',
@@ -1868,7 +1860,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.warn(`⚠️ Failed to scrape credits for ${track.trackName}: ${creditsResult.error}`);
             failedCount++;
           }
-          
+
           // Rate limiting: 2.5 seconds between requests
           await new Promise(resolve => setTimeout(resolve, 2500));
         } catch (error: any) {
@@ -1876,7 +1868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           failedCount++;
         }
       }
-      
+
       res.json({ 
         success: true, 
         enrichedCount,
@@ -1894,7 +1886,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/enrich-track/:id", async (req, res) => {
     try {
       const { id: trackId } = req.params;
-      
+
       // Fetch track
       const track = await storage.getTrackById(trackId);
       if (!track) {
@@ -1913,39 +1905,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const spotify = await getUncachableSpotifyClient();
           console.log(`[Tier 0: Spotify API] Fetching comprehensive metadata...`);
           const spotifyData = await searchTrackByNameAndArtist(track.trackName, track.artistName);
-          
+
           if (spotifyData) {
             if (spotifyData.isrc) {
               updates.isrc = spotifyData.isrc;
               console.log(`✅ [Tier 0] Recovered ISRC: ${spotifyData.isrc}`);
             }
-            
+
             // Update label if missing
             if (spotifyData.label && !track.label) {
               updates.label = spotifyData.label;
             }
-            
+
             // Update album art if missing
             if (spotifyData.albumArt && !track.albumArt) {
               updates.albumArt = spotifyData.albumArt;
             }
-            
+
             // Store additional Spotify metadata
             if (spotifyData.popularity !== undefined) {
               console.log(`📊 Spotify popularity: ${spotifyData.popularity}/100`);
             }
-            
+
             // Log audio features if available (can be used as mood indicators)
             if (spotifyData.audioFeatures) {
               console.log(`🎵 Audio features: energy=${spotifyData.audioFeatures.energy?.toFixed(2)}, valence=${spotifyData.audioFeatures.valence?.toFixed(2)}`);
             }
-            
+
             // Log artist metadata
             if (spotifyData.artists && spotifyData.artists.length > 0) {
               const primaryArtist = spotifyData.artists[0];
               console.log(`👤 Artist: ${primaryArtist.name} - Popularity: ${primaryArtist.popularity}, Genres: ${primaryArtist.genres?.join(', ') || 'N/A'}`);
             }
-            
+
             await storage.logActivity({
               trackId: track.id,
               eventType: "spotify_metadata_enriched",
@@ -1966,26 +1958,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         console.log(`[Tier 1: Spotify Credits] Scraping...`);
         const creditsResult = await scrapeTrackCreditsWithTimeout(track.spotifyUrl, 45000);
-        
+
         if (creditsResult.success && creditsResult.credits) {
           const { writers, composers, labels, publishers } = creditsResult.credits;
           const songwriters = [...writers, ...composers].filter(Boolean);
           const songwriterString = songwriters.length > 0 ? songwriters.join(", ") : undefined;
           const publisherString = publishers.length > 0 ? publishers.join(", ") : undefined;
           const labelString = labels.length > 0 ? labels.join(", ") : undefined;
-          
+
           updates.songwriter = songwriterString;
           updates.publisher = publisherString;
           updates.label = labelString;
-          
+
           // Store Spotify stream count if available (fallback for tracks without Chartmetric data)
           if (creditsResult.spotifyStreams && !updates.spotifyStreams) {
             updates.spotifyStreams = creditsResult.spotifyStreams;
             console.log(`✅ Captured Spotify streams from page: ${creditsResult.spotifyStreams.toLocaleString()}`);
           }
-          
+
           enrichmentTier = "spotify-credits";
-          
+
           tierResults.push({
             tier: "spotify-credits",
             success: true,
@@ -2017,16 +2009,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`[Tier 2: MLC] Looking up publisher status...`);
           const { enrichTrackWithMLC } = await import('./mlc.js');
-          
+
           const mlcEnrichment = await enrichTrackWithMLC(effectiveIsrc);
-          
+
           if (mlcEnrichment) {
             updates.publisherStatus = mlcEnrichment.publisherStatus;
             updates.collectionShare = mlcEnrichment.collectionShare;
             updates.ipiNumber = mlcEnrichment.ipiNumber;
             updates.iswc = mlcEnrichment.iswc;
             updates.mlcSongCode = mlcEnrichment.mlcSongCode;
-            
+
             tierResults.push({
               tier: "mlc",
               success: true,
@@ -2067,15 +2059,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // TIER 3: MusicBrainz (social links fallback)
       const musicbrainzResults: { name: string; found: boolean; hasLinks: boolean }[] = [];
-      
+
       if (updates.songwriter) {
         try {
           console.log(`[Tier 3: MusicBrainz] Enriching social links...`);
           const { searchArtistByName, getArtistExternalLinks } = await import('./musicbrainz.js');
-          
+
           const songwriterNames = updates.songwriter.split(',').map((s: string) => s.trim());
           let linksFound = 0;
-          
+
           for (const songwriterName of songwriterNames.slice(0, 3)) {
             try {
               const artistResult = await searchArtistByName(songwriterName);
@@ -2094,12 +2086,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   website: links.website,
                 });
                 await storage.linkArtistToTrack(artist.id, track.id);
-                
+
                 const hasLinks = Object.keys(links).some(k => links[k as keyof typeof links]);
                 if (hasLinks) {
                   linksFound++;
                 }
-                
+
                 musicbrainzResults.push({
                   name: songwriterName,
                   found: true,
@@ -2121,7 +2113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
           }
-          
+
           tierResults.push({
             tier: "musicbrainz",
             success: linksFound > 0,
@@ -2168,7 +2160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Create a temporary track object with the recovered ISRC for Chartmetric
             const trackWithIsrc = { ...track, isrc: effectiveIsrc };
             const chartmetricData = await enrichTrackWithChartmetric(trackWithIsrc);
-          
+
           if (chartmetricData) {
             updates.chartmetricId = chartmetricData.chartmetricId;
             updates.chartmetricStatus = "success";
@@ -2182,12 +2174,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             updates.composerName = chartmetricData.composerName;
             updates.moods = chartmetricData.moods;
             updates.activities = chartmetricData.activities;
-            
+
             const streamsText = chartmetricData.spotifyStreams !== null && chartmetricData.spotifyStreams !== undefined
               ? `${chartmetricData.spotifyStreams.toLocaleString()} streams` 
               : 'unknown streams';
             const stageText = chartmetricData.trackStage || 'unknown stage';
-            
+
             tierResults.push({
               tier: "chartmetric",
               success: true,
@@ -2200,14 +2192,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 activities: chartmetricData.activities
               }
             });
-            
+
             // Log Chartmetric activity
             await storage.logActivity({
               trackId: track.id,
               eventType: "chartmetric_enriched",
               eventDescription: `Chartmetric analytics: ${streamsText}, ${stageText}`,
             });
-            
+
             console.log(`✅ [Tier 4] Success: ${streamsText}`);
           } else {
             // Log activity when Chartmetric has no data
@@ -2216,7 +2208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               eventType: "chartmetric_enriched",
               eventDescription: `No Chartmetric data found for ISRC ${effectiveIsrc}`,
             });
-            
+
             tierResults.push({
               tier: "chartmetric",
               success: false,
@@ -2246,7 +2238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update track with all collected data
       const successfulTiers = tierResults.filter(t => t.success).length;
-      
+
       // Only set enrichedAt if we actually got some data
       if (successfulTiers > 0 || Object.keys(updates).length > 0) {
         updates.enrichedAt = new Date();
@@ -2258,7 +2250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .filter(t => t.success)
           .map(t => t.tier)
           .join(', ');
-        
+
         await storage.logActivity({
           trackId: track.id,
           eventType: "track_enriched",
@@ -2314,7 +2306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .filter(t => !t.success)
           .map(t => `${t.tier}: ${t.message}`)
           .join('; ');
-        
+
         return res.status(500).json({
           error: `Enrichment failed for all tiers. ${failureMessages}`,
           errorType: "EnrichmentError",
@@ -2335,7 +2327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tierResults,
         summary: `Completed ${successfulTiers}/${tierResults.length} tiers successfully`
       });
-      
+
       console.log(`[Unified Enrichment] Complete: ${successfulTiers}/${tierResults.length} tiers successful`);
     } catch (error: any) {
       console.error("[Unified Enrichment] Error:", {
@@ -2344,12 +2336,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stack: error.stack?.split('\n').slice(0, 3).join('\n'),
         trackId: req.params.id
       });
-      
+
       // Provide detailed error message to frontend
       const errorMessage = error.name === 'TimeoutError' 
         ? "Enrichment timed out - the track page took too long to load"
         : error.message || "Failed to enrich track";
-      
+
       res.status(500).json({ 
         error: errorMessage,
         errorType: error.name || "UnknownError"
@@ -2360,7 +2352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Railway-backed track enrichment endpoint
   app.post("/api/playlists/:playlistId/enrich-tracks", async (req, res) => {
     const enrichingTrackIds: string[] = [];
-    
+
     try {
       const { playlistId } = req.params;
       const scraperApiUrl = process.env.SCRAPER_API_URL;
@@ -2446,19 +2438,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (!track) continue;
 
             if (result.success && result.credits) {
-              // Combine songwriters and composers
-              const songwriters = [
-                ...(result.credits.songwriters || []),
-                ...(result.credits.composers || [])
-              ].filter(Boolean);
-
-              const publishers = result.credits.publishers || [];
-              const labels = result.credits.labels || [];
-
+              // Update track with enriched data
               await storage.updateTrackMetadata(result.trackId, {
-                songwriter: songwriters.length > 0 ? songwriters.join(', ') : undefined,
-                publisher: publishers.length > 0 ? publishers.join(', ') : undefined,
-                label: labels.length > 0 ? labels.join(', ') : undefined,
+                songwriter: result.credits.songwriters?.join(', ') || undefined,
+                publisher: result.credits.publishers?.join(', ') || undefined,
+                label: result.credits.labels?.join(', ') || undefined,
                 enrichedAt: new Date(),
                 enrichmentStatus: 'completed'
               });
@@ -2480,7 +2464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         } catch (error: any) {
           console.error(`Batch ${i + 1} error:`, error.message);
-          
+
           // Mark all tracks in batch as failed
           for (const track of batch) {
             await storage.updateTrackMetadata(track.id, {
@@ -2508,7 +2492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error: any) {
       console.error('Error in Railway enrichment:', error);
-      
+
       // Reset any tracks still in enriching state back to pending
       if (enrichingTrackIds.length > 0) {
         try {
@@ -2518,7 +2502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('Failed to reset enriching tracks:', resetError);
         }
       }
-      
+
       res.status(500).json({
         success: false,
         error: error.message || 'Failed to enrich tracks'
@@ -2529,7 +2513,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tracks/:trackId/ai-insights", async (req, res) => {
     try {
       const track = await storage.getTrackById(req.params.trackId);
-      
+
       if (!track) {
         return res.status(404).json({ error: "Track not found" });
       }
@@ -2545,10 +2529,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/test-spotify", async (req, res) => {
     try {
       const spotify = await getUncachableSpotifyClient();
-      
+
       // Get user's playlists
       const userPlaylists = await spotify.currentUser.playlists.playlists(10);
-      
+
       // Try to fetch tracks from the first user playlist
       let firstPlaylistTracks = null;
       if (userPlaylists.items.length > 0) {
@@ -2565,7 +2549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstPlaylistTracks = { error: e.message };
         }
       }
-      
+
       res.json({ 
         success: true,
         userPlaylists: userPlaylists.items.map(p => ({ 
@@ -2584,7 +2568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/playlists/bulk-import", async (req, res) => {
     try {
       const { csvData } = req.body;
-      
+
       if (!csvData || typeof csvData !== 'string') {
         return res.status(400).json({ error: "CSV data is required" });
       }
@@ -2607,7 +2591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const title = match[1].trim();
         const isEditorial = match[2].toLowerCase() === 'yes';
         const link = match[4].trim();
-        
+
         const playlistIdMatch = link.match(/playlist\/([a-zA-Z0-9]+)/);
         if (!playlistIdMatch) {
           results.failed++;
@@ -2633,7 +2617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log('Spotify not available for enrichment, skipping...');
               }
             }
-            
+
             const newPlaylist = await storage.addTrackedPlaylist({
               name: title,
               playlistId: playlistId,
@@ -2644,7 +2628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               isComplete: 0,
               lastFetchCount: 0,
             });
-            
+
             // Broadcast playlist addition to frontend
             broadcast('playlist_updated', {
               playlistId: newPlaylist.playlistId,
@@ -2683,10 +2667,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/fetch-playlists", async (req, res) => {
     try {
       const { mode = 'all', playlistId } = req.body;
-      
+
       // Delegate to core implementation - eliminates 866-line duplication
       const result = await fetchPlaylistsCore({ mode, playlistId });
-      
+
       res.json({
         success: result.success,
         tracksAdded: result.tracksInserted,
@@ -2695,12 +2679,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Error fetching playlists:", error);
-      
+
       // Map validation errors to 400 (client error) with specific messages
       if (error instanceof PlaylistValidationError) {
         return res.status(400).json({ error: error.message });
       }
-      
+
       // All other errors → 500 (server error)
       res.status(500).json({ error: "Failed to fetch playlists from Spotify" });
     }
@@ -2710,10 +2694,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const spotify = await getUncachableSpotifyClient();
       const trackedPlaylists = await storage.getTrackedPlaylists();
-      
+
       // Find playlists missing totalTracks
       const playlistsToBackfill = trackedPlaylists.filter(p => !p.totalTracks);
-      
+
       if (playlistsToBackfill.length === 0) {
         return res.json({ 
           success: true, 
@@ -2721,36 +2705,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
           backfilled: 0 
         });
       }
-      
+
       console.log(`Backfilling metadata for ${playlistsToBackfill.length} playlists...`);
-      
+
       let backfilledCount = 0;
       const results: Array<{ name: string; totalTracks: number | null; isEditorial: boolean }> = [];
-      
+
       for (const playlist of playlistsToBackfill) {
         try {
           // Try to fetch playlist metadata from Spotify API
           const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId, "from_token" as any);
-          
+
           const totalTracks = playlistData.tracks?.total || null;
           const isEditorial = playlistData.owner?.id === 'spotify' ? 1 : 0;
           // fetchMethod not updated during metadata refresh - only during actual fetch
-          
+
           // Update the playlist with metadata
           await storage.updatePlaylistMetadata(playlist.id, {
             totalTracks,
             isEditorial,
           });
-          
+
           backfilledCount++;
           results.push({
             name: playlist.name,
             totalTracks,
             isEditorial: isEditorial === 1,
           });
-          
+
           console.log(`✓ ${playlist.name}: ${totalTracks} tracks (${isEditorial === 1 ? 'editorial' : 'non-editorial'})`);
-          
+
           await new Promise(resolve => setTimeout(resolve, 100));
         } catch (error: any) {
           console.error(`Failed to backfill ${playlist.name}:`, error.message);
@@ -2761,7 +2745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       res.json({ 
         success: true, 
         backfilled: backfilledCount,
@@ -2777,13 +2761,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/backfill-album-art", async (req, res) => {
     try {
       const spotify = await getUncachableSpotifyClient();
-      
+
       // Get all tracks missing album art
       const tracks = await db.select()
         .from(playlistSnapshots)
         .where(sql`${playlistSnapshots.albumArt} IS NULL`)
         .limit(500); // Process in batches to avoid timeout
-      
+
       if (tracks.length === 0) {
         return res.json({ 
           success: true, 
@@ -2791,12 +2775,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updated: 0 
         });
       }
-      
+
       console.log(`Backfilling album art for ${tracks.length} tracks...`);
-      
+
       let updatedCount = 0;
       let failedCount = 0;
-      
+
       for (const track of tracks) {
         try {
           // Extract track ID from Spotify URL
@@ -2805,28 +2789,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
             failedCount++;
             continue;
           }
-          
+
           const trackId = trackIdMatch[1];
-          
+
           // Fetch track details from Spotify
           const trackData = await spotify.tracks.get(trackId);
           const albumArt = trackData.album?.images?.[1]?.url || trackData.album?.images?.[0]?.url || null;
-          
+
           if (albumArt) {
             // Update track with album art
             await db.update(playlistSnapshots)
               .set({ albumArt })
               .where(eq(playlistSnapshots.id, track.id));
-            
+
             updatedCount++;
-            
+
             if (updatedCount % 50 === 0) {
               console.log(`Progress: ${updatedCount}/${tracks.length} tracks updated...`);
             }
           } else {
             failedCount++;
           }
-          
+
           // Rate limiting - small delay between requests
           await new Promise(resolve => setTimeout(resolve, 50));
         } catch (error: any) {
@@ -2834,9 +2818,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           failedCount++;
         }
       }
-      
+
       console.log(`Backfill complete: ${updatedCount} updated, ${failedCount} failed`);
-      
+
       res.json({ 
         success: true, 
         updated: updatedCount,
@@ -2854,7 +2838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Get all tracked playlists
       const trackedPlaylists = await storage.getTrackedPlaylists();
-      
+
       if (trackedPlaylists.length === 0) {
         return res.json({ 
           success: true, 
@@ -2862,12 +2846,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updated: 0 
         });
       }
-      
+
       console.log(`Backfilling playlist names for tracks from ${trackedPlaylists.length} playlists...`);
-      
+
       let updatedCount = 0;
       const results: Array<{ playlistId: string; oldName: string; newName: string; tracksUpdated: number }> = [];
-      
+
       for (const playlist of trackedPlaylists) {
         try {
           // Update all tracks with this playlist ID to have the correct playlist name
@@ -2875,10 +2859,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .set({ playlistName: playlist.name })
             .where(eq(playlistSnapshots.playlistId, playlist.playlistId))
             .returning({ id: playlistSnapshots.id });
-          
+
           const tracksUpdated = result.length;
           updatedCount += tracksUpdated;
-          
+
           if (tracksUpdated > 0) {
             results.push({
               playlistId: playlist.playlistId,
@@ -2892,9 +2876,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error(`Failed to backfill ${playlist.name}:`, error.message);
         }
       }
-      
+
       console.log(`Backfill complete: ${updatedCount} tracks updated across ${results.length} playlists`);
-      
+
       res.json({ 
         success: true, 
         updated: updatedCount,
@@ -2911,34 +2895,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/scrape-playlist", async (req, res) => {
     try {
       const { playlistUrl, playlistName } = req.body;
-      
+
       if (!playlistUrl) {
         return res.status(400).json({ error: "Playlist URL is required" });
       }
-      
+
       console.log(`Starting scrape for playlist: ${playlistUrl}`);
-      
+
       const extractPlaylistId = (url: string): string | null => {
         const match = url.match(/playlist\/([a-zA-Z0-9]+)/);
         return match ? match[1] : null;
       };
-      
+
       const playlistId = extractPlaylistId(playlistUrl);
       if (!playlistId) {
         return res.status(400).json({ error: "Invalid Spotify playlist URL" });
       }
-      
+
       const result = await scrapeSpotifyPlaylist(playlistUrl);
-      
+
       if (!result.success || !result.tracks) {
         return res.status(500).json({ 
           error: result.error || "Failed to scrape playlist" 
         });
       }
-      
+
       const today = new Date().toISOString().split('T')[0];
       const finalPlaylistName = playlistName || result.playlistName || "Unknown Playlist";
-      
+
       const scrapedTracks: InsertPlaylistSnapshot[] = result.tracks.map(track => {
         const score = calculateUnsignedScore({
           playlistName: finalPlaylistName,
@@ -2946,7 +2930,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           publisher: null,
           writer: null,
         });
-        
+
         return {
           week: today,
           playlistName: finalPlaylistName,
@@ -2961,12 +2945,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           dataSource: "scraped",
         };
       });
-      
+
       if (scrapedTracks.length > 0) {
         await storage.insertTracks(scrapedTracks);
         console.log(`Successfully saved ${scrapedTracks.length} scraped tracks`);
       }
-      
+
       // Update playlist metadata if curator/followers available
       if (result.curator || result.followers !== null) {
         const existingPlaylist = await storage.getTrackedPlaylistBySpotifyId(playlistId);
@@ -2979,14 +2963,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Updated playlist metadata: curator="${result.curator}", followers=${result.followers}`);
         }
       }
-      
+
       res.json({
         success: true,
         playlistName: finalPlaylistName,
         tracksAdded: scrapedTracks.length,
         week: today,
       });
-      
+
     } catch (error: any) {
       console.error("Error in scrape endpoint:", error);
       res.status(500).json({ 
@@ -3008,10 +2992,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/data/all", async (req, res) => {
     try {
       await storage.deleteAllData();
-      
+
       invalidateMetricsCache();
       await flushMetricsUpdate();
-      
+
       res.json({ success: true, message: "All data deleted successfully" });
     } catch (error) {
       console.error("Error deleting all data:", error);
@@ -3023,14 +3007,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { playlistId } = req.params;
       const { deleteSongwriters } = req.body;
-      
+
       const result = await storage.deletePlaylistCascade(playlistId, { 
         deleteSongwriters: deleteSongwriters === true 
       });
-      
+
       invalidateMetricsCache();
       await flushMetricsUpdate();
-      
+
       res.json({
         success: true,
         tracksDeleted: result.tracksDeleted,
@@ -3047,7 +3031,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/enrichment-jobs", async (req, res) => {
     try {
       const { trackIds, playlistId } = req.body;
-      
+
       if (!trackIds || !Array.isArray(trackIds) || trackIds.length === 0) {
         return res.status(400).json({ 
           error: "trackIds is required and must be a non-empty array" 

@@ -1,13 +1,15 @@
 import { useEffect, useRef, useCallback } from 'react';
 
 interface WebSocketMessage {
-  type: 'connected' | 'track_enriched' | 'batch_complete' | 'enrichment_progress' | 'metric_update' | 'playlist_error' | 'playlist_updated' | 'playlist_quality_updated';
+  type: 'connected' | 'track_enriched' | 'batch_complete' | 'enrichment_progress' | 'metric_update' | 'playlist_error' | 'playlist_updated' | 'playlist_quality_updated' | 'playlist_fetch_complete';
   trackId?: string;
   trackName?: string;
   artistName?: string;
   enrichedCount?: number;
   totalCount?: number;
   playlistId?: string;
+  playlistName?: string;
+  tracksInserted?: number;
   message?: string;
   error?: string;
   data?: any;
@@ -110,6 +112,11 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
               // Invalidate quality metrics query to trigger UI refresh
               if (callbacksRef.current.onMetricUpdate) {
                 callbacksRef.current.onMetricUpdate(data);
+              }
+              break;
+            case 'playlist_fetch_complete':
+              if (callbacksRef.current.onMessage) {
+                callbacksRef.current.onMessage(data);
               }
               break;
           }
