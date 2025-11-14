@@ -129,6 +129,69 @@ export class EnrichmentWorker {
         message: `Retrieved ${tracks.length} tracks, starting enrichment...`,
       });
 
+      await this.jobQueue.updateJobProgress(job.id, {
+        progress: 10,
+        logs: [`[${new Date().toISOString()}] Starting Phase 1 enrichment (Spotify API batch enrichment)...`],
+      });
+
+      this.broadcastProgress(job.id, {
+        status: 'running',
+        progress: 10,
+        message: 'Phase 1: Fetching metadata from Spotify API...',
+      });
+
+      try {
+        const spotify = await getUncachableSpotifyClient();
+        const phase1Result = await enrichTracksWithSpotifyAPI(
+          spotify,
+          tracks,
+          this.storage.updateTrackMetadata.bind(this.storage)
+        );
+
+        await this.jobQueue.updateJobProgress(job.id, {
+          progress: 35,
+          logs: [
+            `[${new Date().toISOString()}] Phase 1 complete: ${phase1Result.tracksEnriched}/${phase1Result.tracksProcessed} tracks enriched`,
+            `[${new Date().toISOString()}] Phase 1 stats: ISRC recovered=${phase1Result.isrcRecovered}, API calls=${phase1Result.apiCalls}`,
+          ],
+        });
+
+        this.broadcastProgress(job.id, {
+          status: 'running',
+          progress: 35,
+          message: `Phase 1 complete: ${phase1Result.tracksEnriched} tracks enriched, ${phase1Result.isrcRecovered} ISRCs recovered`,
+        });
+
+        for (const trackId of job.trackIds) {
+          if (this.wsBroadcast) {
+            this.wsBroadcast('track_enriched', {
+              type: 'track_enriched',
+              trackId,
+              phase: 1,
+            });
+          }
+        }
+
+        console.log(`[Phase 1] ✅ Complete: ${phase1Result.tracksEnriched}/${phase1Result.tracksProcessed} tracks enriched`);
+        console.log(`[Phase 1] ISRC Recovery: ${phase1Result.isrcRecovered} tracks`);
+        console.log(`[Phase 1] Field Stats:`, phase1Result.fieldStats);
+      } catch (phase1Error) {
+        console.error("[Worker] Phase 1 (Spotify API) failed, continuing to Phase 2:", phase1Error);
+        
+        await this.jobQueue.updateJobProgress(job.id, {
+          progress: 35,
+          logs: [
+            `[${new Date().toISOString()}] Phase 1 failed: ${phase1Error instanceof Error ? phase1Error.message : String(phase1Error)}. Continuing to Phase 2.`,
+          ],
+        });
+
+        this.broadcastProgress(job.id, {
+          status: 'running',
+          progress: 35,
+          message: 'Phase 1 failed, continuing to Phase 2...',
+        });
+      }
+
       const tracksForEnrichment = tracks.map((t: PlaylistSnapshot) => ({
         id: t.id,
         spotifyUrl: t.spotifyUrl,
@@ -137,7 +200,7 @@ export class EnrichmentWorker {
       }));
 
       await this.jobQueue.updateJobProgress(job.id, {
-        progress: 10,
+        progress: 35,
         logs: [`[${new Date().toISOString()}] Starting Phase 2 enrichment (Spotify credits scraping)...`],
       });
 
