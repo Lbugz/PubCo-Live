@@ -476,6 +476,50 @@ export function DetailsDrawer({
                     )}
                   </section>
 
+                  {/* Producers Section */}
+                  <section className="space-y-4">
+                    <h3 className="text-sm font-semibold font-heading flex items-center gap-2">
+                      <Music2 className="h-4 w-4" />
+                      PRODUCERS ({(() => {
+                        const producerNames = displayTrack.producer?.split(",").map((name) => name.trim()).filter(Boolean) ?? [];
+                        return producerNames.length;
+                      })()})
+                    </h3>
+                    
+                    {trackLoading ? (
+                      <div className="space-y-2">
+                        {[1].map((i) => (
+                          <Card key={i} className="p-3">
+                            <Skeleton className="h-4 w-32" />
+                          </Card>
+                        ))}
+                      </div>
+                    ) : displayTrack.producer ? (
+                      <div className="space-y-2">
+                        {displayTrack.producer.split(",").map((name, idx) => {
+                          const producerName = name.trim();
+                          const producerId = `producer-${idx}`;
+                          
+                          return (
+                            <Card 
+                              key={producerId} 
+                              className="p-3"
+                              data-testid={`card-producer-${producerId}`}
+                            >
+                              <span className="font-medium">{producerName}</span>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <Card className="p-8 text-center rounded-lg">
+                        <Music2 className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
+                        <p className="text-sm text-muted-foreground">No producer information available yet</p>
+                        <p className="text-xs text-muted-foreground mt-1">Enrich this track to discover producers</p>
+                      </Card>
+                    )}
+                  </section>
+
                   {/* Track Analytics Section */}
                   <section className="space-y-4">
                     <h3 className="text-sm font-semibold font-heading flex items-center gap-2">
@@ -484,53 +528,18 @@ export function DetailsDrawer({
                     </h3>
                     <Card className="p-4 rounded-lg">
                       {isEnriching ? (
-                        <div className="space-y-3">
-                          {[1, 2, 3, 4].map((i) => (
-                            <div key={i} className="flex justify-between">
-                              <Skeleton className="h-4 w-24" />
-                              <Skeleton className="h-4 w-16" />
-                            </div>
-                          ))}
+                        <div>
+                          <Skeleton className="h-4 w-24 mb-2" />
+                          <Skeleton className="h-6 w-20" />
                         </div>
                       ) : (
                         <div className="space-y-3 text-sm">
                           {/* Streaming Metrics */}
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <span className="text-muted-foreground block mb-1">Spotify Streams</span>
-                              <span className="font-semibold text-lg">
-                                {displayTrack.spotifyStreams ? displayTrack.spotifyStreams.toLocaleString() : '—'}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block mb-1">Velocity</span>
-                              <span className={cn(
-                                "font-semibold text-lg",
-                                displayTrack.streamingVelocity && parseFloat(displayTrack.streamingVelocity.toString()) > 0 
-                                  ? "text-green-600 dark:text-green-400" 
-                                  : ""
-                              )}>
-                                {displayTrack.streamingVelocity 
-                                  ? `${parseFloat(displayTrack.streamingVelocity.toString()) >= 0 ? '+' : ''}${displayTrack.streamingVelocity}%`
-                                  : '—'
-                                }
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <span className="text-muted-foreground block mb-1">YouTube Views</span>
-                              <span className="font-semibold">
-                                {displayTrack.youtubeViews ? displayTrack.youtubeViews.toLocaleString() : '—'}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block mb-1">Playlist Followers</span>
-                              <span className="font-semibold">
-                                {displayTrack.playlistFollowers ? displayTrack.playlistFollowers.toLocaleString() : '—'}
-                              </span>
-                            </div>
+                          <div>
+                            <span className="text-muted-foreground block mb-1">Spotify Streams</span>
+                            <span className="font-semibold text-lg">
+                              {displayTrack.spotifyStreams ? displayTrack.spotifyStreams.toLocaleString() : '—'}
+                            </span>
                           </div>
 
                           {/* Moods */}
