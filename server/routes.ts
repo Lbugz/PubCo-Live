@@ -90,7 +90,35 @@ async function fetchSpotifyPlaylistMetadata(playlistId: string): Promise<{
       isEditorial: playlistData.owner?.id === 'spotify',
     };
   } catch (error: any) {
-    console.log(`Failed to fetch Spotify metadata: ${error.message}`);
+    console.log(`Failed to fetch Spotify API metadata: ${error.message}`);
+    
+    // If API returns 404 (common for editorial playlists with client credentials),
+    // fall back to Puppeteer scraping which can extract metadata from the web page
+    if (error.message?.includes('404') || error.status === 404) {
+      console.log(`🔄 Spotify API returned 404, falling back to Puppeteer scraper for ${playlistId}`);
+      try {
+        const { scrapeSpotifyPlaylist } = await import('./scraper');
+        const playlistUrl = `https://open.spotify.com/playlist/${playlistId}`;
+        const scrapeResult = await scrapeSpotifyPlaylist(playlistUrl);
+        
+        if (scrapeResult.success && scrapeResult.playlistName) {
+          console.log(`✅ Puppeteer fallback succeeded: ${scrapeResult.playlistName} (${scrapeResult.tracks?.length || 0} tracks)`);
+          return {
+            name: scrapeResult.playlistName,
+            totalTracks: scrapeResult.tracks?.length || null,
+            curator: scrapeResult.curator || null,
+            followers: scrapeResult.followers || null,
+            imageUrl: null, // Scraper doesn't extract image URLs from GraphQL
+            isEditorial: scrapeResult.curator?.toLowerCase() === 'spotify',
+          };
+        }
+        
+        console.log(`❌ Puppeteer fallback failed: ${scrapeResult.error || 'Unknown error'}`);
+      } catch (scrapeError: any) {
+        console.error(`❌ Puppeteer scraper threw error: ${scrapeError.message}`);
+      }
+    }
+    
     return null;
   }
 }
