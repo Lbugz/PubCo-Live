@@ -50,7 +50,7 @@ The frontend is a single-page React application built with a modular component a
 - **Custom Playlist Tracking**: Supports adding, managing, and bulk importing Spotify playlists, including automatic metadata fetching and duplicate prevention.
 - **Advanced Editorial Playlist Capture**: Two-tier approach using Puppeteer for network capture and DOM harvesting.
 - **Enhanced CSV Export**: Includes all metadata and contact fields.
-- **Chartmetric Integration**: Provides cross-platform tracking and industry insights, storing Chartmetric IDs and implementing rate limiting. It features a universal Chartmetric-first approach for all playlist operations, falling back to Spotify API or Puppeteer if Chartmetric access is unavailable or fails.
+- **Chartmetric Integration**: Provides cross-platform tracking and industry insights, storing Chartmetric IDs and implementing rate limiting. It features a universal Chartmetric-first approach for all playlist operations, falling back to Spotify API or Puppeteer if Chartmetric access is unavailable or fails. Uses correct Chartmetric API endpoint format (`/playlist/{platform}/{id}`) with URL encoding to properly resolve Spotify playlist IDs to Chartmetric IDs.
 
 ### System Design Choices
 - **Database Schema**: Includes `PlaylistSnapshot`, `TrackedPlaylists`, `Tags`, `TrackTags`, `Artists`, and `ArtistSongwriters` tables. Chartmetric fields are integrated into `PlaylistSnapshot`.
