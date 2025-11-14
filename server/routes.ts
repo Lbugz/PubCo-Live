@@ -870,86 +870,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let source = 'spotify';
       let imageUrl = providedMetadata.imageUrl;
       
-      // For non-editorial playlists without provided metadata, try to fetch metadata
-      if (!useScraping && !hasProvidedMetadata) {
-        console.log(`🚀 [Phase 2 Optimization] Running parallel metadata fetch for ${validatedPlaylist.playlistId}`);
-        
-        // Run Chartmetric and Spotify API in parallel using Promise.allSettled
-        const [chartmetricResult, spotifyResult] = await Promise.allSettled([
-          getPlaylistMetadata(validatedPlaylist.playlistId),
-          fetchSpotifyPlaylistMetadata(validatedPlaylist.playlistId),
-        ]);
-        
-        // Prefer Chartmetric if successful and has complete data
-        let metadataSource: 'chartmetric' | 'spotify' | 'none' = 'none';
-        
-        if (chartmetricResult.status === 'fulfilled' && chartmetricResult.value?.name && chartmetricResult.value?.trackCount !== undefined) {
-          // Chartmetric succeeded with complete data
-          const chartmetricMetadata = chartmetricResult.value;
-          name = chartmetricMetadata.name;
-          totalTracks = chartmetricMetadata.trackCount || null;
-          curator = chartmetricMetadata.curator || null;
-          followers = chartmetricMetadata.followerCount || null;
-          imageUrl = chartmetricMetadata.imageUrl || null;
-          metadataSource = 'chartmetric';
-          
-          // Detect editorial based on curator
-          if (curator?.toLowerCase() === 'spotify') {
-            isEditorial = 1;
-            console.log(`✅ Chartmetric: Detected editorial playlist (curator=Spotify): ${validatedPlaylist.playlistId}`);
-          }
-          
-          console.log(`✅ [Parallel] Chartmetric metadata success: ${totalTracks} tracks, curator="${curator}", followers=${followers}`);
-        } else if (spotifyResult.status === 'fulfilled' && spotifyResult.value) {
-          // Chartmetric failed but Spotify succeeded
-          const spotifyMetadata = spotifyResult.value;
-          name = spotifyMetadata.name;
-          totalTracks = spotifyMetadata.totalTracks;
-          curator = spotifyMetadata.curator;
-          followers = spotifyMetadata.followers;
-          imageUrl = spotifyMetadata.imageUrl;
-          metadataSource = 'spotify';
-          
-          if (spotifyMetadata.isEditorial) {
-            isEditorial = 1;
-            console.log(`✅ Spotify API: Detected editorial playlist (owner=spotify): ${validatedPlaylist.playlistId}`);
-          }
-          
-          console.log(`✅ [Parallel] Spotify API metadata success: ${totalTracks} tracks, curator="${curator}"`);
-        } else {
-          // Both failed
-          console.log(`⚠️  [Parallel] Both Chartmetric and Spotify API failed for ${validatedPlaylist.playlistId}, will use scraping`);
-          if (chartmetricResult.status === 'rejected') {
-            console.log(`  Chartmetric error: ${chartmetricResult.reason?.message || 'Unknown'}`);
-          }
-          if (spotifyResult.status === 'rejected') {
-            console.log(`  Spotify error: ${spotifyResult.reason?.message || 'Unknown'}`);
-          }
-          isEditorial = 1;
-        }
-        
-        // Log performance metrics
-        const chartmetricTime = chartmetricResult.status === 'fulfilled' ? 'success' : 'failed';
-        const spotifyTime = spotifyResult.status === 'fulfilled' ? 'success' : 'failed';
-        console.log(`📊 [Parallel Performance] Chartmetric: ${chartmetricTime}, Spotify: ${spotifyTime}, Used: ${metadataSource}`);
-        
-        // Set fetchMethod based on metadata source for provenance tracking
-        if (metadataSource === 'chartmetric') {
-          fetchMethod = 'chartmetric_metadata';
-        } else if (metadataSource === 'spotify') {
-          fetchMethod = 'spotify_metadata';
-        }
-      } else {
-        console.log(`Playlist ${validatedPlaylist.playlistId} added with scraping mode - metadata will be fetched during track fetch`);
-      }
+      // For non-editorial playlists without provided metadata, fetch metadata ASYNC (non-blocking)
+      // This ensures the dialog closes immediately and updates arrive via WebSocket
+      const shouldFetchMetadataAsync = !useScraping && !hasProvidedMetadata;
       
-      // Abort if metadata fetch completely failed AND playlist is not editorial
-      // Editorial playlists will get metadata via Puppeteer scraping, so allow them through
-      if (name === "Untitled Playlist" && !isEditorial) {
-        throw new Error(
-          `Failed to fetch playlist metadata for ${validatedPlaylist.playlistId}. ` +
-          `Both Chartmetric and Spotify API are unavailable. Please try again later.`
-        );
+      if (shouldFetchMetadataAsync) {
+        console.log(`⚡ Metadata fetch will run ASYNC (non-blocking) for ${validatedPlaylist.playlistId}`);
+      } else {
+        console.log(`Playlist ${validatedPlaylist.playlistId} added with ${hasProvidedMetadata ? 'provided metadata' : 'scraping mode'} - ${hasProvidedMetadata ? 'using frontend data' : 'metadata will be fetched during track fetch'}`);
       }
       
       const playlist = await storage.addTrackedPlaylist({
@@ -1001,24 +929,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
       
-      // Trigger automatic fetch in background (fire-and-forget, non-blocking)
-      // Direct function invocation - no HTTP loopback overhead
+      // Trigger async metadata fetch + track fetch in background (fire-and-forget, non-blocking)
+      // Clone closure-specific variables to avoid race conditions between concurrent requests
+      const asyncPayload = {
+        playlistId: playlist.playlistId,
+        playlistDbId: playlist.id,
+        playlistName: playlist.name,
+        shouldFetchMetadata: shouldFetchMetadataAsync,
+      };
+      
       setImmediate(() => {
         (async () => {
           try {
-            console.log(`🚀 Auto-triggering fetch for newly added playlist: ${playlist.name}`);
+            // Step 1: Fetch metadata if needed (async, updates DB + broadcasts to frontend)
+            if (asyncPayload.shouldFetchMetadata) {
+              console.log(`🔄 [Async] Fetching metadata for ${asyncPayload.playlistName} (${asyncPayload.playlistId})`);
+              
+              const [chartmetricResult, spotifyResult] = await Promise.allSettled([
+                getPlaylistMetadata(asyncPayload.playlistId),
+                fetchSpotifyPlaylistMetadata(asyncPayload.playlistId),
+              ]);
+              
+              let metadataUpdates: any = {};
+              let metadataSource: 'chartmetric' | 'spotify' | 'none' = 'none';
+              
+              if (chartmetricResult.status === 'fulfilled' && chartmetricResult.value?.name && chartmetricResult.value?.trackCount !== undefined) {
+                const chartmetricMetadata = chartmetricResult.value;
+                metadataUpdates = {
+                  name: chartmetricMetadata.name,
+                  totalTracks: chartmetricMetadata.trackCount || null,
+                  curator: chartmetricMetadata.curator || null,
+                  followers: chartmetricMetadata.followerCount || null,
+                  imageUrl: chartmetricMetadata.imageUrl || null,
+                  fetchMethod: 'chartmetric_metadata',
+                  isEditorial: chartmetricMetadata.curator?.toLowerCase() === 'spotify' ? 1 : 0,
+                };
+                metadataSource = 'chartmetric';
+              } else if (spotifyResult.status === 'fulfilled' && spotifyResult.value) {
+                const spotifyMetadata = spotifyResult.value;
+                metadataUpdates = {
+                  name: spotifyMetadata.name,
+                  totalTracks: spotifyMetadata.totalTracks,
+                  curator: spotifyMetadata.curator,
+                  followers: spotifyMetadata.followers,
+                  imageUrl: spotifyMetadata.imageUrl,
+                  fetchMethod: 'spotify_metadata',
+                  isEditorial: spotifyMetadata.isEditorial ? 1 : 0,
+                };
+                metadataSource = 'spotify';
+              } else {
+                console.log(`⚠️  [Async] Both Chartmetric and Spotify API failed for ${asyncPayload.playlistId}`);
+                metadataUpdates = {
+                  isEditorial: 1, // Assume editorial if APIs fail
+                };
+                metadataSource = 'none';
+              }
+              
+              if (Object.keys(metadataUpdates).length > 0) {
+                console.log(`✅ [Async] Metadata fetch success (${metadataSource}): updating ${asyncPayload.playlistName}`);
+                
+                // Use the correct storage method for metadata updates
+                const metadataOnly = {
+                  name: metadataUpdates.name,
+                  curator: metadataUpdates.curator,
+                  followers: metadataUpdates.followers,
+                  totalTracks: metadataUpdates.totalTracks,
+                  imageUrl: metadataUpdates.imageUrl,
+                };
+                await storage.updateTrackedPlaylistMetadata(asyncPayload.playlistDbId, metadataOnly);
+                
+                // Update additional fields if present
+                if (metadataUpdates.fetchMethod || metadataUpdates.isEditorial !== undefined) {
+                  await storage.updatePlaylistMetadata(asyncPayload.playlistDbId, {
+                    fetchMethod: metadataUpdates.fetchMethod,
+                    isEditorial: metadataUpdates.isEditorial,
+                  });
+                }
+                
+                // Broadcast metadata updates to frontend via WebSocket
+                broadcast('playlist_updated', {
+                  playlistId: asyncPayload.playlistId,
+                  id: asyncPayload.playlistDbId,
+                  updates: metadataUpdates,
+                });
+              }
+            }
+            
+            // Step 2: Auto-trigger track fetch
+            console.log(`🚀 Auto-triggering fetch for newly added playlist: ${asyncPayload.playlistName}`);
             
             const { triggerPlaylistFetch } = await import("./services/playlistFetchService");
             
-            // Direct invocation - eliminates 20-40ms HTTP overhead, worker consumption, and network failure modes
             const result = await triggerPlaylistFetch({ 
               mode: 'specific',
-              playlistId: playlist.playlistId
+              playlistId: asyncPayload.playlistId
             });
             
-            console.log(`✅ Auto-fetch completed for: ${playlist.name} (${result.tracksInserted} tracks inserted)`);
+            console.log(`✅ Auto-fetch completed for: ${asyncPayload.playlistName} (${result.tracksInserted} tracks inserted)`);
+            
+            // Broadcast final completion
+            broadcast('playlist_fetch_complete', {
+              playlistId: asyncPayload.playlistId,
+              id: asyncPayload.playlistDbId,
+              tracksInserted: result.tracksInserted,
+            });
           } catch (error: any) {
-            console.error(`Auto-fetch error for ${playlist.name}:`, error.message);
+            console.error(`❌ [Async] Error for ${asyncPayload.playlistName}:`, error.message);
+            // Broadcast error to UI
+            broadcast('playlist_error', {
+              playlistId: asyncPayload.playlistId,
+              id: asyncPayload.playlistDbId,
+              error: error.message || 'Failed to fetch playlist data',
+            });
           }
         })();
       });

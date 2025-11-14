@@ -140,10 +140,32 @@ export class DatabaseStorage implements IStorage {
 
   async getTracksByPlaylist(playlistId: string, week?: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]> {
     const { limit, offset } = options || {};
-    const conditions = [eq(playlistSnapshots.playlistId, playlistId)];
     
-    if (week && week !== "all") {
-      conditions.push(eq(playlistSnapshots.week, week));
+    // First, get the database UUID from the Spotify playlist ID
+    const [playlist] = await db.select({ id: trackedPlaylists.id })
+      .from(trackedPlaylists)
+      .where(eq(trackedPlaylists.playlistId, playlistId))
+      .limit(1);
+    
+    if (!playlist) {
+      // Playlist not found - return empty array
+      return [];
+    }
+    
+    // Resolve "latest" to actual week date
+    let resolvedWeek = week;
+    if (week === "latest") {
+      resolvedWeek = await this.getLatestWeek();
+      if (!resolvedWeek) {
+        return []; // No tracks exist yet
+      }
+    }
+    
+    // Now query using the database UUID (after Nov 14 FK fix, playlist_snapshots.playlistId stores UUIDs)
+    const conditions = [eq(playlistSnapshots.playlistId, playlist.id)];
+    
+    if (resolvedWeek && resolvedWeek !== "all") {
+      conditions.push(eq(playlistSnapshots.week, resolvedWeek));
     }
     
     let query = db.select()
@@ -163,10 +185,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTracksByPlaylistCount(playlistId: string, week?: string): Promise<number> {
-    const conditions = [eq(playlistSnapshots.playlistId, playlistId)];
+    // First, get the database UUID from the Spotify playlist ID
+    const [playlist] = await db.select({ id: trackedPlaylists.id })
+      .from(trackedPlaylists)
+      .where(eq(trackedPlaylists.playlistId, playlistId))
+      .limit(1);
     
-    if (week && week !== "all") {
-      conditions.push(eq(playlistSnapshots.week, week));
+    if (!playlist) {
+      // Playlist not found - return 0
+      return 0;
+    }
+    
+    // Resolve "latest" to actual week date
+    let resolvedWeek = week;
+    if (week === "latest") {
+      resolvedWeek = await this.getLatestWeek();
+      if (!resolvedWeek) {
+        return 0; // No tracks exist yet
+      }
+    }
+    
+    // Now query using the database UUID (after Nov 14 FK fix, playlist_snapshots.playlistId stores UUIDs)
+    const conditions = [eq(playlistSnapshots.playlistId, playlist.id)];
+    
+    if (resolvedWeek && resolvedWeek !== "all") {
+      conditions.push(eq(playlistSnapshots.week, resolvedWeek));
     }
     
     const result = await db.select({ count: count() })
