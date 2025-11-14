@@ -13,6 +13,48 @@ export interface WorkerOptions {
   wsBroadcast?: (event: string, data: any) => void;
 }
 
+type TrackMetadataUpdate = Partial<Omit<PlaylistSnapshot, 'id'>>;
+
+class TrackStateContext {
+  private tracks: Map<string, PlaylistSnapshot>;
+  private updates: Map<string, TrackMetadataUpdate>;
+
+  constructor(initialTracks: PlaylistSnapshot[]) {
+    this.tracks = new Map(initialTracks.map(t => [t.id, { ...t }]));
+    this.updates = new Map();
+  }
+
+  applyPatch(trackId: string, patch: TrackMetadataUpdate) {
+    const existing = this.updates.get(trackId) || {};
+    this.updates.set(trackId, { ...existing, ...patch });
+    
+    const track = this.tracks.get(trackId);
+    if (track) {
+      Object.assign(track, patch);
+    }
+  }
+
+  getTrack(trackId: string): PlaylistSnapshot | undefined {
+    return this.tracks.get(trackId);
+  }
+
+  getAllTracks(): PlaylistSnapshot[] {
+    return Array.from(this.tracks.values());
+  }
+
+  getUpdates(): Array<[string, TrackMetadataUpdate]> {
+    return Array.from(this.updates.entries());
+  }
+
+  clearUpdate(trackId: string) {
+    this.updates.delete(trackId);
+  }
+
+  hasUpdates(): boolean {
+    return this.updates.size > 0;
+  }
+}
+
 export class EnrichmentWorker {
   private jobQueue: JobQueue;
   private storage: IStorage;
@@ -102,6 +144,37 @@ export class EnrichmentWorker {
     }
   }
 
+  private async persistPhaseUpdates(
+    ctx: TrackStateContext, 
+    jobId: string, 
+    phaseName: string
+  ): Promise<{ persistedCount: number; failedTrackIds: string[] }> {
+    const updates = ctx.getUpdates();
+    let persistedCount = 0;
+    const failedTrackIds: string[] = [];
+
+    for (const [trackId, update] of updates) {
+      try {
+        await this.storage.updateTrackMetadata(trackId, update);
+        ctx.clearUpdate(trackId);
+        persistedCount++;
+      } catch (error) {
+        console.error(`[Worker] Failed to persist ${phaseName} update for track ${trackId}:`, error);
+        failedTrackIds.push(trackId);
+      }
+    }
+
+    if (failedTrackIds.length > 0) {
+      await this.jobQueue.updateJobProgress(jobId, {
+        logs: [
+          `[${new Date().toISOString()}] ${phaseName}: ${failedTrackIds.length} tracks failed to persist (${failedTrackIds.join(', ')})`,
+        ],
+      });
+    }
+
+    return { persistedCount, failedTrackIds };
+  }
+
   private async executeJob(job: EnrichmentJob) {
     try {
       const tracks = await this.storage.getTracksByIds(job.trackIds);
@@ -117,6 +190,8 @@ export class EnrichmentWorker {
         });
         return;
       }
+
+      const ctx = new TrackStateContext(tracks);
 
       await this.jobQueue.updateJobProgress(job.id, {
         progress: 5,
@@ -142,16 +217,23 @@ export class EnrichmentWorker {
 
       try {
         const spotify = await getUncachableSpotifyClient();
+        
+        const updateTrackInContext = async (trackId: string, metadata: any) => {
+          ctx.applyPatch(trackId, metadata);
+        };
+        
         const phase1Result = await enrichTracksWithSpotifyAPI(
           spotify,
-          tracks,
-          this.storage.updateTrackMetadata.bind(this.storage)
+          ctx.getAllTracks(),
+          updateTrackInContext
         );
+
+        const { persistedCount, failedTrackIds } = await this.persistPhaseUpdates(ctx, job.id, 'Phase 1');
 
         await this.jobQueue.updateJobProgress(job.id, {
           progress: 35,
           logs: [
-            `[${new Date().toISOString()}] Phase 1 complete: ${phase1Result.tracksEnriched}/${phase1Result.tracksProcessed} tracks enriched`,
+            `[${new Date().toISOString()}] Phase 1 complete: ${phase1Result.tracksEnriched}/${phase1Result.tracksProcessed} tracks enriched, ${persistedCount} persisted`,
             `[${new Date().toISOString()}] Phase 1 stats: ISRC recovered=${phase1Result.isrcRecovered}, API calls=${phase1Result.apiCalls}`,
           ],
         });
@@ -159,11 +241,11 @@ export class EnrichmentWorker {
         this.broadcastProgress(job.id, {
           status: 'running',
           progress: 35,
-          message: `Phase 1 complete: ${phase1Result.tracksEnriched} tracks enriched, ${phase1Result.isrcRecovered} ISRCs recovered`,
+          message: `Phase 1 complete: ${persistedCount} tracks persisted, ${phase1Result.isrcRecovered} ISRCs recovered`,
         });
 
         for (const trackId of job.trackIds) {
-          if (this.wsBroadcast) {
+          if (!failedTrackIds.includes(trackId) && this.wsBroadcast) {
             this.wsBroadcast('track_enriched', {
               type: 'track_enriched',
               trackId,
@@ -172,7 +254,7 @@ export class EnrichmentWorker {
           }
         }
 
-        console.log(`[Phase 1] ✅ Complete: ${phase1Result.tracksEnriched}/${phase1Result.tracksProcessed} tracks enriched`);
+        console.log(`[Phase 1] ✅ Complete: ${phase1Result.tracksEnriched}/${phase1Result.tracksProcessed} tracks enriched, ${persistedCount} persisted`);
         console.log(`[Phase 1] ISRC Recovery: ${phase1Result.isrcRecovered} tracks`);
         console.log(`[Phase 1] Field Stats:`, phase1Result.fieldStats);
       } catch (phase1Error) {
@@ -192,7 +274,7 @@ export class EnrichmentWorker {
         });
       }
 
-      const tracksForEnrichment = tracks.map((t: PlaylistSnapshot) => ({
+      const tracksForEnrichment = ctx.getAllTracks().map((t: PlaylistSnapshot) => ({
         id: t.id,
         spotifyUrl: t.spotifyUrl,
         songwriter: t.songwriter,
@@ -212,23 +294,8 @@ export class EnrichmentWorker {
 
       const result = await enrichTracksWithCredits(tracksForEnrichment);
 
-      await this.jobQueue.updateJobProgress(job.id, {
-        progress: 70,
-        enrichedTracks: result.tracksEnriched,
-        errorCount: result.errors,
-        logs: [
-          `[${new Date().toISOString()}] Phase 2 complete: ${result.tracksEnriched}/${result.tracksProcessed} tracks enriched`,
-        ],
-      });
-
-      this.broadcastProgress(job.id, {
-        status: 'running',
-        progress: 70,
-        message: `Phase 2 complete, starting MLC publisher lookup...`,
-      });
-
       for (const enrichedTrack of result.enrichedTracks) {
-        await this.storage.updateTrackMetadata(enrichedTrack.trackId, {
+        ctx.applyPatch(enrichedTrack.trackId, {
           songwriter: enrichedTrack.songwriter || undefined,
           producer: enrichedTrack.producer || undefined,
           publisher: enrichedTrack.publisher || undefined,
@@ -237,38 +304,59 @@ export class EnrichmentWorker {
           enrichedAt: new Date(),
           enrichmentStatus: 'enriched',
         });
+      }
 
-        const creditsFound = [];
-        if (enrichedTrack.songwriter) creditsFound.push('songwriter');
-        if (enrichedTrack.producer) creditsFound.push('producer');
-        if (enrichedTrack.label) creditsFound.push('label');
-        
-        const streamsText = enrichedTrack.spotifyStreams 
-          ? `, ${enrichedTrack.spotifyStreams.toLocaleString()} streams` 
-          : '';
-        
-        await this.storage.logActivity({
-          entityType: 'track',
-          trackId: enrichedTrack.trackId,
-          playlistId: null,
-          eventType: 'credits_enriched',
-          eventDescription: `Phase 2: Scraped ${creditsFound.length > 0 ? creditsFound.join(', ') : 'no credits'}${streamsText}`,
-          metadata: JSON.stringify({
-            phase: 2,
-            songwriter: enrichedTrack.songwriter,
-            producer: enrichedTrack.producer,
-            publisher: enrichedTrack.publisher,
-            label: enrichedTrack.label,
-            spotifyStreams: enrichedTrack.spotifyStreams,
-          }),
-        });
+      const { persistedCount: phase2Persisted, failedTrackIds: phase2Failed } = await this.persistPhaseUpdates(ctx, job.id, 'Phase 2');
 
-        if (this.wsBroadcast) {
-          this.wsBroadcast('track_enriched', {
-            type: 'track_enriched',
+      await this.jobQueue.updateJobProgress(job.id, {
+        progress: 70,
+        enrichedTracks: result.tracksEnriched,
+        errorCount: result.errors,
+        logs: [
+          `[${new Date().toISOString()}] Phase 2 complete: ${result.tracksEnriched}/${result.tracksProcessed} tracks enriched, ${phase2Persisted} persisted`,
+        ],
+      });
+
+      this.broadcastProgress(job.id, {
+        status: 'running',
+        progress: 70,
+        message: `Phase 2 complete: ${phase2Persisted} tracks persisted, starting MLC lookup...`,
+      });
+
+      for (const enrichedTrack of result.enrichedTracks) {
+        if (!phase2Failed.includes(enrichedTrack.trackId)) {
+          const creditsFound = [];
+          if (enrichedTrack.songwriter) creditsFound.push('songwriter');
+          if (enrichedTrack.producer) creditsFound.push('producer');
+          if (enrichedTrack.label) creditsFound.push('label');
+          
+          const streamsText = enrichedTrack.spotifyStreams 
+            ? `, ${enrichedTrack.spotifyStreams.toLocaleString()} streams` 
+            : '';
+          
+          await this.storage.logActivity({
+            entityType: 'track',
             trackId: enrichedTrack.trackId,
-            phase: 2,
+            playlistId: null,
+            eventType: 'credits_enriched',
+            eventDescription: `Phase 2: Scraped ${creditsFound.length > 0 ? creditsFound.join(', ') : 'no credits'}${streamsText}`,
+            metadata: JSON.stringify({
+              phase: 2,
+              songwriter: enrichedTrack.songwriter,
+              producer: enrichedTrack.producer,
+              publisher: enrichedTrack.publisher,
+              label: enrichedTrack.label,
+              spotifyStreams: enrichedTrack.spotifyStreams,
+            }),
           });
+
+          if (this.wsBroadcast) {
+            this.wsBroadcast('track_enriched', {
+              type: 'track_enriched',
+              trackId: enrichedTrack.trackId,
+              phase: 2,
+            });
+          }
         }
       }
 
@@ -292,8 +380,7 @@ export class EnrichmentWorker {
       }> = [];
 
       try {
-        const updatedTracks = await this.storage.getTracksByIds(job.trackIds);
-        const tracksForMLC = updatedTracks.map((t: PlaylistSnapshot) => ({
+        const tracksForMLC = ctx.getAllTracks().map((t: PlaylistSnapshot) => ({
           id: t.id,
           isrc: t.isrc,
           trackName: t.trackName,
@@ -303,59 +390,67 @@ export class EnrichmentWorker {
 
         mlcResults = await enrichTracksWithMLC(tracksForMLC);
 
-        await this.jobQueue.updateJobProgress(job.id, {
-          progress: 85,
-          logs: [
-            `[${new Date().toISOString()}] MLC enrichment complete: ${mlcResults.filter(r => r.hasPublisher).length}/${mlcResults.length} tracks have publishers`,
-          ],
-        });
-
-        this.broadcastProgress(job.id, {
-          status: 'running',
-          progress: 85,
-          message: `MLC enrichment complete, saving results...`,
-        });
-
         for (const mlcResult of mlcResults) {
           const publisherName = mlcResult.publisherNames.join(', ') || undefined;
           const publisherStatus = mlcResult.error 
             ? undefined 
             : (mlcResult.hasPublisher ? 'published' : 'unknown');
 
-          await this.storage.updateTrackMetadata(mlcResult.trackId, {
+          ctx.applyPatch(mlcResult.trackId, {
             publisher: publisherName,
             publisherStatus,
             mlcSongCode: mlcResult.mlcSongCode || undefined,
             enrichmentStatus: 'enriched',
           });
+        }
 
-          const mlcDescription = mlcResult.error
-            ? `MLC: Error - ${mlcResult.error}`
-            : mlcResult.hasPublisher
-              ? `MLC: Publisher found - ${mlcResult.publisherNames.join(', ')}`
-              : 'MLC: No publisher found (unsigned/unknown)';
+        const { persistedCount: mlcPersisted, failedTrackIds: mlcFailed } = await this.persistPhaseUpdates(ctx, job.id, 'MLC');
 
-          await this.storage.logActivity({
-            entityType: 'track',
-            trackId: mlcResult.trackId,
-            playlistId: null,
-            eventType: 'mlc_enrichment_completed',
-            eventDescription: mlcDescription,
-            metadata: JSON.stringify({
-              hasPublisher: mlcResult.hasPublisher,
-              publisherNames: mlcResult.publisherNames,
-              mlcSongCode: mlcResult.mlcSongCode,
-              publisherStatus,
-              error: mlcResult.error,
-            }),
-          });
+        await this.jobQueue.updateJobProgress(job.id, {
+          progress: 85,
+          logs: [
+            `[${new Date().toISOString()}] MLC enrichment complete: ${mlcResults.filter(r => r.hasPublisher).length}/${mlcResults.length} tracks have publishers, ${mlcPersisted} persisted`,
+          ],
+        });
 
-          if (this.wsBroadcast) {
-            this.wsBroadcast('track_enriched', {
-              type: 'track_enriched',
+        this.broadcastProgress(job.id, {
+          status: 'running',
+          progress: 85,
+          message: `MLC complete: ${mlcPersisted} tracks persisted`,
+        });
+
+        for (const mlcResult of mlcResults) {
+          if (!mlcFailed.includes(mlcResult.trackId)) {
+            const mlcDescription = mlcResult.error
+              ? `MLC: Error - ${mlcResult.error}`
+              : mlcResult.hasPublisher
+                ? `MLC: Publisher found - ${mlcResult.publisherNames.join(', ')}`
+                : 'MLC: No publisher found (unsigned/unknown)';
+
+            await this.storage.logActivity({
+              entityType: 'track',
               trackId: mlcResult.trackId,
-              phase: 'mlc',
+              playlistId: null,
+              eventType: 'mlc_enrichment_completed',
+              eventDescription: mlcDescription,
+              metadata: JSON.stringify({
+                hasPublisher: mlcResult.hasPublisher,
+                publisherNames: mlcResult.publisherNames,
+                mlcSongCode: mlcResult.mlcSongCode,
+                publisherStatus: mlcResult.error 
+                  ? undefined 
+                  : (mlcResult.hasPublisher ? 'published' : 'unknown'),
+                error: mlcResult.error,
+              }),
             });
+
+            if (this.wsBroadcast) {
+              this.wsBroadcast('track_enriched', {
+                type: 'track_enriched',
+                trackId: mlcResult.trackId,
+                phase: 'mlc',
+              });
+            }
           }
         }
       } catch (mlcError) {
@@ -375,12 +470,16 @@ export class EnrichmentWorker {
         });
 
         for (const trackId of job.trackIds) {
-          await this.storage.updateTrackMetadata(trackId, {
+          ctx.applyPatch(trackId, {
             enrichmentStatus: 'enriched',
             publisherStatus: 'unknown',
             enrichedAt: new Date(),
           });
+        }
 
+        await this.persistPhaseUpdates(ctx, job.id, 'MLC Fallback');
+
+        for (const trackId of job.trackIds) {
           if (this.wsBroadcast) {
             this.wsBroadcast('track_enriched', {
               type: 'track_enriched',

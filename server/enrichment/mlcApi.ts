@@ -212,6 +212,101 @@ class MLCApiClient {
   }
 }
 
+async function enrichSingleTrack(
+  track: Pick<PlaylistSnapshot, "id" | "isrc" | "trackName" | "artistName" | "songwriter">,
+  client: MLCApiClient
+): Promise<MLCEnrichmentResult> {
+  try {
+    let mlcWork: MLCWork | null = null;
+
+    if (track.isrc) {
+      console.log(`[MLC] ${track.id}: Searching by ISRC ${track.isrc}...`);
+      const recordings = await client.searchByISRC(
+        track.isrc,
+        track.trackName,
+        track.artistName
+      );
+
+      if (recordings.length > 0) {
+        const recording = recordings[0];
+        console.log(`[MLC] ${track.id}: Found recording, fetching work data...`);
+        
+        if (recording.mlcsongCode) {
+          mlcWork = await client.getWorkById(recording.mlcsongCode);
+        }
+      }
+    }
+
+    if (!mlcWork && track.trackName) {
+      console.log(`[MLC] ${track.id}: Searching by title "${track.trackName}"...`);
+      
+      let writers: MLCSearchWriter[] | undefined;
+      if (track.songwriter) {
+        const songwriterNames = track.songwriter.split(/[,&;]/).map(s => s.trim());
+        writers = songwriterNames.map(name => {
+          const parts = name.split(' ');
+          return {
+            writerFirstName: parts.slice(0, -1).join(' ') || parts[0],
+            writerLastName: parts.length > 1 ? parts[parts.length - 1] : '',
+          };
+        });
+      }
+
+      const searchResults = await client.searchByTitleAndWriters(track.trackName, writers);
+
+      if (searchResults.length > 0) {
+        const firstResult = searchResults[0];
+        console.log(`[MLC] ${track.id}: Found ${searchResults.length} works, fetching first match...`);
+        
+        if (firstResult.mlcSongCode) {
+          mlcWork = await client.getWorkById(firstResult.mlcSongCode);
+        }
+      }
+    }
+
+    if (mlcWork) {
+      const publishers = mlcWork.publishers || [];
+      const writers = mlcWork.writers || [];
+      
+      const publisherNames = publishers
+        .map(p => p.publisherName)
+        .filter((name): name is string => !!name);
+      
+      const writerNames = writers
+        .map(w => `${w.writerFirstName || ''} ${w.writerLastName || ''}`.trim())
+        .filter(name => !!name);
+
+      console.log(`[MLC] ${track.id}: ✓ Found ${publishers.length} publishers, ${writers.length} writers`);
+
+      return {
+        trackId: track.id,
+        hasPublisher: publishers.length > 0,
+        publisherNames,
+        writerNames,
+        mlcSongCode: mlcWork.mlcSongCode,
+        iswc: mlcWork.iswc,
+      };
+    } else {
+      console.log(`[MLC] ${track.id}: No MLC data found`);
+      return {
+        trackId: track.id,
+        hasPublisher: false,
+        publisherNames: [],
+        writerNames: [],
+      };
+    }
+  } catch (error) {
+    console.error(`[MLC] ${track.id}: Error -`, error);
+    return {
+      trackId: track.id,
+      hasPublisher: false,
+      publisherNames: [],
+      writerNames: [],
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 export async function enrichTracksWithMLC(
   tracks: Pick<PlaylistSnapshot, "id" | "isrc" | "trackName" | "artistName" | "songwriter">[]
 ): Promise<MLCEnrichmentResult[]> {
@@ -230,103 +325,18 @@ export async function enrichTracksWithMLC(
   }
 
   const client = new MLCApiClient(username, password);
+  const CONCURRENCY = 5;
+
+  console.log(`[MLC] Starting publisher lookup for ${tracks.length} tracks (${CONCURRENCY} concurrent)...`);
+
   const results: MLCEnrichmentResult[] = [];
 
-  console.log(`[MLC] Starting publisher lookup for ${tracks.length} tracks...`);
-
-  for (const track of tracks) {
-    try {
-      let mlcWork: MLCWork | null = null;
-
-      if (track.isrc) {
-        console.log(`[MLC] ${track.id}: Searching by ISRC ${track.isrc}...`);
-        const recordings = await client.searchByISRC(
-          track.isrc,
-          track.trackName,
-          track.artistName
-        );
-
-        if (recordings.length > 0) {
-          const recording = recordings[0];
-          console.log(`[MLC] ${track.id}: Found recording, fetching work data...`);
-          
-          if (recording.mlcsongCode) {
-            mlcWork = await client.getWorkById(recording.mlcsongCode);
-          }
-        }
-      }
-
-      if (!mlcWork && track.trackName) {
-        console.log(`[MLC] ${track.id}: Searching by title "${track.trackName}"...`);
-        
-        let writers: MLCSearchWriter[] | undefined;
-        if (track.songwriter) {
-          const songwriterNames = track.songwriter.split(/[,&;]/).map(s => s.trim());
-          writers = songwriterNames.map(name => {
-            const parts = name.split(' ');
-            return {
-              writerFirstName: parts.slice(0, -1).join(' ') || parts[0],
-              writerLastName: parts.length > 1 ? parts[parts.length - 1] : '',
-            };
-          });
-        }
-
-        const searchResults = await client.searchByTitleAndWriters(track.trackName, writers);
-
-        if (searchResults.length > 0) {
-          const firstResult = searchResults[0];
-          console.log(`[MLC] ${track.id}: Found ${searchResults.length} works, fetching first match...`);
-          
-          if (firstResult.mlcSongCode) {
-            mlcWork = await client.getWorkById(firstResult.mlcSongCode);
-          }
-        }
-      }
-
-      if (mlcWork) {
-        const publishers = mlcWork.publishers || [];
-        const writers = mlcWork.writers || [];
-        
-        const publisherNames = publishers
-          .map(p => p.publisherName)
-          .filter((name): name is string => !!name);
-        
-        const writerNames = writers
-          .map(w => `${w.writerFirstName || ''} ${w.writerLastName || ''}`.trim())
-          .filter(name => !!name);
-
-        console.log(`[MLC] ${track.id}: ✓ Found ${publishers.length} publishers, ${writers.length} writers`);
-
-        results.push({
-          trackId: track.id,
-          hasPublisher: publishers.length > 0,
-          publisherNames,
-          writerNames,
-          mlcSongCode: mlcWork.mlcSongCode,
-          iswc: mlcWork.iswc,
-        });
-      } else {
-        console.log(`[MLC] ${track.id}: No MLC data found`);
-        results.push({
-          trackId: track.id,
-          hasPublisher: false,
-          publisherNames: [],
-          writerNames: [],
-        });
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-    } catch (error) {
-      console.error(`[MLC] ${track.id}: Error -`, error);
-      results.push({
-        trackId: track.id,
-        hasPublisher: false,
-        publisherNames: [],
-        writerNames: [],
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
+  for (let i = 0; i < tracks.length; i += CONCURRENCY) {
+    const batch = tracks.slice(i, i + CONCURRENCY);
+    const batchResults = await Promise.all(
+      batch.map(track => enrichSingleTrack(track, client))
+    );
+    results.push(...batchResults);
   }
 
   console.log(`[MLC] Completed: ${results.filter(r => r.hasPublisher).length}/${tracks.length} tracks have publishers`);

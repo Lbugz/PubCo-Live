@@ -496,11 +496,11 @@ export async function enrichTracksWithCredits(
   // Register exit handlers for safety
   registerExitHandler();
 
-  // Initialize queue with reduced concurrency to prevent memory crashes
+  // Initialize queue with controlled concurrency for better throughput
   const queue = getQueue({
-    maxConcurrency: 1,  // Single browser at a time to prevent OOM
-    minDelay: 1000,     // Increased delay between operations
-    browserPoolSize: 1, // Single browser pool
+    maxConcurrency: 2,  // 2 concurrent browsers for better throughput (monitor memory)
+    minDelay: 1000,     // Delay between operations
+    browserPoolSize: 2, // 2 browser pool for parallelization
   });
 
   const TRACK_TIMEOUT = 45000; // 45s timeout per track
