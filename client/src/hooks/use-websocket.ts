@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 
 interface WebSocketMessage {
-  type: 'connected' | 'track_enriched' | 'batch_complete' | 'enrichment_progress' | 'metric_update';
+  type: 'connected' | 'track_enriched' | 'batch_complete' | 'enrichment_progress' | 'metric_update' | 'playlist_error';
   trackId?: string;
   trackName?: string;
   artistName?: string;
@@ -9,6 +9,8 @@ interface WebSocketMessage {
   totalCount?: number;
   playlistId?: string;
   message?: string;
+  error?: string;
+  data?: any;
 }
 
 interface UseWebSocketOptions {
@@ -16,6 +18,7 @@ interface UseWebSocketOptions {
   onBatchComplete?: (data: WebSocketMessage) => void;
   onEnrichmentProgress?: (data: WebSocketMessage) => void;
   onMetricUpdate?: (data: WebSocketMessage) => void;
+  onPlaylistError?: (data: WebSocketMessage) => void;
   onConnected?: () => void;
   onMessage?: (data: WebSocketMessage) => void;
 }
@@ -88,6 +91,11 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
             case 'metric_update':
               if (callbacksRef.current.onMetricUpdate) {
                 callbacksRef.current.onMetricUpdate(data);
+              }
+              break;
+            case 'playlist_error':
+              if (callbacksRef.current.onPlaylistError) {
+                callbacksRef.current.onPlaylistError(data);
               }
               break;
           }

@@ -91,6 +91,25 @@ export default function PlaylistsView() {
     onMetricUpdate: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/metrics/playlists"] });
     },
+    onPlaylistError: (data) => {
+      // Handle playlist errors (e.g., deleted from Spotify)
+      if (data.data?.error) {
+        toast({
+          title: "Playlist Error",
+          description: data.data.error,
+          variant: "destructive",
+        });
+      }
+      
+      // Close drawer if the errored playlist is currently selected
+      if (selectedPlaylist && data.data?.playlistId === selectedPlaylist.playlistId) {
+        setDrawerOpen(false);
+        setSelectedPlaylist(null);
+      }
+      
+      // Refresh playlists to remove deleted playlist
+      queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
+    },
   });
 
   // Fetch Chartmetric analytics for selected playlist

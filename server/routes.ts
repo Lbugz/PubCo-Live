@@ -2704,6 +2704,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
               fetchMethod = 'spotify_api';
               console.log(`[Tracks] Fetch Method = spotify_api (${allPlaylistItems.length} tracks, ${skippedCount} skipped)`);
             } catch (apiError: any) {
+              // Check if playlist doesn't exist (404)
+              if (apiError.message?.includes('404') || apiError.status === 404) {
+                console.error(`[Tracks] ❌ Playlist ${playlist.playlistId} not found (404) - deleting from database`);
+                
+                // Delete invalid playlist
+                await storage.deleteTrackedPlaylist(playlist.id);
+                
+                // Broadcast error to frontend
+                if (wss) {
+                  broadcastToClients({
+                    type: 'playlist_error',
+                    data: {
+                      playlistId: playlist.playlistId,
+                      error: 'Playlist not found or deleted from Spotify',
+                    },
+                  });
+                }
+                
+                continue; // Skip to next playlist
+              }
+              
               // Spotify API failed - fall through to Puppeteer
               console.log(`[Tracks] Spotify API failed: ${apiError.message}`);
               console.log(`[Tracks] Last resort fallback → Puppeteer scraping`);
