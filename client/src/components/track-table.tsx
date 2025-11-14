@@ -10,6 +10,8 @@ import { TrackActionsDropdown } from "./track-actions-dropdown";
 import { SongwriterDisplay } from "./songwriter-display";
 import { useQuery } from "@tanstack/react-query";
 import { getTagColorClass } from "./tag-manager";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useRef } from "react";
 
 interface TrackTableProps {
   tracks: PlaylistSnapshot[];
@@ -72,6 +74,16 @@ export function TrackTable({
 }: TrackTableProps) {
   const allSelected = tracks.length > 0 && tracks.every(track => selectedTrackIds.has(track.id));
   const someSelected = !allSelected && tracks.some(track => selectedTrackIds.has(track.id));
+  
+  const parentRef = useRef<HTMLDivElement>(null);
+  
+  const virtualizer = useVirtualizer({
+    count: tracks.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 96,
+    overscan: 5,
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -120,21 +132,48 @@ export function TrackTable({
         <div className="text-right">Actions</div>
       </div>
 
-      {/* Track Rows with Zebra Striping */}
-      <div className="space-y-0">
-        {tracks.map((track, index) => {
-          const isSelected = selectedTrackIds.has(track.id);
-          return (
-            <Card
-              key={track.id}
-              className={cn(
-                "hover-gradient cursor-pointer rounded-none border-x-0 border-t-0",
-                index % 2 === 0 ? "bg-card/50" : "bg-card/30",
-                isSelected && "ring-2 ring-primary bg-primary/5"
-              )}
-              data-testid={`card-track-${track.id}`}
-              onClick={() => onRowClick?.(track)}
-            >
+      {/* Virtualized Track Rows */}
+      <div
+        ref={parentRef}
+        className="overflow-auto"
+        style={{
+          height: 'calc(100vh - 300px)',
+          minHeight: '400px',
+        }}
+      >
+        <div
+          style={{
+            height: `${virtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const track = tracks[virtualRow.index];
+            const index = virtualRow.index;
+            const isSelected = selectedTrackIds.has(track.id);
+            return (
+              <div
+                key={virtualRow.key}
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <Card
+                  className={cn(
+                    "hover-gradient cursor-pointer rounded-none border-x-0 border-t-0",
+                    index % 2 === 0 ? "bg-card/50" : "bg-card/30",
+                    isSelected && "ring-2 ring-primary bg-primary/5"
+                  )}
+                  data-testid={`card-track-${track.id}`}
+                  onClick={() => onRowClick?.(track)}
+                >
               <div className="grid grid-cols-1 lg:grid-cols-[auto_2fr_2fr_2fr_2fr_2fr_1fr_auto] gap-4 p-4 items-center">
                 {/* Checkbox Column - Desktop Only */}
                 <div 
@@ -252,8 +291,10 @@ export function TrackTable({
               </div>
             </div>
           </Card>
-          );
-        })}
+        </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="flex items-center justify-between pt-4 px-4 text-sm text-muted-foreground">
