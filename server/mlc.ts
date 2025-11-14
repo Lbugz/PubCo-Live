@@ -118,12 +118,18 @@ async function getAccessToken(): Promise<string | null> {
   }
 }
 
-export function determinePublisherStatus(publishers: MLCPublisher[]): PublisherStatus {
+export function determinePublisherStatus(publishers: MLCPublisher[] | undefined): PublisherStatus {
   if (!publishers || publishers.length === 0) {
     return "unsigned";
   }
 
-  const publisherNames = publishers.map(p => p.publisherName.toLowerCase());
+  const publisherNames = publishers
+    .filter(p => p && p.publisherName)
+    .map(p => p.publisherName.toLowerCase());
+  
+  if (publisherNames.length === 0) {
+    return "unsigned";
+  }
   
   const hasMajorPublisher = publisherNames.some(name => 
     MAJOR_PUBLISHERS.some(major => name.includes(major))
@@ -197,15 +203,12 @@ export async function getWorkByMlcSongCode(mlcSongCode: string): Promise<MLCWork
   try {
     console.log(`[MLC] Fetching work details for MLC Song Code: ${mlcSongCode}`);
     
-    const response = await fetch(`${MLC_API_BASE_URL}/works`, {
-      method: "POST",
+    const response = await fetch(`${MLC_API_BASE_URL}/work/id/${mlcSongCode}`, {
+      method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
+        "Accept": "application/json",
       },
-      body: JSON.stringify([{
-        mlcsongCode: mlcSongCode,
-      }]),
     });
 
     if (!response.ok) {
@@ -216,15 +219,15 @@ export async function getWorkByMlcSongCode(mlcSongCode: string): Promise<MLCWork
       throw new Error(`MLC API error: ${response.status} ${response.statusText}`);
     }
 
-    const works: MLCWork[] = await response.json();
+    const work: MLCWork = await response.json();
     
-    if (!works || works.length === 0) {
+    if (!work) {
       console.log(`[MLC] No work found for Song Code: ${mlcSongCode}`);
       return null;
     }
 
-    const work = works[0];
-    console.log(`[MLC] Found work: "${work.primaryTitle}" with ${work.publishers?.length || 0} publishers`);
+    const publishersCount = work.publishers?.length || 0;
+    console.log(`[MLC] Found work: "${work.primaryTitle || 'Unknown'}" with ${publishersCount} publishers`);
     
     return work;
   } catch (error) {
@@ -312,7 +315,16 @@ export async function enrichTrackWithMLC(isrc: string): Promise<{
     const work = await getWorkByMlcSongCode(recording.mlcsongCode);
     
     if (!work) {
-      return null;
+      console.log(`[MLC] No work details found for MLC Song Code: ${recording.mlcsongCode}, propagating minimal data`);
+      return {
+        publisherName: null,
+        publisherStatus: "unsigned",
+        collectionShare: null,
+        ipiNumber: null,
+        iswc: null,
+        mlcSongCode: recording.mlcsongCode,
+        writers: [],
+      };
     }
 
     const publishers = work.publishers || [];
@@ -327,9 +339,10 @@ export async function enrichTrackWithMLC(isrc: string): Promise<{
       ? work.writers[0].writerIPI 
       : null;
 
-    const writers = work.writers.map(w => 
-      `${w.writerFirstName} ${w.writerLastName}`.trim()
-    ).filter(Boolean);
+    const writers = (work.writers || [])
+      .filter(w => w && (w.writerFirstName || w.writerLastName))
+      .map(w => `${w.writerFirstName || ''} ${w.writerLastName || ''}`.trim())
+      .filter(Boolean);
 
     return {
       publisherName: primaryPublisher?.publisherName || null,
@@ -337,7 +350,7 @@ export async function enrichTrackWithMLC(isrc: string): Promise<{
       collectionShare,
       ipiNumber: writerIPI,
       iswc: work.iswc || null,
-      mlcSongCode: work.mlcSongCode || null,
+      mlcSongCode: work.mlcSongCode || recording.mlcsongCode || null,
       writers,
     };
   } catch (error) {
