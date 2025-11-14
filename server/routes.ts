@@ -2910,6 +2910,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   console.log(`[Tracks] ✅ Using Puppeteer (local) results: ${networkTrackCount} tracks`);
                   fetchMethod = 'network-capture';
                   capturedTracks = networkResult.tracks ?? [];
+                  
+                  // Update playlist metadata from network scraper (since we're using its results)
+                  const updates: any = { totalTracks: networkTrackCount };
+                  if (networkResult.playlistName?.trim()) {
+                    updates.name = networkResult.playlistName.trim();
+                  }
+                  if (networkResult.curator?.trim()) {
+                    updates.curator = networkResult.curator.trim();
+                  }
+                  if (networkResult.followers !== undefined && networkResult.followers !== null) {
+                    updates.followers = networkResult.followers;
+                  }
+                  if (networkResult.imageUrl?.trim()) {
+                    updates.imageUrl = networkResult.imageUrl.trim();
+                  }
+                  
+                  await storage.updateTrackedPlaylistMetadata(playlist.id, updates);
+                  console.log(`Updated playlist metadata from network: name="${updates.name || 'not set'}", curator="${updates.curator || 'not set'}", followers=${updates.followers ?? 'not set'}`);
+                  
+                  // Broadcast metadata update
+                  broadcast('playlist_updated', {
+                    playlistId: playlist.playlistId,
+                    id: playlist.id,
+                    updates,
+                  });
                 } else {
                   if (!domResult.success && domResult.error) {
                     console.error(`DOM capture failed for ${playlist.name}: ${domResult.error}`);

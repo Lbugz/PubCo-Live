@@ -134,10 +134,19 @@ export async function fetchEditorialTracksViaNetwork(
             console.log('[Network Capture] 🔍 DEBUG - playlistV2.followers:', JSON.stringify(playlistV2.followers, null, 2));
             console.log('[Network Capture] 🔍 DEBUG - playlistV2.ownerV2:', JSON.stringify(playlistV2.ownerV2, null, 2));
             
+            // Handle followers field - can be either a number or an object with totalCount
+            // Use ?? instead of || to preserve legitimate 0 values
+            let followersCount: number | null = null;
+            if (typeof playlistV2.followers === 'number') {
+              followersCount = playlistV2.followers;
+            } else if (playlistV2.followers?.totalCount !== undefined) {
+              followersCount = playlistV2.followers.totalCount ?? null;
+            }
+            
             graphQLMetadata = {
               name: playlistV2.name,
               curator: playlistV2.ownerV2?.data?.name || playlistV2.owner?.name,
-              followers: playlistV2.followers?.totalCount || null,
+              followers: followersCount,
               imageUrl: playlistV2.images?.items?.[0]?.sources?.[0]?.url || playlistV2.images?.[0]?.url,
             };
             console.log(`[Network Capture] 📊 Extracted GraphQL metadata: name="${graphQLMetadata.name}", curator="${graphQLMetadata.curator}", followers=${graphQLMetadata.followers}`);
