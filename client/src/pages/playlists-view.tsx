@@ -253,18 +253,6 @@ export default function PlaylistsView() {
       
       queryClient.invalidateQueries({ queryKey: ["/api/playlist-snapshot"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
-      
-      // Auto-trigger enrichment if enabled
-      if (autoEnrichOnFetch && playlist && totalNew > 0) {
-        console.log(`[Auto-Enrich] Starting enrichment for playlist ${playlist.id}...`);
-        toast({
-          title: "Starting track enrichment",
-          description: "Fetching songwriters and publishers...",
-        });
-        enrichTracksMutation.mutate(playlist.playlistId);
-      } else if (!autoEnrichOnFetch && totalNew > 0) {
-        console.log(`[Auto-Enrich] Skipped - auto-enrich is disabled`);
-      }
     },
     onError: (error: Error) => {
       console.error(`[Auto-Fetch] Error:`, error);
