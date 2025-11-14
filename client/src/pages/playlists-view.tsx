@@ -1456,7 +1456,7 @@ export default function PlaylistsView() {
                   </AccordionContent>
                 </AccordionItem>
 
-                
+
               </Accordion>
             </div>
           )}

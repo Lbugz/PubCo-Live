@@ -5,6 +5,8 @@ import { enrichTracksWithCredits } from "./spotifyCreditsScaper";
 import { enrichTracksWithMLC } from "./mlcApi";
 import { enrichTracksWithSpotifyAPI } from "./spotifyBatchEnrichment";
 import { getUncachableSpotifyClient } from "../spotify";
+import { searchArtistByName, getArtistExternalLinks } from "../musicbrainz";
+import { enrichTrackWithChartmetric } from "../chartmetric";
 import type { WebSocket } from "ws";
 
 export interface WorkerOptions {
@@ -385,21 +387,208 @@ export class EnrichmentWorker {
 
       console.log(`[Phase 2: Credits Scraping] ✅ Complete: ${result.tracksEnriched}/${result.tracksProcessed} tracks enriched, ${phase2Persisted} persisted`);
 
-      // Phase 3: MusicBrainz (artist social links) - Currently embedded in Phase 2
-      console.log(`[Phase 3: MusicBrainz] Artist link extraction embedded in Phase 2 workflow`);
-      
-      // Phase 4: Chartmetric (streaming analytics) - Not yet implemented in worker
-      console.log(`[Phase 4: Chartmetric] ⚠️ Not yet implemented in background job queue`);
+      // Phase 3: MusicBrainz (artist social links)
+      await this.jobQueue.updateJobProgress(job.id, {
+        progress: 72,
+        logs: [`[${new Date().toISOString()}] Starting Phase 3 enrichment (MusicBrainz artist social links)...`],
+      });
+
+      this.broadcastProgress(job.id, {
+        status: 'running',
+        progress: 72,
+        message: 'Phase 3: Fetching artist social links from MusicBrainz...',
+      });
+
+      let phase3ArtistsCreated = 0;
+      let phase3LinksFound = 0;
+
+      try {
+        for (const track of ctx.getAllTracks()) {
+          if (!track.songwriter) continue;
+
+          const songwriterNames = track.songwriter
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+
+          for (const songwriterName of songwriterNames) {
+            try {
+              // Search for artist by name
+              const artistResult = await searchArtistByName(songwriterName);
+              
+              if (artistResult && artistResult.score >= 90) {
+                // Get external links
+                const links = await getArtistExternalLinks(artistResult.id);
+
+                // Create or update artist
+                const artist = await this.storage.createOrUpdateArtist({
+                  name: songwriterName,
+                  musicbrainzId: artistResult.id,
+                  ...links,
+                });
+
+                // Link artist to track
+                await this.storage.linkArtistToTrack(artist.id, track.id);
+                phase3ArtistsCreated++;
+
+                if (Object.keys(links).length > 0) {
+                  phase3LinksFound++;
+                  console.log(`[Phase 3] ✅ Found ${Object.keys(links).length} social links for ${songwriterName}`);
+                }
+              }
+            } catch (error) {
+              console.error(`[Phase 3] Error enriching artist ${songwriterName}:`, error);
+            }
+          }
+        }
+
+        await this.jobQueue.updateJobProgress(job.id, {
+          progress: 75,
+          logs: [
+            `[${new Date().toISOString()}] Phase 3 (MusicBrainz) complete: ${phase3ArtistsCreated} artists created, ${phase3LinksFound} with social links`,
+          ],
+        });
+
+        this.broadcastProgress(job.id, {
+          status: 'running',
+          progress: 75,
+          message: `Phase 3 complete: ${phase3LinksFound} artists with social links found`,
+        });
+
+        console.log(`[Phase 3: MusicBrainz] ✅ Complete: ${phase3ArtistsCreated} artists, ${phase3LinksFound} with links`);
+
+        // Broadcast quality metric update
+        if (this.wsBroadcast && job.playlistId) {
+          this.wsBroadcast('playlist_quality_updated', {
+            type: 'playlist_quality_updated',
+            playlistId: job.playlistId,
+            phase: 3,
+            artistsWithLinks: phase3LinksFound,
+          });
+        }
+      } catch (phase3Error) {
+        console.error("[Worker] Phase 3 (MusicBrainz) failed, continuing to Phase 4:", phase3Error);
+
+        await this.jobQueue.updateJobProgress(job.id, {
+          progress: 75,
+          logs: [
+            `[${new Date().toISOString()}] Phase 3 failed: ${phase3Error instanceof Error ? phase3Error.message : String(phase3Error)}. Continuing to Phase 4.`,
+          ],
+        });
+      }
+
+      // Phase 4: Chartmetric (streaming analytics, moods, activities)
+      await this.jobQueue.updateJobProgress(job.id, {
+        progress: 75,
+        logs: [`[${new Date().toISOString()}] Starting Phase 4 enrichment (Chartmetric analytics)...`],
+      });
+
+      this.broadcastProgress(job.id, {
+        status: 'running',
+        progress: 75,
+        message: 'Phase 4: Fetching Chartmetric analytics...',
+      });
+
+      let phase4EnrichedCount = 0;
+      let phase4NotFoundCount = 0;
+      let phase4FailedCount = 0;
+
+      try {
+        for (const track of ctx.getAllTracks()) {
+          // Skip if already enriched
+          if (track.chartmetricStatus === 'success' || track.chartmetricStatus === 'not_found') {
+            continue;
+          }
+
+          if (!track.isrc) {
+            ctx.applyPatch(track.id, {
+              chartmetricStatus: 'failed_missing_isrc',
+              chartmetricEnrichedAt: new Date(),
+            });
+            phase4FailedCount++;
+            continue;
+          }
+
+          try {
+            const chartmetricData = await enrichTrackWithChartmetric(track);
+
+            if (chartmetricData && chartmetricData.chartmetricId) {
+              ctx.applyPatch(track.id, {
+                chartmetricId: chartmetricData.chartmetricId,
+                spotifyStreams: chartmetricData.spotifyStreams,
+                streamingVelocity: chartmetricData.streamingVelocity,
+                youtubeViews: chartmetricData.youtubeViews,
+                trackStage: chartmetricData.trackStage,
+                moods: chartmetricData.moods,
+                activities: chartmetricData.activities,
+                chartmetricStatus: 'success',
+                chartmetricEnrichedAt: new Date(),
+              });
+              phase4EnrichedCount++;
+              console.log(`[Phase 4] ✅ Enriched ${track.trackName}: ${chartmetricData.spotifyStreams?.toLocaleString()} streams`);
+            } else {
+              ctx.applyPatch(track.id, {
+                chartmetricStatus: 'not_found',
+                chartmetricEnrichedAt: new Date(),
+              });
+              phase4NotFoundCount++;
+            }
+          } catch (error) {
+            console.error(`[Phase 4] Error enriching track ${track.id}:`, error);
+            ctx.applyPatch(track.id, {
+              chartmetricStatus: 'failed_api',
+              chartmetricEnrichedAt: new Date(),
+            });
+            phase4FailedCount++;
+          }
+        }
+
+        const { persistedCount: phase4Persisted } = await this.persistPhaseUpdates(ctx, job.id, 'Phase 4');
+
+        await this.jobQueue.updateJobProgress(job.id, {
+          progress: 82,
+          logs: [
+            `[${new Date().toISOString()}] Phase 4 (Chartmetric) complete: ${phase4EnrichedCount} enriched, ${phase4NotFoundCount} not found, ${phase4FailedCount} failed, ${phase4Persisted} persisted`,
+          ],
+        });
+
+        this.broadcastProgress(job.id, {
+          status: 'running',
+          progress: 82,
+          message: `Phase 4 complete: ${phase4EnrichedCount} tracks enriched with analytics`,
+        });
+
+        console.log(`[Phase 4: Chartmetric] ✅ Complete: ${phase4EnrichedCount} enriched, ${phase4NotFoundCount} not found, ${phase4FailedCount} failed`);
+
+        // Broadcast quality metric update
+        if (this.wsBroadcast && job.playlistId) {
+          this.wsBroadcast('playlist_quality_updated', {
+            type: 'playlist_quality_updated',
+            playlistId: job.playlistId,
+            phase: 4,
+            tracksEnriched: phase4EnrichedCount,
+          });
+        }
+      } catch (phase4Error) {
+        console.error("[Worker] Phase 4 (Chartmetric) failed, continuing to Phase 5:", phase4Error);
+
+        await this.jobQueue.updateJobProgress(job.id, {
+          progress: 82,
+          logs: [
+            `[${new Date().toISOString()}] Phase 4 failed: ${phase4Error instanceof Error ? phase4Error.message : String(phase4Error)}. Continuing to Phase 5.`,
+          ],
+        });
+      }
 
       await this.jobQueue.updateJobProgress(job.id, {
-        progress: 70,
+        progress: 82,
         logs: [`[${new Date().toISOString()}] Starting Phase 5 enrichment (MLC publisher status)...`],
       });
 
       this.broadcastProgress(job.id, {
         status: 'running',
-        progress: 70,
-        message: 'Checking publisher status with MLC API...',
+        progress: 82,
+        message: 'Phase 5: Checking publisher status with MLC API...',
       });
 
       let mlcResults: Array<{
@@ -440,7 +629,7 @@ export class EnrichmentWorker {
         console.log(`[Phase 5: MLC] ✅ Complete: ${mlcResults.filter(r => r.hasPublisher).length}/${mlcResults.length} tracks have publishers, ${mlcPersisted} persisted`);
 
         await this.jobQueue.updateJobProgress(job.id, {
-          progress: 85,
+          progress: 92,
           logs: [
             `[${new Date().toISOString()}] Phase 5 (MLC) enrichment complete: ${mlcResults.filter(r => r.hasPublisher).length}/${mlcResults.length} tracks have publishers, ${mlcPersisted} persisted`,
           ],
@@ -448,7 +637,7 @@ export class EnrichmentWorker {
 
         this.broadcastProgress(job.id, {
           status: 'running',
-          progress: 85,
+          progress: 92,
           message: `Phase 5 complete: ${mlcPersisted} tracks persisted`,
         });
 
@@ -501,16 +690,16 @@ export class EnrichmentWorker {
         console.error("[Worker] MLC enrichment failed, continuing job:", mlcError);
 
         await this.jobQueue.updateJobProgress(job.id, {
-          progress: 85,
+          progress: 92,
           logs: [
-            `[${new Date().toISOString()}] MLC enrichment failed: ${mlcError instanceof Error ? mlcError.message : String(mlcError)}. Continuing with Phase 2 results only.`,
+            `[${new Date().toISOString()}] Phase 5 (MLC) failed: ${mlcError instanceof Error ? mlcError.message : String(mlcError)}. Job continuing.`,
           ],
         });
 
         this.broadcastProgress(job.id, {
           status: 'running',
-          progress: 85,
-          message: 'MLC enrichment failed, continuing with Phase 2 results...',
+          progress: 92,
+          message: 'Phase 5 failed, finalizing job...',
         });
 
         for (const trackId of job.trackIds) {
