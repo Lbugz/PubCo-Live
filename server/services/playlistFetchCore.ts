@@ -1,10 +1,11 @@
 /**
- * Core playlist fetching logic extracted from routes.ts
- * This module contains the authoritative fetch flow for playlists
+ * Core playlist fetching logic with parallel processing
+ * Phase 4: Playlist-Level Parallelism with Rate Limiting
  */
 
 import type { PlaylistFetchOptions } from "./playlistFetchService";
 import { PlaylistValidationError, PlaylistFetchError } from "./playlistFetchErrors";
+import { playlistLimiter, chartmetricLimiter, spotifyLimiter, puppeteerLimiter, delay, CHARTMETRIC_DELAY_MS } from "./rateLimiters";
 import { storage } from "../storage";
 import { getUncachableSpotifyClient } from "../spotify";
 import { getPlaylistTracks } from "../chartmetric";
@@ -25,8 +26,308 @@ export interface PlaylistFetchResult {
   }>;
 }
 
+interface SinglePlaylistResult {
+  playlistName: string;
+  playlistId: string;
+  newTracks: InsertPlaylistSnapshot[];
+  completeness: {
+    name: string;
+    fetchCount: number;
+    totalTracks: number | null;
+    isComplete: boolean;
+    skipped: number;
+  };
+  error?: Error;
+}
+
 /**
- * Core fetch implementation that handles playlist data retrieval, track processing, and storage
+ * Fetch a single playlist with rate-limited external calls
+ * Returns structured result for aggregation
+ */
+async function fetchSinglePlaylist(
+  playlist: any,
+  spotify: any | null,
+  today: string,
+  existingTrackKeys: Set<string>,
+  fetchEditorialTracksViaNetwork: any
+): Promise<SinglePlaylistResult> {
+  console.log(`[Playlist ${playlist.playlistId}] Starting fetch for ${playlist.name} (isEditorial=${playlist.isEditorial})`);
+  
+  const newTracks: InsertPlaylistSnapshot[] = [];
+  let playlistTotalTracks = playlist.totalTracks;
+  let skippedCount = 0;
+  let fetchMethod: string | null = null;
+  
+  try {
+    // PHASE 1: Try Chartmetric FIRST (with rate limiting)
+    try {
+      console.log(`[Playlist ${playlist.playlistId}] Trying Chartmetric...`);
+      
+      const cmTracks = await chartmetricLimiter(async () => {
+        const tracks = await getPlaylistTracks(playlist.playlistId, 'spotify');
+        // Enforce 2-second delay after Chartmetric call
+        await delay(CHARTMETRIC_DELAY_MS);
+        return tracks;
+      });
+      
+      if (cmTracks && cmTracks.length > 0) {
+        console.log(`[Playlist ${playlist.playlistId}] ✅ Chartmetric: ${cmTracks.length} tracks`);
+        
+        for (const cmTrack of cmTracks) {
+          const trackKey = `${playlist.playlistId}_https://open.spotify.com/track/${cmTrack.spotifyId}`;
+          
+          // Synchronous check before any await to prevent race conditions
+          if (existingTrackKeys.has(trackKey)) {
+            skippedCount++;
+            continue;
+          }
+          
+          const score = calculateUnsignedScore({
+            playlistName: playlist.name,
+            label: null,
+            publisher: null,
+            writer: null,
+          });
+          
+          const newTrack: InsertPlaylistSnapshot = {
+            week: today,
+            playlistName: playlist.name,
+            playlistId: playlist.playlistId,
+            trackName: cmTrack.name,
+            artistName: cmTrack.artists.map(a => a.name).join(", "),
+            spotifyUrl: `https://open.spotify.com/track/${cmTrack.spotifyId}`,
+            albumArt: cmTrack.album?.image_url || null,
+            isrc: cmTrack.isrc || null,
+            label: null,
+            unsignedScore: score,
+            addedAt: new Date(),
+            dataSource: "chartmetric",
+            chartmetricId: cmTrack.chartmetricId ? String(cmTrack.chartmetricId) : null,
+            chartmetricStatus: "completed",
+          };
+          
+          newTracks.push(newTrack);
+          existingTrackKeys.add(trackKey);
+        }
+        
+        fetchMethod = 'chartmetric';
+        playlistTotalTracks = cmTracks.length;
+        
+        await storage.updatePlaylistCompleteness(playlist.playlistId, cmTracks.length - skippedCount, playlistTotalTracks, new Date());
+        
+        return {
+          playlistName: playlist.name,
+          playlistId: playlist.playlistId,
+          newTracks,
+          completeness: {
+            name: playlist.name,
+            fetchCount: cmTracks.length - skippedCount,
+            totalTracks: playlistTotalTracks,
+            isComplete: true,
+            skipped: skippedCount,
+          },
+        };
+      } else {
+        console.log(`[Playlist ${playlist.playlistId}] Chartmetric returned no tracks`);
+      }
+    } catch (cmError: any) {
+      console.log(`[Playlist ${playlist.playlistId}] Chartmetric failed: ${cmError.message}`);
+    }
+    
+    // PHASE 2: Try Spotify API (for NON-editorial playlists, with rate limiting)
+    if (playlist.isEditorial !== 1 && spotify) {
+      try {
+        console.log(`[Playlist ${playlist.playlistId}] Trying Spotify API...`);
+        
+        const playlistData = await spotifyLimiter(() => 
+          spotify.playlists.getPlaylist(playlist.playlistId, "from_token" as any)
+        );
+        playlistTotalTracks = playlistData.tracks?.total || 0;
+        
+        let offset = 0;
+        const limit = 100;
+        
+        while (offset < (playlistTotalTracks ?? 0)) {
+          const tracksPage = await spotifyLimiter(() =>
+            spotify.playlists.getPlaylistItems(
+              playlist.playlistId,
+              undefined,
+              `items(track(id,name,artists(name),album(name,images),external_urls))`,
+              limit,
+              offset,
+              "from_token" as any
+            )
+          );
+          
+          if (!tracksPage.items) break;
+          
+          for (const item of tracksPage.items) {
+            if (!item.track?.id) continue;
+            
+            const trackKey = `${playlist.playlistId}_${item.track.external_urls?.spotify}`;
+            
+            // Synchronous check before any await
+            if (existingTrackKeys.has(trackKey)) {
+              skippedCount++;
+              continue;
+            }
+            
+            const score = calculateUnsignedScore({
+              playlistName: playlist.name,
+              label: null,
+              publisher: null,
+              writer: null,
+            });
+            
+            const newTrack: InsertPlaylistSnapshot = {
+              week: today,
+              playlistName: playlist.name,
+              playlistId: playlist.playlistId,
+              trackName: item.track.name,
+              artistName: item.track.artists?.map((a: any) => a.name).join(", ") || "Unknown",
+              spotifyUrl: item.track.external_urls?.spotify || "",
+              albumArt: item.track.album?.images?.[0]?.url || null,
+              unsignedScore: score,
+              addedAt: new Date(),
+              dataSource: "spotify_api",
+            };
+            
+            newTracks.push(newTrack);
+            existingTrackKeys.add(trackKey);
+          }
+          
+          offset += limit;
+        }
+        
+        fetchMethod = 'spotify_api';
+        console.log(`[Playlist ${playlist.playlistId}] ✅ Spotify API: ${newTracks.length} tracks`);
+        
+        await storage.updatePlaylistCompleteness(playlist.playlistId, newTracks.length, playlistTotalTracks ?? 0, new Date());
+        
+        return {
+          playlistName: playlist.name,
+          playlistId: playlist.playlistId,
+          newTracks,
+          completeness: {
+            name: playlist.name,
+            fetchCount: newTracks.length,
+            totalTracks: playlistTotalTracks ?? 0,
+            isComplete: newTracks.length === (playlistTotalTracks ?? 0),
+            skipped: skippedCount,
+          },
+        };
+      } catch (spotifyError: any) {
+        console.log(`[Playlist ${playlist.playlistId}] Spotify API failed: ${spotifyError.message}`);
+      }
+    }
+    
+    // PHASE 3: Try Puppeteer (for editorial playlists, with rate limiting)
+    if (playlist.isEditorial === 1) {
+      try {
+        console.log(`[Playlist ${playlist.playlistId}] Trying Puppeteer...`);
+        
+        const playlistUrl = `https://open.spotify.com/playlist/${playlist.playlistId}`;
+        const puppeteerResult = await puppeteerLimiter(() => 
+          fetchEditorialTracksViaNetwork(playlistUrl)
+        );
+        const puppeteerTracks = puppeteerResult.success ? puppeteerResult.tracks : [];
+        
+        if (puppeteerTracks && puppeteerTracks.length > 0) {
+          for (const track of puppeteerTracks) {
+            const trackKey = `${playlist.playlistId}_${track.spotifyUrl}`;
+            
+            // Synchronous check before any await
+            if (existingTrackKeys.has(trackKey)) {
+              skippedCount++;
+              continue;
+            }
+            
+            const score = calculateUnsignedScore({
+              playlistName: playlist.name,
+              label: null,
+              publisher: null,
+              writer: null,
+            });
+            
+            const newTrack: InsertPlaylistSnapshot = {
+              week: today,
+              playlistName: playlist.name,
+              playlistId: playlist.playlistId,
+              trackName: track.name,
+              artistName: track.artists.join(", "),
+              spotifyUrl: track.spotifyUrl,
+              albumArt: track.albumArt,
+              isrc: track.isrc,
+              unsignedScore: score,
+              addedAt: new Date(),
+              dataSource: "puppeteer",
+            };
+            
+            newTracks.push(newTrack);
+            existingTrackKeys.add(trackKey);
+          }
+          
+          fetchMethod = 'puppeteer';
+          playlistTotalTracks = puppeteerTracks.length;
+          console.log(`[Playlist ${playlist.playlistId}] ✅ Puppeteer: ${puppeteerTracks.length} tracks`);
+          
+          await storage.updatePlaylistCompleteness(playlist.playlistId, puppeteerTracks.length - skippedCount, playlistTotalTracks, new Date());
+          
+          return {
+            playlistName: playlist.name,
+            playlistId: playlist.playlistId,
+            newTracks,
+            completeness: {
+              name: playlist.name,
+              fetchCount: puppeteerTracks.length - skippedCount,
+              totalTracks: playlistTotalTracks,
+              isComplete: true,
+              skipped: skippedCount,
+            },
+          };
+        } else {
+          console.log(`[Playlist ${playlist.playlistId}] Puppeteer returned no tracks`);
+        }
+      } catch (puppeteerError: any) {
+        console.log(`[Playlist ${playlist.playlistId}] Puppeteer failed: ${puppeteerError.message}`);
+      }
+    }
+    
+    // All methods failed
+    console.warn(`[Playlist ${playlist.playlistId}] ⚠️ All fetch methods failed`);
+    return {
+      playlistName: playlist.name,
+      playlistId: playlist.playlistId,
+      newTracks: [],
+      completeness: {
+        name: playlist.name,
+        fetchCount: 0,
+        totalTracks: playlistTotalTracks,
+        isComplete: false,
+        skipped: skippedCount,
+      },
+    };
+    
+  } catch (error: any) {
+    console.error(`[Playlist ${playlist.playlistId}] Error:`, error);
+    return {
+      playlistName: playlist.name,
+      playlistId: playlist.playlistId,
+      newTracks: [],
+      completeness: {
+        name: playlist.name,
+        fetchCount: 0,
+        totalTracks: null,
+        isComplete: false,
+        skipped: 0,
+      },
+      error,
+    };
+  }
+}
+
+/**
+ * Core fetch implementation with parallel playlist processing
  * Called by both HTTP endpoint and auto-trigger service
  */
 export async function fetchPlaylistsCore(options: PlaylistFetchOptions): Promise<PlaylistFetchResult> {
@@ -53,6 +354,8 @@ export async function fetchPlaylistsCore(options: PlaylistFetchOptions): Promise
     throw new PlaylistValidationError(`No playlists found for mode: ${mode}`);
   }
   
+  console.log(`\n🚀 Starting PARALLEL fetch for ${trackedPlaylists.length} playlists (concurrency: 3)`);
+  
   // Only get Spotify client if we have non-editorial playlists to fetch
   const hasNonEditorialPlaylists = trackedPlaylists.some(p => p.isEditorial !== 1);
   let spotify: any = null;
@@ -71,262 +374,43 @@ export async function fetchPlaylistsCore(options: PlaylistFetchOptions): Promise
     existingTracks.map(t => `${t.playlistId}_${t.spotifyUrl}`)
   );
   
-  const allTracks: InsertPlaylistSnapshot[] = [];
-  const completenessResults: Array<{ name: string; fetchCount: number; totalTracks: number | null; isComplete: boolean; skipped: number }> = [];
-  
-  // Import Puppeteer functions for editorial playlists
+  // Import Puppeteer functions
   const { fetchEditorialTracksViaNetwork } = await import("../scrapers/spotifyEditorialNetwork");
   
-  for (const playlist of trackedPlaylists) {
-    try {
-      console.log(`Fetching playlist: ${playlist.name} (isEditorial=${playlist.isEditorial}, method=${playlist.fetchMethod})`);
+  // Process playlists in parallel using playlistLimiter (concurrency: 3)
+  const playlistPromises = trackedPlaylists.map((playlist, index) =>
+    playlistLimiter(async () => {
+      console.log(`[Queue] Processing playlist ${index + 1}/${trackedPlaylists.length}: ${playlist.name}`);
+      return fetchSinglePlaylist(playlist, spotify, today, existingTrackKeys, fetchEditorialTracksViaNetwork);
+    })
+  );
+  
+  // Wait for all playlists to complete (use allSettled to prevent one failure from stopping others)
+  const results = await Promise.allSettled(playlistPromises);
+  
+  // Aggregate results
+  const allTracks: InsertPlaylistSnapshot[] = [];
+  const completenessResults: Array<{ name: string; fetchCount: number; totalTracks: number | null; isComplete: boolean; skipped: number }> = [];
+  let successCount = 0;
+  let failureCount = 0;
+  
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      const playlistResult = result.value;
+      allTracks.push(...playlistResult.newTracks);
+      completenessResults.push(playlistResult.completeness);
       
-      let playlistTracks: any[] = [];
-      let playlistTotalTracks = playlist.totalTracks;
-      let skippedCount = 0;
-      
-      // fetchMethod will be set based on which tier actually succeeds
-      let fetchMethod = null;
-      let chartmetricSucceeded = false;
-      let spotifyApiSucceeded = false;
-      let puppeteerSucceeded = false;
-      
-      // PHASE 1: Try Chartmetric FIRST for ALL playlists (editorial AND non-editorial)
-      try {
-        console.log(`[Tracks] Starting fetch for ${playlist.name} (isEditorial=${playlist.isEditorial})`);
-        console.log(`[Tracks] Trying Chartmetric track lookup for ${playlist.playlistId}...`);
-        
-        const cmTracks = await getPlaylistTracks(playlist.playlistId, 'spotify');
-        
-        if (cmTracks && cmTracks.length > 0) {
-          console.log(`[Tracks] ✅ Chartmetric success: ${cmTracks.length} tracks`);
-          
-          // Set success flag immediately after capturing Chartmetric data
-          chartmetricSucceeded = true;
-          fetchMethod = 'chartmetric';
-          
-          // Convert Chartmetric tracks to our format
-          for (const cmTrack of cmTracks) {
-            const trackKey = `${playlist.playlistId}_https://open.spotify.com/track/${cmTrack.spotifyId}`;
-            
-            if (existingTrackKeys.has(trackKey)) {
-              skippedCount++;
-              continue;
-            }
-            
-            const score = calculateUnsignedScore({
-              playlistName: playlist.name,
-              label: null,
-              publisher: null,
-              writer: null,
-            });
-            
-            const newTrack: InsertPlaylistSnapshot = {
-              week: today,
-              playlistName: playlist.name,
-              playlistId: playlist.playlistId,
-              trackName: cmTrack.name,
-              artistName: cmTrack.artists.map(a => a.name).join(", "),
-              spotifyUrl: `https://open.spotify.com/track/${cmTrack.spotifyId}`,
-              albumArt: cmTrack.album?.image_url || null,
-              isrc: cmTrack.isrc || null,
-              label: null,
-              unsignedScore: score,
-              addedAt: new Date(),
-              dataSource: "chartmetric",
-              chartmetricId: cmTrack.chartmetricId ? String(cmTrack.chartmetricId) : null,
-              chartmetricStatus: "completed",
-            };
-            
-            allTracks.push(newTrack);
-            existingTrackKeys.add(trackKey);
-          }
-          
-          fetchMethod = 'chartmetric';
-          playlistTotalTracks = cmTracks.length;
-          console.log(`[Tracks] Fetch Method = chartmetric (${cmTracks.length} tracks, ${skippedCount} skipped)`);
-          
-          // Successfully got tracks from Chartmetric - skip to next playlist
-          completenessResults.push({
-            name: playlist.name,
-            fetchCount: cmTracks.length - skippedCount,
-            totalTracks: playlistTotalTracks,
-            isComplete: true,
-            skipped: skippedCount,
-          });
-          
-          await storage.updatePlaylistCompleteness(playlist.playlistId, cmTracks.length - skippedCount, playlistTotalTracks ?? 0, new Date());
-          
-          continue; // Move to next playlist
-        } else {
-          console.log(`[Tracks] Chartmetric returned no tracks`);
-        }
-      } catch (cmError: any) {
-        console.log(`[Tracks] Chartmetric failed: ${cmError.message}`);
+      if (playlistResult.error) {
+        failureCount++;
+        console.error(`❌ Playlist "${playlistResult.playlistName}" failed:`, playlistResult.error.message);
+      } else {
+        successCount++;
       }
-      
-      // PHASE 2: Try Spotify API (for NON-editorial playlists only)
-      if (playlist.isEditorial !== 1 && spotify) {
-        try {
-          console.log(`[Tracks] Trying Spotify API for ${playlist.playlistId}...`);
-          
-          const playlistData = await spotify.playlists.getPlaylist(playlist.playlistId, "from_token" as any);
-          playlistTotalTracks = playlistData.tracks?.total || 0;
-          
-          let offset = 0;
-          const limit = 100;
-          
-          while (offset < (playlistTotalTracks ?? 0)) {
-            const tracksPage = await spotify.playlists.getPlaylistItems(
-              playlist.playlistId,
-              undefined,
-              `items(track(id,name,artists(name),album(name,images),external_urls))`,
-              limit,
-              offset,
-              "from_token" as any
-            );
-            
-            if (!tracksPage.items) break;
-            
-            for (const item of tracksPage.items) {
-              if (!item.track?.id) continue;
-              
-              const trackKey = `${playlist.playlistId}_${item.track.external_urls?.spotify}`;
-              if (existingTrackKeys.has(trackKey)) {
-                skippedCount++;
-                continue;
-              }
-              
-              const score = calculateUnsignedScore({
-                playlistName: playlist.name,
-                label: null,
-                publisher: null,
-                writer: null,
-              });
-              
-              const newTrack: InsertPlaylistSnapshot = {
-                week: today,
-                playlistName: playlist.name,
-                playlistId: playlist.playlistId,
-                trackName: item.track.name,
-                artistName: item.track.artists?.map((a: any) => a.name).join(", ") || "Unknown",
-                spotifyUrl: item.track.external_urls?.spotify || "",
-                albumArt: item.track.album?.images?.[0]?.url || null,
-                unsignedScore: score,
-                addedAt: new Date(),
-                dataSource: "spotify_api",
-              };
-              
-              playlistTracks.push(newTrack);
-              allTracks.push(newTrack);
-              existingTrackKeys.add(trackKey);
-            }
-            
-            offset += limit;
-          }
-          
-          spotifyApiSucceeded = true;
-          fetchMethod = 'spotify_api';
-          console.log(`[Tracks] ✅ Spotify API success: ${playlistTracks.length} tracks`);
-          
-          completenessResults.push({
-            name: playlist.name,
-            fetchCount: playlistTracks.length,
-            totalTracks: playlistTotalTracks ?? 0,
-            isComplete: playlistTracks.length === (playlistTotalTracks ?? 0),
-            skipped: skippedCount,
-          });
-          
-          await storage.updatePlaylistCompleteness(playlist.playlistId, playlistTracks.length, playlistTotalTracks ?? 0, new Date());
-          
-          continue; // Move to next playlist
-        } catch (spotifyError: any) {
-          console.log(`[Tracks] Spotify API failed: ${spotifyError.message}`);
-        }
-      }
-      
-      // PHASE 3: Try Puppeteer (for editorial playlists OR as fallback)
-      if (playlist.isEditorial === 1) {
-        try {
-          console.log(`[Tracks] Trying Puppeteer scraper for ${playlist.playlistId}...`);
-          
-          const playlistUrl = `https://open.spotify.com/playlist/${playlist.playlistId}`;
-          const puppeteerResult = await fetchEditorialTracksViaNetwork(playlistUrl);
-          const puppeteerTracks = puppeteerResult.success ? puppeteerResult.tracks : [];
-          
-          if (puppeteerTracks && puppeteerTracks.length > 0) {
-            for (const track of puppeteerTracks) {
-              const trackKey = `${playlist.playlistId}_${track.spotifyUrl}`;
-              
-              if (existingTrackKeys.has(trackKey)) {
-                skippedCount++;
-                continue;
-              }
-              
-              const score = calculateUnsignedScore({
-                playlistName: playlist.name,
-                label: null,
-                publisher: null,
-                writer: null,
-              });
-              
-              const newTrack: InsertPlaylistSnapshot = {
-                week: today,
-                playlistName: playlist.name,
-                playlistId: playlist.playlistId,
-                trackName: track.name,
-                artistName: track.artists.join(", "),
-                spotifyUrl: track.spotifyUrl,
-                albumArt: track.albumArt,
-                isrc: track.isrc,
-                unsignedScore: score,
-                addedAt: new Date(),
-                dataSource: "puppeteer",
-              };
-              
-              playlistTracks.push(newTrack);
-              allTracks.push(newTrack);
-              existingTrackKeys.add(trackKey);
-            }
-            
-            puppeteerSucceeded = true;
-            fetchMethod = 'puppeteer';
-            playlistTotalTracks = puppeteerTracks.length;
-            console.log(`[Tracks] ✅ Puppeteer success: ${puppeteerTracks.length} tracks`);
-            
-            completenessResults.push({
-              name: playlist.name,
-              fetchCount: puppeteerTracks.length - skippedCount,
-              totalTracks: playlistTotalTracks,
-              isComplete: true,
-              skipped: skippedCount,
-            });
-            
-            await storage.updatePlaylistCompleteness(playlist.playlistId, puppeteerTracks.length - skippedCount, playlistTotalTracks, new Date());
-            
-            continue; // Move to next playlist
-          } else {
-            console.log(`[Tracks] Puppeteer returned no tracks`);
-          }
-        } catch (puppeteerError: any) {
-          console.log(`[Tracks] Puppeteer failed: ${puppeteerError.message}`);
-        }
-      }
-      
-      // If all methods failed
-      console.warn(`⚠️ All fetch methods failed for ${playlist.name}`);
+    } else {
+      failureCount++;
+      console.error(`❌ Playlist fetch rejected:`, result.reason);
       completenessResults.push({
-        name: playlist.name,
-        fetchCount: 0,
-        totalTracks: playlistTotalTracks,
-        isComplete: false,
-        skipped: skippedCount,
-      });
-      
-    } catch (error: any) {
-      console.error(`Error fetching playlist ${playlist.name}:`, error);
-      completenessResults.push({
-        name: playlist.name,
+        name: 'Unknown',
         fetchCount: 0,
         totalTracks: null,
         isComplete: false,
@@ -334,6 +418,9 @@ export async function fetchPlaylistsCore(options: PlaylistFetchOptions): Promise
       });
     }
   }
+  
+  console.log(`\n✅ Parallel fetch complete: ${successCount} succeeded, ${failureCount} failed`);
+  console.log(`📊 Total tracks collected: ${allTracks.length}`);
   
   // Insert all tracks
   if (allTracks.length > 0) {
