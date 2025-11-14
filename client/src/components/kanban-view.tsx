@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { type PlaylistSnapshot } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +20,7 @@ interface KanbanViewProps {
   onEnrich?: (trackId: string) => void;
 }
 
-export function KanbanView({
+export const KanbanView = memo(function KanbanView({
   tracks,
   isLoading,
   selectedTrackIds = new Set(),
@@ -178,4 +179,4 @@ export function KanbanView({
       {renderColumn("Low Potential", lowPotentialTracks.length, lowPotentialTracks, "low")}
     </div>
   );
-}
+});

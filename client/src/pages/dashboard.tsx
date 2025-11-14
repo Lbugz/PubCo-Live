@@ -5,6 +5,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useMobile } from "@/hooks/use-mobile";
+import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -65,6 +66,7 @@ export default function Dashboard() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("all");
   const [selectedTag, setSelectedTag] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [scoreRange, setScoreRange] = useState<[number, number]>([0, 10]);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<PlaylistSnapshot | null>(null);
@@ -317,10 +319,10 @@ export default function Dashboard() {
 
   const filteredTracks = tracks?.filter((track) => {
     const matchesSearch = 
-      searchQuery === "" ||
-      track.trackName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      track.artistName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      track.label?.toLowerCase().includes(searchQuery.toLowerCase());
+      debouncedSearchQuery === "" ||
+      track.trackName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      track.artistName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      track.label?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
     const matchesScore = track.unsignedScore >= scoreRange[0] && track.unsignedScore <= scoreRange[1];
     
     // Advanced filters

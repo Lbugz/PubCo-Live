@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { type PlaylistSnapshot } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +19,7 @@ interface CardViewProps {
   onEnrich?: (trackId: string) => void;
 }
 
-export function CardView({
+export const CardView = memo(function CardView({
   tracks,
   isLoading,
   selectedTrackIds = new Set(),
@@ -213,4 +214,4 @@ export function CardView({
       })}
     </div>
   );
-}
+});

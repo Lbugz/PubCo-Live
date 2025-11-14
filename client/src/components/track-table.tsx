@@ -1,3 +1,4 @@
+import { memo, useRef, useMemo } from "react";
 import { ExternalLink, Music, CheckCircle2, XCircle, Cloud, Database, Sparkles, FileText, MoreVertical, Tag as TagIcon, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,6 @@ import { SongwriterDisplay } from "./songwriter-display";
 import { useQuery } from "@tanstack/react-query";
 import { getTagColorClass } from "./tag-manager";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef, useMemo } from "react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface TrackTableProps {
@@ -55,7 +55,7 @@ function TrackTags({ trackId, tags }: { trackId: string; tags?: Tag[] }) {
   );
 }
 
-export function TrackTable({ 
+export const TrackTable = memo(function TrackTable({ 
   tracks, 
   isLoading, 
   selectedTrackIds = new Set(), 
@@ -311,4 +311,4 @@ export function TrackTable({
       </div>
     </div>
   );
-}
+});
