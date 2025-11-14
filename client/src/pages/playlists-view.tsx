@@ -279,9 +279,9 @@ export default function PlaylistsView() {
       }
 
       // Backend will try Chartmetric metadata lookup first, then Spotify API
-      // Puppeteer scraping is auto-triggered during fetch if needed
+      // and override this placeholder with the real playlist name
       const res = await apiRequest("POST", "/api/tracked-playlists", {
-        name: "Loading...", // Placeholder until metadata is fetched
+        name: "Untitled Playlist", // Temporary placeholder - backend fetches real name
         playlistId: playlistId,
         spotifyUrl: `https://open.spotify.com/playlist/${playlistId}`,
         chartmetricUrl: chartmetricUrl || null,

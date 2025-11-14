@@ -712,6 +712,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Determine if editorial (either explicit flag or scraping mode requested)
       let isEditorial = useScraping ? 1 : 0;
+      let name = validatedPlaylist.name; // Will be overridden with fetched name
       let totalTracks = providedMetadata.totalTracks;
       let fetchMethod = null; // Set to null - will be populated when actual fetch completes
       let curator = providedMetadata.curator;
@@ -729,6 +730,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Validate that Chartmetric actually returned meaningful data
           if (chartmetricMetadata && chartmetricMetadata.name && chartmetricMetadata.trackCount !== undefined) {
+            name = chartmetricMetadata.name; // ← CRITICAL: Override "Loading..." with real name
             totalTracks = chartmetricMetadata.trackCount || null;
             curator = chartmetricMetadata.curator || null;
             followers = chartmetricMetadata.followerCount || null;
@@ -756,6 +758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const spotify = await getUncachableSpotifyClient();
             const playlistData = await spotify.playlists.getPlaylist(validatedPlaylist.playlistId, "from_token" as any);
             
+            name = playlistData.name; // ← CRITICAL: Override "Loading..." with real name
             totalTracks = playlistData.tracks?.total || null;
             curator = playlistData.owner?.display_name || null;
             followers = playlistData.followers?.total || null;
@@ -782,6 +785,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const playlist = await storage.addTrackedPlaylist({
         ...validatedPlaylist,
+        name, // ← CRITICAL: Override placeholder with fetched name
         totalTracks,
         isEditorial,
         fetchMethod,
