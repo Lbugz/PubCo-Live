@@ -88,7 +88,7 @@ export default function PlaylistsView() {
           queryKey: ['/api/playlists', message.playlistId, 'quality'] 
         });
       }
-      
+
       // Handle playlist_fetch_complete to show toast
       if (message.type === 'playlist_fetch_complete') {
         toast({
@@ -178,12 +178,13 @@ export default function PlaylistsView() {
     enrichedCount: number;
     isrcCount: number;
     avgUnsignedScore: number;
+    publishedCount?: number; // Added for MLC phase
   }>({
     queryKey: ['/api/playlists', selectedPlaylist?.id, 'quality'],
     queryFn: async ({ queryKey }) => {
       const [, playlistId] = queryKey as [string, string, string];
       if (!playlistId) {
-        return { totalTracks: 0, enrichedCount: 0, isrcCount: 0, avgUnsignedScore: 0 };
+        return { totalTracks: 0, enrichedCount: 0, isrcCount: 0, avgUnsignedScore: 0, publishedCount: 0 };
       }
       const response = await fetch(`/api/playlists/${playlistId}/quality`);
       if (!response.ok) {
@@ -713,7 +714,7 @@ export default function PlaylistsView() {
                 value={playlistMetrics?.highImpactPlaylists ?? 0}
                 icon={Trophy}
                 variant="gold"
-                tooltip="Playlists with average unsigned score of 7 or higher, indicating strong publishing opportunities"
+                tooltip="Playlists with average unsigned score of 7 or higher, indicating publishing opportunities"
                 change={playlistMetrics?.changeHighImpact}
                 testId="stats-high-impact-playlists"
               />
@@ -1193,7 +1194,7 @@ export default function PlaylistsView() {
                               </div>
                               <p className="text-xs text-muted-foreground">
                                 {qualityMetrics.isrcCount > 0 
-                                  ? `✓ ${qualityMetrics.isrcCount} ISRCs recovered` 
+                                  ? `✓ ${qualityMetrics.isrcCount} tracks with ISRC codes` 
                                   : "Pending ISRC recovery"}
                               </p>
                             </div>
@@ -1226,16 +1227,21 @@ export default function PlaylistsView() {
                           <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-3">
                             <div className={cn(
                               "h-2 w-2 rounded-full transition-all duration-300",
-                              qualityMetrics.enrichedCount > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                              (qualityMetrics.publishedCount || 0) > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
                             )} />
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium">Phase 3: MLC Publisher Status</p>
+                                <p className="text-sm font-medium">Phase 3: MLC Lookup</p>
+                                {(qualityMetrics.publishedCount || 0) > 0 && qualityMetrics.totalTracks > 0 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {Math.round(((qualityMetrics.publishedCount || 0) / qualityMetrics.totalTracks) * 100)}%
+                                  </Badge>
+                                )}
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                {qualityMetrics.enrichedCount > 0 
-                                  ? "✓ Publisher lookup complete" 
-                                  : "Pending publisher lookup"}
+                                {(qualityMetrics.publishedCount || 0) > 0 
+                                  ? `✓ ${qualityMetrics.publishedCount} tracks verified` 
+                                  : "Pending publisher verification"}
                               </p>
                             </div>
                           </div>
@@ -1269,7 +1275,7 @@ export default function PlaylistsView() {
                                     {chartmetricAnalytics.stats.momentum === 'growing' && <TrendingUp className="h-3 w-3 mr-1" />}
                                     {chartmetricAnalytics.stats.momentum === 'declining' && <TrendingDown className="h-3 w-3 mr-1" />}
                                     {chartmetricAnalytics.stats.momentum === 'stable' && <Minus className="h-3 w-3 mr-1" />}
-                                    {chartmetricAnalytics.stats.momentum.charAt(0).toUpperCase() + chartmetricAnalytics.stats.momentum.slice(1)}
+                                    {chartmetricAnalytics.stats.momentum === 'stable' ? 'Stable' : chartmetricAnalytics.stats.momentum.charAt(0).toUpperCase() + chartmetricAnalytics.stats.momentum.slice(1)}
                                   </Badge>
                                 )}
                               </div>
