@@ -140,7 +140,7 @@ export default function Dashboard() {
     return () => clearInterval(timer);
   }, [recentEnrichments.length]);
 
-  const toggleFilter = (filter: string) => {
+  const toggleFilter = useCallback((filter: string) => {
     setActiveFilters(prev => {
       if (prev.includes(filter)) {
         return prev.filter(f => f !== filter);
@@ -148,22 +148,22 @@ export default function Dashboard() {
         return [...prev, filter];
       }
     });
-  };
+  }, []);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setActiveFilters([]);
-  };
+  }, []);
 
-  const clearAllFilters = () => {
+  const clearAllFilters = useCallback(() => {
     setSelectedWeek("all");
     setSelectedPlaylist("all");
     setSelectedTag("all");
     setSearchQuery("");
     setScoreRange([0, 10]);
     setActiveFilters([]);
-  };
+  }, []);
 
-  const toggleTrackSelection = (trackId: string) => {
+  const toggleTrackSelection = useCallback((trackId: string) => {
     setSelectedTrackIds(prev => {
       const newSet = new Set(prev);
       if (newSet.has(trackId)) {
@@ -173,27 +173,11 @@ export default function Dashboard() {
       }
       return newSet;
     });
-  };
+  }, []);
 
-  const toggleSelectAll = () => {
-    const allFilteredSelected = filteredTracks.length > 0 && filteredTracks.every(t => selectedTrackIds.has(t.id));
-    
-    if (allFilteredSelected) {
-      // All filtered tracks selected - deselect them (keep other selections)
-      const newSet = new Set(selectedTrackIds);
-      filteredTracks.forEach(t => newSet.delete(t.id));
-      setSelectedTrackIds(newSet);
-    } else {
-      // Not all filtered tracks selected - select all filtered tracks (keep existing selections)
-      const newSet = new Set(selectedTrackIds);
-      filteredTracks.forEach(t => newSet.add(t.id));
-      setSelectedTrackIds(newSet);
-    }
-  };
-
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     setSelectedTrackIds(new Set());
-  };
+  }, []);
 
   // Handle playlist query parameter from URL
   useEffect(() => {
@@ -317,48 +301,75 @@ export default function Dashboard() {
     },
   });
 
-  const filteredTracks = tracks?.filter((track) => {
-    const matchesSearch = 
-      debouncedSearchQuery === "" ||
-      track.trackName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-      track.artistName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-      track.label?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-    const matchesScore = track.unsignedScore >= scoreRange[0] && track.unsignedScore <= scoreRange[1];
-    
-    // Advanced filters
-    let matchesAdvancedFilters = true;
-    if (activeFilters.length > 0) {
-      const hasIsrc = !!track.isrc;
-      const hasCredits = !!track.publisher || !!track.songwriter;
-      const hasPublisher = !!track.publisher;
-      const hasSongwriter = !!track.songwriter;
-      const hasEmail = !!track.email;
+  // Memoize filtered tracks and stats to avoid recomputation on every render
+  const { filteredTracks, highPotentialCount, mediumPotentialCount, avgScore } = useMemo(() => {
+    const filtered = tracks?.filter((track) => {
+      const matchesSearch = 
+        debouncedSearchQuery === "" ||
+        track.trackName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        track.artistName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        track.label?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+      const matchesScore = track.unsignedScore >= scoreRange[0] && track.unsignedScore <= scoreRange[1];
       
-      const filterMatches: Record<string, boolean> = {
-        "has-isrc": hasIsrc,
-        "no-isrc": !hasIsrc,
-        "has-credits": hasCredits,
-        "no-credits": !hasCredits,
-        "has-publisher": hasPublisher,
-        "no-publisher": !hasPublisher,
-        "has-songwriter": hasSongwriter,
-        "no-songwriter": !hasSongwriter,
-        "has-email": hasEmail,
-        "no-email": !hasEmail,
-      };
+      // Advanced filters
+      let matchesAdvancedFilters = true;
+      if (activeFilters.length > 0) {
+        const hasIsrc = !!track.isrc;
+        const hasCredits = !!track.publisher || !!track.songwriter;
+        const hasPublisher = !!track.publisher;
+        const hasSongwriter = !!track.songwriter;
+        const hasEmail = !!track.email;
+        
+        const filterMatches: Record<string, boolean> = {
+          "has-isrc": hasIsrc,
+          "no-isrc": !hasIsrc,
+          "has-credits": hasCredits,
+          "no-credits": !hasCredits,
+          "has-publisher": hasPublisher,
+          "no-publisher": !hasPublisher,
+          "has-songwriter": hasSongwriter,
+          "no-songwriter": !hasSongwriter,
+          "has-email": hasEmail,
+          "no-email": !hasEmail,
+        };
+        
+        matchesAdvancedFilters = activeFilters.every(filter => filterMatches[filter]);
+      }
       
-      matchesAdvancedFilters = activeFilters.every(filter => filterMatches[filter]);
-    }
-    
-    return matchesSearch && matchesScore && matchesAdvancedFilters;
-  }) || [];
+      return matchesSearch && matchesScore && matchesAdvancedFilters;
+    }) || [];
 
-  // Calculate stats based on FILTERED tracks (dynamic stats)
-  const highPotentialCount = filteredTracks.filter(t => t.unsignedScore >= 7).length;
-  const mediumPotentialCount = filteredTracks.filter(t => t.unsignedScore >= 4 && t.unsignedScore < 7).length;
-  const avgScore = filteredTracks.length 
-    ? (filteredTracks.reduce((sum, t) => sum + t.unsignedScore, 0) / filteredTracks.length)
-    : 0;
+    // Calculate stats based on filtered tracks in a single pass
+    const highPotential = filtered.filter(t => t.unsignedScore >= 7).length;
+    const mediumPotential = filtered.filter(t => t.unsignedScore >= 4 && t.unsignedScore < 7).length;
+    const average = filtered.length 
+      ? (filtered.reduce((sum, t) => sum + t.unsignedScore, 0) / filtered.length)
+      : 0;
+
+    return {
+      filteredTracks: filtered,
+      highPotentialCount: highPotential,
+      mediumPotentialCount: mediumPotential,
+      avgScore: average,
+    };
+  }, [tracks, debouncedSearchQuery, scoreRange, activeFilters]);
+
+  // toggleSelectAll depends on filteredTracks, so define it after the useMemo
+  const toggleSelectAll = useCallback(() => {
+    setSelectedTrackIds(prev => {
+      const allFilteredSelected = filteredTracks.length > 0 && filteredTracks.every(t => prev.has(t.id));
+      
+      const newSet = new Set(prev);
+      if (allFilteredSelected) {
+        // All filtered tracks selected - deselect them (keep other selections)
+        filteredTracks.forEach(t => newSet.delete(t.id));
+      } else {
+        // Not all filtered tracks selected - select all filtered tracks (keep existing selections)
+        filteredTracks.forEach(t => newSet.add(t.id));
+      }
+      return newSet;
+    });
+  }, [filteredTracks]);
 
   // Check if any filter is active
   const hasActiveFilters = 
@@ -375,7 +386,7 @@ export default function Dashboard() {
     return acc;
   }, {} as Record<string, typeof filterOptions>);
 
-  const handleExport = async () => {
+  const handleExport = useCallback(async () => {
     try {
       const response = await fetch(`/api/export?week=${selectedWeek}&format=csv`, {
         method: "GET",
@@ -392,15 +403,15 @@ export default function Dashboard() {
     } catch (error) {
       console.error("Export failed:", error);
     }
-  };
+  }, [selectedWeek]);
 
-  const handleOpenPlaylistManager = () => {
+  const handleOpenPlaylistManager = useCallback(() => {
     setPlaylistManagerOpen(true);
-  };
+  }, []);
 
-  const handleOpenTagManager = () => {
+  const handleOpenTagManager = useCallback(() => {
     setTagManagerOpen(true);
-  };
+  }, []);
 
   const handleBulkEnrich = useCallback((mode: "selected" | "filtered") => {
     const trackIds = mode === "selected" 
