@@ -96,40 +96,12 @@ async function fetchSpotifyPlaylistMetadata(playlistId: string): Promise<{
 }
 
 import { registerFetchHandler, type PlaylistFetchOptions } from "./services/playlistFetchService";
+import { fetchPlaylistsCore } from "./services/playlistFetchCore";
 
 // Shared fetch handler logic (called by both HTTP endpoint and auto-trigger)
+// Delegates to core implementation - no HTTP overhead
 async function handlePlaylistFetch(options: PlaylistFetchOptions) {
-  const { mode = 'all', playlistId } = options;
-  const today = new Date().toISOString().split('T')[0];
-  
-  const allTrackedPlaylists = await storage.getTrackedPlaylists();
-  
-  if (allTrackedPlaylists.length === 0) {
-    throw new Error("No playlists are being tracked. Please add playlists to track first.");
-  }
-  
-  // Filter playlists based on mode
-  let trackedPlaylists = allTrackedPlaylists;
-  if (mode === 'editorial') {
-    trackedPlaylists = allTrackedPlaylists.filter(p => p.isEditorial === 1);
-  } else if (mode === 'non-editorial') {
-    trackedPlaylists = allTrackedPlaylists.filter(p => p.isEditorial !== 1);
-  } else if (mode === 'specific' && playlistId) {
-    trackedPlaylists = allTrackedPlaylists.filter(p => p.playlistId === playlistId);
-  }
-  
-  if (trackedPlaylists.length === 0) {
-    throw new Error(`No playlists found for mode: ${mode}`);
-  }
-  
-  // Rest of the logic will be extracted here
-  // For now, return a placeholder - full implementation follows
-  return {
-    success: true,
-    tracksInserted: 0,
-    playlistsFetched: trackedPlaylists.length,
-    completenessResults: []
-  };
+  return await fetchPlaylistsCore(options);
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -2658,26 +2630,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/fetch-playlists", async (req, res) => {
-    try {
-      const { mode, playlistId } = req.body;
-      
-      // Delegate to shared handler (eliminates code duplication)
-      const result = await handlePlaylistFetch({ mode, playlistId });
-      
-      return res.json({
-        success: true,
-        tracksInserted: result.tracksInserted,
-        playlistsFetched: result.playlistsFetched,
-        completenessResults: result.completenessResults,
-      });
-    } catch (error: any) {
-      console.error("Error fetching playlists:", error);
-      return res.status(500).json({ error: error.message || "Failed to fetch playlists" });
-    }
-  });
-
-  // Original fetch endpoint logic - kept for reference, to be removed after full extraction
-  app.post("/api/fetch-playlists-legacy", async (req, res) => {
     try {
       const { mode = 'all', playlistId } = req.body;
       const today = new Date().toISOString().split('T')[0];
