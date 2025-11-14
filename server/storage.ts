@@ -1,10 +1,12 @@
 import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, artists, artistSongwriters, enrichmentJobs, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory, type Artist, type InsertArtist, type EnrichmentJob, type InsertEnrichmentJob } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, desc, inArray, and } from "drizzle-orm";
+import { eq, sql, desc, inArray, and, count } from "drizzle-orm";
 
 export interface IStorage {
-  getTracksByWeek(week: string): Promise<PlaylistSnapshot[]>;
-  getTracksByPlaylist(playlistId: string, week?: string): Promise<PlaylistSnapshot[]>;
+  getTracksByWeek(week: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]>;
+  getTracksByWeekCount(week: string): Promise<number>;
+  getTracksByPlaylist(playlistId: string, week?: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]>;
+  getTracksByPlaylistCount(playlistId: string, week?: string): Promise<number>;
   getTrackById(id: string): Promise<PlaylistSnapshot | null>;
   getTracksByIds(ids: string[]): Promise<PlaylistSnapshot[]>;
   getLatestWeek(): Promise<string | null>;
@@ -20,7 +22,8 @@ export interface IStorage {
   addTagToTrack(trackId: string, tagId: string): Promise<void>;
   removeTagFromTrack(trackId: string, tagId: string): Promise<void>;
   getTrackTags(trackId: string): Promise<Tag[]>;
-  getTracksByTag(tagId: string): Promise<PlaylistSnapshot[]>;
+  getTracksByTag(tagId: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]>;
+  getTracksByTagCount(tagId: string): Promise<number>;
   getTrackedPlaylists(): Promise<TrackedPlaylist[]>;
   getTrackedPlaylistBySpotifyId(playlistId: string): Promise<TrackedPlaylist | null>;
   getPlaylistById(id: string): Promise<TrackedPlaylist | null>;
@@ -54,39 +57,124 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async getTracksByWeek(week: string): Promise<PlaylistSnapshot[]> {
+  async getTracksByWeek(week: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]> {
+    const { limit, offset } = options || {};
+    
     if (week === "all") {
-      return db.select()
+      let query = db.select()
         .from(playlistSnapshots)
-        .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore));
+        .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore))
+        .$dynamic();
+      
+      if (limit !== undefined) {
+        query = query.limit(limit);
+      }
+      if (offset !== undefined && offset > 0) {
+        query = query.offset(offset);
+      }
+      
+      return query;
     }
     
     if (week === "latest") {
       const latestWeek = await this.getLatestWeek();
       if (!latestWeek) return [];
-      return db.select()
+      
+      let query = db.select()
         .from(playlistSnapshots)
         .where(eq(playlistSnapshots.week, latestWeek))
-        .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore));
+        .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore))
+        .$dynamic();
+      
+      if (limit !== undefined) {
+        query = query.limit(limit);
+      }
+      if (offset !== undefined && offset > 0) {
+        query = query.offset(offset);
+      }
+      
+      return query;
     }
     
-    return db.select()
+    let query = db.select()
       .from(playlistSnapshots)
       .where(eq(playlistSnapshots.week, week))
-      .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore));
+      .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore))
+      .$dynamic();
+    
+    if (limit !== undefined) {
+      query = query.limit(limit);
+    }
+    if (offset !== undefined && offset > 0) {
+      query = query.offset(offset);
+    }
+    
+    return query;
   }
 
-  async getTracksByPlaylist(playlistId: string, week?: string): Promise<PlaylistSnapshot[]> {
+  async getTracksByWeekCount(week: string): Promise<number> {
+    if (week === "all") {
+      const result = await db.select({ count: count() })
+        .from(playlistSnapshots);
+      const raw = result[0]?.count ?? 0;
+      return typeof raw === "bigint" ? Number(raw) : Number(raw);
+    }
+    
+    if (week === "latest") {
+      const latestWeek = await this.getLatestWeek();
+      if (!latestWeek) return 0;
+      
+      const result = await db.select({ count: count() })
+        .from(playlistSnapshots)
+        .where(eq(playlistSnapshots.week, latestWeek));
+      const raw = result[0]?.count ?? 0;
+      return typeof raw === "bigint" ? Number(raw) : Number(raw);
+    }
+    
+    const result = await db.select({ count: count() })
+      .from(playlistSnapshots)
+      .where(eq(playlistSnapshots.week, week));
+    const raw = result[0]?.count ?? 0;
+    return typeof raw === "bigint" ? Number(raw) : Number(raw);
+  }
+
+  async getTracksByPlaylist(playlistId: string, week?: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]> {
+    const { limit, offset } = options || {};
     const conditions = [eq(playlistSnapshots.playlistId, playlistId)];
     
     if (week && week !== "all") {
       conditions.push(eq(playlistSnapshots.week, week));
     }
     
-    return db.select()
+    let query = db.select()
       .from(playlistSnapshots)
       .where(and(...conditions))
-      .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore));
+      .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore))
+      .$dynamic();
+    
+    if (limit !== undefined) {
+      query = query.limit(limit);
+    }
+    if (offset !== undefined && offset > 0) {
+      query = query.offset(offset);
+    }
+    
+    return query;
+  }
+
+  async getTracksByPlaylistCount(playlistId: string, week?: string): Promise<number> {
+    const conditions = [eq(playlistSnapshots.playlistId, playlistId)];
+    
+    if (week && week !== "all") {
+      conditions.push(eq(playlistSnapshots.week, week));
+    }
+    
+    const result = await db.select({ count: count() })
+      .from(playlistSnapshots)
+      .where(and(...conditions));
+    
+    const raw = result[0]?.count ?? 0;
+    return typeof raw === "bigint" ? Number(raw) : Number(raw);
   }
 
   async getTrackById(id: string): Promise<PlaylistSnapshot | null> {
@@ -240,15 +328,37 @@ export class DatabaseStorage implements IStorage {
     return result.map(r => r.tag);
   }
 
-  async getTracksByTag(tagId: string): Promise<PlaylistSnapshot[]> {
-    const result = await db
+  async getTracksByTag(tagId: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]> {
+    const { limit, offset } = options || {};
+    
+    let query = db
       .select({ track: playlistSnapshots })
       .from(trackTags)
       .innerJoin(playlistSnapshots, eq(trackTags.trackId, playlistSnapshots.id))
       .where(eq(trackTags.tagId, tagId))
-      .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore));
+      .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore))
+      .$dynamic();
     
+    if (limit !== undefined) {
+      query = query.limit(limit);
+    }
+    if (offset !== undefined && offset > 0) {
+      query = query.offset(offset);
+    }
+    
+    const result = await query;
     return result.map(r => r.track);
+  }
+
+  async getTracksByTagCount(tagId: string): Promise<number> {
+    const result = await db
+      .select({ count: count() })
+      .from(trackTags)
+      .innerJoin(playlistSnapshots, eq(trackTags.trackId, playlistSnapshots.id))
+      .where(eq(trackTags.tagId, tagId));
+    
+    const raw = result[0]?.count ?? 0;
+    return typeof raw === "bigint" ? Number(raw) : Number(raw);
   }
 
   async getTrackedPlaylists(): Promise<TrackedPlaylist[]> {

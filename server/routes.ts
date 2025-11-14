@@ -358,29 +358,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset = parsedOffset;
       }
       
-      let allTracks;
-      if (tagId) {
-        allTracks = await storage.getTracksByTag(tagId);
-      } else if (playlistId) {
-        allTracks = await storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined);
-      } else {
-        allTracks = await storage.getTracksByWeek(week);
-      }
-      
       // Backward compatible: return plain array if no pagination requested
       if (limit === undefined) {
-        res.json(allTracks);
+        let tracks;
+        if (tagId) {
+          tracks = await storage.getTracksByTag(tagId);
+        } else if (playlistId) {
+          tracks = await storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined);
+        } else {
+          tracks = await storage.getTracksByWeek(week);
+        }
+        res.json(tracks);
         return;
       }
       
-      // Paginated response
-      const tracks = allTracks.slice(offset, offset + limit);
+      // Paginated response - use SQL COUNT and fetch paginated data
+      const [totalTracks, paginatedTracks] = await Promise.all([
+        // Get total count using SQL COUNT
+        tagId 
+          ? storage.getTracksByTagCount(tagId)
+          : playlistId
+          ? storage.getTracksByPlaylistCount(playlistId, week !== "latest" ? week : undefined)
+          : storage.getTracksByWeekCount(week),
+        // Get paginated tracks
+        tagId
+          ? storage.getTracksByTag(tagId, { limit, offset })
+          : playlistId
+          ? storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined, { limit, offset })
+          : storage.getTracksByWeek(week, { limit, offset })
+      ]);
+      
       res.json({
-        tracks,
-        total: allTracks.length,
+        tracks: paginatedTracks,
+        total: totalTracks,
         limit,
         offset,
-        hasMore: (offset + limit) < allTracks.length
+        hasMore: (offset + limit) < totalTracks
       });
     } catch (error) {
       console.error("Error fetching tracks:", error);
