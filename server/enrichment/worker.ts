@@ -206,14 +206,14 @@ export class EnrichmentWorker {
 
       this.broadcastProgress(job.id, {
         status: 'running',
-        progress: 10,
-        message: 'Starting Puppeteer scraping...',
+        progress: 35,
+        message: 'Starting Phase 2: Puppeteer scraping...',
       });
 
       const result = await enrichTracksWithCredits(tracksForEnrichment);
 
       await this.jobQueue.updateJobProgress(job.id, {
-        progress: 60,
+        progress: 70,
         enrichedTracks: result.tracksEnriched,
         errorCount: result.errors,
         logs: [
@@ -223,7 +223,7 @@ export class EnrichmentWorker {
 
       this.broadcastProgress(job.id, {
         status: 'running',
-        progress: 60,
+        progress: 70,
         message: `Phase 2 complete, starting MLC publisher lookup...`,
       });
 
