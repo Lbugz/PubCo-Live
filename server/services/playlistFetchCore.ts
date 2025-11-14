@@ -4,6 +4,7 @@
  */
 
 import type { PlaylistFetchOptions } from "./playlistFetchService";
+import { PlaylistValidationError, PlaylistFetchError } from "./playlistFetchErrors";
 import { storage } from "../storage";
 import { getUncachableSpotifyClient } from "../spotify";
 import { getPlaylistTracks } from "../chartmetric";
@@ -35,7 +36,7 @@ export async function fetchPlaylistsCore(options: PlaylistFetchOptions): Promise
   const allTrackedPlaylists = await storage.getTrackedPlaylists();
   
   if (allTrackedPlaylists.length === 0) {
-    throw new Error("No playlists are being tracked. Please add playlists to track first.");
+    throw new PlaylistValidationError("No playlists are being tracked. Please add playlists to track first.");
   }
   
   // Filter playlists based on mode
@@ -49,7 +50,7 @@ export async function fetchPlaylistsCore(options: PlaylistFetchOptions): Promise
   }
   
   if (trackedPlaylists.length === 0) {
-    throw new Error(`No playlists found for mode: ${mode}`);
+    throw new PlaylistValidationError(`No playlists found for mode: ${mode}`);
   }
   
   // Only get Spotify client if we have non-editorial playlists to fetch
