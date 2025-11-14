@@ -64,10 +64,12 @@ async function fetchSinglePlaylist(
       console.log(`[Playlist ${playlist.playlistId}] Trying Chartmetric...`);
       
       const cmTracks = await chartmetricLimiter(async () => {
-        const tracks = await getPlaylistTracks(playlist.playlistId, 'spotify');
-        // Enforce 2-second delay after Chartmetric call
-        await delay(CHARTMETRIC_DELAY_MS);
-        return tracks;
+        try {
+          return await getPlaylistTracks(playlist.playlistId, 'spotify');
+        } finally {
+          // ALWAYS enforce 2-second delay (even on error) to prevent rate limit violations
+          await delay(CHARTMETRIC_DELAY_MS);
+        }
       });
       
       if (cmTracks && cmTracks.length > 0) {
