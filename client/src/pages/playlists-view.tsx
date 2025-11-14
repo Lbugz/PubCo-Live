@@ -1424,45 +1424,7 @@ export default function PlaylistsView() {
                   </AccordionContent>
                 </AccordionItem>
 
-                {/* Activity History Section */}
-                <AccordionItem value="activity" className="border rounded-lg overflow-hidden bg-background/60 backdrop-blur">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate" data-testid="accordion-activity">
-                    <span className="font-medium">Activity History</span>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    {activityLoading ? (
-                      <div className="space-y-3">
-                        {[1, 2, 3].map((i) => (
-                          <div key={i} className="flex gap-3">
-                            <Skeleton className="h-8 w-8 rounded-full" />
-                            <div className="flex-1 space-y-2">
-                              <Skeleton className="h-4 w-3/4" />
-                              <Skeleton className="h-3 w-1/2" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : playlistActivity && playlistActivity.length > 0 ? (
-                      <div className="space-y-4">
-                        {playlistActivity.map((item) => (
-                          <div key={item.id} className="flex gap-3" data-testid={`activity-item-${item.id}`}>
-                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium">{item.eventDescription}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No activity recorded yet. Fetch playlist data to see activity.</p>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
+                
               </Accordion>
             </div>
           )}

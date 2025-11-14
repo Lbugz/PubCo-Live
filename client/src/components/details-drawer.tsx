@@ -584,42 +584,81 @@ export function DetailsDrawer({
                     </Card>
                   </section>
 
-                  {/* Activity History Section */}
-                  {activity && activity.length > 0 && (
-                    <section className="space-y-4">
-                      <h3 className="text-sm font-semibold font-heading flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        ACTIVITY HISTORY ({activity.length})
-                      </h3>
-                      <div className="space-y-2">
-                        {activity.slice(0, 5).map((item) => (
-                          <Card key={item.id} className="p-3 rounded-lg hover-elevate">
-                            <div className="flex gap-3 items-start">
-                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                                {item.eventType === "enrichment" && <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />}
-                                {item.eventType === "contact" && <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />}
-                                {item.eventType === "tag" && <TagIcon className="h-3.5 w-3.5 text-muted-foreground" />}
-                                {!["enrichment", "contact", "tag"].includes(item.eventType) && (
-                                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium leading-snug">{item.eventDescription}</p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
-                                </p>
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
-                        {activity.length > 5 && (
-                          <p className="text-xs text-muted-foreground text-center pt-2">
-                            +{activity.length - 5} more events
+                  {/* Enrichment Timeline */}
+                  <section className="space-y-4">
+                    <h3 className="text-sm font-semibold font-heading flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      ENRICHMENT PIPELINE STATUS
+                    </h3>
+                    <div className="space-y-2">
+                      {/* Phase 1: Spotify API (ISRC Recovery) */}
+                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-1">
+                        <div className={cn(
+                          "h-2 w-2 rounded-full transition-all duration-300",
+                          displayTrack.isrc ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                        )} />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">Phase 1: Spotify API</p>
+                            {displayTrack.isrc && (
+                              <Badge variant="secondary" className="text-xs">Complete</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {displayTrack.isrc 
+                              ? `✓ ISRC recovered: ${displayTrack.isrc}` 
+                              : "Pending ISRC recovery"}
                           </p>
-                        )}
+                        </div>
                       </div>
-                    </section>
-                  )}
+
+                      {/* Phase 2: Credits Scraping */}
+                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-2">
+                        <div className={cn(
+                          "h-2 w-2 rounded-full transition-all duration-300",
+                          displayTrack.enrichmentStatus === 'enriched' ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                        )} />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">Phase 2: Credits Scraping</p>
+                            {displayTrack.enrichmentStatus === 'enriched' && (
+                              <Badge variant="secondary" className="text-xs">Complete</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {displayTrack.enrichmentStatus === 'enriched'
+                              ? `✓ Credits found: ${displayTrack.songwriter || 'Unknown'}` 
+                              : isEnriching 
+                                ? "⟳ Scraping credits data..." 
+                                : "Pending credit scraping"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Phase 3: MLC Publisher Lookup */}
+                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-3">
+                        <div className={cn(
+                          "h-2 w-2 rounded-full transition-all duration-300",
+                          displayTrack.publisherStatus === 'published' ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                        )} />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">Phase 3: MLC Lookup</p>
+                            {displayTrack.publisherStatus === 'published' && (
+                              <Badge variant="secondary" className="text-xs">Complete</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {displayTrack.publisherStatus === 'published'
+                              ? `✓ Publisher verified: ${displayTrack.publisher || 'Unknown'}` 
+                              : displayTrack.publisherStatus === 'unsigned'
+                                ? "✓ Unsigned artist confirmed"
+                                : "Pending publisher verification"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
                 </div>
               );
             })()}
