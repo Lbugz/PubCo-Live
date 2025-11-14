@@ -12,7 +12,7 @@ export interface IStorage {
   getLatestWeek(): Promise<string | null>;
   getAllWeeks(): Promise<string[]>;
   getAllPlaylists(): Promise<string[]>;
-  insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<void>;
+  insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<string[]>;
   deleteTracksByWeek(week: string): Promise<void>;
   updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; publisherStatus?: string; mlcSongCode?: string; songwriter?: string; producer?: string; spotifyStreams?: number; enrichedAt?: Date; enrichmentStatus?: string; enrichmentTier?: string }): Promise<void>;
   getUnenrichedTracks(limit?: number): Promise<PlaylistSnapshot[]>;
@@ -273,8 +273,8 @@ export class DatabaseStorage implements IStorage {
     return result.map(r => r.playlist);
   }
 
-  async insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<void> {
-    if (tracks.length === 0) return;
+  async insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<string[]> {
+    if (tracks.length === 0) return [];
     
     console.log(`[insertTracks] Attempting to insert ${tracks.length} tracks`);
     console.log(`[insertTracks] Sample track:`, {
@@ -285,7 +285,7 @@ export class DatabaseStorage implements IStorage {
     });
     
     try {
-      await db.insert(playlistSnapshots)
+      const inserted = await db.insert(playlistSnapshots)
         .values(tracks)
         .onConflictDoUpdate({
           target: [playlistSnapshots.week, playlistSnapshots.playlistId, playlistSnapshots.spotifyUrl],
@@ -296,13 +296,16 @@ export class DatabaseStorage implements IStorage {
             addedAt: sql`EXCLUDED.added_at`,
             dataSource: sql`EXCLUDED.data_source`,
           },
-        });
+        })
+        .returning({ id: playlistSnapshots.id });
       
-      console.log(`[insertTracks] ✅ Successfully inserted/updated ${tracks.length} tracks`);
+      const trackIds = inserted.map(t => t.id);
+      console.log(`[insertTracks] ✅ Successfully inserted/updated ${tracks.length} tracks, got ${trackIds.length} IDs`);
+      return trackIds;
     } catch (error: any) {
       console.error(`[insertTracks] ❌ ERROR inserting tracks:`, error);
       console.error(`[insertTracks] Error details:`, error.message, error.stack);
-      throw error; // Re-throw to bubble up
+      throw error; // Re-throw to ensure caller handles failure
     }
   }
 

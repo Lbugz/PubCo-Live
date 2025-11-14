@@ -432,11 +432,40 @@ export async function fetchPlaylistsCore(options: PlaylistFetchOptions): Promise
   // Insert all tracks
   if (allTracks.length > 0) {
     console.log(`Inserting ${allTracks.length} tracks into database...`);
-    await storage.insertTracks(allTracks);
     
-    // Schedule background enrichment
-    console.log(`Scheduling background enrichment for ${allTracks.length} new tracks...`);
-    scheduleMetricsUpdate({ source: "fetch_playlists" });
+    try {
+      const trackIds = await storage.insertTracks(allTracks);
+      
+      // Auto-trigger enrichment for newly inserted tracks
+      if (trackIds.length > 0) {
+        console.log(`🎯 Auto-triggering enrichment for ${trackIds.length} new tracks...`);
+        const { getJobQueue } = await import("../enrichment/jobQueueManager");
+        const jobQueue = getJobQueue();
+        
+        if (jobQueue) {
+          try {
+            // Enqueue enrichment job for all newly inserted tracks
+            await jobQueue.enqueue({
+              type: 'enrich-tracks',
+              trackIds,
+            });
+            console.log(`✅ Enrichment job queued for ${trackIds.length} tracks`);
+          } catch (error: any) {
+            console.error(`❌ Failed to enqueue enrichment job:`, error.message);
+          }
+        } else {
+          console.warn(`⚠️  Job queue not initialized - enrichment will not run automatically`);
+        }
+      }
+      
+      // Schedule metrics update only on successful insertion
+      console.log(`Scheduling background metrics update for ${trackIds.length} new tracks...`);
+      scheduleMetricsUpdate({ source: "fetch_playlists" });
+    } catch (error: any) {
+      console.error(`❌ Failed to insert tracks:`, error.message);
+      // Do not schedule enrichment or metrics updates on insertion failure
+      throw error; // Re-throw to signal failure to caller
+    }
   }
   
   return {
