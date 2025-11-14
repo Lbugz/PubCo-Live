@@ -635,15 +635,61 @@ export function DetailsDrawer({
                         </div>
                       </div>
 
-                      {/* Phase 3: MLC Publisher Lookup */}
+                      {/* Phase 3: MusicBrainz Artist Links */}
                       <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-3">
+                        <div className={cn(
+                          "h-2 w-2 rounded-full transition-all duration-300",
+                          artists.length > 0 && artists.some(a => 'musicbrainzId' in a) 
+                            ? "bg-green-500 shadow-lg shadow-green-500/50" 
+                            : "bg-muted animate-pulse"
+                        )} />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">Phase 3: MusicBrainz</p>
+                            {artists.length > 0 && artists.some(a => 'musicbrainzId' in a) && (
+                              <Badge variant="secondary" className="text-xs">Complete</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {artists.length > 0 && artists.some(a => 'musicbrainzId' in a)
+                              ? `✓ Artist links found for ${artists.filter(a => 'musicbrainzId' in a).length} artist(s)` 
+                              : "Pending artist social links"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Phase 4: Chartmetric Analytics */}
+                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-4">
+                        <div className={cn(
+                          "h-2 w-2 rounded-full transition-all duration-300",
+                          displayTrack.chartmetricStatus === 'success' ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                        )} />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">Phase 4: Chartmetric</p>
+                            {displayTrack.chartmetricStatus === 'success' && (
+                              <Badge variant="secondary" className="text-xs">Complete</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {displayTrack.chartmetricStatus === 'success'
+                              ? `✓ Analytics: ${displayTrack.spotifyStreams?.toLocaleString() || 'N/A'} streams, ${displayTrack.trackStage || 'stage unknown'}` 
+                              : displayTrack.chartmetricStatus === 'not_found'
+                                ? "✓ Not found in Chartmetric"
+                                : "Pending analytics data"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Phase 5: MLC Publisher Lookup */}
+                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-5">
                         <div className={cn(
                           "h-2 w-2 rounded-full transition-all duration-300",
                           displayTrack.publisherStatus === 'published' ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
                         )} />
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium">Phase 3: MLC Lookup</p>
+                            <p className="text-sm font-medium">Phase 5: MLC Lookup</p>
                             {displayTrack.publisherStatus === 'published' && (
                               <Badge variant="secondary" className="text-xs">Complete</Badge>
                             )}
