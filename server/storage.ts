@@ -534,7 +534,9 @@ export class DatabaseStorage implements IStorage {
 
   async getPlaylistQualityMetrics(playlistId: string): Promise<{ totalTracks: number; enrichedCount: number; isrcCount: number; avgUnsignedScore: number }> {
     // playlistId is the database UUID from tracked_playlists
-    // After Nov 14 migration, playlist_snapshots.playlist_id also stores UUIDs
+    // We need to query playlist_snapshots where playlist_id matches this UUID
+    console.log(`[getPlaylistQualityMetrics] Fetching metrics for playlist UUID: ${playlistId}`);
+    
     const [result] = await db.select({
       totalTracks: sql<number>`CAST(COUNT(*) AS INTEGER)`,
       enrichedCount: sql<number>`CAST(SUM(CASE WHEN ${playlistSnapshots.enrichedAt} IS NOT NULL THEN 1 ELSE 0 END) AS INTEGER)`,
@@ -543,6 +545,13 @@ export class DatabaseStorage implements IStorage {
     })
       .from(playlistSnapshots)
       .where(eq(playlistSnapshots.playlistId, playlistId));
+
+    console.log(`[getPlaylistQualityMetrics] Results:`, {
+      totalTracks: result?.totalTracks || 0,
+      enrichedCount: result?.enrichedCount || 0,
+      isrcCount: result?.isrcCount || 0,
+      avgUnsignedScore: result?.avgUnsignedScore || 0,
+    });
 
     return {
       totalTracks: result?.totalTracks || 0,

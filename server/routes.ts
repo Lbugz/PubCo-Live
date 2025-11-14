@@ -736,35 +736,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/tracked-playlists", async (req, res) => {
+  // Get all tracked playlists (with track counts)
+  app.get("/api/tracked-playlists", async (_req, res) => {
+    const playlists = await storage.getTrackedPlaylists();
+    res.json(playlists);
+  });
+
+  // Get quality metrics for a specific playlist
+  app.get("/api/playlists/:id/quality", async (req, res) => {
     try {
-      const playlists = await storage.getTrackedPlaylists();
-
-      // Normalize snake_case DB fields to camelCase for frontend compatibility
-      const normalized = playlists.map(p => ({
-        id: p.id,
-        name: p.name,
-        playlistId: (p as any).playlist_id || p.playlistId,
-        spotifyUrl: (p as any).spotify_url || p.spotifyUrl,
-        totalTracks: (p as any).total_tracks || p.totalTracks,
-        lastFetchCount: (p as any).last_fetch_count || p.lastFetchCount,
-        isComplete: (p as any).is_complete || p.isComplete,
-        fetchMethod: (p as any).fetch_method || p.fetchMethod,
-        lastChecked: (p as any).last_checked || p.lastChecked,
-        isEditorial: (p as any).is_editorial || p.isEditorial,
-        createdAt: (p as any).created_at || p.createdAt,
-        curator: p.curator,
-        source: p.source,
-        genre: p.genre,
-        region: p.region,
-        followers: p.followers,
-        imageUrl: (p as any).image_url || p.imageUrl, // Critical: Map snake_case to camelCase
-      }));
-
-      res.json(normalized);
-    } catch (error) {
-      console.error("Error fetching tracked playlists:", error);
-      res.status(500).json({ error: "Failed to fetch tracked playlists" });
+      const { id } = req.params;
+      const metrics = await storage.getPlaylistQualityMetrics(id);
+      res.json(metrics);
+    } catch (error: any) {
+      console.error(`[Quality Metrics] Error fetching for playlist ${req.params.id}:`, error);
+      res.status(500).json({ error: error.message });
     }
   });
 
