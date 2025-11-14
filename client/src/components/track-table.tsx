@@ -11,7 +11,8 @@ import { SongwriterDisplay } from "./songwriter-display";
 import { useQuery } from "@tanstack/react-query";
 import { getTagColorClass } from "./tag-manager";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface TrackTableProps {
   tracks: PlaylistSnapshot[];
@@ -35,17 +36,8 @@ function getScoreLabel(score: number): string {
   return "Low";
 }
 
-function TrackTags({ trackId }: { trackId: string }) {
-  const { data: tags = [] } = useQuery<Tag[]>({
-    queryKey: ["/api/tracks", trackId, "tags"],
-    queryFn: async () => {
-      const response = await fetch(`/api/tracks/${trackId}/tags`);
-      if (!response.ok) throw new Error("Failed to fetch track tags");
-      return response.json();
-    },
-  });
-
-  if (tags.length === 0) return null;
+function TrackTags({ trackId, tags }: { trackId: string; tags?: Tag[] }) {
+  if (!tags || tags.length === 0) return null;
 
   return (
     <div className="flex flex-wrap gap-1 mt-1">
@@ -82,6 +74,20 @@ export function TrackTable({
     getScrollElement: () => parentRef.current,
     estimateSize: () => 96,
     overscan: 5,
+  });
+
+  // Batch fetch tags for all tracks
+  const trackIds = useMemo(() => tracks.map(t => t.id), [tracks]);
+  
+  const { data: tagsMap = {} } = useQuery<Record<string, Tag[]>>({
+    queryKey: ["/api/tracks/tags/batch", trackIds],
+    queryFn: async () => {
+      if (trackIds.length === 0) return {};
+      const response = await apiRequest("POST", "/api/tracks/tags/batch", { trackIds });
+      return response; // apiRequest already parses JSON
+    },
+    enabled: trackIds.length > 0,
+    staleTime: 60000, // Cache for 1 minute
   });
 
   if (isLoading) {
@@ -241,6 +247,7 @@ export function TrackTable({
                       </Badge>
                     )}
                   </div>
+                  <TrackTags trackId={track.id} tags={tagsMap[track.id]} />
                 </div>
               </div>
               

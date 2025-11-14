@@ -206,7 +206,7 @@ export default function Dashboard() {
     queryKey: ["/api/weeks"],
   });
 
-  const { data: tracks, isLoading: tracksLoading } = useQuery<PlaylistSnapshot[]>({
+  const { data: tracksData, isLoading: tracksLoading } = useQuery<{ tracks: PlaylistSnapshot[]; total: number; hasMore: boolean } | PlaylistSnapshot[]>({
     queryKey: selectedTag !== "all" 
       ? ["/api/tracks", "tag", selectedTag]
       : selectedPlaylist !== "all"
@@ -229,6 +229,13 @@ export default function Dashboard() {
     },
     enabled: !!selectedWeek || selectedTag !== "all" || selectedPlaylist !== "all",
   });
+
+  // Extract tracks array from paginated response (supports both old and new format)
+  const tracks = useMemo(() => {
+    if (!tracksData) return [];
+    if (Array.isArray(tracksData)) return tracksData; // Old format
+    return tracksData.tracks; // New paginated format
+  }, [tracksData]);
 
   const { data: trackedPlaylists = [] } = useQuery<TrackedPlaylist[]>({
     queryKey: ["/api/tracked-playlists"],

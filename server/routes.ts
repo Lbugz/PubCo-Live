@@ -338,16 +338,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tagId = req.query.tagId as string | undefined;
       const playlistId = req.query.playlist as string | undefined;
       
-      let tracks;
-      if (tagId) {
-        tracks = await storage.getTracksByTag(tagId);
-      } else if (playlistId) {
-        tracks = await storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined);
-      } else {
-        tracks = await storage.getTracksByWeek(week);
+      // Parse and validate pagination parameters
+      let limit: number | undefined = undefined;
+      let offset = 0;
+      
+      if (req.query.limit) {
+        const parsedLimit = parseInt(req.query.limit as string, 10);
+        if (isNaN(parsedLimit) || parsedLimit <= 0) {
+          return res.status(400).json({ error: "Invalid limit parameter: must be a positive integer" });
+        }
+        limit = parsedLimit;
       }
       
-      res.json(tracks);
+      if (req.query.offset) {
+        const parsedOffset = parseInt(req.query.offset as string, 10);
+        if (isNaN(parsedOffset) || parsedOffset < 0) {
+          return res.status(400).json({ error: "Invalid offset parameter: must be a non-negative integer" });
+        }
+        offset = parsedOffset;
+      }
+      
+      let allTracks;
+      if (tagId) {
+        allTracks = await storage.getTracksByTag(tagId);
+      } else if (playlistId) {
+        allTracks = await storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined);
+      } else {
+        allTracks = await storage.getTracksByWeek(week);
+      }
+      
+      // Backward compatible: return plain array if no pagination requested
+      if (limit === undefined) {
+        res.json(allTracks);
+        return;
+      }
+      
+      // Paginated response
+      const tracks = allTracks.slice(offset, offset + limit);
+      res.json({
+        tracks,
+        total: allTracks.length,
+        limit,
+        offset,
+        hasMore: (offset + limit) < allTracks.length
+      });
     } catch (error) {
       console.error("Error fetching tracks:", error);
       res.status(500).json({ error: "Failed to fetch tracks" });
@@ -468,6 +502,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching track tags:", error);
       res.status(500).json({ error: "Failed to fetch track tags" });
+    }
+  });
+
+  // Batch endpoint for fetching tags for multiple tracks
+  app.post("/api/tracks/tags/batch", async (req, res) => {
+    try {
+      const { trackIds } = req.body;
+      
+      if (!Array.isArray(trackIds)) {
+        return res.status(400).json({ error: "trackIds must be an array" });
+      }
+      
+      // Fetch tags for all tracks in parallel
+      const tagResults = await Promise.all(
+        trackIds.map(async (trackId) => {
+          try {
+            const tags = await storage.getTrackTags(trackId);
+            return { trackId, tags };
+          } catch (error) {
+            console.error(`Error fetching tags for track ${trackId}:`, error);
+            return { trackId, tags: [] };
+          }
+        })
+      );
+      
+      // Convert array to map for easier lookup
+      const tagsMap = tagResults.reduce((acc, { trackId, tags }) => {
+        acc[trackId] = tags;
+        return acc;
+      }, {} as Record<string, any[]>);
+      
+      res.json(tagsMap);
+    } catch (error) {
+      console.error("Error fetching batch track tags:", error);
+      res.status(500).json({ error: "Failed to fetch batch track tags" });
     }
   });
 
