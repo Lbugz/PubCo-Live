@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { recordAuthSuccess, recordAuthFailure } from "./auth-monitor";
 import { execSync } from "child_process";
+import { fetchEditorialTracksViaNetwork, type NetworkCaptureResult } from "./scrapers/spotifyEditorialNetwork";
 
 const COOKIES_FILE = path.join(process.cwd(), "spotify_cookies.json");
 
@@ -132,10 +133,9 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
     });
     
     const page = await browser.newPage();
-    
     await page.setViewport({ width: 1920, height: 1080 });
     
-    // Load cookies from Replit Secret or file
+    // Load cookies from Replit Secret or file (with auth monitoring)
     try {
       let cookies;
       let cookieSource: "secret" | "file" | "none" = "none";
@@ -190,66 +190,44 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
       }
     });
     
-    console.log("Navigating to playlist page...");
-    await page.goto(playlistUrl, { 
-      waitUntil: "networkidle2", 
-      timeout: 60000 
-    });
+    console.log("Using network capture method for metadata extraction...");
     
-    // Handle cookie consent banner if present
-    await handleCookieConsent(page);
+    // Use network capture with shared page to extract GraphQL metadata
+    const networkResult = await fetchEditorialTracksViaNetwork(playlistUrl, page);
     
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    if (!networkResult.success) {
+      await browser.close();
+      return {
+        success: false,
+        error: networkResult.error || "Network capture failed",
+      };
+    }
     
-    // Extract playlist metadata (name, curator, followers) in one call
-    const metadata = await page.evaluate(() => {
-      // Extract playlist name
-      const nameElement = document.querySelector('h1[data-encore-id="type"]');
-      const name = nameElement?.textContent?.trim() || "Unknown Playlist";
-      
-      // Extract curator with fallback selectors
-      const curatorElement = document.querySelector('[data-testid="entityHeaderSubtitle"] a')
-                            || document.querySelector('[data-testid="entityHeaderSubtitle"] span')
-                            || document.querySelector('div[data-testid="entity-subtitle"]');
-      const curator = curatorElement?.textContent?.trim() || null;
-      
-      // Extract follower count with fallback selectors
-      const followerElement = document.querySelector('button[data-testid="followers-count"]')
-                              || document.querySelector('[data-testid="entity-subtitle-more-button"]')
-                              || document.querySelector('[aria-label*="followers"]');
-      const followerText = followerElement?.textContent?.trim() || null;
-      
-      return { name, curator, followerText };
-    });
+    // Map network capture tracks to ScrapedTrack format
+    const tracks: ScrapedTrack[] = networkResult.tracks.map(track => ({
+      trackName: track.name,
+      artistName: track.artists.join(", "),
+      album: track.album || "",
+      duration: track.durationMs ? formatDuration(track.durationMs) : "0:00",
+      spotifyUrl: track.spotifyUrl,
+    }));
     
-    const playlistName = metadata.name;
-    const curator = metadata.curator || null;
-    const followers = metadata.followerText ? parseFollowerCount(metadata.followerText) : null;
+    console.log(`Successfully captured ${tracks.length} tracks with network capture`);
+    console.log(`Playlist metadata: name="${networkResult.playlistName}", curator="${networkResult.curator}", followers=${networkResult.followers}`);
     
-    console.log(`Playlist metadata: name="${playlistName}", curator="${curator}", followers=${followers}`);
-    
-    if (!metadata.curator) console.warn("⚠️ Could not extract curator");
-    if (!metadata.followerText) console.warn("⚠️ Could not extract follower count");
-    
-    console.log("Waiting for track rows to load...");
-    await page.waitForSelector('[data-testid="tracklist-row"]', { timeout: 30000 });
-    
-    const tracks = await autoScrollAndCollectTracks(page);
-    
-    console.log(`Successfully scraped ${tracks.length} tracks`);
-    
-    const cookies = await page.cookies();
-    fs.writeFileSync(COOKIES_FILE, JSON.stringify(cookies, null, 2));
+    // Save cookies for future use
+    const updatedCookies = await page.cookies();
+    fs.writeFileSync(COOKIES_FILE, JSON.stringify(updatedCookies, null, 2));
     console.log("Saved session cookies for future use");
     
     await browser.close();
     
     return {
       success: true,
-      playlistName,
+      playlistName: networkResult.playlistName || "Unknown Playlist",
       tracks,
-      curator,
-      followers,
+      curator: networkResult.curator || null,
+      followers: networkResult.followers || null,
     };
     
   } catch (error: any) {
@@ -264,6 +242,14 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
       error: error.message || "Unknown scraping error",
     };
   }
+}
+
+// Helper to format duration from milliseconds
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
 async function autoScrollAndCollectTracks(page: Page): Promise<Array<{

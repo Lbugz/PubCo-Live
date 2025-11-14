@@ -50,42 +50,52 @@ export interface NetworkCaptureResult {
 }
 
 export async function fetchEditorialTracksViaNetwork(
-  playlistUrl: string
+  playlistUrl: string,
+  existingPage?: import('puppeteer').Page
 ): Promise<NetworkCaptureResult> {
   console.log(`[Network Capture] Starting for: ${playlistUrl}`);
-  console.log(`[Network Capture] Running in headless mode with saved cookies...`);
   
   let browser;
+  let page: import('puppeteer').Page;
+  const shouldCloseBrowser = !existingPage; // Only close if we launched it
+  
   try {
-    browser = await puppeteer.launch({
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
-      headless: true, // Run in headless mode (Replit has no X server)
-      args: [
-        "--window-size=1440,900",
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-      ],
-      defaultViewport: { width: 1440, height: 900 },
-    });
+    if (existingPage) {
+      console.log(`[Network Capture] Using provided page instance`);
+      page = existingPage;
+    } else {
+      console.log(`[Network Capture] Launching new browser with saved cookies...`);
+      browser = await puppeteer.launch({
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
+        headless: true,
+        args: [
+          "--window-size=1440,900",
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+        ],
+        defaultViewport: { width: 1440, height: 900 },
+      });
 
-    const [page] = await browser.pages();
-    
-    // Load saved cookies if available
-    try {
-      const fs = await import('fs');
-      const path = await import('path');
-      const cookiesPath = path.join(process.cwd(), 'spotify-cookies.json');
-      if (fs.existsSync(cookiesPath)) {
-        const cookiesString = fs.readFileSync(cookiesPath, 'utf8');
-        const cookies = JSON.parse(cookiesString);
-        await page.setCookie(...cookies);
-        console.log(`[Network Capture] Loaded ${cookies.length} saved cookies`);
-      } else {
-        console.log(`[Network Capture] No saved cookies found, will need manual login`);
+      const pages = await browser.pages();
+      page = pages[0];
+      
+      // Load saved cookies if available (only for self-managed browser)
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const cookiesPath = path.join(process.cwd(), 'spotify-cookies.json');
+        if (fs.existsSync(cookiesPath)) {
+          const cookiesString = fs.readFileSync(cookiesPath, 'utf8');
+          const cookies = JSON.parse(cookiesString);
+          await page.setCookie(...cookies);
+          console.log(`[Network Capture] Loaded ${cookies.length} saved cookies`);
+        } else {
+          console.log(`[Network Capture] No saved cookies found, will need manual login`);
+        }
+      } catch (err) {
+        console.warn('[Network Capture] Failed to load cookies:', err);
       }
-    } catch (err) {
-      console.warn('[Network Capture] Failed to load cookies:', err);
     }
     
     // Accumulator for captured data
@@ -419,8 +429,11 @@ export async function fetchEditorialTracksViaNetwork(
       console.warn('[Network Capture] Failed to save cookies:', err);
     }
     
-    await browser.close();
-    browser = undefined;
+    // Only close browser if we launched it ourselves
+    if (shouldCloseBrowser && browser) {
+      await browser.close();
+      browser = undefined;
+    }
     
     // Map to our schema
     const tracks: NetworkCaptureTrack[] = allItems
@@ -457,8 +470,8 @@ export async function fetchEditorialTracksViaNetwork(
   } catch (error: any) {
     console.error(`[Network Capture] Error:`, error.message);
     
-    // Clean up browser if it's still open
-    if (browser) {
+    // Clean up browser only if we launched it ourselves
+    if (shouldCloseBrowser && browser) {
       try {
         await browser.close();
       } catch {}
