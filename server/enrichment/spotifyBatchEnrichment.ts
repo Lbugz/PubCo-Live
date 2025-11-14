@@ -231,6 +231,12 @@ export async function enrichTracksWithSpotifyAPI(
 
         if (!dbTrack.albumImages && trackData.album?.images?.length) {
           update.albumImages = JSON.stringify(trackData.album.images);
+          
+          const mediumImage = trackData.album.images.find((img: any) => img.width === 300) || trackData.album.images[1] || trackData.album.images[0];
+          if (mediumImage && !dbTrack.albumArt) {
+            (update as any).albumArt = mediumImage.url;
+          }
+          
           hasUpdates = true;
         }
 

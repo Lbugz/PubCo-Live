@@ -95,12 +95,15 @@ async function getAccessToken(): Promise<string | null> {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[MLC] Auth failed: ${response.status} ${response.statusText}`, errorText);
       throw new Error(`MLC auth failed: ${response.status} ${response.statusText}`);
     }
 
     const data: MLCAuthResponse = await response.json();
 
     if (data.error) {
+      console.error(`[MLC] Auth error in response:`, data);
       throw new Error(`MLC auth error: ${data.error} - ${data.errorDescription}`);
     }
 
@@ -110,7 +113,7 @@ async function getAccessToken(): Promise<string | null> {
       expiresAt: Date.now() + (expiresIn - 300) * 1000,
     };
 
-    console.log("[MLC] Successfully authenticated");
+    console.log("[MLC] Successfully authenticated, token expires in", expiresIn, "seconds");
     return cachedToken.accessToken;
   } catch (error) {
     console.error("[MLC] Authentication error:", error);
@@ -174,6 +177,12 @@ export async function searchRecordingByISRC(isrc: string): Promise<MLCRecording 
     if (!response.ok) {
       if (response.status === 404) {
         console.log(`[MLC] No recording found for ISRC: ${isrc}`);
+        return null;
+      }
+      if (response.status === 401) {
+        const errorText = await response.text();
+        console.error(`[MLC] 401 Unauthorized on search - Token may be invalid. Response:`, errorText);
+        cachedToken = null;
         return null;
       }
       throw new Error(`MLC API error: ${response.status} ${response.statusText}`);
