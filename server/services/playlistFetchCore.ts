@@ -308,7 +308,7 @@ async function fetchSinglePlaylist(
                 const track = newTracks.find(t => t.spotifyUrl === trackUrl);
                 if (track) {
                   if (metadata.spotifyTrackId) track.spotifyTrackId = metadata.spotifyTrackId;
-                  if (metadata.isrc) track.isrc = metadata.isrc;
+                  if (metadata.isrc) track.isrc = metadata.isrc;ata.isrc;
                   if (metadata.label) track.label = metadata.label;
                   if (metadata.releaseDate) track.releaseDate = metadata.releaseDate;
                   if (metadata.popularity !== undefined) track.popularity = metadata.popularity;
@@ -328,9 +328,21 @@ async function fetchSinglePlaylist(
               );
               
               console.log(`[Playlist ${playlist.playlistId}] ✅ Batch enrichment: ${enrichmentResult.isrcRecovered} ISRCs recovered, ${enrichmentResult.tracksEnriched} tracks enriched`);
+              
+              // Broadcast quality metric update after batch enrichment
+              if (wsBroadcast) {
+                wsBroadcast('playlist_quality_updated', {
+                  type: 'playlist_quality_updated',
+                  playlistId: playlist.id,
+                  phase: 1,
+                  isrcRecovered: enrichmentResult.isrcRecovered,
+                  tracksEnriched: enrichmentResult.tracksEnriched,
+                });
+              }
             } catch (enrichError: any) {
               console.error(`[Playlist ${playlist.playlistId}] ⚠️ Batch enrichment failed:`, enrichError.message);
               // Continue even if enrichment fails - tracks are still valid
+            }
             }
           }
           

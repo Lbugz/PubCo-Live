@@ -81,6 +81,14 @@ export default function PlaylistsView() {
     onMetricUpdate: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/metrics/playlists"] });
     },
+    onMessage: (message) => {
+      // Handle playlist_quality_updated to refresh quality metrics in drawer
+      if (message.type === 'playlist_quality_updated' && message.playlistId) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/playlists', message.playlistId, 'quality'] 
+        });
+      }
+    },
     onPlaylistError: (data) => {
       // Handle playlist errors (e.g., deleted from Spotify)
       if (data.data?.error) {
@@ -1149,13 +1157,20 @@ export default function PlaylistsView() {
                         <p className="text-xs font-medium text-muted-foreground mb-3">Enrichment Pipeline Status</p>
                         <div className="space-y-2">
                           {/* Phase 1: Spotify API */}
-                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg" data-testid="enrichment-phase-1">
+                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-1">
                             <div className={cn(
-                              "h-2 w-2 rounded-full",
-                              qualityMetrics.isrcCount > 0 ? "bg-green-500" : "bg-muted"
+                              "h-2 w-2 rounded-full transition-all duration-300",
+                              qualityMetrics.isrcCount > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
                             )} />
                             <div className="flex-1">
-                              <p className="text-sm font-medium">Phase 1: Spotify API</p>
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium">Phase 1: Spotify API</p>
+                                {qualityMetrics.isrcCount > 0 && qualityMetrics.totalTracks > 0 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {Math.round((qualityMetrics.isrcCount / qualityMetrics.totalTracks) * 100)}%
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground">
                                 {qualityMetrics.isrcCount > 0 
                                   ? `✓ ${qualityMetrics.isrcCount} ISRCs recovered` 
@@ -1165,13 +1180,20 @@ export default function PlaylistsView() {
                           </div>
                           
                           {/* Phase 2: Credits Scraping */}
-                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg" data-testid="enrichment-phase-2">
+                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-2">
                             <div className={cn(
-                              "h-2 w-2 rounded-full",
-                              qualityMetrics.enrichedCount > 0 ? "bg-green-500" : "bg-muted"
+                              "h-2 w-2 rounded-full transition-all duration-300",
+                              qualityMetrics.enrichedCount > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
                             )} />
                             <div className="flex-1">
-                              <p className="text-sm font-medium">Phase 2: Credits Scraping</p>
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium">Phase 2: Credits Scraping</p>
+                                {qualityMetrics.enrichedCount > 0 && qualityMetrics.totalTracks > 0 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {Math.round((qualityMetrics.enrichedCount / qualityMetrics.totalTracks) * 100)}%
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground">
                                 {qualityMetrics.enrichedCount > 0 
                                   ? `✓ ${qualityMetrics.enrichedCount} tracks enriched` 
@@ -1181,13 +1203,15 @@ export default function PlaylistsView() {
                           </div>
                           
                           {/* Phase 3: MLC Publisher Lookup */}
-                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg" data-testid="enrichment-phase-3">
+                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-3">
                             <div className={cn(
-                              "h-2 w-2 rounded-full",
-                              qualityMetrics.enrichedCount > 0 ? "bg-green-500" : "bg-muted"
+                              "h-2 w-2 rounded-full transition-all duration-300",
+                              qualityMetrics.enrichedCount > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
                             )} />
                             <div className="flex-1">
-                              <p className="text-sm font-medium">Phase 3: MLC Publisher Status</p>
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium">Phase 3: MLC Publisher Status</p>
+                              </div>
                               <p className="text-xs text-muted-foreground">
                                 {qualityMetrics.enrichedCount > 0 
                                   ? "✓ Publisher lookup complete" 

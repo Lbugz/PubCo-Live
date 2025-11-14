@@ -108,13 +108,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
               break;
             case 'playlist_quality_updated':
               // Invalidate quality metrics query to trigger UI refresh
-              // Assuming queryClient is accessible in this scope or passed in
-              // If queryClient is not directly available, this part might need adjustment
-              // For now, we'll assume it's globally available or imported elsewhere.
-              // If not, this would be a place to add a queryClient parameter to useWebSocket.
-              // queryClient.invalidateQueries({
-              //   queryKey: ['/api/playlists', data.playlistId, 'quality']
-              // });
+              if (callbacksRef.current.onMetricUpdate) {
+                callbacksRef.current.onMetricUpdate(data);
+              }
               break;
           }
         } catch (error) {
