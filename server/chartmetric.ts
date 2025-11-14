@@ -643,17 +643,35 @@ async function resolvePlaylistId(platformIdOrChartmetricId: string, platform: st
   try {
     console.log(`🔍 Chartmetric: Looking up numeric ID for platform playlist ${platform}:${platformIdOrChartmetricId}`);
     
-    // Use Chartmetric /playlist/url endpoint to resolve platform playlist URLs to numeric IDs
-    // Format: GET /playlist/url?url=spotify:playlist:{id}
-    const spotifyUri = `spotify:playlist:${platformIdOrChartmetricId}`;
-    const encodedUri = encodeURIComponent(spotifyUri);
-    const lookupData = await makeChartmetricRequest<any>(`/playlist/url?url=${encodedUri}`);
+    // Use Chartmetric search endpoint to find the playlist by platform ID
+    // The /playlist/url endpoint requires enterprise access, so we use search instead
+    // Note: Search endpoint doesn't support filtering by platform, so we search by ID and filter results
+    const searchQuery = platformIdOrChartmetricId; // Search by Spotify playlist ID
+    const searchResults = await makeChartmetricRequest<any>(
+      `/search?q=${encodeURIComponent(searchQuery)}&type=playlists&limit=10`
+    );
     
-    if (lookupData && lookupData.id) {
-      const chartmetricId = lookupData.id.toString();
-      console.log(`✅ Chartmetric: Resolved ${platform}:${platformIdOrChartmetricId} → Chartmetric ID ${chartmetricId}`);
-      playlistIdCache.set(cacheKey, chartmetricId);
-      return chartmetricId;
+    if (searchResults && searchResults.playlists && Array.isArray(searchResults.playlists) && searchResults.playlists.length > 0) {
+      // Find exact match by platform_id (Spotify playlist ID)
+      const exactMatch = searchResults.playlists.find((p: any) => 
+        p.platform_id === platformIdOrChartmetricId || p.code === platformIdOrChartmetricId
+      );
+      
+      if (exactMatch && exactMatch.id) {
+        const chartmetricId = exactMatch.id.toString();
+        console.log(`✅ Chartmetric: Resolved ${platform}:${platformIdOrChartmetricId} → Chartmetric ID ${chartmetricId} (via search)`);
+        playlistIdCache.set(cacheKey, chartmetricId);
+        return chartmetricId;
+      }
+      
+      // If no exact match, try the first result as a fallback
+      const firstResult = searchResults.playlists[0];
+      if (firstResult && firstResult.id) {
+        const chartmetricId = firstResult.id.toString();
+        console.log(`⚠️  Chartmetric: Using best-match result for ${platform}:${platformIdOrChartmetricId} → ID ${chartmetricId}`);
+        playlistIdCache.set(cacheKey, chartmetricId);
+        return chartmetricId;
+      }
     }
     
     console.log(`⚠️  Chartmetric: No numeric ID found for ${platform}:${platformIdOrChartmetricId}`);

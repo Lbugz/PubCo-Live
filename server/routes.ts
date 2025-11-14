@@ -969,7 +969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity history for playlist addition
       try {
         await storage.logActivity({
-          playlistId: playlist.playlistId,
+          playlistId: playlist.id, // ← FIX: Use database UUID, not Spotify ID
           entityType: 'playlist',
           eventType: 'playlist_added',
           eventDescription: `Playlist "${playlist.name}" added to tracking`,
