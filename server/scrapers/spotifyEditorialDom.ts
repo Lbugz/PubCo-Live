@@ -3,6 +3,29 @@ import puppeteer from "puppeteer";
 // Helper function to wait
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Helper function to parse follower count
+function parseFollowerCount(followerText: string): number | null {
+  if (!followerText) return null;
+  
+  const cleaned = followerText.replace(/followers?/i, '').trim();
+  const match = cleaned.match(/^([0-9,.]*)\s*([KMB])?$/i);
+  if (!match) return null;
+  
+  const numberPart = match[1].replace(/,/g, '');
+  const suffix = match[2]?.toUpperCase();
+  
+  let value = parseFloat(numberPart);
+  if (isNaN(value)) return null;
+  
+  switch (suffix) {
+    case 'K': value *= 1e3; break;
+    case 'M': value *= 1e6; break;
+    case 'B': value *= 1e9; break;
+  }
+  
+  return Math.floor(value);
+}
+
 export interface DomCaptureTrack {
   name: string;
   artists: string[];
@@ -14,6 +37,10 @@ export interface DomCaptureResult {
   success: boolean;
   tracks: DomCaptureTrack[];
   totalCaptured: number;
+  playlistName?: string | null;
+  curator?: string | null;
+  followers?: number | null;
+  imageUrl?: string | null;
   error?: string;
 }
 
@@ -223,6 +250,89 @@ export async function harvestVirtualizedRows(
       }
     }
     
+    // Extract playlist metadata before closing
+    let playlistName: string | null = null;
+    let curator: string | null = null;
+    let followers: number | null = null;
+    let imageUrl: string | null = null;
+    
+    try {
+      console.log(`[DOM Capture] Extracting playlist metadata...`);
+      const metadata = await page.evaluate(() => {
+        // Extract playlist name
+        const nameElement = document.querySelector('[data-testid="playlist-page"] h1[data-encore-id="type"]')
+                           || document.querySelector('main h1[data-encore-id="type"]')
+                           || document.querySelector('h1[data-encore-id="type"]');
+        let name = nameElement?.textContent?.trim() || null;
+        
+        // Fallback to page title
+        if (!name || name === "null" || name === "Your Library") {
+          const titleMatch = document.title.match(/^([^|]+)/);
+          name = titleMatch ? titleMatch[1].trim() : null;
+        }
+        
+        // Extract curator
+        const curatorElement = document.querySelector('[data-testid="entityHeaderSubtitle"] a')
+                              || document.querySelector('[data-testid="entityHeaderSubtitle"] span')
+                              || document.querySelector('div[data-testid="entity-subtitle"]');
+        const curator = curatorElement?.textContent?.trim() || null;
+        
+        // Extract followers - try multiple selectors
+        let followerText: string | null = null;
+        const followerSelectors = [
+          'button[data-testid="followers-count"]',
+          '[data-testid="entity-subtitle-more-button"]',
+          '[aria-label*="followers"]',
+          '[aria-label*="follower"]',
+          'button:has-text("followers")',
+          '[data-testid="playlist-followers"]',
+          'span:has-text("followers")',
+        ];
+        
+        for (const selector of followerSelectors) {
+          try {
+            const element = document.querySelector(selector);
+            if (element?.textContent) {
+              const text = element.textContent.trim();
+              if (text.match(/\d+.*follow/i)) {
+                followerText = text;
+                break;
+              }
+            }
+          } catch (e) {
+            // Continue
+          }
+        }
+        
+        // Fallback: Search page text
+        if (!followerText) {
+          const allText = document.body.innerText;
+          const followerMatch = allText.match(/(\d+[,\d]*\s*[KMB]?\s*followers?)/i);
+          if (followerMatch) {
+            followerText = followerMatch[1];
+          }
+        }
+        
+        // Extract image
+        const imageElement = document.querySelector('[data-testid="playlist-image"] img')
+                            || document.querySelector('[data-testid="entity-image"] img')
+                            || document.querySelector('img[alt*="playlist"]')
+                            || document.querySelector('main img');
+        const imageUrl = imageElement?.getAttribute('src') || null;
+        
+        return { name, curator, followerText, imageUrl };
+      });
+      
+      playlistName = metadata.name;
+      curator = metadata.curator;
+      followers = metadata.followerText ? parseFollowerCount(metadata.followerText) : null;
+      imageUrl = metadata.imageUrl;
+      
+      console.log(`[DOM Capture] Metadata: name="${playlistName}", curator="${curator}", followerText="${metadata.followerText}", parsedFollowers=${followers}`);
+    } catch (err) {
+      console.warn('[DOM Capture] Failed to extract metadata:', err);
+    }
+    
     await browser.close();
     browser = undefined;
     
@@ -240,6 +350,10 @@ export async function harvestVirtualizedRows(
       success: true,
       tracks,
       totalCaptured: tracks.length,
+      playlistName,
+      curator,
+      followers,
+      imageUrl,
     };
   } catch (error: any) {
     console.error(`[DOM Capture] Error:`, error.message);

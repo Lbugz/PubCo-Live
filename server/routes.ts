@@ -2878,8 +2878,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
                 if (domResult.success && domTrackCount > networkTrackCount) {
                   console.log(`[Tracks] ✅ Puppeteer (DOM fallback) success: ${domTrackCount} tracks`);
+                  console.log(`[Tracks] DOM scraper metadata: name="${domResult.playlistName}", curator="${domResult.curator}", followers=${domResult.followers}`);
                   fetchMethod = 'network-capture';
                   capturedTracks = domResult.tracks ?? [];
+                  
+                  // Update playlist metadata from DOM scraper
+                  const updates: any = { totalTracks: domTrackCount };
+                  if (domResult.playlistName?.trim()) {
+                    updates.name = domResult.playlistName.trim();
+                  }
+                  if (domResult.curator?.trim()) {
+                    updates.curator = domResult.curator.trim();
+                  }
+                  if (domResult.followers !== undefined && domResult.followers !== null) {
+                    updates.followers = domResult.followers;
+                  }
+                  if (domResult.imageUrl?.trim()) {
+                    updates.imageUrl = domResult.imageUrl.trim();
+                  }
+                  
+                  await storage.updateTrackedPlaylistMetadata(playlist.id, updates);
+                  console.log(`Updated playlist metadata from DOM: name="${updates.name || 'not set'}", curator="${updates.curator || 'not set'}", followers=${updates.followers ?? 'not set'}`);
+                  
+                  // Broadcast metadata update
+                  broadcast('playlist_updated', {
+                    playlistId: playlist.playlistId,
+                    id: playlist.id,
+                    updates,
+                  });
                 } else if (networkResult.success && networkTrackCount > 0) {
                   console.log(`[Tracks] ✅ Using Puppeteer (local) results: ${networkTrackCount} tracks`);
                   fetchMethod = 'network-capture';
