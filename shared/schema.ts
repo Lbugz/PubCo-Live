@@ -7,7 +7,7 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   week: date("week").notNull(),
   playlistName: text("playlist_name").notNull(),
-  playlistId: text("playlist_id").notNull(),
+  playlistId: varchar("playlist_id").notNull().references(() => trackedPlaylists.id, { onDelete: "cascade" }),
   trackName: text("track_name").notNull(),
   artistName: text("artist_name").notNull(),
   spotifyUrl: text("spotify_url").notNull(),

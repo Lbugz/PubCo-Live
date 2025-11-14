@@ -34,6 +34,12 @@ The frontend is a single-page React application with a modular component archite
 - **Artist Normalization**: Separate `artists` table with unique MusicBrainz IDs and a `artist_songwriters` junction table.
 - **Real-time Enrichment Updates**: WebSocket integration broadcasts `track_enriched` events.
 - **Activity Logging**: Detailed activity history for enrichment processes and playlist operations. Fixed foreign key bug where activity logs referenced `playlist.playlistId` (Spotify ID string) instead of `playlist.id` (database UUID), resolving FK constraint violations.
+- **Playlist Snapshots Foreign Key Fix (Nov 14, 2025)**: Resolved critical schema bug where `playlist_snapshots.playlist_id` stored Spotify playlist IDs instead of database UUIDs, breaking foreign key relationships and preventing track visibility/enrichment. Fix included:
+    - **Schema Migration**: Changed `playlist_snapshots.playlist_id` from `text` to `varchar` with FK constraint referencing `tracked_playlists.id` (CASCADE delete)
+    - **Data Migration**: Migrated 150 existing tracks from Spotify IDs to tracked_playlists UUIDs, deleted 75 orphaned tracks
+    - **Code Updates**: Fixed all insertion paths (Chartmetric, Spotify API, Puppeteer) to use `playlist.id` instead of `playlist.playlistId`
+    - **Validation**: Achieved 100% ISRC recovery rate (150/150 tracks) through enrichment Phase 1 (Spotify API batch)
+    - **Result**: Tracks now properly join to playlists via FK, enrichment pipeline fully functional
 - **Lead Tagging System**: Custom, color-coded tags for tracks with filtering.
 - **Custom Playlist Tracking**: Supports adding, managing, and bulk importing Spotify playlists with automatic metadata fetching and duplicate prevention.
 - **Advanced Editorial Playlist Capture**: Robust fallback system with browser-sharing architecture for editorial playlists:

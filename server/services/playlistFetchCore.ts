@@ -76,7 +76,7 @@ async function fetchSinglePlaylist(
         console.log(`[Playlist ${playlist.playlistId}] ✅ Chartmetric: ${cmTracks.length} tracks`);
         
         for (const cmTrack of cmTracks) {
-          const trackKey = `${playlist.playlistId}_https://open.spotify.com/track/${cmTrack.spotifyId}`;
+          const trackKey = `${playlist.id}_https://open.spotify.com/track/${cmTrack.spotifyId}`;
           
           // Synchronous check before any await to prevent race conditions
           if (existingTrackKeys.has(trackKey)) {
@@ -94,7 +94,7 @@ async function fetchSinglePlaylist(
           const newTrack: InsertPlaylistSnapshot = {
             week: today,
             playlistName: playlist.name,
-            playlistId: playlist.playlistId,
+            playlistId: playlist.id,
             trackName: cmTrack.name,
             artistName: cmTrack.artists.map(a => a.name).join(", "),
             spotifyUrl: `https://open.spotify.com/track/${cmTrack.spotifyId}`,
@@ -115,11 +115,11 @@ async function fetchSinglePlaylist(
         fetchMethod = 'chartmetric';
         playlistTotalTracks = cmTracks.length;
         
-        await storage.updatePlaylistCompleteness(playlist.playlistId, cmTracks.length - skippedCount, playlistTotalTracks, new Date());
+        await storage.updatePlaylistCompleteness(playlist.id, cmTracks.length - skippedCount, playlistTotalTracks, new Date());
         
         return {
           playlistName: playlist.name,
-          playlistId: playlist.playlistId,
+          playlistId: playlist.id,
           newTracks,
           completeness: {
             name: playlist.name,
@@ -166,7 +166,7 @@ async function fetchSinglePlaylist(
           for (const item of tracksPage.items) {
             if (!item.track?.id) continue;
             
-            const trackKey = `${playlist.playlistId}_${item.track.external_urls?.spotify}`;
+            const trackKey = `${playlist.id}_${item.track.external_urls?.spotify}`;
             
             // Synchronous check before any await
             if (existingTrackKeys.has(trackKey)) {
@@ -184,7 +184,7 @@ async function fetchSinglePlaylist(
             const newTrack: InsertPlaylistSnapshot = {
               week: today,
               playlistName: playlist.name,
-              playlistId: playlist.playlistId,
+              playlistId: playlist.id,
               trackName: item.track.name,
               artistName: item.track.artists?.map((a: any) => a.name).join(", ") || "Unknown",
               spotifyUrl: item.track.external_urls?.spotify || "",
@@ -209,11 +209,11 @@ async function fetchSinglePlaylist(
         fetchMethod = 'spotify_api';
         console.log(`[Playlist ${playlist.playlistId}] ✅ Spotify API: ${newTracks.length} tracks`);
         
-        await storage.updatePlaylistCompleteness(playlist.playlistId, newTracks.length, playlistTotalTracks ?? 0, new Date());
+        await storage.updatePlaylistCompleteness(playlist.id, newTracks.length, playlistTotalTracks ?? 0, new Date());
         
         return {
           playlistName: playlist.name,
-          playlistId: playlist.playlistId,
+          playlistId: playlist.id,
           newTracks,
           completeness: {
             name: playlist.name,
@@ -241,7 +241,7 @@ async function fetchSinglePlaylist(
         
         if (puppeteerTracks && puppeteerTracks.length > 0) {
           for (const track of puppeteerTracks) {
-            const trackKey = `${playlist.playlistId}_${track.spotifyUrl}`;
+            const trackKey = `${playlist.id}_${track.spotifyUrl}`;
             
             // Synchronous check before any await
             if (existingTrackKeys.has(trackKey)) {
@@ -259,7 +259,7 @@ async function fetchSinglePlaylist(
             const newTrack: InsertPlaylistSnapshot = {
               week: today,
               playlistName: playlist.name,
-              playlistId: playlist.playlistId,
+              playlistId: playlist.id,
               trackName: track.name,
               artistName: track.artists.join(", "),
               spotifyUrl: track.spotifyUrl,
@@ -278,11 +278,11 @@ async function fetchSinglePlaylist(
           playlistTotalTracks = puppeteerTracks.length;
           console.log(`[Playlist ${playlist.playlistId}] ✅ Puppeteer: ${puppeteerTracks.length} tracks`);
           
-          await storage.updatePlaylistCompleteness(playlist.playlistId, puppeteerTracks.length - skippedCount, playlistTotalTracks, new Date());
+          await storage.updatePlaylistCompleteness(playlist.id, puppeteerTracks.length - skippedCount, playlistTotalTracks, new Date());
           
           return {
             playlistName: playlist.name,
-            playlistId: playlist.playlistId,
+            playlistId: playlist.id,
             newTracks,
             completeness: {
               name: playlist.name,
@@ -304,7 +304,7 @@ async function fetchSinglePlaylist(
     console.warn(`[Playlist ${playlist.playlistId}] ⚠️ All fetch methods failed`);
     return {
       playlistName: playlist.name,
-      playlistId: playlist.playlistId,
+      playlistId: playlist.id,
       newTracks: [],
       completeness: {
         name: playlist.name,
@@ -319,7 +319,7 @@ async function fetchSinglePlaylist(
     console.error(`[Playlist ${playlist.playlistId}] Error:`, error);
     return {
       playlistName: playlist.name,
-      playlistId: playlist.playlistId,
+      playlistId: playlist.id,
       newTracks: [],
       completeness: {
         name: playlist.name,
