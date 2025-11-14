@@ -31,17 +31,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageContainer } from "@/components/layout/page-container";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { AddPlaylistDialog } from "@/components/add-playlist-dialog";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
@@ -65,16 +55,6 @@ export default function PlaylistsView() {
   useEffect(() => {
     localStorage.setItem('playlistsMetricsVisible', showMetrics.toString());
   }, [showMetrics]);
-  
-  const form = useForm({
-    defaultValues: {
-      playlistUrl: "",
-      chartmetricUrl: "",
-      isEditorial: false,
-      autoFetch: true,
-      autoEnrich: true,
-    }
-  });
   
   // Fetch playlists mutation
   const fetchPlaylistsMutation = useFetchPlaylistsMutation();
@@ -294,104 +274,6 @@ export default function PlaylistsView() {
       });
     },
   });
-
-
-  const addPlaylistMutation = useMutation({
-    mutationFn: async ({ url, chartmetricUrl, isEditorial }: { url: string; chartmetricUrl?: string; isEditorial?: boolean }): Promise<TrackedPlaylist> => {
-      const playlistId = extractPlaylistId(url);
-      if (!playlistId) {
-        throw new Error("Invalid Spotify playlist URL or ID");
-      }
-
-      // Backend will try Chartmetric metadata lookup first, then Spotify API
-      // and override this placeholder with the real playlist name
-      const res = await apiRequest("POST", "/api/tracked-playlists", {
-        name: "Untitled Playlist", // Temporary placeholder - backend fetches real name
-        playlistId: playlistId,
-        spotifyUrl: `https://open.spotify.com/playlist/${playlistId}`,
-        chartmetricUrl: chartmetricUrl || null,
-      });
-      
-      const playlist: TrackedPlaylist = await res.json();
-      return playlist;
-    },
-    onSuccess: async (data: TrackedPlaylist) => {
-      // Snapshot form values before resetting
-      const submittedValues = form.getValues();
-      const totalTracksInfo = data.totalTracks ? ` (${data.totalTracks} tracks)` : '';
-      console.log(`[Add Playlist] Success! Playlist ID: ${data.playlistId}, autoFetch: ${submittedValues.autoFetch}`);
-      
-      toast({
-        title: "Playlist Added!",
-        description: `Now tracking "${data.name}"${totalTracksInfo}${submittedValues.autoFetch ? ' - Fetching tracks...' : ''}`,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
-      form.reset();
-      setAddDialogOpen(false);
-
-      // Auto-fetch if enabled
-      if (submittedValues.autoFetch) {
-        console.log(`[Auto-Fetch] Scheduling fetch for playlist ${data.playlistId} in 500ms...`);
-        setTimeout(() => {
-          console.log(`[Auto-Fetch] Triggering fetch now for ${data.playlistId}`);
-          fetchPlaylistDataMutation.mutate(data.playlistId);
-        }, 500);
-      } else {
-        console.log(`[Auto-Fetch] Skipped - auto-fetch is disabled`);
-      }
-    },
-    onError: (error: any) => {
-      const isRestricted = error.message?.includes("region-restricted") || error.message?.includes("editorial-only");
-      
-      toast({
-        title: isRestricted ? "Playlist Restricted" : "Error",
-        description: error.message || "Failed to add playlist",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const extractPlaylistId = (urlOrId: string): string | null => {
-    const trimmed = urlOrId.trim();
-    
-    const urlMatch = trimmed.match(/playlist\/([a-zA-Z0-9]+)/);
-    if (urlMatch) {
-      return urlMatch[1];
-    }
-    
-    if (/^[a-zA-Z0-9]+$/.test(trimmed)) {
-      return trimmed;
-    }
-    
-    return null;
-  };
-
-  const handleAddPlaylist = (values: {
-    playlistUrl: string;
-    chartmetricUrl: string;
-    isEditorial: boolean;
-    autoFetch: boolean;
-    autoEnrich: boolean;
-  }) => {
-    if (addPlaylistMutation.isPending) {
-      return;
-    }
-    
-    if (!values.playlistUrl.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a Spotify playlist URL or ID",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    addPlaylistMutation.mutate({ 
-      url: values.playlistUrl,
-      chartmetricUrl: values.chartmetricUrl.trim() || undefined,
-      isEditorial: values.isEditorial || undefined
-    });
-  };
 
   // Selection helpers
   const togglePlaylistSelection = (playlistId: string) => {
@@ -737,139 +619,29 @@ export default function PlaylistsView() {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="gradient" size="default" className="gap-2" data-testid="button-add-playlist">
-                <Plus className="h-4 w-4" />
-                Add Playlist
-              </Button>
-            </DialogTrigger>
-          <DialogContent className="glass-panel">
-            <DialogHeader>
-              <DialogTitle>Add Spotify Playlist</DialogTitle>
-              <DialogDescription>
-                Enter a Spotify playlist URL or ID to start tracking it
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleAddPlaylist)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="playlistUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Playlist URL or ID</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://open.spotify.com/playlist/..."
-                          {...field}
-                          data-testid="input-new-playlist-url"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="chartmetricUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Chartmetric URL (Optional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://app.chartmetric.com/playlist/spotify/..."
-                          {...field}
-                          data-testid="input-chartmetric-url"
-                        />
-                      </FormControl>
-                      <p className="text-xs text-muted-foreground">
-                        Add a Chartmetric link for easier tracking
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <FormField
-                    control={form.control}
-                    name="isEditorial"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center gap-2 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            data-testid="checkbox-editorial-override"
-                          />
-                        </FormControl>
-                        <FormLabel className="text-sm font-normal cursor-pointer">
-                          This is an editorial playlist (use web scraping)
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="space-y-3 pt-2 border-t">
-                  <div className="flex items-center justify-between">
-                    <FormField
-                      control={form.control}
-                      name="autoFetch"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center gap-2 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-sm font-normal cursor-pointer">
-                            Auto-fetch tracks after adding
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <Badge variant="outline" className="text-xs">Recommended</Badge>
-                  </div>
-                  
-                  <FormField
-                    control={form.control}
-                    name="autoEnrich"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center gap-2 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            disabled={!form.watch("autoFetch")}
-                          />
-                        </FormControl>
-                        <FormLabel className="text-sm font-normal cursor-pointer">
-                          Auto-enrich tracks after fetching
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Automatic enrichment pulls songwriter credits, streaming stats, and MusicBrainz data
-                  </p>
-                </div>
-                
-                <Button 
-                  type="submit"
-                  disabled={addPlaylistMutation.isPending}
-                  className="w-full"
-                  data-testid="button-submit-add-playlist"
-                >
-                  {addPlaylistMutation.isPending ? "Adding..." : "Add Playlist"}
-                </Button>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+          <Button 
+            variant="gradient" 
+            size="default" 
+            className="gap-2" 
+            data-testid="button-add-playlist"
+            onClick={() => setAddDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Add Playlist
+          </Button>
+          
+          <AddPlaylistDialog 
+            open={addDialogOpen} 
+            onOpenChange={setAddDialogOpen}
+            onPlaylistsAdded={(spotifyPlaylistIds) => {
+              // Trigger automatic fetch/enrichment for each successfully added playlist
+              spotifyPlaylistIds.forEach((spotifyPlaylistId, index) => {
+                setTimeout(() => {
+                  fetchPlaylistDataMutation.mutate(spotifyPlaylistId);
+                }, index * 500); // Stagger requests by 500ms to avoid rate limiting
+              });
+            }}
+          />
         </div>
       </div>
 
