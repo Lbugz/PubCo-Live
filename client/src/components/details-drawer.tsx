@@ -488,37 +488,173 @@ export function DetailsDrawer({
                     <TabsContent value="producers" className="space-y-4 mt-4" data-testid="content-producers">
                     
                     {trackLoading ? (
-                      <div className="space-y-2">
-                        {[1].map((i) => (
-                          <Card key={i} className="p-3">
-                            <Skeleton className="h-4 w-32" />
+                      <div className="space-y-3">
+                        {[1, 2].map((i) => (
+                          <Card key={i} className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 flex-1">
+                                <Skeleton className="h-4 w-32" />
+                                <Skeleton className="h-5 w-16" />
+                              </div>
+                              <Skeleton className="h-4 w-4" />
+                            </div>
                           </Card>
                         ))}
                       </div>
-                    ) : displayTrack.producer ? (
-                      <div className="space-y-2">
-                        {displayTrack.producer.split(",").map((name, idx) => {
-                          const producerName = name.trim();
-                          const producerId = `producer-${idx}`;
-                          
-                          return (
-                            <Card 
-                              key={producerId} 
-                              className="p-3"
-                              data-testid={`card-producer-${producerId}`}
-                            >
-                              <span className="font-medium">{producerName}</span>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <Card className="p-8 text-center rounded-lg">
-                        <Music2 className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
-                        <p className="text-sm text-muted-foreground">No producer information available yet</p>
-                        <p className="text-xs text-muted-foreground mt-1">Enrich this track to discover producers</p>
-                      </Card>
-                    )}
+                    ) : (() => {
+                      const producerNames = displayTrack.producer?.split(",").map((name) => name.trim().toLowerCase()).filter(Boolean) ?? [];
+                      const producerRefs = new Map(artists.map((artist) => [artist.name.trim().toLowerCase(), artist]));
+                      const producerEntries = producerNames.length 
+                        ? producerNames.map((name) => {
+                            const artist = producerRefs.get(name);
+                            return artist ?? { id: `unmatched-${name}`, name, role: "Producer" as const };
+                          })
+                        : [];
+
+                      return producerEntries.length > 0 ? (
+                        <Accordion type="multiple" defaultValue={[producerEntries[0]?.id ?? ""]} className="space-y-3">
+                          {producerEntries.map((entry) => {
+                            const socialLinks = getSocialLinks(entry);
+                            const isEnriched = 'musicbrainzId' in entry;
+                            const isVerified = isEnriched;
+                            
+                            return (
+                              <AccordionItem 
+                                key={entry.id} 
+                                value={entry.id}
+                                className="border rounded-lg"
+                                data-testid={`accordion-producer-${entry.id}`}
+                              >
+                                <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate">
+                                  <div className="flex items-center gap-2 flex-1 text-left">
+                                    <span className="font-semibold">{entry.name}</span>
+                                    {isVerified ? (
+                                      <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                    ) : (
+                                      <XCircle className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                    )}
+                                    <Badge 
+                                      variant="outline"
+                                      className={cn(
+                                        "text-xs ml-auto mr-2",
+                                        isVerified 
+                                          ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
+                                          : "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20"
+                                      )}
+                                    >
+                                      {isVerified ? "Verified" : "Unverified"}
+                                    </Badge>
+                                    <Badge 
+                                      variant="outline"
+                                      className={cn(
+                                        "text-xs",
+                                        displayTrack.unsignedScore >= 7 ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20" :
+                                        displayTrack.unsignedScore >= 4 ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20" :
+                                        "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
+                                      )}
+                                    >
+                                      Score {displayTrack.unsignedScore}/10
+                                    </Badge>
+                                  </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="px-4 pb-4 pt-2">
+                                  <div className="space-y-4">
+                                    {/* Publisher & Stage Row */}
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                      <div>
+                                        <span className="text-muted-foreground block mb-1">Publisher</span>
+                                        <span className="font-medium">{displayTrack.publisher || "—"}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground block mb-1">Stage</span>
+                                        <span className="font-medium">{displayTrack.trackStage || "Emerging"}</span>
+                                      </div>
+                                    </div>
+
+                                    {/* Social Links */}
+                                    {socialLinks.length > 0 ? (
+                                      <div>
+                                        <span className="text-xs text-muted-foreground block mb-2">Socials</span>
+                                        <div className="flex gap-2">
+                                          {socialLinks.map((link) => (
+                                            <Button
+                                              key={link.name}
+                                              variant="outline"
+                                              size="icon"
+                                              className={cn("h-8 w-8", link.color)}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                window.open(link.url, '_blank', 'noopener,noreferrer');
+                                              }}
+                                              data-testid={`link-${link.name.toLowerCase()}-${entry.id}`}
+                                              title={link.name}
+                                            >
+                                              <link.icon className="h-4 w-4" />
+                                            </Button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ) : isEnriched ? (
+                                      <p className="text-xs text-muted-foreground italic">No social links found</p>
+                                    ) : (
+                                      <Badge variant="outline" className="text-xs text-amber-700 dark:text-amber-400 border-amber-500/20">
+                                        Enrich to discover socials
+                                      </Badge>
+                                    )}
+
+                                    {/* Notes Display */}
+                                    {displayTrack.contactNotes && (
+                                      <div>
+                                        <span className="text-xs text-muted-foreground block mb-1">Notes</span>
+                                        <p className="text-sm italic">"{displayTrack.contactNotes}"</p>
+                                      </div>
+                                    )}
+
+                                    {/* Tags Display */}
+                                    {fullTrack?.tags && fullTrack.tags.length > 0 && (
+                                      <div>
+                                        <span className="text-xs text-muted-foreground block mb-2">Tags</span>
+                                        <div className="flex flex-wrap gap-1">
+                                          {fullTrack.tags.map((tag) => (
+                                            <Badge 
+                                              key={tag.id} 
+                                              variant="outline" 
+                                              className="text-xs"
+                                              style={{ backgroundColor: `${tag.color}20`, borderColor: tag.color, color: tag.color }}
+                                            >
+                                              {tag.name}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Add Contact Info Button */}
+                                    <TrackContactDialog track={displayTrack} asChild={false}>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full gap-2"
+                                        data-testid={`button-contact-${entry.id}`}
+                                      >
+                                        <UserPlus className="h-3.5 w-3.5" />
+                                        Add Contact Info
+                                      </Button>
+                                    </TrackContactDialog>
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            );
+                          })}
+                        </Accordion>
+                      ) : (
+                        <Card className="p-8 text-center rounded-lg">
+                          <Music2 className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
+                          <p className="text-sm text-muted-foreground">No producer information available yet</p>
+                          <p className="text-xs text-muted-foreground mt-1">Enrich this track to discover producers</p>
+                        </Card>
+                      );
+                    })()}
                     </TabsContent>
                   </Tabs>
 
