@@ -154,7 +154,7 @@ async function fetchSinglePlaylist(
             spotify.playlists.getPlaylistItems(
               playlist.playlistId,
               undefined,
-              `items(track(id,name,artists(name),album(name,images),external_urls))`,
+              `items(track(id,name,artists(name),album(name,images),external_urls,external_ids,duration_ms,explicit,popularity))`,
               limit,
               offset,
               "from_token" as any
@@ -188,7 +188,12 @@ async function fetchSinglePlaylist(
               trackName: item.track.name,
               artistName: item.track.artists?.map((a: any) => a.name).join(", ") || "Unknown",
               spotifyUrl: item.track.external_urls?.spotify || "",
+              spotifyTrackId: item.track.id,
               albumArt: item.track.album?.images?.[0]?.url || null,
+              isrc: (item.track as any).external_ids?.isrc || null,
+              duration: (item.track as any).duration_ms || null,
+              explicit: (item.track as any).explicit ? 1 : 0,
+              popularity: (item.track as any).popularity || null,
               unsignedScore: score,
               addedAt: new Date(),
               dataSource: "spotify_api",
