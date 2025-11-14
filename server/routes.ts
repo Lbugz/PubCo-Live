@@ -108,7 +108,7 @@ async function fetchSpotifyPlaylistMetadata(playlistId: string): Promise<{
             totalTracks: scrapeResult.tracks?.length || null,
             curator: scrapeResult.curator || null,
             followers: scrapeResult.followers || null,
-            imageUrl: null, // Scraper doesn't extract image URLs from GraphQL
+            imageUrl: scrapeResult.imageUrl || null, // Extract artwork from GraphQL or DOM
             isEditorial: scrapeResult.curator?.toLowerCase() === 'spotify',
           };
         }

@@ -91,6 +91,7 @@ export interface ScrapeResult {
   tracks?: ScrapedTrack[];
   curator?: string | null;
   followers?: number | null;
+  imageUrl?: string | null;
   error?: string;
 }
 
@@ -228,6 +229,7 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
       tracks,
       curator: networkResult.curator || null,
       followers: networkResult.followers || null,
+      imageUrl: networkResult.imageUrl || null,
     };
     
   } catch (error: any) {
