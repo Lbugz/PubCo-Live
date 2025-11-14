@@ -51,12 +51,12 @@ export default function PlaylistsView() {
   });
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  
+
   // Persist metrics visibility to localStorage
   useEffect(() => {
     localStorage.setItem('playlistsMetricsVisible', showMetrics.toString());
   }, [showMetrics]);
-  
+
   // Fetch playlists mutation
   const fetchPlaylistsMutation = useFetchPlaylistsMutation();
 
@@ -98,24 +98,36 @@ export default function PlaylistsView() {
           variant: "destructive",
         });
       }
-      
+
       // Close drawer if the errored playlist is currently selected
       if (selectedPlaylist && data.data?.playlistId === selectedPlaylist.playlistId) {
         setDrawerOpen(false);
         setSelectedPlaylist(null);
       }
-      
+
       // Refresh playlists to remove deleted playlist
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
     },
     onPlaylistUpdated: (data) => {
       // Refresh playlist list to show updated metadata (name, artwork, curator, followers)
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
-      
+
       // Also refresh individual playlist if it's currently being viewed
       if (data.playlistId) {
         queryClient.invalidateQueries({ queryKey: ["/api/playlists", data.playlistId] });
       }
+    },
+    // Fix undefined enrichment toast message
+    onTrackEnriched: (data) => {
+      const enrichedCount = data.tracksEnriched || 0;
+      const totalCount = data.totalTracks || 0;
+      const phaseLabel = data.phase === 1 ? 'Spotify API' : data.phase === 2 ? 'Credits' : 'MLC';
+
+      toast({
+        title: "Track Enriched!",
+        description: `${phaseLabel}: ${enrichedCount}/${totalCount} tracks enriched`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/playlist-snapshot"] });
     },
   });
 
@@ -190,7 +202,7 @@ export default function PlaylistsView() {
     if (selectedPlaylistIds.size > 0) {
       const validIds = new Set(playlists.map(p => p.id));
       const newSelection = new Set<string>();
-      
+
       selectedPlaylistIds.forEach(id => {
         if (validIds.has(id)) {
           newSelection.add(id);
@@ -215,7 +227,7 @@ export default function PlaylistsView() {
         title: "Track enrichment complete",
         description: `${data.enrichedCount} tracks enriched with credits, ${data.failedCount} failed`,
       });
-      
+
       queryClient.invalidateQueries({ queryKey: ["/api/playlist-snapshot"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
     },
@@ -241,14 +253,14 @@ export default function PlaylistsView() {
       const playlist = playlists.find(p => p.playlistId === spotifyPlaylistId);
       const totalSkipped = data.completenessResults?.reduce((sum: number, r: any) => sum + (r.skipped || 0), 0) || 0;
       const totalNew = data.tracksAdded || 0;
-      
+
       console.log(`[Auto-Fetch] Fetch complete: ${totalNew} new tracks, ${totalSkipped} skipped`);
-      
+
       toast({
         title: "Playlist data fetched successfully",
         description: `${playlist?.name || 'Playlist'}: ${totalNew} new tracks added, ${totalSkipped} duplicates skipped`,
       });
-      
+
       queryClient.invalidateQueries({ queryKey: ["/api/playlist-snapshot"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
     },
@@ -272,7 +284,7 @@ export default function PlaylistsView() {
         title: "Metadata refreshed",
         description: `Updated curator${data.curator ? `: ${data.curator}` : ''} and followers${data.followers ? `: ${data.followers.toLocaleString()}` : ''}`,
       });
-      
+
       queryClient.invalidateQueries({ queryKey: ["/api/tracked-playlists"] });
     },
     onError: (error: Error) => {
@@ -299,7 +311,7 @@ export default function PlaylistsView() {
 
   const toggleSelectAll = () => {
     const allFilteredSelected = filteredPlaylists.length > 0 && filteredPlaylists.every(p => selectedPlaylistIds.has(p.id));
-    
+
     if (allFilteredSelected) {
       // All filtered playlists selected - deselect them (keep other selections)
       const newSet = new Set(selectedPlaylistIds);
@@ -320,7 +332,7 @@ export default function PlaylistsView() {
   // Bulk action handlers
   const handleBulkFetchData = async (mode: BulkActionMode) => {
     const targetPlaylists = mode === "selected" ? selectedFilteredPlaylists : filteredPlaylists;
-    
+
     if (targetPlaylists.length === 0) {
       toast({
         title: "No playlists to fetch",
@@ -368,7 +380,7 @@ export default function PlaylistsView() {
 
   const handleBulkRefreshMetadata = async (mode: BulkActionMode) => {
     const targetPlaylists = mode === "selected" ? selectedFilteredPlaylists : filteredPlaylists;
-    
+
     if (targetPlaylists.length === 0) {
       toast({
         title: "No playlists to refresh",
@@ -415,7 +427,7 @@ export default function PlaylistsView() {
 
   const handleBulkExport = (mode: BulkActionMode) => {
     const targetPlaylists = mode === "selected" ? selectedFilteredPlaylists : filteredPlaylists;
-    
+
     if (targetPlaylists.length === 0) {
       toast({
         title: "No playlists to export",
@@ -430,7 +442,7 @@ export default function PlaylistsView() {
         "Name", "Curator", "Followers", "Total Tracks", "Source", "Genre",
         "Last Checked", "Status", "Playlist ID", "Playlist URL"
       ];
-      
+
       const rows = targetPlaylists.map(playlist => [
         playlist.name,
         playlist.curator || "",
@@ -443,12 +455,12 @@ export default function PlaylistsView() {
         playlist.playlistId,
         `https://open.spotify.com/playlist/${playlist.playlistId}`
       ]);
-      
+
       const csvContent = [
         headers.join(","),
         ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
       ].join("\n");
-      
+
       const blob = new Blob([csvContent], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -458,7 +470,7 @@ export default function PlaylistsView() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       toast({
         title: "Export successful",
         description: `Exported ${targetPlaylists.length} playlist${targetPlaylists.length !== 1 ? 's' : ''} to CSV`,
@@ -508,10 +520,10 @@ export default function PlaylistsView() {
   // Reconcile selections with filtered playlists (strict filter-aligned selection)
   useEffect(() => {
     if (selectedPlaylistIds.size === 0) return;
-    
+
     const filteredIds = new Set(filteredPlaylists.map(p => p.id));
     const reconciled = new Set<string>();
-    
+
     selectedPlaylistIds.forEach(id => {
       if (filteredIds.has(id)) {
         reconciled.add(id);
@@ -520,11 +532,11 @@ export default function PlaylistsView() {
 
     // Early return if no pruning needed
     if (reconciled.size === selectedPlaylistIds.size) return;
-    
+
     // Update selection and notify user
     const removedCount = selectedPlaylistIds.size - reconciled.size;
     setSelectedPlaylistIds(reconciled);
-    
+
     if (removedCount > 0) {
       toast({
         title: "Selections updated",
@@ -562,7 +574,7 @@ export default function PlaylistsView() {
 
   const getStatusBadge = (status: string | null) => {
     if (!status) return <Badge variant="secondary">Unknown</Badge>;
-    
+
     switch (status) {
       case "active":
         return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Active</Badge>;
@@ -627,7 +639,7 @@ export default function PlaylistsView() {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-          
+
           <Button 
             variant="gradient" 
             size="default" 
@@ -638,7 +650,7 @@ export default function PlaylistsView() {
             <Plus className="h-4 w-4" />
             Add Playlist
           </Button>
-          
+
           <AddPlaylistDialog 
             open={addDialogOpen} 
             onOpenChange={setAddDialogOpen}
@@ -718,7 +730,7 @@ export default function PlaylistsView() {
                 />
               </div>
             </div>
-            
+
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
               <SelectTrigger className="w-[180px]" data-testid="select-source-filter">
                 <SelectValue placeholder="All Sources" />
@@ -821,7 +833,7 @@ export default function PlaylistsView() {
                       data-testid={`checkbox-card-${playlist.id}`}
                     />
                   </div>
-                  
+
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-3 pl-8">
@@ -1032,7 +1044,7 @@ export default function PlaylistsView() {
                   {/* Dark overlay for text readability */}
                   <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
                 </div>
-                
+
                 {/* Overlapping Info Card */}
                 <Card className="bg-background/95 backdrop-blur-lg border-primary/20 -mt-16 mx-4 relative z-10">
                   <CardContent className="p-4 space-y-4">
@@ -1083,7 +1095,7 @@ export default function PlaylistsView() {
                     <span className="font-medium">Metadata & Quality</span>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4 space-y-6">
-                    
+
                     {/* 1. Track Quality Summary */}
                     <div>
                       <p className="text-xs font-medium text-muted-foreground mb-3">Track Quality Summary</p>
@@ -1109,7 +1121,7 @@ export default function PlaylistsView() {
                               )}
                             </CardContent>
                           </Card>
-                          
+
                           {/* ISRC Coverage */}
                           <Card className="bg-background/40" data-testid="quality-card-isrc">
                             <CardContent className="p-3 text-center">
@@ -1124,7 +1136,7 @@ export default function PlaylistsView() {
                               )}
                             </CardContent>
                           </Card>
-                          
+
                           {/* Average Unsigned Score */}
                           <Card className="bg-background/40" data-testid="quality-card-score">
                             <CardContent className="p-3 text-center">
@@ -1150,7 +1162,7 @@ export default function PlaylistsView() {
                         <p className="text-xs text-muted-foreground">Quality metrics unavailable. Fetch playlist data to calculate.</p>
                       )}
                     </div>
-                    
+
                     {/* Enrichment Timeline */}
                     {qualityMetrics && qualityMetrics.totalTracks > 0 && (
                       <div>
@@ -1178,7 +1190,7 @@ export default function PlaylistsView() {
                               </p>
                             </div>
                           </div>
-                          
+
                           {/* Phase 2: Credits Scraping */}
                           <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-2">
                             <div className={cn(
@@ -1201,7 +1213,7 @@ export default function PlaylistsView() {
                               </p>
                             </div>
                           </div>
-                          
+
                           {/* Phase 3: MLC Publisher Lookup */}
                           <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-3">
                             <div className={cn(

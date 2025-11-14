@@ -27,7 +27,7 @@ class TrackStateContext {
   applyPatch(trackId: string, patch: TrackMetadataUpdate) {
     const existing = this.updates.get(trackId) || {};
     this.updates.set(trackId, { ...existing, ...patch });
-    
+
     const track = this.tracks.get(trackId);
     if (track) {
       Object.assign(track, patch);
@@ -108,14 +108,14 @@ export class EnrichmentWorker {
 
     try {
       const job = await this.jobQueue.getNextJob();
-      
+
       if (!job) {
         return;
       }
 
       jobId = job.id;
       console.log(`🔄 Processing job ${job.id} (${job.trackIds.length} tracks)`);
-      
+
       this.broadcastProgress(job.id, {
         status: 'running',
         progress: 0,
@@ -125,13 +125,13 @@ export class EnrichmentWorker {
       await this.executeJob(job);
     } catch (error) {
       console.error("❌ Worker error:", error);
-      
+
       if (jobId) {
         try {
-          await this.jobQueue.completeJob(jobId, false, [
+          await this.jobQueue.completeJob(job.id, false, [
             `[${new Date().toISOString()}] Fatal worker error: ${error instanceof Error ? error.message : String(error)}`,
           ]);
-          
+
           this.broadcastProgress(jobId, {
             status: 'failed',
             progress: 0,
@@ -178,7 +178,7 @@ export class EnrichmentWorker {
   private async executeJob(job: EnrichmentJob) {
     try {
       const tracks = await this.storage.getTracksByIds(job.trackIds);
-      
+
       if (tracks.length === 0) {
         await this.jobQueue.completeJob(job.id, false, [
           `[${new Date().toISOString()}] No tracks found for job`,
@@ -217,11 +217,11 @@ export class EnrichmentWorker {
 
       try {
         const spotify = await getUncachableSpotifyClient();
-        
+
         const updateTrackInContext = async (trackId: string, metadata: any) => {
           ctx.applyPatch(trackId, metadata);
         };
-        
+
         const phase1Result = await enrichTracksWithSpotifyAPI(
           spotify,
           ctx.getAllTracks(),
@@ -253,7 +253,7 @@ export class EnrichmentWorker {
             });
           }
         }
-        
+
         // Broadcast quality metric update for UI refresh
         if (this.wsBroadcast && job.playlistId) {
           this.wsBroadcast('playlist_quality_updated', {
@@ -270,7 +270,7 @@ export class EnrichmentWorker {
         console.log(`[Phase 1] Field Stats:`, phase1Result.fieldStats);
       } catch (phase1Error) {
         console.error("[Worker] Phase 1 (Spotify API) failed, continuing to Phase 2:", phase1Error);
-        
+
         await this.jobQueue.updateJobProgress(job.id, {
           progress: 35,
           logs: [
@@ -340,11 +340,11 @@ export class EnrichmentWorker {
           if (enrichedTrack.songwriter) creditsFound.push('songwriter');
           if (enrichedTrack.producer) creditsFound.push('producer');
           if (enrichedTrack.label) creditsFound.push('label');
-          
+
           const streamsText = enrichedTrack.spotifyStreams 
             ? `, ${enrichedTrack.spotifyStreams.toLocaleString()} streams` 
             : '';
-          
+
           await this.storage.logActivity({
             entityType: 'track',
             trackId: enrichedTrack.trackId,
@@ -366,11 +366,13 @@ export class EnrichmentWorker {
               type: 'track_enriched',
               trackId: enrichedTrack.trackId,
               phase: 2,
+              tracksEnriched: result.tracksEnriched,
+              totalTracks: result.tracksProcessed,
             });
           }
         }
       }
-      
+
       // Broadcast quality metric update after Phase 2
       if (this.wsBroadcast && job.playlistId) {
         this.wsBroadcast('playlist_quality_updated', {
@@ -474,7 +476,7 @@ export class EnrichmentWorker {
             }
           }
         }
-        
+
         // Broadcast final quality metric update after MLC
         if (this.wsBroadcast && job.playlistId) {
           this.wsBroadcast('playlist_quality_updated', {
@@ -487,7 +489,7 @@ export class EnrichmentWorker {
         }
       } catch (mlcError) {
         console.error("[Worker] MLC enrichment failed, continuing job:", mlcError);
-        
+
         await this.jobQueue.updateJobProgress(job.id, {
           progress: 85,
           logs: [
@@ -547,7 +549,7 @@ export class EnrichmentWorker {
       console.log(`✅ Job ${job.id} completed: ${result.tracksEnriched} enriched, ${result.errors} errors`);
     } catch (error) {
       console.error(`❌ Job ${job.id} failed:`, error);
-      
+
       await this.jobQueue.completeJob(job.id, false, [
         `[${new Date().toISOString()}] Job failed: ${error instanceof Error ? error.message : String(error)}`,
       ]);
