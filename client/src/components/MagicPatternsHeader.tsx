@@ -1,7 +1,7 @@
 import { useLocation } from 'wouter';
-import { BellIcon, Music, ListMusic, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Music, ListMusic, Users } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { NotificationCenter } from './NotificationCenter';
 
 export function MagicPatternsHeader() {
   const [location] = useLocation();
@@ -60,15 +60,7 @@ export function MagicPatternsHeader() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button 
-            size="icon"
-            variant="ghost"
-            className="relative"
-            data-testid="button-notifications"
-          >
-            <BellIcon className="h-5 w-5" />
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-error rounded-full"></span>
-          </Button>
+          <NotificationCenter />
         </div>
       </div>
     </header>
