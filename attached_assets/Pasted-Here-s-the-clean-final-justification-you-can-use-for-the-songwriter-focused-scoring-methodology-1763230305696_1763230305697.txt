@@ -1,0 +1,188 @@
+Here’s the **clean, final justification** you can use for the songwriter-focused scoring methodology — rewritten for clarity, aligned with your product, and fully consistent with the excerpt you selected.
+
+No code changes. No updates. Just the *justification*.
+
+---
+
+# ✅ Why This Songwriter-Focused Methodology Makes Sense
+
+The original scoring system was built for **artists**, not **songwriters**. But your platform’s goal is to **track every songwriter** (including those writing for major artists) and identify *who is unpublished or underrepresented*.
+
+The updated scoring logic fixes the mismatch by measuring the things that actually matter for publishing A&R.
+
+---
+
+# 1️⃣ Core Problem the New Method Solves
+
+Your database tracks **songwriters**, but the old scoring logic measured:
+
+* Artist playlist placement (Fresh Finds)
+* Artist label (major vs indie)
+* Artist credibility signals
+
+These do NOT reliably correlate to whether a **songwriter** has:
+
+* a publisher
+* representation
+* available rights
+* commercial momentum
+
+So the methodology was misaligned with your publishing business.
+
+---
+
+# 2️⃣ The Songwriter-Correct Inputs (and Why They Matter)
+
+## **1. Missing Publisher (+5)
+
+→ #1 predictor of publishing opportunity**
+If no publisher is listed:
+
+* the songwriter is likely *unpublished*
+* backend royalties may be unclaimed
+* there’s no admin or deal blocking you
+
+This is the most important signal in your entire system.
+
+---
+
+## **2. Missing Writer Metadata (+3)
+
+→ Signals DIY artists and underrepresented writers**
+Metadata gaps indicate:
+
+* self-released artists writing their own songs
+* incomplete PRO/admin registrations
+* no management handling credits
+* easier outreach and signing opportunity
+
+This reliably identifies writers who are *not yet fully represented*.
+
+---
+
+## **3. Fresh Finds Only When Artist = Songwriter (+3)
+
+→ Corrects the biggest false-positive in the old model**
+Fresh Finds = editorial validation…
+…but only for the **artist**, not every songwriter on the track.
+
+So you only apply the Fresh Finds bonus when:
+
+> the artist is also a songwriter on the track.
+
+This turns Fresh Finds into a correct proxy for **emerging self-written songwriting talent**.
+
+---
+
+## **4. Indie Label Only Matters When Artist = Songwriter (+2)
+
+→ Measures a real DIY songwriting opportunity**
+Indie labels don’t tell you anything about hired songwriters.
+
+But when the **artist wrote the song AND the release is indie**, you reliably identify:
+
+* indie songwriters
+* DIY creators
+* highest-likelihood unpublished writers
+
+This is where publishing deals are easiest to originate.
+
+---
+
+## **5. Stream Velocity (+2)
+
+→ Commercial momentum = songwriting value rising**
+Velocity indicates the composition itself is heating up.
+
+This helps your team prioritize:
+
+* fast-growing tracks
+* trending writers
+* songs gaining traction before competitors move
+
+Velocity = urgency in publishing A&R.
+
+---
+
+## **6. Major Label Penalty ONLY When Artist = Songwriter (-2)
+
+→ Fixes the biggest mistake in the old logic**
+A songwriter may write for a major artist and still be:
+
+* unpublished
+* independent
+* unsigned in both admin + PRO
+
+So you only penalize the major-label scenario when:
+
+> the artist is the songwriter *and* signed to a major.
+
+Because in that specific case:
+
+* majors often bundle publishing in 360/creative deals
+* the songwriter is less likely available
+
+This preserves legitimate opportunities among writers working with majors.
+
+---
+
+# 3️⃣ Why This Methodology Works Perfectly for Your Use Case
+
+You said:
+
+> “I'm building a database of **all songwriters**, including those who write for major artists.”
+
+This model is aligned with that goal because it:
+
+### ✔ Tracks **every songwriter**, not just DIY artists
+
+No one gets filtered out because of the artist’s label.
+
+### ✔ Prioritizes signals that matter *only* for publishing
+
+Missing publisher ≫ missing label ≫ playlist placement.
+
+### ✔ Corrects the false assumption that artist signals = songwriter signals
+
+A songwriter’s career pathway is different than an artist’s.
+
+### ✔ Adds velocity to catch emerging writers early
+
+Before PROs or major publishers grab them.
+
+### ✔ Gives bonus points to self-written + indie tracks
+
+This is your high-yield acquisition zone.
+
+### ✔ Keeps the scoring interpretable
+
+You still have a clean 1–10 scale that’s quick for A&R to scan.
+
+---
+
+# 4️⃣ The Songwriter-Focused Rubric (Final)
+
+```
+const RUBRIC = {
+  missingPublisher: 5,
+  missingWriter: 3,
+  artistIsWriter_FreshFinds: 3,
+  artistIsWriter_Indie: 2,
+  hasStreamVelocity: 2,
+  majorLabelArtist_SameWriter: -2
+};
+```
+
+---
+
+# 5️⃣ In One Line:
+
+**The methodology now measures *publishing opportunity*, not *artist momentum* — which makes it the correct model for a songwriter-first discovery engine.**
+
+If you want, I can also produce:
+
+* a 1-page internal A&R scoring explainer
+* a scoring visualization for the UI
+* a scoring audit sheet you can give your team
+
+Just let me know, 1sthexagram.
