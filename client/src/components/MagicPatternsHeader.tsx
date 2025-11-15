@@ -11,21 +11,21 @@ export function MagicPatternsHeader() {
       return {
         title: 'Playlists',
         subtitle: 'Monitor and track Spotify playlists • Editorial and user-curated sources • Automated talent discovery',
-        icon: <ListMusic className="h-8 w-8 text-secondary" />
+        icon: <ListMusic className="h-8 w-8 text-primary" />
       };
     }
     if (location === '/' || location === '/tracks') {
       return {
         title: 'Tracks',
         subtitle: 'Discover and prioritize unsigned tracks • Songwriter identification • Publishing opportunity scoring',
-        icon: <Music className="h-8 w-8 text-secondary" />
+        icon: <Music className="h-8 w-8 text-primary" />
       };
     }
     if (location === '/contacts') {
       return {
         title: 'Contact Workspace',
         subtitle: 'Relationship management for unsigned talent discovery • Lead cadence tracking • Funnel coverage analytics',
-        icon: <Users className="h-8 w-8 text-secondary" />
+        icon: <Users className="h-8 w-8 text-primary" />
       };
     }
     return {
@@ -46,7 +46,7 @@ export function MagicPatternsHeader() {
             data-testid="button-sidebar-toggle" 
           />
           {content.icon && (
-            <div className="hidden sm:flex items-center justify-center w-12 h-12 rounded-xl bg-secondary/10">
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
               {content.icon}
             </div>
           )}

@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   Users, TrendingUp, Target, Activity, Search, Filter, X, Mail, Phone, 
-  MessageCircle, User, ChevronDown, Loader2, UserPlus, Upload, Share2, 
-  Download, Flame, Link as LinkIcon, ArrowUpRight, ArrowDownRight, Eye, EyeOff
+  MessageCircle, User, ChevronDown, Loader2, UserPlus, Upload,
+  Flame, Link as LinkIcon, ArrowUpRight, ArrowDownRight, Eye, EyeOff
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -162,16 +162,16 @@ export default function Contacts() {
           bValue = b.totalStreams || 0;
           break;
         case "trackCount":
-          aValue = a.trackCount || 0;
-          bValue = b.trackCount || 0;
+          aValue = a.totalTracks || 0;
+          bValue = b.totalTracks || 0;
           break;
         case "stage":
           aValue = a.stage || "";
           bValue = b.stage || "";
           break;
         case "wowGrowth":
-          aValue = a.wowGrowth || 0;
-          bValue = b.wowGrowth || 0;
+          aValue = a.wowGrowthPct || 0;
+          bValue = b.wowGrowthPct || 0;
           break;
         default:
           return 0;
@@ -332,24 +332,12 @@ export default function Contacts() {
 
       {/* Saved View Banner / Filter Toolbar */}
       <div className="space-y-3">
-        {/* View info and actions */}
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h3 className="text-sm font-medium mb-1">All Contacts View</h3>
-            <p className="text-xs text-muted-foreground">
-              Default workspace showing all contacts across pipeline stages
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2" data-testid="button-share-view">
-              <Share2 className="h-4 w-4" />
-              Share View
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2" data-testid="button-export-csv">
-              <Download className="h-4 w-4" />
-              Export CSV
-            </Button>
-          </div>
+        {/* View info */}
+        <div>
+          <h3 className="text-sm font-medium mb-1">All Contacts View</h3>
+          <p className="text-xs text-muted-foreground">
+            Default workspace showing all contacts across pipeline stages
+          </p>
         </div>
 
         {/* Search and filters */}
