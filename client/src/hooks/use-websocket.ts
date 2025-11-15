@@ -1,4 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
+import { useWebSocketContext } from '@/contexts/WebSocketContext';
 
 interface WebSocketMessage {
   type: 'connected' | 'track_enriched' | 'batch_complete' | 'enrichment_progress' | 'metric_update' | 'playlist_error' | 'playlist_updated' | 'playlist_quality_updated' | 'playlist_fetch_complete' | 'enrichment_job_started' | 'enrichment_job_completed' | 'enrichment_job_failed' | 'enrichment_phase_started';
@@ -44,163 +45,92 @@ interface UseWebSocketOptions {
 }
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 5;
+  const { isConnected, subscribe } = useWebSocketContext();
 
-  // Store callbacks in refs to avoid recreating connect function
-  const callbacksRef = useRef(options);
+  // Create stable message handler using useCallback
+  const handleMessage = useCallback((data: WebSocketMessage) => {
+    // Always call generic onMessage handler if provided
+    if (options.onMessage) {
+      options.onMessage(data);
+    }
 
-  // Update callback refs when they change
-  useEffect(() => {
-    callbacksRef.current = options;
+    // Route to specific handlers
+    switch (data.type) {
+      case 'connected':
+        if (options.onConnected) {
+          options.onConnected();
+        }
+        break;
+      case 'track_enriched':
+        if (options.onTrackEnriched) {
+          options.onTrackEnriched(data);
+        }
+        break;
+      case 'batch_complete':
+        if (options.onBatchComplete) {
+          options.onBatchComplete(data);
+        }
+        break;
+      case 'enrichment_progress':
+        if (options.onEnrichmentProgress) {
+          options.onEnrichmentProgress(data);
+        }
+        break;
+      case 'metric_update':
+        if (options.onMetricUpdate) {
+          options.onMetricUpdate(data);
+        }
+        break;
+      case 'playlist_error':
+        if (options.onPlaylistError) {
+          options.onPlaylistError(data);
+        }
+        break;
+      case 'playlist_updated':
+        if (options.onPlaylistUpdated) {
+          options.onPlaylistUpdated(data);
+        }
+        break;
+      case 'playlist_quality_updated':
+        if (options.onMetricUpdate) {
+          options.onMetricUpdate(data);
+        }
+        break;
+      case 'playlist_fetch_complete':
+        if (options.onMessage) {
+          options.onMessage(data);
+        }
+        break;
+      case 'enrichment_job_started':
+        if (options.onJobStarted) {
+          options.onJobStarted(data);
+        }
+        break;
+      case 'enrichment_job_completed':
+        if (options.onJobCompleted) {
+          options.onJobCompleted(data);
+        }
+        break;
+      case 'enrichment_job_failed':
+        if (options.onJobFailed) {
+          options.onJobFailed(data);
+        }
+        break;
+      case 'enrichment_phase_started':
+        if (options.onPhaseStarted) {
+          options.onPhaseStarted(data);
+        }
+        break;
+    }
   }, [options]);
 
-  const connect = useCallback(() => {
-    // Don't reconnect if already connected or max attempts reached
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
-    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-      console.warn('Max WebSocket reconnection attempts reached');
-      return;
-    }
-
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-
-    try {
-      const ws = new WebSocket(wsUrl);
-
-      ws.onopen = () => {
-        console.log('WebSocket connected');
-        reconnectAttemptsRef.current = 0; // Reset attempts on successful connection
-        if (callbacksRef.current.onConnected) {
-          callbacksRef.current.onConnected();
-        }
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data: WebSocketMessage = JSON.parse(event.data);
-          console.log('WebSocket message received:', data);
-
-          // Always call generic onMessage handler if provided
-          if (callbacksRef.current.onMessage) {
-            callbacksRef.current.onMessage(data);
-          }
-
-          switch (data.type) {
-            case 'connected':
-              // Connection confirmation
-              break;
-            case 'track_enriched':
-              console.log('[WebSocket] Track enriched:', data);
-              if (callbacksRef.current.onTrackEnriched) {
-                callbacksRef.current.onTrackEnriched(data);
-              }
-              break;
-            case 'batch_complete':
-              if (callbacksRef.current.onBatchComplete) {
-                callbacksRef.current.onBatchComplete(data);
-              }
-              break;
-            case 'enrichment_progress':
-              if (callbacksRef.current.onEnrichmentProgress) {
-                callbacksRef.current.onEnrichmentProgress(data);
-              }
-              break;
-            case 'metric_update':
-              if (callbacksRef.current.onMetricUpdate) {
-                callbacksRef.current.onMetricUpdate(data);
-              }
-              break;
-            case 'playlist_error':
-              if (callbacksRef.current.onPlaylistError) {
-                callbacksRef.current.onPlaylistError(data);
-              }
-              break;
-            case 'playlist_updated':
-              if (callbacksRef.current.onPlaylistUpdated) {
-                callbacksRef.current.onPlaylistUpdated(data);
-              }
-              break;
-            case 'playlist_quality_updated':
-              // Invalidate quality metrics query to trigger UI refresh
-              if (callbacksRef.current.onMetricUpdate) {
-                callbacksRef.current.onMetricUpdate(data);
-              }
-              break;
-            case 'playlist_fetch_complete':
-              if (callbacksRef.current.onMessage) {
-                callbacksRef.current.onMessage(data);
-              }
-              break;
-            case 'enrichment_job_started':
-              if (callbacksRef.current.onJobStarted) {
-                callbacksRef.current.onJobStarted(data);
-              }
-              break;
-            case 'enrichment_job_completed':
-              if (callbacksRef.current.onJobCompleted) {
-                callbacksRef.current.onJobCompleted(data);
-              }
-              break;
-            case 'enrichment_job_failed':
-              if (callbacksRef.current.onJobFailed) {
-                callbacksRef.current.onJobFailed(data);
-              }
-              break;
-            case 'enrichment_phase_started':
-              if (callbacksRef.current.onPhaseStarted) {
-                callbacksRef.current.onPhaseStarted(data);
-              }
-              break;
-          }
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
-
-      ws.onclose = () => {
-        console.log('WebSocket disconnected');
-        wsRef.current = null;
-
-        // Attempt to reconnect with exponential backoff
-        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-          reconnectAttemptsRef.current++;
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
-          console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttemptsRef.current})`);
-
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
-          }, delay);
-        }
-      };
-
-      wsRef.current = ws;
-    } catch (error) {
-      console.error('Error creating WebSocket:', error);
-    }
-  }, []); // Empty deps - connect function is stable
-
+  // Subscribe to messages when component mounts
   useEffect(() => {
-    connect();
-
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
-  }, [connect]);
+    const unsubscribe = subscribe(handleMessage);
+    return unsubscribe;
+  }, [subscribe, handleMessage]);
 
   return {
-    isConnected: wsRef.current?.readyState === WebSocket.OPEN,
+    isConnected,
   };
 }

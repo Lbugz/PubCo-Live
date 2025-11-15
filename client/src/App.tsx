@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { MagicPatternsHeader } from "@/components/MagicPatternsHeader";
+import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import Dashboard from "@/pages/dashboard";
 import PlaylistsView from "@/pages/playlists-view";
 import Contacts from "@/pages/contacts";
@@ -58,22 +59,24 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark">
-        <TooltipProvider>
-          <SidebarProvider style={style as React.CSSProperties}>
-            <div className="flex h-screen w-full">
-              <AppSidebar />
-              <div className="flex flex-col flex-1 overflow-hidden">
-                <MagicPatternsHeader />
-                <main className="flex-1 overflow-auto bg-background">
-                  <Router />
-                </main>
+      <WebSocketProvider>
+        <ThemeProvider defaultTheme="dark">
+          <TooltipProvider>
+            <SidebarProvider style={style as React.CSSProperties}>
+              <div className="flex h-screen w-full">
+                <AppSidebar />
+                <div className="flex flex-col flex-1 overflow-hidden">
+                  <MagicPatternsHeader />
+                  <main className="flex-1 overflow-auto bg-background">
+                    <Router />
+                  </main>
+                </div>
               </div>
-            </div>
-          </SidebarProvider>
-          <Toaster />
-        </TooltipProvider>
-      </ThemeProvider>
+            </SidebarProvider>
+            <Toaster />
+          </TooltipProvider>
+        </ThemeProvider>
+      </WebSocketProvider>
     </QueryClientProvider>
   );
 }

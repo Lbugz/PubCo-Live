@@ -463,6 +463,34 @@ export type InsertContactAlert = z.infer<typeof insertContactAlertSchema>;
 export type ContactTag = typeof contactTags.$inferSelect;
 export type InsertContactTag = z.infer<typeof insertContactTagSchema>;
 
+// System Notifications
+export const notificationTypeEnum = pgEnum('notification_type', [
+  'automation_complete',
+  'enrichment_complete',
+  'enrichment_failed',
+  'playlist_error',
+  'system_alert'
+]);
+
+export const systemNotifications = pgTable("system_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: notificationTypeEnum("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  metadata: text("metadata"),
+  playlistId: varchar("playlist_id").references(() => trackedPlaylists.id, { onDelete: "cascade" }),
+  read: integer("read").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertSystemNotificationSchema = createInsertSchema(systemNotifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type SystemNotification = typeof systemNotifications.$inferSelect;
+export type InsertSystemNotification = z.infer<typeof insertSystemNotificationSchema>;
+
 export const playlists = [
   {
     name: "Fresh Finds",
