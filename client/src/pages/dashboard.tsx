@@ -590,21 +590,29 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <PageContainer>
         <div className="space-y-6 fade-in">
-          {/* Header with Enrich Data Button */}
-          <div className="flex items-center justify-end">
-            <Button
-              onClick={() => enrichArtistsMutation.mutate({ limit: 50 })}
-              variant="gradient"
-              size="default"
-              className="gap-2"
-              disabled={enrichArtistsMutation.isPending || !tracks || tracks.length === 0}
-              data-testid="button-enrich-artists"
-            >
-              <Users className={`h-4 w-4 ${enrichArtistsMutation.isPending ? "animate-pulse" : ""}`} />
-              <span className="hidden md:inline">
-                {enrichArtistsMutation.isPending ? "Enriching Data..." : "Enrich Data"}
-              </span>
-            </Button>
+          {/* Header Section */}
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Tracks</h1>
+              <p className="text-muted-foreground">
+                Discover and prioritize unsigned tracks • Songwriter identification • Publishing opportunity scoring
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => enrichArtistsMutation.mutate({ limit: 50 })}
+                variant="gradient"
+                size="default"
+                className="gap-2"
+                disabled={enrichArtistsMutation.isPending || !tracks || tracks.length === 0}
+                data-testid="button-enrich-artists"
+              >
+                <Users className={`h-4 w-4 ${enrichArtistsMutation.isPending ? "animate-pulse" : ""}`} />
+                <span className="hidden md:inline">
+                  {enrichArtistsMutation.isPending ? "Enriching Data..." : "Enrich Data"}
+                </span>
+              </Button>
+            </div>
           </div>
 
           {/* Enhanced Stats Cards with Trends and Toggle */}
