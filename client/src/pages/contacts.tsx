@@ -306,7 +306,7 @@ export default function Contacts() {
                 value={formatNumber(stats.total)}
                 icon={Users}
                 variant="blue"
-                tooltip="Total number of active songwriter contacts in the pipeline"
+                tooltip="Total active songwriter contacts tracked across all pipeline stages (Discovery Pool, Watch List, Active Search) for publishing outreach and relationship management"
                 testId="stats-total-pipeline"
               />
               <StatsCard
@@ -314,7 +314,7 @@ export default function Contacts() {
                 value={formatNumber(stats.hotLeads)}
                 icon={Flame}
                 variant="warning"
-                tooltip="Priority outreach candidates marked as hot leads"
+                tooltip="Priority outreach candidates with unsigned score 7-10 indicating immediate publishing opportunities - ready for direct contact and deal discussions"
                 testId="stats-hot-leads"
               />
               <StatsCard
@@ -322,7 +322,7 @@ export default function Contacts() {
                 value={`${stats.unsignedPct.toFixed(1)}%`}
                 icon={TrendingUp}
                 variant={stats.unsignedPct >= 50 ? "green" : stats.unsignedPct >= 25 ? "warning" : "default"}
-                tooltip="Percentage of contacts with tracks missing publisher data - pipeline quality indicator"
+                tooltip="Percentage of contacts with tracks missing publisher data after enrichment - pipeline quality indicator showing unsigned publishing opportunity concentration"
                 testId="stats-unsigned-pct"
               />
             </div>

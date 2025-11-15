@@ -700,7 +700,7 @@ export default function PlaylistsView() {
                 value={playlistMetrics?.totalPlaylists ?? 0}
                 icon={Music2}
                 variant="blue"
-                tooltip="Total number of Spotify playlists being monitored for unsigned talent discovery"
+                tooltip="Total Spotify playlists monitored across Fresh Finds, editorial, and custom sources for unsigned talent discovery and publishing leads"
                 testId="stats-total-playlists"
               />
               <StatsCard
@@ -708,7 +708,7 @@ export default function PlaylistsView() {
                 value={playlistMetrics?.unsignedSongwriters ?? 0}
                 icon={UserCheck}
                 variant="green"
-                tooltip="Distinct songwriters with no publisher across all tracked playlists - prime discovery targets"
+                tooltip="Distinct songwriters with no publisher data after successful enrichment across all tracked playlists - your primary discovery pool for outreach"
                 change={playlistMetrics?.changeUnsigned}
                 testId="stats-unsigned-songwriters"
               />
@@ -717,7 +717,7 @@ export default function PlaylistsView() {
                 value={playlistMetrics?.highImpactPlaylists ?? 0}
                 icon={Trophy}
                 variant="gold"
-                tooltip="Playlists with average unsigned score of 7 or higher, indicating publishing opportunities"
+                tooltip="Playlists averaging 7+ unsigned score indicating concentrated publishing opportunities - prioritize these for deeper research and outreach"
                 change={playlistMetrics?.changeHighImpact}
                 testId="stats-high-impact-playlists"
               />

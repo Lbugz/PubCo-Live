@@ -688,7 +688,7 @@ export default function Dashboard() {
                     value={trackMetrics?.dealReady?.toLocaleString() || "0"}
                     icon={Target}
                     variant="green"
-                    tooltip="Tracks with contact info (email) and high unsigned score (7+). Click to filter the table below."
+                    tooltip="Immediate outreach opportunities: Tracks with verified contact email and unsigned score of 7-10 indicating strong publishing potential. Click to filter."
                     change={trackMetrics?.changeDealReady}
                     onClick={() => {
                       setActiveFilters(['has-email']);
@@ -705,7 +705,7 @@ export default function Dashboard() {
                     value={trackMetrics?.avgScore?.toFixed(1) || "0.0"}
                     icon={Activity}
                     variant="default"
-                    tooltip="Average unsigned score across all tracks in the current week"
+                    tooltip="Average unsigned score (0-10 scale) across all tracks this week. Higher scores indicate stronger unsigned publishing signals based on missing metadata, indie labels, and stream velocity."
                     change={trackMetrics?.changeAvgScore}
                     testId="stats-avg-score"
                   />
@@ -714,7 +714,7 @@ export default function Dashboard() {
                     value={trackMetrics?.missingPublisher?.toLocaleString() || "0"}
                     icon={Sparkles}
                     variant="blue"
-                    tooltip="Tracks with no publisher data - your highest priority signal for unsigned opportunities"
+                    tooltip="Tracks with no publisher data after successful enrichment - the strongest signal (+5 points) for unsigned publishing opportunities. Click to filter."
                     change={trackMetrics?.changeMissingPublisher}
                     onClick={() => {
                       setActiveFilters(['no-publisher']);
