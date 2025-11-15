@@ -71,8 +71,7 @@ const workflowSections = [
     icon: Users,
     items: [
       { title: "Contacts", url: "/contacts", icon: Users },
-      { title: "Engagements", url: "/engagements", icon: MessageCircle },
-      { title: "Opportunities", url: "/opportunities", icon: Target },
+      { title: "Outreach Pipeline", url: "/outreach", icon: Target },
     ],
   },
   {
@@ -80,8 +79,6 @@ const workflowSections = [
     icon: Briefcase,
     items: [
       { title: "Pipeline", url: "/pipeline", icon: Layout },
-      { title: "Deal Detail", url: "/deal-detail", icon: FileText },
-      { title: "Templates", url: "/deal-templates", icon: FileText },
     ],
   },
 ];

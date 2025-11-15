@@ -10,11 +10,8 @@ import { MagicPatternsHeader } from "@/components/MagicPatternsHeader";
 import Dashboard from "@/pages/dashboard";
 import PlaylistsView from "@/pages/playlists-view";
 import Contacts from "@/pages/contacts";
-import Engagements from "@/pages/engagements";
-import Opportunities from "@/pages/opportunities";
+import OutreachPipeline from "@/pages/outreach";
 import Pipeline from "@/pages/pipeline";
-import DealDetail from "@/pages/deal-detail";
-import DealTemplates from "@/pages/deal-templates";
 import SettingsSpotify from "@/pages/settings-spotify";
 import SettingsDatabase from "@/pages/settings-database";
 import SettingsPreferences from "@/pages/settings-preferences";
@@ -33,14 +30,11 @@ function Router() {
       {/* Relationships/CRM */}
       <Route path="/relationships" component={Contacts} />
       <Route path="/contacts" component={Contacts} />
-      <Route path="/engagements" component={Engagements} />
-      <Route path="/opportunities" component={Opportunities} />
+      <Route path="/outreach" component={OutreachPipeline} />
       
       {/* Deals */}
       <Route path="/deals" component={Pipeline} />
       <Route path="/pipeline" component={Pipeline} />
-      <Route path="/deal-detail" component={DealDetail} />
-      <Route path="/deal-templates" component={DealTemplates} />
       
       {/* Settings */}
       <Route path="/settings" component={SettingsSpotify} />
