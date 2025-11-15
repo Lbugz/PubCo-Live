@@ -165,13 +165,12 @@ async function populateContacts() {
   }
 }
 
-if (require.main === module) {
-  populateContacts()
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.error("Fatal:", error);
-      process.exit(1);
-    });
-}
+// Run immediately when imported
+populateContacts()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error("Fatal:", error);
+    process.exit(1);
+  });
 
 export { populateContacts };
