@@ -58,6 +58,7 @@ export interface IStorage {
   // Contact management methods
   getContacts(options?: { stage?: string; search?: string; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]>;
   getContactsCount(options?: { stage?: string; search?: string }): Promise<number>;
+  getContactsCountWithHotLead(): Promise<number>;
   getContactById(id: string): Promise<ContactWithSongwriter | null>;
   updateContact(id: string, updates: Partial<Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void>;
   getContactTracks(contactId: string): Promise<PlaylistSnapshot[]>;
@@ -911,6 +912,15 @@ export class DatabaseStorage implements IStorage {
     }
     
     return query;
+  }
+
+  async getContactsCountWithHotLead(): Promise<number> {
+    const result = await db.select({ count: count() })
+      .from(contacts)
+      .where(sql`${contacts.hotLead} > 0`);
+    
+    const raw = result[0]?.count ?? 0;
+    return typeof raw === "bigint" ? Number(raw) : Number(raw);
   }
 
   async getContactsCount(options?: { stage?: string; search?: string }): Promise<number> {

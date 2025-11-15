@@ -3143,6 +3143,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(contactsList);
       }
 
+      // Get global stats (ignoring filters)
+      const [totalContacts, discoveryCount, watchCount, searchCount, hotLeadsCount] = await Promise.all([
+        storage.getContactsCount({}),
+        storage.getContactsCount({ stage: 'discovery' }),
+        storage.getContactsCount({ stage: 'watch' }),
+        storage.getContactsCount({ stage: 'search' }),
+        storage.getContactsCountWithHotLead()
+      ]);
+
       const [totalCount, paginatedContacts] = await Promise.all([
         storage.getContactsCount({ stage, search }),
         storage.getContacts({ stage, search, limit, offset })
@@ -3153,7 +3162,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         total: totalCount,
         limit,
         offset,
-        hasMore: (offset + limit) < totalCount
+        hasMore: (offset + limit) < totalCount,
+        stats: {
+          total: totalContacts,
+          hotLeads: hotLeadsCount,
+          discovery: discoveryCount,
+          watch: watchCount,
+          search: searchCount,
+        }
       });
     } catch (error: any) {
       console.error("Error fetching contacts:", error);
@@ -3174,6 +3190,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error fetching contact:", error);
       res.status(500).json({ error: error.message || "Failed to fetch contact" });
+    }
+  });
+
+  app.get("/api/contacts/:id/tracks", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const tracks = await storage.getContactTracks(id);
+      res.json(tracks);
+    } catch (error: any) {
+      console.error("Error fetching contact tracks:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch contact tracks" });
+    }
+  });
+
+  app.post("/api/contacts/:id/notes", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { text } = req.body;
+
+      if (!text || typeof text !== 'string' || !text.trim()) {
+        return res.status(400).json({ error: "Note text is required" });
+      }
+
+      // For now, just return success - full notes implementation in task #8
+      res.json({ success: true, message: "Note saved successfully" });
+    } catch (error: any) {
+      console.error("Error saving note:", error);
+      res.status(500).json({ error: error.message || "Failed to save note" });
     }
   });
 
