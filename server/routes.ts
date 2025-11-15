@@ -3103,6 +3103,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Contact Management Routes
+  app.get("/api/contacts", async (req, res) => {
+    try {
+      const stage = req.query.stage as string | undefined;
+      const search = req.query.search as string | undefined;
+      
+      // Validate stage parameter if provided
+      if (stage !== undefined) {
+        const allowedStages = ['discovery', 'watch', 'search'];
+        if (!allowedStages.includes(stage)) {
+          return res.status(400).json({ 
+            error: `Invalid stage filter. Allowed values: ${allowedStages.join(', ')}`
+          });
+        }
+      }
+      
+      let limit: number | undefined = undefined;
+      let offset = 0;
+
+      if (req.query.limit) {
+        const parsedLimit = parseInt(req.query.limit as string, 10);
+        if (isNaN(parsedLimit) || parsedLimit <= 0) {
+          return res.status(400).json({ error: "Invalid limit parameter" });
+        }
+        limit = parsedLimit;
+      }
+
+      if (req.query.offset) {
+        const parsedOffset = parseInt(req.query.offset as string, 10);
+        if (isNaN(parsedOffset) || parsedOffset < 0) {
+          return res.status(400).json({ error: "Invalid offset parameter" });
+        }
+        offset = parsedOffset;
+      }
+
+      if (limit === undefined) {
+        const contactsList = await storage.getContacts({ stage, search });
+        return res.json(contactsList);
+      }
+
+      const [totalCount, paginatedContacts] = await Promise.all([
+        storage.getContactsCount({ stage, search }),
+        storage.getContacts({ stage, search, limit, offset })
+      ]);
+
+      res.json({
+        contacts: paginatedContacts,
+        total: totalCount,
+        limit,
+        offset,
+        hasMore: (offset + limit) < totalCount
+      });
+    } catch (error: any) {
+      console.error("Error fetching contacts:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch contacts" });
+    }
+  });
+
+  app.get("/api/contacts/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const contact = await storage.getContactById(id);
+
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+
+      res.json(contact);
+    } catch (error: any) {
+      console.error("Error fetching contact:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch contact" });
+    }
+  });
+
+  app.patch("/api/contacts/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      // Only allow updating specific mutable fields
+      const mutableFields = ['stage', 'hotLead', 'wowGrowthPct', 'assignedUserId'];
+      const unknownFields = Object.keys(updates).filter(k => !mutableFields.includes(k));
+      if (unknownFields.length > 0) {
+        return res.status(400).json({ 
+          error: `Unknown fields: ${unknownFields.join(', ')}. Only ${mutableFields.join(', ')} can be updated.`
+        });
+      }
+
+      const allowedStages = ['discovery', 'watch', 'search'];
+      const filteredUpdates: any = {};
+
+      if (updates.stage !== undefined) {
+        if (!allowedStages.includes(updates.stage)) {
+          return res.status(400).json({ 
+            error: `Invalid stage. Allowed values: ${allowedStages.join(', ')}`
+          });
+        }
+        filteredUpdates.stage = updates.stage;
+      }
+
+      if (updates.hotLead !== undefined) {
+        if (typeof updates.hotLead !== 'number' || !Number.isInteger(updates.hotLead) || updates.hotLead < 0) {
+          return res.status(400).json({ error: "hotLead must be a non-negative integer" });
+        }
+        filteredUpdates.hotLead = updates.hotLead;
+      }
+
+      if (updates.wowGrowthPct !== undefined) {
+        if (typeof updates.wowGrowthPct !== 'number' || !Number.isInteger(updates.wowGrowthPct)) {
+          return res.status(400).json({ error: "wowGrowthPct must be an integer" });
+        }
+        if (updates.wowGrowthPct < -100 || updates.wowGrowthPct > 10000) {
+          return res.status(400).json({ 
+            error: "wowGrowthPct must be between -100 and 10000" 
+          });
+        }
+        filteredUpdates.wowGrowthPct = updates.wowGrowthPct;
+      }
+
+      if (updates.assignedUserId !== undefined) {
+        if (updates.assignedUserId === null || updates.assignedUserId === '') {
+          filteredUpdates.assignedUserId = null;
+        } else if (typeof updates.assignedUserId === 'string') {
+          const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (!uuidPattern.test(updates.assignedUserId)) {
+            return res.status(400).json({ error: "assignedUserId must be a valid UUID or null" });
+          }
+          filteredUpdates.assignedUserId = updates.assignedUserId;
+        } else {
+          return res.status(400).json({ error: "assignedUserId must be a valid UUID string or null" });
+        }
+      }
+
+      if (Object.keys(filteredUpdates).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
+      }
+
+      await storage.updateContact(id, filteredUpdates);
+
+      const updatedContact = await storage.getContactById(id);
+      if (!updatedContact) {
+        return res.status(404).json({ error: "Contact not found after update" });
+      }
+      
+      res.json(updatedContact);
+    } catch (error: any) {
+      console.error("Error updating contact:", error);
+      res.status(500).json({ error: error.message || "Failed to update contact" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

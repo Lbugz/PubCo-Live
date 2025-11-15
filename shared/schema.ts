@@ -441,6 +441,10 @@ export const insertContactTagSchema = createInsertSchema(contactTags).omit({
 
 // Types for CRM tables
 export type Contact = typeof contacts.$inferSelect;
+export type ContactWithSongwriter = Contact & {
+  songwriterName: string;
+  songwriterChartmetricId?: string;
+};
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type ContactTrack = typeof contactTracks.$inferSelect;
 export type InsertContactTrack = z.infer<typeof insertContactTrackSchema>;

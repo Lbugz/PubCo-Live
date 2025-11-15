@@ -1,4 +1,4 @@
-import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, artists, artistSongwriters, enrichmentJobs, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory, type Artist, type InsertArtist, type EnrichmentJob, type InsertEnrichmentJob } from "@shared/schema";
+import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, artists, artistSongwriters, enrichmentJobs, contacts, contactTracks, songwriterProfiles, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory, type Artist, type InsertArtist, type EnrichmentJob, type InsertEnrichmentJob, type Contact, type ContactWithSongwriter } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, inArray, and, count } from "drizzle-orm";
 
@@ -54,6 +54,13 @@ export interface IStorage {
   getEnrichmentJobsByStatus(statuses: Array<'queued' | 'running' | 'completed' | 'failed'>): Promise<EnrichmentJob[]>;
   updateEnrichmentJob(id: string, updates: Partial<Omit<EnrichmentJob, 'id' | 'createdAt'>>): Promise<void>;
   claimNextEnrichmentJob(): Promise<EnrichmentJob | null>;
+  
+  // Contact management methods
+  getContacts(options?: { stage?: string; search?: string; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]>;
+  getContactsCount(options?: { stage?: string; search?: string }): Promise<number>;
+  getContactById(id: string): Promise<ContactWithSongwriter | null>;
+  updateContact(id: string, updates: Partial<Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void>;
+  getContactTracks(contactId: string): Promise<PlaylistSnapshot[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -155,7 +162,7 @@ export class DatabaseStorage implements IStorage {
     // Resolve "latest" to actual week date
     let resolvedWeek = week;
     if (week === "latest") {
-      resolvedWeek = await this.getLatestWeek();
+      resolvedWeek = await this.getLatestWeek() || undefined;
       if (!resolvedWeek) {
         return []; // No tracks exist yet
       }
@@ -199,7 +206,7 @@ export class DatabaseStorage implements IStorage {
     // Resolve "latest" to actual week date
     let resolvedWeek = week;
     if (week === "latest") {
-      resolvedWeek = await this.getLatestWeek();
+      resolvedWeek = await this.getLatestWeek() || undefined;
       if (!resolvedWeek) {
         return 0; // No tracks exist yet
       }
@@ -850,6 +857,147 @@ export class DatabaseStorage implements IStorage {
       updatedAt: new Date(row.updated_at),
       completedAt: row.completed_at ? new Date(row.completed_at) : null,
     };
+  }
+
+  // Contact management methods
+  async getContacts(options?: { stage?: string; search?: string; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]> {
+    const { stage, search, limit, offset } = options || {};
+    
+    let query = db.select({
+      id: contacts.id,
+      songwriterId: contacts.songwriterId,
+      songwriterName: songwriterProfiles.name,
+      stage: contacts.stage,
+      stageUpdatedAt: contacts.stageUpdatedAt,
+      wowGrowthPct: contacts.wowGrowthPct,
+      hotLead: contacts.hotLead,
+      assignedUserId: contacts.assignedUserId,
+      totalStreams: contacts.totalStreams,
+      totalTracks: contacts.totalTracks,
+      createdAt: contacts.createdAt,
+      updatedAt: contacts.updatedAt,
+    })
+      .from(contacts)
+      .innerJoin(songwriterProfiles, eq(contacts.songwriterId, songwriterProfiles.id))
+      .$dynamic();
+    
+    const conditions = [];
+    if (stage) {
+      conditions.push(eq(contacts.stage, stage as any));
+    }
+    
+    if (search && search.trim().length > 0) {
+      const searchPattern = `%${search.trim()}%`;
+      conditions.push(
+        sql`LOWER(${songwriterProfiles.name}) LIKE LOWER(${searchPattern})`
+      );
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    query = query.orderBy(
+      desc(contacts.hotLead),
+      desc(contacts.stageUpdatedAt),
+      desc(contacts.id)
+    );
+    
+    if (limit !== undefined) {
+      query = query.limit(limit);
+    }
+    if (offset !== undefined && offset > 0) {
+      query = query.offset(offset);
+    }
+    
+    return query;
+  }
+
+  async getContactsCount(options?: { stage?: string; search?: string }): Promise<number> {
+    const { stage, search } = options || {};
+    
+    const conditions = [];
+    if (stage) {
+      conditions.push(eq(contacts.stage, stage as any));
+    }
+    
+    if (search && search.trim().length > 0) {
+      const searchPattern = `%${search.trim()}%`;
+      conditions.push(
+        sql`LOWER(${songwriterProfiles.name}) LIKE LOWER(${searchPattern})`
+      );
+    }
+    
+    let query = db.select({ count: count() })
+      .from(contacts)
+      .innerJoin(songwriterProfiles, eq(contacts.songwriterId, songwriterProfiles.id))
+      .$dynamic();
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    const result = await query;
+    const raw = result[0]?.count ?? 0;
+    return typeof raw === "bigint" ? Number(raw) : Number(raw);
+  }
+
+  async getContactById(id: string): Promise<ContactWithSongwriter | null> {
+    const result = await db.select({
+      id: contacts.id,
+      songwriterId: contacts.songwriterId,
+      songwriterName: songwriterProfiles.name,
+      songwriterChartmetricId: songwriterProfiles.chartmetricId,
+      stage: contacts.stage,
+      stageUpdatedAt: contacts.stageUpdatedAt,
+      wowGrowthPct: contacts.wowGrowthPct,
+      hotLead: contacts.hotLead,
+      assignedUserId: contacts.assignedUserId,
+      totalStreams: contacts.totalStreams,
+      totalTracks: contacts.totalTracks,
+      createdAt: contacts.createdAt,
+      updatedAt: contacts.updatedAt,
+    })
+      .from(contacts)
+      .innerJoin(songwriterProfiles, eq(contacts.songwriterId, songwriterProfiles.id))
+      .where(eq(contacts.id, id))
+      .limit(1);
+    
+    return result[0] || null;
+  }
+
+  async updateContact(id: string, updates: Partial<Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
+    // Whitelist mutable columns only
+    const mutableUpdates: any = {};
+    
+    if (updates.stage !== undefined) mutableUpdates.stage = updates.stage;
+    if (updates.hotLead !== undefined) mutableUpdates.hotLead = updates.hotLead;
+    if (updates.wowGrowthPct !== undefined) mutableUpdates.wowGrowthPct = updates.wowGrowthPct;
+    if (updates.assignedUserId !== undefined) mutableUpdates.assignedUserId = updates.assignedUserId;
+    
+    // If stage changed, update stageUpdatedAt
+    if (updates.stage !== undefined) {
+      mutableUpdates.stageUpdatedAt = new Date();
+    }
+    
+    // Always update updatedAt timestamp
+    mutableUpdates.updatedAt = new Date();
+    
+    await db.update(contacts)
+      .set(mutableUpdates)
+      .where(eq(contacts.id, id));
+  }
+
+  async getContactTracks(contactId: string): Promise<PlaylistSnapshot[]> {
+    const result = await db.select({
+      track: playlistSnapshots,
+    })
+      .from(contactTracks)
+      .innerJoin(playlistSnapshots, eq(contactTracks.trackId, playlistSnapshots.id))
+      .where(eq(contactTracks.contactId, contactId))
+      .orderBy(desc(playlistSnapshots.spotifyStreams));
+    
+    return result.map(r => r.track);
   }
 }
 
