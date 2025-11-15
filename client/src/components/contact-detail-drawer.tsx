@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { X, Mail, MessageCircle, RefreshCw, Edit, TrendingUp, Music, Activity, FileText, ExternalLink, Instagram, Twitter, Music2 } from "lucide-react";
+import { 
+  X, Mail, MessageCircle, RefreshCw, Edit, TrendingUp, Music, Activity, 
+  FileText, ExternalLink, Instagram, Twitter, Music2, Flame, User, Clock,
+  Hash, Link as LinkIcon, Target
+} from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -138,6 +142,18 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
     const d = typeof date === 'string' ? new Date(date) : date;
     return d.toLocaleDateString();
   };
+  
+  const getTimeInStage = (stageUpdatedAt: string | Date) => {
+    const updated = typeof stageUpdatedAt === 'string' ? new Date(stageUpdatedAt) : stageUpdatedAt;
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - updated.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "1 day";
+    if (diffDays < 7) return `${diffDays} days`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks`;
+    return `${Math.floor(diffDays / 30)} months`;
+  };
 
   if (!open || !contactId) return null;
 
@@ -158,59 +174,122 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                   <SheetTitle className="text-2xl" data-testid="text-contact-name">
                     {contact.songwriterName}
                   </SheetTitle>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG]?.color
-                      )}
-                      data-testid="badge-contact-stage"
-                    >
-                      {STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG]?.label || contact.stage}
-                    </Badge>
-                    {contact.hotLead > 0 && (
-                      <Badge variant="default" className="gap-1" data-testid="badge-hot-lead">
-                        <TrendingUp className="h-3 w-3" />
-                        Hot Lead
-                      </Badge>
-                    )}
-                  </div>
                 </div>
               </div>
             </SheetHeader>
 
-            <Separator className="my-4" />
+            {/* Engagement Snapshot Hero */}
+            <Card className="p-5 mt-4 bg-muted/50">
+              <h3 className="text-sm font-medium mb-4 text-muted-foreground">Engagement Snapshot</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Target className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Stage</span>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-xs",
+                      STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG]?.color
+                    )}
+                    data-testid="badge-contact-stage"
+                  >
+                    {STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG]?.label || contact.stage}
+                  </Badge>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Time in Stage</span>
+                  </div>
+                  <div className="text-sm font-medium">{getTimeInStage(contact.stageUpdatedAt)}</div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Music className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Tracked Tracks</span>
+                  </div>
+                  <div className="text-sm font-medium" data-testid="text-total-tracks">{contact.totalTracks || 0}</div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Flame className="h-4 w-4 text-orange-500" />
+                    <span className="text-xs text-muted-foreground">Hot Lead</span>
+                  </div>
+                  <div className="text-sm font-medium">
+                    {contact.hotLead > 0 ? (
+                      <Badge variant="default" className="gap-1" data-testid="badge-hot-lead">
+                        <Flame className="h-3 w-3" />
+                        Yes
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">No</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Card>
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            {/* Info Cards Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              {/* Performance Pulse */}
               <Card className="p-4">
-                <div className="text-sm text-muted-foreground mb-1">Total Streams</div>
-                <div className="text-2xl font-bold" data-testid="text-total-streams">
-                  {formatNumber(contact.totalStreams || 0)}
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Performance Pulse
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Total Streams</div>
+                    <div className="text-xl font-bold" data-testid="text-total-streams">
+                      {formatNumber(contact.totalStreams || 0)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Track Count</div>
+                    <div className="text-xl font-bold">{contact.totalTracks || 0}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">WoW Growth</div>
+                    <div className={cn(
+                      "text-xl font-bold",
+                      contact.wowGrowthPct !== null && contact.wowGrowthPct > 0 && "text-chart-2",
+                      contact.wowGrowthPct !== null && contact.wowGrowthPct < 0 && "text-red-400"
+                    )} data-testid="text-wow-growth">
+                      {contact.wowGrowthPct !== null ? `${contact.wowGrowthPct > 0 ? "+" : ""}${contact.wowGrowthPct}%` : "—"}
+                    </div>
+                  </div>
                 </div>
               </Card>
+
+              {/* Relationship Panel */}
               <Card className="p-4">
-                <div className="text-sm text-muted-foreground mb-1">Tracks</div>
-                <div className="text-2xl font-bold" data-testid="text-total-tracks">
-                  {contact.totalTracks || 0}
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="text-sm text-muted-foreground mb-1">WoW Growth</div>
-                <div className={cn(
-                  "text-2xl font-bold",
-                  contact.wowGrowthPct !== null && contact.wowGrowthPct > 0 && "text-chart-2",
-                  contact.wowGrowthPct !== null && contact.wowGrowthPct < 0 && "text-red-400"
-                )} data-testid="text-wow-growth">
-                  {contact.wowGrowthPct !== null ? `${contact.wowGrowthPct > 0 ? "+" : ""}${contact.wowGrowthPct}%` : "—"}
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Relationship
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Owner</div>
+                    <div className="text-sm font-medium">Unassigned</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Created</div>
+                    <div className="text-sm font-medium">{formatDate(contact.createdAt)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Last Updated</div>
+                    <div className="text-sm font-medium">{formatDate(contact.updatedAt)}</div>
+                  </div>
                 </div>
               </Card>
             </div>
 
             {/* Quick Actions */}
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="flex flex-wrap gap-2 mt-4">
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 className="gap-2"
                 data-testid="button-send-email"
@@ -219,7 +298,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 Send Email
               </Button>
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 className="gap-2"
                 data-testid="button-send-dm"
@@ -228,13 +307,13 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 Send DM
               </Button>
               <Button
-                variant={contact.hotLead > 0 ? "default" : "outline"}
+                variant={contact.hotLead > 0 ? "secondary" : "outline"}
                 size="sm"
                 className="gap-2"
                 onClick={handleHotLeadToggle}
                 data-testid="button-toggle-hot-lead"
               >
-                <TrendingUp className="h-4 w-4" />
+                <Flame className="h-4 w-4" />
                 {contact.hotLead > 0 ? "Remove Hot Lead" : "Mark Hot Lead"}
               </Button>
               <Button
@@ -249,36 +328,56 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
             </div>
 
             {/* Stage Selector */}
-            <div className="mb-6">
+            <div className="mt-4">
               <label className="text-sm font-medium mb-2 block">Pipeline Stage</label>
               <Select value={contact.stage} onValueChange={handleStageChange}>
                 <SelectTrigger data-testid="select-change-stage">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="discovery">Discovery</SelectItem>
+                  <SelectItem value="discovery">Discovery Pool</SelectItem>
                   <SelectItem value="watch">Watch List</SelectItem>
                   <SelectItem value="search">Active Search</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Social Links (Placeholder) */}
-            <Card className="p-4 mb-6">
-              <h3 className="text-sm font-medium mb-3">Social Links</h3>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="gap-2" data-testid="button-spotify-link">
-                  <Music2 className="h-4 w-4" />
-                  Spotify
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2" data-testid="button-instagram-link">
-                  <Instagram className="h-4 w-4" />
-                  Instagram
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2" data-testid="button-twitter-link">
-                  <Twitter className="h-4 w-4" />
-                  Twitter
-                </Button>
+            {/* Identifiers Card */}
+            <Card className="p-4 mt-4">
+              <h3 className="text-sm font-medium mb-3">Identifiers</h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Contact ID</span>
+                  </div>
+                  <span className="text-sm font-mono">{contact.id.slice(0, 8)}...</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Songwriter ID</span>
+                  </div>
+                  <span className="text-sm font-mono">{contact.songwriterId.slice(0, 8)}...</span>
+                </div>
+                {contact.songwriterChartmetricId && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Chartmetric ID</span>
+                    </div>
+                    <Button variant="link" size="sm" className="h-auto p-0 text-sm" asChild>
+                      <a 
+                        href={`https://app.chartmetric.com/artist/${contact.songwriterChartmetricId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {contact.songwriterChartmetricId}
+                        <ExternalLink className="h-3 w-3 ml-1" />
+                      </a>
+                    </Button>
+                  </div>
+                )}
               </div>
             </Card>
 
