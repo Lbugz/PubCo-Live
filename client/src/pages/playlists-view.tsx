@@ -679,8 +679,7 @@ export default function PlaylistsView() {
 
       {/* Stats Cards with Toggle */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-muted-foreground">TOP METRICS</h2>
+        <div className="flex items-center justify-end">
           <Button
             variant="ghost"
             size="icon"
@@ -692,8 +691,9 @@ export default function PlaylistsView() {
           </Button>
         </div>
         <Collapsible open={showMetrics}>
-          <CollapsibleContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 slide-in-right">
+          <CollapsibleContent className="space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground">TOP METRICS</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               <StatsCard
                 title="Total Tracked"
                 value={playlistMetrics?.totalPlaylists ?? 0}
