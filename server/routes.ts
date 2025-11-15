@@ -2744,6 +2744,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/backfill-last-checked", async (req, res) => {
+    try {
+      const trackedPlaylists = await storage.getTrackedPlaylists();
+      
+      // Find playlists missing lastChecked timestamp
+      const playlistsToUpdate = trackedPlaylists.filter(p => !p.lastChecked);
+      
+      if (playlistsToUpdate.length === 0) {
+        return res.json({
+          success: true,
+          message: "All playlists already have lastChecked timestamps",
+          updated: 0
+        });
+      }
+      
+      console.log(`Backfilling lastChecked for ${playlistsToUpdate.length} playlists...`);
+      
+      let updatedCount = 0;
+      const now = new Date();
+      
+      for (const playlist of playlistsToUpdate) {
+        try {
+          await storage.updatePlaylistMetadata(playlist.id, {
+            lastChecked: now,
+          });
+          updatedCount++;
+        } catch (error: any) {
+          console.error(`Failed to update playlist ${playlist.name}:`, error.message);
+        }
+      }
+      
+      console.log(`Backfill complete: ${updatedCount} playlists updated`);
+      
+      res.json({
+        success: true,
+        updated: updatedCount,
+        total: playlistsToUpdate.length,
+        message: `Updated ${updatedCount} playlists with current timestamp`
+      });
+    } catch (error: any) {
+      console.error("Error backfilling lastChecked:", error);
+      res.status(500).json({ error: "Failed to backfill lastChecked timestamps" });
+    }
+  });
+
   app.post("/api/backfill-album-art", async (req, res) => {
     try {
       const spotify = await getUncachableSpotifyClient();
@@ -3100,201 +3145,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error fetching enrichment job:", error);
       res.status(500).json({ error: error.message || "Failed to fetch enrichment job" });
-    }
-  });
-
-  // Contact Management Routes
-  app.get("/api/contacts", async (req, res) => {
-    try {
-      const stage = req.query.stage as string | undefined;
-      const search = req.query.search as string | undefined;
-      
-      // Validate stage parameter if provided
-      if (stage !== undefined) {
-        const allowedStages = ['discovery', 'watch', 'search'];
-        if (!allowedStages.includes(stage)) {
-          return res.status(400).json({ 
-            error: `Invalid stage filter. Allowed values: ${allowedStages.join(', ')}`
-          });
-        }
-      }
-      
-      let limit: number | undefined = undefined;
-      let offset = 0;
-
-      if (req.query.limit) {
-        const parsedLimit = parseInt(req.query.limit as string, 10);
-        if (isNaN(parsedLimit) || parsedLimit <= 0) {
-          return res.status(400).json({ error: "Invalid limit parameter" });
-        }
-        limit = parsedLimit;
-      }
-
-      if (req.query.offset) {
-        const parsedOffset = parseInt(req.query.offset as string, 10);
-        if (isNaN(parsedOffset) || parsedOffset < 0) {
-          return res.status(400).json({ error: "Invalid offset parameter" });
-        }
-        offset = parsedOffset;
-      }
-
-      if (limit === undefined) {
-        const contactsList = await storage.getContacts({ stage, search });
-        return res.json(contactsList);
-      }
-
-      // Get global stats (ignoring filters)
-      const [totalContacts, discoveryCount, watchCount, searchCount, hotLeadsCount] = await Promise.all([
-        storage.getContactsCount({}),
-        storage.getContactsCount({ stage: 'discovery' }),
-        storage.getContactsCount({ stage: 'watch' }),
-        storage.getContactsCount({ stage: 'search' }),
-        storage.getContactsCountWithHotLead()
-      ]);
-
-      const [totalCount, paginatedContacts] = await Promise.all([
-        storage.getContactsCount({ stage, search }),
-        storage.getContacts({ stage, search, limit, offset })
-      ]);
-
-      res.json({
-        contacts: paginatedContacts,
-        total: totalCount,
-        limit,
-        offset,
-        hasMore: (offset + limit) < totalCount,
-        stats: {
-          total: totalContacts,
-          hotLeads: hotLeadsCount,
-          discovery: discoveryCount,
-          watch: watchCount,
-          search: searchCount,
-        }
-      });
-    } catch (error: any) {
-      console.error("Error fetching contacts:", error);
-      res.status(500).json({ error: error.message || "Failed to fetch contacts" });
-    }
-  });
-
-  app.get("/api/contacts/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const contact = await storage.getContactById(id);
-
-      if (!contact) {
-        return res.status(404).json({ error: "Contact not found" });
-      }
-
-      res.json(contact);
-    } catch (error: any) {
-      console.error("Error fetching contact:", error);
-      res.status(500).json({ error: error.message || "Failed to fetch contact" });
-    }
-  });
-
-  app.get("/api/contacts/:id/tracks", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const tracks = await storage.getContactTracks(id);
-      res.json(tracks);
-    } catch (error: any) {
-      console.error("Error fetching contact tracks:", error);
-      res.status(500).json({ error: error.message || "Failed to fetch contact tracks" });
-    }
-  });
-
-  app.post("/api/contacts/:id/notes", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { text } = req.body;
-
-      if (!text || typeof text !== 'string' || !text.trim()) {
-        return res.status(400).json({ error: "Note text is required" });
-      }
-
-      // For now, just return success - full notes implementation in task #8
-      res.json({ success: true, message: "Note saved successfully" });
-    } catch (error: any) {
-      console.error("Error saving note:", error);
-      res.status(500).json({ error: error.message || "Failed to save note" });
-    }
-  });
-
-  app.patch("/api/contacts/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const updates = req.body;
-
-      // Only allow updating specific mutable fields
-      const mutableFields = ['stage', 'hotLead', 'wowGrowthPct', 'assignedUserId'];
-      const unknownFields = Object.keys(updates).filter(k => !mutableFields.includes(k));
-      if (unknownFields.length > 0) {
-        return res.status(400).json({ 
-          error: `Unknown fields: ${unknownFields.join(', ')}. Only ${mutableFields.join(', ')} can be updated.`
-        });
-      }
-
-      const allowedStages = ['discovery', 'watch', 'search'];
-      const filteredUpdates: any = {};
-
-      if (updates.stage !== undefined) {
-        if (!allowedStages.includes(updates.stage)) {
-          return res.status(400).json({ 
-            error: `Invalid stage. Allowed values: ${allowedStages.join(', ')}`
-          });
-        }
-        filteredUpdates.stage = updates.stage;
-      }
-
-      if (updates.hotLead !== undefined) {
-        if (typeof updates.hotLead !== 'number' || !Number.isInteger(updates.hotLead) || updates.hotLead < 0) {
-          return res.status(400).json({ error: "hotLead must be a non-negative integer" });
-        }
-        filteredUpdates.hotLead = updates.hotLead;
-      }
-
-      if (updates.wowGrowthPct !== undefined) {
-        if (typeof updates.wowGrowthPct !== 'number' || !Number.isInteger(updates.wowGrowthPct)) {
-          return res.status(400).json({ error: "wowGrowthPct must be an integer" });
-        }
-        if (updates.wowGrowthPct < -100 || updates.wowGrowthPct > 10000) {
-          return res.status(400).json({ 
-            error: "wowGrowthPct must be between -100 and 10000" 
-          });
-        }
-        filteredUpdates.wowGrowthPct = updates.wowGrowthPct;
-      }
-
-      if (updates.assignedUserId !== undefined) {
-        if (updates.assignedUserId === null || updates.assignedUserId === '') {
-          filteredUpdates.assignedUserId = null;
-        } else if (typeof updates.assignedUserId === 'string') {
-          const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          if (!uuidPattern.test(updates.assignedUserId)) {
-            return res.status(400).json({ error: "assignedUserId must be a valid UUID or null" });
-          }
-          filteredUpdates.assignedUserId = updates.assignedUserId;
-        } else {
-          return res.status(400).json({ error: "assignedUserId must be a valid UUID string or null" });
-        }
-      }
-
-      if (Object.keys(filteredUpdates).length === 0) {
-        return res.status(400).json({ error: "No valid fields to update" });
-      }
-
-      await storage.updateContact(id, filteredUpdates);
-
-      const updatedContact = await storage.getContactById(id);
-      if (!updatedContact) {
-        return res.status(404).json({ error: "Contact not found after update" });
-      }
-      
-      res.json(updatedContact);
-    } catch (error: any) {
-      console.error("Error updating contact:", error);
-      res.status(500).json({ error: error.message || "Failed to update contact" });
     }
   });
 
