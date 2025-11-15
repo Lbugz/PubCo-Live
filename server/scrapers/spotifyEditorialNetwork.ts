@@ -441,12 +441,25 @@ export async function fetchEditorialTracksViaNetwork(
         const track = item.track || item;
         if (!track || !track.name) return null;
         
+        // Handle both string[] (from GraphQL) and object[] (from old format)
+        let artistNames: string[] = [];
+        if (Array.isArray(track.artists)) {
+          if (track.artists.length > 0) {
+            // Check if first element is a string or object
+            if (typeof track.artists[0] === 'string') {
+              artistNames = track.artists; // Already strings from GraphQL
+            } else {
+              artistNames = track.artists.map((a: any) => a.name).filter(Boolean);
+            }
+          }
+        }
+        
         return {
           trackId: track.id || "",
           isrc: track.external_ids?.isrc || null,
           name: track.name,
-          artists: (track.artists || []).map((a: any) => a.name).filter(Boolean),
-          album: track.album?.name || null,
+          artists: artistNames,
+          album: track.album?.name || track.album || null,
           albumArt: track.album?.images?.[1]?.url || track.album?.images?.[0]?.url || null,
           addedAt: item.added_at ? new Date(item.added_at) : new Date(),
           popularity: track.popularity || null,
