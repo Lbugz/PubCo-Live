@@ -215,7 +215,7 @@ export default function Contacts() {
   };
 
   return (
-    <PageContainer className="space-y-6">
+    <PageContainer className="space-y-6 fade-in">
       {/* Header Section */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
