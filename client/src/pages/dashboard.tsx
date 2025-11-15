@@ -717,10 +717,11 @@ export default function Dashboard() {
                     tooltip="Tracks with no publisher data - your highest priority signal for unsigned opportunities"
                     change={trackMetrics?.changeMissingPublisher}
                     onClick={() => {
-                      setActiveFilters(['missing-publisher']);
+                      setActiveFilters(['no-publisher']);
                       toast({
                         title: "Filtered to missing publisher tracks",
                         description: "Showing tracks with no publisher data",
+                        variant: "info",
                       });
                     }}
                     testId="stats-missing-publisher"
