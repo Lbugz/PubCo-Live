@@ -53,14 +53,14 @@ async function retryWithBackoff<T>(
     if (retries === 0) {
       throw error;
     }
-    
+
     if (error.status === 429 || error.message?.includes('429')) {
       const backoffDelay = retryDelay * 2;
       console.log(`[SpotifyBatch] Rate limited, retrying in ${backoffDelay}ms... (${retries} retries left)`);
       await delay(backoffDelay);
       return retryWithBackoff(fn, retries - 1, backoffDelay);
     }
-    
+
     throw error;
   }
 }
@@ -97,7 +97,7 @@ export async function enrichTracksWithSpotifyAPI(
     const needsPopularity = track.popularity === null || track.popularity === undefined;
     const needsAudioFeatures = !track.audioFeatures;
     const needsArtistData = !track.artistGenres || !track.artistFollowers;
-    
+
     return needsIsrc || needsLabel || needsReleaseDate || needsPopularity || needsAudioFeatures || needsArtistData;
   });
 
@@ -112,7 +112,7 @@ export async function enrichTracksWithSpotifyAPI(
     const batch = tracksNeedingEnrichment.slice(i, i + BATCH_SIZE);
     const batchNum = Math.floor(i / BATCH_SIZE) + 1;
     const totalBatches = Math.ceil(tracksNeedingEnrichment.length / BATCH_SIZE);
-    
+
     console.log(`[Phase 1] Processing batch ${batchNum}/${totalBatches} (${batch.length} tracks)`);
 
     const trackIds: string[] = [];
@@ -231,12 +231,12 @@ export async function enrichTracksWithSpotifyAPI(
 
         if (!dbTrack.albumImages && trackData.album?.images?.length) {
           update.albumImages = JSON.stringify(trackData.album.images);
-          
+
           const mediumImage = trackData.album.images.find((img: any) => img.width === 300) || trackData.album.images[1] || trackData.album.images[0];
           if (mediumImage && !dbTrack.albumArt) {
             (update as any).albumArt = mediumImage.url;
           }
-          
+
           hasUpdates = true;
         }
 
@@ -330,3 +330,31 @@ function extractSpotifyTrackId(spotifyUrl: string): string | null {
   const match = spotifyUrl.match(/track\/([a-zA-Z0-9]+)/);
   return match ? match[1] : null;
 }
+
+// Assuming 'wss' is a globally available WebSocket server instance
+// and 'enrichedTrack' is the data object returned from the enrichment process
+// that contains at least 'id', 'name', and 'artist' properties.
+// Example of how this might be used within a WebSocket handler:
+/*
+wss.on('connection', (ws) => {
+  // ... other handlers ...
+
+  // Example: When a track enrichment is completed
+  const enrichedTrack = {
+    id: 'some_track_id',
+    name: 'Some Track Name',
+    artist: 'Some Artist Name',
+    // ... other properties from enrichment ...
+  };
+
+  // Broadcast the enriched track information
+  wss.broadcast({
+    type: 'track_enriched',
+    track: {
+      id: enrichedTrack.id,
+      name: enrichedTrack.name,
+      artist: enrichedTrack.artist,
+    },
+  });
+});
+*/
