@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 import type { ContactWithSongwriter } from "@shared/schema";
 import { ContactDetailDrawer } from "@/components/contact-detail-drawer";
 import { PageContainer } from "@/components/layout/page-container";
+import { FilterBar } from "@/components/layout/filter-bar";
 
 const STAGE_CONFIG = {
   discovery: {
@@ -274,8 +275,8 @@ export default function Contacts() {
       </div>
 
       {/* Saved View Banner / Filter Toolbar */}
-      <Card className="p-4 space-y-4">
-        {/* Top row: View info and actions */}
+      <div className="space-y-3">
+        {/* View info and actions */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h3 className="text-sm font-medium mb-1">All Contacts View</h3>
@@ -295,8 +296,9 @@ export default function Contacts() {
           </div>
         </div>
 
-        {/* Search and filters row */}
-        <div className="flex flex-col md:flex-row gap-3">
+        {/* Search and filters */}
+        <FilterBar>
+          <div className="flex flex-col md:flex-row gap-3 w-full">
           {/* Search */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -309,14 +311,14 @@ export default function Contacts() {
             />
           </div>
 
-          <Button variant="outline" size="sm" className="gap-2" data-testid="button-advanced-filters">
-            <Filter className="h-4 w-4" />
-            Advanced Filters
-          </Button>
-        </div>
+            <Button variant="outline" size="sm" className="gap-2" data-testid="button-advanced-filters">
+              <Filter className="h-4 w-4" />
+              Advanced Filters
+            </Button>
+          </div>
 
-        {/* Quick Filter Pills */}
-        <div className="flex items-center gap-2 flex-wrap">
+          {/* Quick Filter Pills */}
+          <div className="flex items-center gap-2 flex-wrap w-full">
           <span className="text-xs text-muted-foreground">Quick filters:</span>
           <Badge
             variant={showHotLeads ? "default" : "outline"}
@@ -369,8 +371,9 @@ export default function Contacts() {
               Clear view
             </Badge>
           )}
-        </div>
-      </Card>
+          </div>
+        </FilterBar>
+      </div>
 
       {/* Stage Selector Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
