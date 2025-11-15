@@ -1306,16 +1306,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`   Limit: ${limit}`);
 
       // Get tracks that need Phase 2 enrichment (missing credits/streams)
-      const today = new Date().toISOString().split('T')[0];
-      let allTracks = await storage.getTracksByWeek(today);
-
-      // Filter by track IDs if specified (highest priority)
+      let allTracks: PlaylistSnapshot[];
+      
+      // If specific track IDs are provided, fetch them directly (from any week)
       if (trackIds && Array.isArray(trackIds) && trackIds.length > 0) {
-        allTracks = allTracks.filter(t => trackIds.includes(t.id));
+        allTracks = await storage.getTracksByIds(trackIds);
       }
-      // Otherwise filter by playlist if specified
-      else if (playlistId) {
-        allTracks = allTracks.filter(t => t.playlistId === playlistId);
+      // Otherwise fetch by week and optionally filter by playlist
+      else {
+        const today = new Date().toISOString().split('T')[0];
+        allTracks = await storage.getTracksByWeek(today);
+        
+        // Filter by playlist if specified
+        if (playlistId) {
+          allTracks = allTracks.filter(t => t.playlistId === playlistId);
+        }
       }
 
       // Filter to only tracks missing Phase 2 data (including 'Unknown' values)
