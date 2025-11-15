@@ -1,0 +1,90 @@
+Looking at your current implementation and the WEBSOCKET_AUDIT.md, here are my recommendations for additional toast notifications and real-time indicators:
+
+Current State Analysis
+What's Already Working:
+
+Track enrichment toasts (Phase 2 credits)
+Playlist fetch complete toasts
+Playlist error toasts
+Basic WebSocket infrastructure
+What's Missing (High Value):
+
+1. Background Enrichment Progress Indicator
+You have enrichment running in the background via job queue, but users have no visibility into:
+
+When a job starts
+Current progress (tracks processed vs total)
+When a job completes
+If a job fails
+Recommendation: Add a persistent header indicator (similar to your enrichmentProgress notification in dashboard.tsx) that shows:
+
+Number of active jobs
+Total tracks being processed
+Estimated time remaining
+Click to expand for details
+2. Job Status Toasts
+Currently missing broadcasts for:
+
+enrichment_job_started - When worker claims a job
+enrichment_job_completed - When job finishes successfully
+enrichment_job_failed - When job encounters errors
+Why it matters: Users click "Enrich Data" and have no feedback that work is happening in the background.
+
+3. Phase Transition Indicators
+You show phase completion but not phase starts. Add toasts for:
+
+Phase 1 (ISRC recovery) starting
+Phase 3 (MusicBrainz) starting
+Phase 4 (Chartmetric) starting
+Phase 5 (MLC) starting
+Why it matters: Users can see the pipeline progress in real-time, not just completions.
+
+4. Bulk Operation Progress
+When users bulk enrich 50+ tracks, they get one toast at the start. Add:
+
+Progress toast that updates every 10 tracks
+Completion summary with success/fail counts
+Error details for failed tracks
+5. Playlist Metadata Updates
+You broadcast playlist_updated but don't show toasts. Add notification when:
+
+Playlist follower count increases significantly (>10%)
+Playlist curator changes
+Playlist becomes unavailable/deleted
+6. Live Activity Feed (Lower Priority)
+Currently activity logs aren't broadcast. Consider adding:
+
+Small notification badge on sidebar when new activity occurs
+Optional live activity feed panel
+Visual Indicators Needed
+In Header:
+
+[🔄 Enriching: 47/150 tracks] <- Persistent, dismissible
+In Tracks View:
+
+📊 Metrics (Last updated: 2m ago) [↻ Auto-refresh ON] <- Add this
+In Playlists View:
+
+🎵 2 playlists updating... <- When fetch/refresh running
+Specific Implementation Suggestions
+Add Job Queue Status WebSocket Handler in use-websocket.ts
+Create Persistent Enrichment Status Component in header (not toast)
+Add Phase Start Broadcasts in worker.ts
+Enhance Bulk Operation Feedback with progress tracking
+Add Auto-refresh Indicator for metrics that update via WebSocket
+Priority Order
+🔴 High (Do First):
+
+Job status toasts/indicator
+Background enrichment progress in header
+Bulk operation progress updates
+🟡 Medium (Nice to Have):
+
+Phase transition toasts
+Playlist metadata change toasts
+Live activity feed badge
+🟢 Low (Polish):
+
+Auto-refresh indicators
+Historical activity replay
+Would you like me to implement any of these? I can start with the high-priority items (job status broadcasts + persistent header indicator for background enrichment).
