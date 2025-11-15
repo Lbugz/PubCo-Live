@@ -1343,9 +1343,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`📋 Found ${unenrichedTracks.length} tracks needing enrichment`);
 
-      // Import and run Phase 2 enrichment
+      // Import and run Phase 2 enrichment (skip queue wait to avoid deadlock with background worker)
       const { enrichTracksWithCredits } = await import("./enrichment/spotifyCreditsScaper");
-      const phase2Result = await enrichTracksWithCredits(unenrichedTracks);
+      const phase2Result = await enrichTracksWithCredits(unenrichedTracks, { skipQueueWait: true });
 
       // Update tracks with enriched data
       for (const enrichedTrack of phase2Result.enrichedTracks) {

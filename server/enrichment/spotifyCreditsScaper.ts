@@ -466,7 +466,8 @@ async function extractCredits(
  * Batch enrich tracks with credits and stream counts using Puppeteer queue
  */
 export async function enrichTracksWithCredits(
-  tracks: Array<{ id: string; spotifyUrl: string; songwriter?: string | null; spotifyStreams?: number | null }>
+  tracks: Array<{ id: string; spotifyUrl: string; songwriter?: string | null; spotifyStreams?: number | null }>,
+  options: { skipQueueWait?: boolean } = {}
 ): Promise<CreditsEnrichmentResult> {
   const result: CreditsEnrichmentResult = {
     success: true,
@@ -572,13 +573,17 @@ export async function enrichTracksWithCredits(
       `[Phase 2] Complete: ${result.tracksEnriched}/${result.tracksProcessed} tracks enriched, ${result.errors} errors`
     );
   } finally {
-    // CRITICAL: Wait for queue to drain before cleanup
-    const startDrain = Date.now();
-    console.log(`[Phase 2] Waiting for queue to drain...`);
-    await waitForQueueIdle();
-    console.log(`[Phase 2] Queue drained in ${Date.now() - startDrain}ms`);
+    // Wait for queue to drain ONLY if not in manual mode (prevents deadlock with background worker)
+    if (!options.skipQueueWait) {
+      const startDrain = Date.now();
+      console.log(`[Phase 2] Waiting for queue to drain...`);
+      await waitForQueueIdle();
+      console.log(`[Phase 2] Queue drained in ${Date.now() - startDrain}ms`);
+    } else {
+      console.log(`[Phase 2] Skipping queue drain wait (manual mode - background jobs may still be running)`);
+    }
     
-    // Cleanup browsers AND reset singleton
+    // ALWAYS cleanup browsers to prevent resource leaks
     const startCleanup = Date.now();
     console.log(`[Phase 2] Cleaning up Puppeteer queue...`);
     await cleanupQueue();
