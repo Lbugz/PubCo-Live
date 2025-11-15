@@ -276,8 +276,8 @@ export async function initializeScheduler(storage: IStorage) {
   // Register weekly performance snapshot job
   registerJob(
     "Weekly Performance Snapshots",
-    "0 1 * * 5", // Every Friday at 1:00 AM
-    "Fridays at 1:00 AM",
+    "0 1 * * 1", // Every Monday at 1:00 AM
+    "Mondays at 1:00 AM",
     async () => {
       console.log("📊 Starting weekly performance snapshot capture...");
       

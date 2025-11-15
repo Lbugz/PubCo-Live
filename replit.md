@@ -59,7 +59,7 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
 - **Automation:** Utilizes `node-cron` for scheduled jobs:
     - **Fresh Finds Weekly Update** (Fridays 9AM): Auto-scrapes Fresh Finds playlists
     - **Failed Enrichment Retry** (Daily 2AM): Re-queues failed enrichments
-    - **Weekly Performance Snapshots** (Fridays 1AM): Captures stream counts for WoW % calculations
+    - **Weekly Performance Snapshots** (Mondays 1AM): Captures stream counts for WoW % calculations
     - Auto-enrichment triggers immediately after playlist fetch
     - Stream velocity data sources: Chartmetric API → Puppeteer scraping → stored in `playlist_snapshots.spotifyStreams`
     - WoW % formula: `(Current Week Streams - Previous Week Streams) / Previous Week Streams × 100`

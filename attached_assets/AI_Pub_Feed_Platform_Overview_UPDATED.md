@@ -358,7 +358,7 @@ Growth velocity adds urgency to existing signals:
    - Primary: Chartmetric API (`/track/:id/spotify/stats`)
    - Fallback: Web scraping from Spotify track pages
    - Stored in `playlist_snapshots.spotifyStreams` column
-2. **Weekly Snapshots:** Automated job runs every Friday at 1:00 AM
+2. **Weekly Snapshots:** Automated job runs every Monday at 1:00 AM
    - Captures current stream counts for all tracks
    - Compares to previous week's snapshot
    - Formula: `(Current - Previous) / Previous × 100 = WoW %`
@@ -366,7 +366,7 @@ Growth velocity adds urgency to existing signals:
    - Stored in `contacts.wowGrowthPct` column
    - Used by scoring algorithm to award velocity bonuses
 4. **Automation:** Requires `ENABLE_AUTO_SCRAPE=true` environment variable
-   - Job: "Weekly Performance Snapshots" (Fridays 1AM)
+   - Job: "Weekly Performance Snapshots" (Mondays 1AM)
    - Manual trigger available via: `POST /api/performance/snapshots`
 
 ---
