@@ -601,14 +601,8 @@ export default function PlaylistsView() {
   return (
     <PageContainer className="space-y-6 fade-in">
 
-      {/* Header Section */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Playlists</h1>
-          <p className="text-muted-foreground">
-            Monitor and track Spotify playlists • Editorial and user-curated sources • Automated talent discovery
-          </p>
-        </div>
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end">
         <div className="flex gap-2">
           {/* Fetch Data Dropdown */}
           <DropdownMenu>

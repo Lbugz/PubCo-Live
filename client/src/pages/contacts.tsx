@@ -216,24 +216,16 @@ export default function Contacts() {
 
   return (
     <PageContainer className="space-y-6 fade-in">
-      {/* Header Section */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Contact Workspace</h1>
-          <p className="text-muted-foreground">
-            Relationship management for unsigned talent discovery • Lead cadence tracking • Funnel coverage analytics
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-2" data-testid="button-add-contact">
-            <UserPlus className="h-4 w-4" />
-            Add Contact
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2" data-testid="button-import-csv">
-            <Upload className="h-4 w-4" />
-            Import CSV
-          </Button>
-        </div>
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="outline" size="sm" className="gap-2" data-testid="button-add-contact">
+          <UserPlus className="h-4 w-4" />
+          Add Contact
+        </Button>
+        <Button variant="outline" size="sm" className="gap-2" data-testid="button-import-csv">
+          <Upload className="h-4 w-4" />
+          Import CSV
+        </Button>
       </div>
 
       {/* Stats Cards with Toggle */}
