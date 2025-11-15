@@ -305,7 +305,7 @@ export type EnrichmentJob = typeof enrichmentJobs.$inferSelect;
 // CRM System Tables
 export const contacts = pgTable("contacts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  artistId: varchar("artist_id").notNull().references(() => artists.id, { onDelete: "cascade" }).unique(),
+  songwriterId: varchar("songwriter_id").notNull().references(() => songwriterProfiles.id, { onDelete: "cascade" }).unique(),
   stage: contactStageEnum("stage").notNull().default('discovery'),
   stageUpdatedAt: timestamp("stage_updated_at").notNull().defaultNow(),
   wowGrowthPct: integer("wow_growth_pct"),

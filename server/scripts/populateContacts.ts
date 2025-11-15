@@ -1,198 +1,175 @@
 /**
- * Populate Contacts from Existing Track Data
- * 
- * This script:
- * 1. Extracts unique artist names from playlist_snapshots
- * 2. Creates artist records in the artists table
- * 3. Creates contact records linked to artists
- * 4. Links tracks to contacts via contact_tracks junction table
- * 5. Calculates initial stats (total tracks, total streams)
+ * Populate Songwriter Contacts from Existing Track Data
  */
 
 import { db } from "../db";
 import { sql } from "drizzle-orm";
-import { artists, contacts, contactTracks } from "../../shared/schema";
+import { songwriterProfiles, contacts, contactTracks } from "../../shared/schema";
+
+function parseSongwriters(songwriterField: string): string[] {
+  if (!songwriterField || songwriterField.trim() === '' || songwriterField === '-') {
+    return [];
+  }
+  
+  return songwriterField
+    .split(',')
+    .map(name => name.trim())
+    .filter(name => name.length > 0 && name !== '-');
+}
 
 async function populateContacts() {
-  console.log("🚀 Starting contact population from existing tracks...\n");
+  console.log("🚀 Starting songwriter contact population...\n");
 
   try {
-    // Step 1: Get unique artists from playlist_snapshots
-    console.log("📊 Step 1: Extracting unique artists from tracks...");
-    
-    const uniqueArtistsResult = await db.execute(sql`
-      SELECT DISTINCT
-        TRIM(artist_name) as artist_name,
-        COUNT(*) as track_count,
-        SUM(COALESCE(spotify_streams, 0)) as total_streams,
-        ARRAY_AGG(DISTINCT id) as track_ids,
-        MAX(instagram) as instagram,
-        MAX(twitter) as twitter,
-        MAX(tiktok) as tiktok,
-        MAX(email) as email
+    const tracksResult = await db.execute(sql`
+      SELECT 
+        id, track_name, artist_name, songwriter,
+        COALESCE(spotify_streams, 0) as spotify_streams,
+        instagram, twitter, email, publisher, publisher_status
       FROM playlist_snapshots
-      WHERE artist_name IS NOT NULL
-        AND TRIM(artist_name) != ''
-      GROUP BY TRIM(artist_name)
-      ORDER BY track_count DESC
+      WHERE songwriter IS NOT NULL AND TRIM(songwriter) != '' AND songwriter != '-'
     `);
 
-    const uniqueArtists = uniqueArtistsResult.rows as Array<{
-      artist_name: string;
-      track_count: number;
-      total_streams: number;
-      track_ids: string[];
-      instagram: string | null;
-      twitter: string | null;
-      tiktok: string | null;
-      email: string | null;
+    const tracks = tracksResult.rows as Array<{
+      id: string; track_name: string; artist_name: string; songwriter: string;
+      spotify_streams: number; instagram: string | null; twitter: string | null;
+      email: string | null; publisher: string | null; publisher_status: string | null;
     }>;
 
-    console.log(`✅ Found ${uniqueArtists.length} unique artists\n`);
+    console.log(`✅ Found ${tracks.length} tracks with songwriter data\n`);
 
-    if (uniqueArtists.length === 0) {
-      console.log("⚠️  No artists found in playlist_snapshots. Exiting.");
+    if (tracks.length === 0) {
+      console.log("⚠️  No songwriters found. Exiting.");
       return;
     }
 
-    // Step 2: Create artist and contact records
-    console.log("📝 Step 2: Creating artist and contact records...");
-    
-    let artistsCreated = 0;
-    let contactsCreated = 0;
-    let linksCreated = 0;
+    const songwriterMap = new Map<string, {
+      name: string; tracks: string[]; totalStreams: number;
+      instagram: string | null; twitter: string | null; email: string | null;
+      hasPublisher: boolean;
+    }>();
 
-    for (const artistData of uniqueArtists) {
+    for (const track of tracks) {
+      const names = parseSongwriters(track.songwriter);
+      
+      for (const name of names) {
+        if (!songwriterMap.has(name)) {
+          songwriterMap.set(name, {
+            name, tracks: [], totalStreams: 0,
+            instagram: track.instagram, twitter: track.twitter, email: track.email,
+            hasPublisher: !!track.publisher,
+          });
+        }
+        
+        const data = songwriterMap.get(name)!;
+        data.tracks.push(track.id);
+        data.totalStreams += track.spotify_streams;
+        if (track.instagram && !data.instagram) data.instagram = track.instagram;
+        if (track.twitter && !data.twitter) data.twitter = track.twitter;
+        if (track.email && !data.email) data.email = track.email;
+        if (track.publisher) data.hasPublisher = true;
+      }
+    }
+
+    console.log(`✅ Found ${songwriterMap.size} unique songwriters\n`);
+
+    let profilesCreated = 0, contactsCreated = 0, linksCreated = 0;
+
+    for (const [name, data] of Array.from(songwriterMap.entries())) {
       try {
-        // Check if artist already exists
-        const existingArtist = await db.execute(sql`
-          SELECT id FROM artists WHERE name = ${artistData.artist_name} LIMIT 1
+        const existingProfile = await db.execute(sql`
+          SELECT id FROM songwriter_profiles WHERE name = ${name} LIMIT 1
         `);
 
-        let artistId: string;
+        let profileId: string;
 
-        if (existingArtist.rows.length > 0) {
-          artistId = (existingArtist.rows[0] as any).id;
-          console.log(`  ↻ Artist exists: ${artistData.artist_name}`);
+        if (existingProfile.rows.length > 0) {
+          profileId = (existingProfile.rows[0] as any).id;
         } else {
-          // Create new artist
-          const newArtist = await db.insert(artists).values({
-            name: artistData.artist_name,
-            instagram: artistData.instagram,
-            twitter: artistData.twitter,
-            // Note: tiktok field doesn't exist on artists table yet
+          const newProfile = await db.insert(songwriterProfiles).values({
+            chartmetricId: `pending_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            name: name,
+            totalTracks: data.tracks.length,
+            topPublisher: data.hasPublisher ? 'Unknown' : null,
           }).returning();
 
-          artistId = newArtist[0].id;
-          artistsCreated++;
-          console.log(`  ✓ Created artist: ${artistData.artist_name} (${artistData.track_count} tracks)`);
+          profileId = newProfile[0].id;
+          profilesCreated++;
+          console.log(`  ✓ Created: ${name} (${data.tracks.length} tracks)`);
         }
 
-        // Check if contact already exists for this artist
         const existingContact = await db.execute(sql`
-          SELECT id FROM contacts WHERE artist_id = ${artistId} LIMIT 1
+          SELECT id FROM contacts WHERE songwriter_id = ${profileId} LIMIT 1
         `);
 
         let contactId: string;
 
         if (existingContact.rows.length > 0) {
           contactId = (existingContact.rows[0] as any).id;
-          
-          // Update contact stats
           await db.execute(sql`
             UPDATE contacts
-            SET 
-              total_tracks = ${artistData.track_count},
-              total_streams = ${artistData.total_streams || 0},
-              updated_at = NOW()
+            SET total_tracks = ${data.tracks.length}, total_streams = ${data.totalStreams}, updated_at = NOW()
             WHERE id = ${contactId}
           `);
-          
-          console.log(`  ↻ Contact exists: ${artistData.artist_name} (updated stats)`);
         } else {
-          // Create new contact
           const newContact = await db.insert(contacts).values({
-            artistId: artistId,
+            songwriterId: profileId,
             stage: 'discovery',
-            totalTracks: artistData.track_count,
-            totalStreams: artistData.total_streams || 0,
+            totalTracks: data.tracks.length,
+            totalStreams: data.totalStreams,
             hotLead: 0,
           }).returning();
 
           contactId = newContact[0].id;
           contactsCreated++;
-          console.log(`  ✓ Created contact: ${artistData.artist_name}`);
         }
 
-        // Link tracks to contact
-        for (const trackId of artistData.track_ids) {
+        for (const trackId of data.tracks) {
           try {
-            // Check if link already exists
             const existingLink = await db.execute(sql`
-              SELECT id FROM contact_tracks 
-              WHERE contact_id = ${contactId} AND track_id = ${trackId}
-              LIMIT 1
+              SELECT id FROM contact_tracks WHERE contact_id = ${contactId} AND track_id = ${trackId} LIMIT 1
             `);
 
             if (existingLink.rows.length === 0) {
-              await db.insert(contactTracks).values({
-                contactId: contactId,
-                trackId: trackId,
-              });
+              await db.insert(contactTracks).values({ contactId, trackId });
               linksCreated++;
             }
-          } catch (linkError) {
-            // Skip if link already exists (unique constraint)
-            console.log(`    ⚠️  Track link already exists or failed`);
-          }
+          } catch {}
         }
 
-      } catch (artistError: any) {
-        console.error(`  ❌ Error processing ${artistData.artist_name}:`, artistError.message);
+      } catch (error: any) {
+        console.error(`  ❌ Error: ${name}:`, error.message);
       }
     }
 
-    console.log("\n📊 Population Summary:");
-    console.log(`  Artists created: ${artistsCreated}`);
+    console.log("\n📊 Summary:");
+    console.log(`  Songwriter profiles created: ${profilesCreated}`);
     console.log(`  Contacts created: ${contactsCreated}`);
     console.log(`  Track links created: ${linksCreated}`);
-    console.log(`  Total unique artists: ${uniqueArtists.length}`);
 
-    // Step 3: Display stats
-    console.log("\n📈 Contact Stats:");
     const stats = await db.execute(sql`
-      SELECT 
-        stage,
-        COUNT(*) as count,
-        SUM(total_tracks) as total_tracks,
-        SUM(total_streams) as total_streams
-      FROM contacts
-      GROUP BY stage
-      ORDER BY stage
+      SELECT stage, COUNT(*) as count, SUM(total_tracks) as total_tracks
+      FROM contacts GROUP BY stage ORDER BY stage
     `);
 
+    console.log("\n📈 Contacts by stage:");
     for (const row of stats.rows as any[]) {
-      console.log(`  ${row.stage}: ${row.count} contacts, ${row.total_tracks || 0} tracks, ${row.total_streams || 0} streams`);
+      console.log(`  ${row.stage}: ${row.count} contacts, ${row.total_tracks || 0} tracks`);
     }
 
-    console.log("\n✅ Contact population complete!\n");
+    console.log("\n✅ Complete!\n");
 
   } catch (error: any) {
-    console.error("❌ Error populating contacts:", error.message);
-    console.error(error.stack);
+    console.error("❌ Error:", error.message);
     process.exit(1);
   }
 }
 
-// Run if called directly
 if (require.main === module) {
   populateContacts()
-    .then(() => {
-      console.log("✨ Done!");
-      process.exit(0);
-    })
+    .then(() => process.exit(0))
     .catch((error) => {
-      console.error("Fatal error:", error);
+      console.error("Fatal:", error);
       process.exit(1);
     });
 }
