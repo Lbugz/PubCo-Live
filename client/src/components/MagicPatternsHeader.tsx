@@ -1,5 +1,5 @@
 import { useLocation } from 'wouter';
-import { BellIcon, Music, ListMusic } from 'lucide-react';
+import { BellIcon, Music, ListMusic, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 
@@ -10,15 +10,22 @@ export function MagicPatternsHeader() {
     if (location === '/playlists') {
       return {
         title: 'Playlists',
-        subtitle: 'Manage and track your Spotify playlists',
+        subtitle: 'Monitor and track Spotify playlists • Editorial and user-curated sources • Automated talent discovery',
         icon: <ListMusic className="h-8 w-8 text-secondary" />
       };
     }
     if (location === '/' || location === '/tracks') {
       return {
         title: 'Tracks',
-        subtitle: 'Discover and prioritize tracks from your playlists',
+        subtitle: 'Discover and prioritize unsigned tracks • Songwriter identification • Publishing opportunity scoring',
         icon: <Music className="h-8 w-8 text-secondary" />
+      };
+    }
+    if (location === '/contacts') {
+      return {
+        title: 'Contact Workspace',
+        subtitle: 'Relationship management for unsigned talent discovery • Lead cadence tracking • Funnel coverage analytics',
+        icon: <Users className="h-8 w-8 text-secondary" />
       };
     }
     return {
