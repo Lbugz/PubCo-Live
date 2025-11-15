@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { systemNotifications, type InsertSystemNotification } from "@shared/schema";
-import { desc, eq, and } from "drizzle-orm";
+import { desc, eq, and, sql } from "drizzle-orm";
 
 export class NotificationService {
   async createNotification(notification: InsertSystemNotification) {
@@ -62,6 +62,7 @@ export class NotificationService {
       .delete(systemNotifications)
       .where(and(
         eq(systemNotifications.read, 1),
+        sql`${systemNotifications.createdAt} < ${cutoffDate.toISOString()}`
       ));
   }
 
