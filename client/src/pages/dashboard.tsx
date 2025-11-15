@@ -77,9 +77,7 @@ export default function Dashboard() {
   const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set());
   const [playlistManagerOpen, setPlaylistManagerOpen] = useState(false);
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
-  const [recentEnrichments, setRecentEnrichments] = useState<Array<{ trackName: string; artistName: string; timestamp: number }>>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [enrichmentProgress, setEnrichmentProgress] = useState<{ message: string; progress?: number } | null>(null);
   const [activeJobs, setActiveJobs] = useState<EnrichmentJob[]>([]);
   const [showMetrics, setShowMetrics] = useState(() => {
     const stored = localStorage.getItem('tracksMetricsVisible');
@@ -118,21 +116,9 @@ export default function Dashboard() {
       console.log('Track enriched via WebSocket:', data);
       // Invalidate tracks query to trigger refetch
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
-      
-      // Add to recent enrichments (no toast needed - will be shown in Activity Panel)
-      setRecentEnrichments(prev => [
-        { trackName: data.trackName || '', artistName: data.artistName || '', timestamp: Date.now() },
-        ...prev.slice(0, 4) // Keep last 5 enrichments
-      ]);
     },
     onEnrichmentProgress: (data) => {
       console.log('Enrichment progress:', data);
-      setEnrichmentProgress({
-        message: data.message || 'Processing...',
-        progress: data.enrichedCount && data.totalCount 
-          ? Math.round((data.enrichedCount / data.totalCount) * 100)
-          : undefined
-      });
       // Update active job progress
       if (data.jobId) {
         setActiveJobs(prev => prev.map(job => 
@@ -166,7 +152,6 @@ export default function Dashboard() {
           ? { ...job, status: data.success ? 'success' : 'error', enrichedCount: data.tracksEnriched || job.trackCount, completedAt: Date.now() }
           : job
       ));
-      setEnrichmentProgress(null);
       toast({
         title: data.success ? "Enrichment complete" : "Enrichment completed with errors",
         description: `${data.tracksEnriched} tracks enriched${data.errors ? ` · ${data.errors} errors` : ''}`,
@@ -181,7 +166,6 @@ export default function Dashboard() {
           ? { ...job, status: 'error', errorMessage: data.error, completedAt: Date.now() }
           : job
       ));
-      setEnrichmentProgress(null);
       toast({
         title: "Enrichment failed",
         description: data.error || "Unknown error occurred",
@@ -203,20 +187,6 @@ export default function Dashboard() {
       }
     },
   });
-
-  // Auto-clear enrichment notifications after 10 seconds
-  useEffect(() => {
-    if (recentEnrichments.length === 0) return;
-    
-    const timer = setInterval(() => {
-      const now = Date.now();
-      setRecentEnrichments(prev => 
-        prev.filter(item => now - item.timestamp < 10000)
-      );
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, [recentEnrichments.length]);
 
   const toggleFilter = useCallback((filter: string) => {
     setActiveFilters(prev => {
@@ -618,98 +588,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Persistent Active Jobs Indicator in Header */}
-      {activeJobs.length > 0 && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-2xl w-full px-4">
-          <Card className="glass-panel backdrop-blur-xl border-primary/20 shadow-lg">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 flex-1">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">
-                      {activeJobs.length} {activeJobs.length === 1 ? 'Job' : 'Jobs'} Active
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Processing {activeJobs.reduce((sum, job) => sum + job.trackCount, 0)} tracks • Phase {Math.max(...activeJobs.map(j => j.phase))}/5
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setActiveJobs([])}
-                  data-testid="button-dismiss-active-jobs"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Enrichment Progress Notification */}
-      {enrichmentProgress && (
-        <div className="fixed top-4 right-4 z-50 max-w-md">
-          <Card className="glass-panel backdrop-blur-xl border-primary/20 shadow-lg">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 flex-1">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium mb-1">{enrichmentProgress.message}</p>
-                    {enrichmentProgress.progress !== undefined && (
-                      <div className="space-y-1">
-                        <Progress value={enrichmentProgress.progress} className="h-2" />
-                        <p className="text-xs text-muted-foreground">{enrichmentProgress.progress}% complete</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setEnrichmentProgress(null)}
-                  data-testid="button-dismiss-enrichment-progress"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-      
-      {/* Live Enrichment Indicator */}
-      {recentEnrichments.length > 0 && (
-        <div className="fixed bottom-4 right-4 z-50 space-y-2 max-w-sm">
-          {recentEnrichments.map((enrichment, idx) => (
-            <div
-              key={enrichment.timestamp}
-              className="bg-card border border-border rounded-md p-3 shadow-lg animate-in slide-in-from-right"
-              style={{
-                animationDelay: `${idx * 50}ms`,
-              }}
-            >
-              <div className="flex items-start gap-2">
-                <div className="flex-shrink-0">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {enrichment.trackName}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {enrichment.artistName}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
       <PageContainer>
         <div className="space-y-6 fade-in">
           {/* Header with Enrich Data Button */}
