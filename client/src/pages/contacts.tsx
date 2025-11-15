@@ -227,38 +227,44 @@ export default function Contacts() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Pipeline */}
         <Card className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">Total Pipeline</span>
+          <div className="mb-4">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Total Pipeline</span>
+              </div>
+              <Badge variant="outline" className="text-xs text-muted-foreground border-muted">
+                Current
+              </Badge>
             </div>
-            <Badge variant="outline" className="gap-1">
-              <ArrowUpRight className="h-3 w-3" />
-              +12%
-            </Badge>
           </div>
           <div className="text-4xl font-bold mb-1" data-testid="text-highlight-total">
             {formatNumber(stats.total)}
           </div>
-          <p className="text-sm text-muted-foreground">Active songwriter contacts</p>
+          <p className="text-sm text-muted-foreground">
+            Active songwriter contacts
+          </p>
         </Card>
 
         {/* Hot Leads */}
         <Card className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Flame className="h-5 w-5 text-orange-500" />
-              <span className="text-sm font-medium text-muted-foreground">Hot Leads</span>
+          <div className="mb-4">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="flex items-center gap-2">
+                <Flame className="h-5 w-5 text-orange-500" />
+                <span className="text-sm font-medium text-muted-foreground">Hot Leads</span>
+              </div>
+              <Badge variant="outline" className="text-xs text-muted-foreground border-muted">
+                Current
+              </Badge>
             </div>
-            <Badge variant="outline" className="gap-1 border-orange-500/30 text-orange-500">
-              <ArrowUpRight className="h-3 w-3" />
-              +8%
-            </Badge>
           </div>
           <div className="text-4xl font-bold mb-1" data-testid="text-highlight-hot-leads">
             {formatNumber(stats.hotLeads)}
           </div>
-          <p className="text-sm text-muted-foreground">Priority outreach candidates</p>
+          <p className="text-sm text-muted-foreground">
+            Priority outreach candidates
+          </p>
         </Card>
 
         {/* Avg WoW Growth */}
