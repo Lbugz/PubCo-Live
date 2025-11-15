@@ -1,6 +1,10 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Users, TrendingUp, Target, Activity, Search, Filter, X, Mail, Phone, MessageCircle, User, ChevronDown, Loader2 } from "lucide-react";
+import { 
+  Users, TrendingUp, Target, Activity, Search, Filter, X, Mail, Phone, 
+  MessageCircle, User, ChevronDown, Loader2, UserPlus, Upload, Share2, 
+  Download, Flame, Link as LinkIcon, ArrowUpRight, ArrowDownRight
+} from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -63,6 +67,11 @@ export default function Contacts() {
   const [offset, setOffset] = useState(0);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  
+  // Quick filters
+  const [showHotLeads, setShowHotLeads] = useState(false);
+  const [showChartmetricLinked, setShowChartmetricLinked] = useState(false);
+  const [showPositiveWow, setShowPositiveWow] = useState(false);
 
   // Fetch contacts with filters
   const { data: contactsData, isLoading } = useQuery<{
@@ -186,51 +195,107 @@ export default function Contacts() {
 
   return (
     <div className="p-8 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Contacts</h1>
-        <p className="text-muted-foreground">
-          Manage songwriter contacts and track outreach pipeline
-        </p>
+      {/* Hero Section */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Contact Workspace</h1>
+          <p className="text-muted-foreground">
+            Relationship management for unsigned talent discovery • Lead cadence tracking • Funnel coverage analytics
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="gap-2" data-testid="button-add-contact">
+            <UserPlus className="h-4 w-4" />
+            Add Contact
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2" data-testid="button-import-csv">
+            <Upload className="h-4 w-4" />
+            Import CSV
+          </Button>
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard
-          title="Total Contacts"
-          value={formatNumber(stats.total)}
-          icon={Users}
-          variant="default"
-        />
-        <StatCard
-          title="Hot Leads"
-          value={formatNumber(stats.hotLeads)}
-          icon={TrendingUp}
-          variant="high"
-        />
-        <StatCard
-          title="Discovery"
-          value={formatNumber(stats.discovery)}
-          icon={User}
-          variant="default"
-        />
-        <StatCard
-          title="Watch List"
-          value={formatNumber(stats.watch)}
-          icon={Activity}
-          variant="medium"
-        />
-        <StatCard
-          title="Active Search"
-          value={formatNumber(stats.search)}
-          icon={Target}
-          variant="high"
-        />
+      {/* Highlight Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Total Pipeline */}
+        <Card className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-muted-foreground" />
+              <span className="text-sm font-medium text-muted-foreground">Total Pipeline</span>
+            </div>
+            <Badge variant="outline" className="gap-1">
+              <ArrowUpRight className="h-3 w-3" />
+              +12%
+            </Badge>
+          </div>
+          <div className="text-4xl font-bold mb-1" data-testid="text-highlight-total">
+            {formatNumber(stats.total)}
+          </div>
+          <p className="text-sm text-muted-foreground">Active songwriter contacts</p>
+        </Card>
+
+        {/* Hot Leads */}
+        <Card className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Flame className="h-5 w-5 text-orange-500" />
+              <span className="text-sm font-medium text-muted-foreground">Hot Leads</span>
+            </div>
+            <Badge variant="outline" className="gap-1 border-orange-500/30 text-orange-500">
+              <ArrowUpRight className="h-3 w-3" />
+              +8%
+            </Badge>
+          </div>
+          <div className="text-4xl font-bold mb-1" data-testid="text-highlight-hot-leads">
+            {formatNumber(stats.hotLeads)}
+          </div>
+          <p className="text-sm text-muted-foreground">Priority outreach candidates</p>
+        </Card>
+
+        {/* Avg WoW Growth */}
+        <Card className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-chart-2" />
+              <span className="text-sm font-medium text-muted-foreground">Avg. WoW Growth</span>
+            </div>
+            <Badge variant="outline" className="gap-1 border-chart-2/30 text-chart-2">
+              <ArrowUpRight className="h-3 w-3" />
+              +2.1%
+            </Badge>
+          </div>
+          <div className="text-4xl font-bold mb-1 text-chart-2" data-testid="text-highlight-avg-growth">
+            +15.3%
+          </div>
+          <p className="text-sm text-muted-foreground">Across active contacts</p>
+        </Card>
       </div>
 
-      {/* Filters & Search */}
-      <Card className="p-4">
-        <div className="flex flex-col md:flex-row gap-4">
+      {/* Saved View Banner / Filter Toolbar */}
+      <Card className="p-4 space-y-4">
+        {/* Top row: View info and actions */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h3 className="text-sm font-medium mb-1">All Contacts View</h3>
+            <p className="text-xs text-muted-foreground">
+              Default workspace showing all contacts across pipeline stages
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="gap-2" data-testid="button-share-view">
+              <Share2 className="h-4 w-4" />
+              Share View
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2" data-testid="button-export-csv">
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+          </div>
+        </div>
+
+        {/* Search and filters row */}
+        <div className="flex flex-col md:flex-row gap-3">
           {/* Search */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -243,56 +308,219 @@ export default function Contacts() {
             />
           </div>
 
-          {/* Stage Filter */}
-          <Select value={selectedStage} onValueChange={setSelectedStage}>
-            <SelectTrigger className="w-full md:w-[200px]" data-testid="select-stage-filter">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="All Stages" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Stages</SelectItem>
-              <SelectItem value="discovery">Discovery</SelectItem>
-              <SelectItem value="watch">Watch List</SelectItem>
-              <SelectItem value="search">Active Search</SelectItem>
-            </SelectContent>
-          </Select>
+          <Button variant="outline" size="sm" className="gap-2" data-testid="button-advanced-filters">
+            <Filter className="h-4 w-4" />
+            Advanced Filters
+          </Button>
+        </div>
 
-          {/* Clear Filters */}
-          {hasFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="gap-2"
-              data-testid="button-clear-filters"
+        {/* Quick Filter Pills */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-muted-foreground">Quick filters:</span>
+          <Badge
+            variant={showHotLeads ? "default" : "outline"}
+            className={cn(
+              "cursor-pointer hover-elevate active-elevate-2",
+              showHotLeads && "bg-orange-500/20 text-orange-400 border-orange-500/30"
+            )}
+            onClick={() => setShowHotLeads(!showHotLeads)}
+            data-testid="badge-filter-hot-leads"
+          >
+            <Flame className="h-3 w-3 mr-1" />
+            Hot leads
+          </Badge>
+          <Badge
+            variant={showChartmetricLinked ? "default" : "outline"}
+            className="cursor-pointer hover-elevate active-elevate-2"
+            onClick={() => setShowChartmetricLinked(!showChartmetricLinked)}
+            data-testid="badge-filter-chartmetric"
+          >
+            <LinkIcon className="h-3 w-3 mr-1" />
+            Chartmetric linked
+          </Badge>
+          <Badge
+            variant={showPositiveWow ? "default" : "outline"}
+            className={cn(
+              "cursor-pointer hover-elevate active-elevate-2",
+              showPositiveWow && "bg-chart-2/20 text-chart-2 border-chart-2/30"
+            )}
+            onClick={() => setShowPositiveWow(!showPositiveWow)}
+            data-testid="badge-filter-positive-wow"
+          >
+            <TrendingUp className="h-3 w-3 mr-1" />
+            Positive WoW
+          </Badge>
+          
+          {/* Clear View chip */}
+          {(showHotLeads || showChartmetricLinked || showPositiveWow || searchQuery.length > 0) && (
+            <Badge
+              variant="outline"
+              className="cursor-pointer hover-elevate active-elevate-2 gap-1"
+              onClick={() => {
+                setShowHotLeads(false);
+                setShowChartmetricLinked(false);
+                setShowPositiveWow(false);
+                setSearchQuery("");
+              }}
+              data-testid="badge-clear-view"
             >
-              <X className="h-4 w-4" />
-              Clear
-            </Button>
+              <X className="h-3 w-3" />
+              Clear view
+            </Badge>
           )}
         </div>
       </Card>
 
-      {/* Bulk Actions Toolbar */}
+      {/* Stage Selector Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card
+          className={cn(
+            "p-4 cursor-pointer hover-elevate active-elevate-2 transition-all",
+            selectedStage === "all" && "border-primary"
+          )}
+          onClick={() => {
+            setSelectedStage("all");
+            setOffset(0);
+          }}
+          data-testid="card-stage-all"
+        >
+          <div className="flex items-start justify-between mb-2">
+            <Users className="h-5 w-5 text-muted-foreground" />
+            {selectedStage === "all" && (
+              <div className="w-2 h-2 rounded-full bg-primary" />
+            )}
+          </div>
+          <div className="text-2xl font-bold mb-1">{formatNumber(stats.total)}</div>
+          <div className="text-sm font-medium mb-1">All Contacts</div>
+          <p className="text-xs text-muted-foreground">
+            Complete pipeline view
+          </p>
+        </Card>
+
+        <Card
+          className={cn(
+            "p-4 cursor-pointer hover-elevate active-elevate-2 transition-all",
+            selectedStage === "discovery" && "border-primary"
+          )}
+          onClick={() => {
+            setSelectedStage("discovery");
+            setOffset(0);
+          }}
+          data-testid="card-stage-discovery"
+        >
+          <div className="flex items-start justify-between mb-2">
+            <User className="h-5 w-5 text-blue-400" />
+            {selectedStage === "discovery" && (
+              <div className="w-2 h-2 rounded-full bg-primary" />
+            )}
+          </div>
+          <div className="text-2xl font-bold mb-1">{formatNumber(stats.discovery)}</div>
+          <div className="text-sm font-medium mb-1">Discovery Pool</div>
+          <p className="text-xs text-muted-foreground">
+            New unsigned talent
+          </p>
+        </Card>
+
+        <Card
+          className={cn(
+            "p-4 cursor-pointer hover-elevate active-elevate-2 transition-all",
+            selectedStage === "watch" && "border-primary"
+          )}
+          onClick={() => {
+            setSelectedStage("watch");
+            setOffset(0);
+          }}
+          data-testid="card-stage-watch"
+        >
+          <div className="flex items-start justify-between mb-2">
+            <Activity className="h-5 w-5 text-yellow-400" />
+            {selectedStage === "watch" && (
+              <div className="w-2 h-2 rounded-full bg-primary" />
+            )}
+          </div>
+          <div className="text-2xl font-bold mb-1">{formatNumber(stats.watch)}</div>
+          <div className="text-sm font-medium mb-1">Watch List</div>
+          <p className="text-xs text-muted-foreground">
+            Tracking momentum
+          </p>
+        </Card>
+
+        <Card
+          className={cn(
+            "p-4 cursor-pointer hover-elevate active-elevate-2 transition-all",
+            selectedStage === "search" && "border-primary"
+          )}
+          onClick={() => {
+            setSelectedStage("search");
+            setOffset(0);
+          }}
+          data-testid="card-stage-search"
+        >
+          <div className="flex items-start justify-between mb-2">
+            <Target className="h-5 w-5 text-emerald-400" />
+            {selectedStage === "search" && (
+              <div className="w-2 h-2 rounded-full bg-primary" />
+            )}
+          </div>
+          <div className="text-2xl font-bold mb-1">{formatNumber(stats.search)}</div>
+          <div className="text-sm font-medium mb-1">Active Search</div>
+          <p className="text-xs text-muted-foreground">
+            Ready for outreach
+          </p>
+        </Card>
+      </div>
+
+      {/* Bulk Selection Banner */}
       {selectedIds.size > 0 && (
         <Card className={cn(
-          "glass-panel p-4",
-          "border-primary/30 bg-primary/5",
-          "sticky top-0 z-20"
+          "p-5 border-2",
+          "border-primary/50 bg-primary/10",
+          "sticky top-4 z-20"
         )}>
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <Badge variant="default" className="text-sm font-semibold" data-testid="badge-selected-count">
-                {selectedIds.size} selected
-              </Badge>
-              <span className="text-sm text-muted-foreground">
-                of {total} contacts
-              </span>
+          <div className="flex items-center justify-between gap-6 flex-wrap">
+            {/* Selection Stats */}
+            <div className="flex items-center gap-6">
+              <div>
+                <div className="text-2xl font-bold mb-1" data-testid="badge-selected-count">
+                  {selectedIds.size}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  contacts selected
+                </div>
+              </div>
+              
+              <div className="h-10 w-px bg-border" />
+              
+              <div>
+                <div className="text-lg font-semibold mb-1">
+                  {formatNumber(
+                    contacts
+                      .filter(c => selectedIds.has(c.id))
+                      .reduce((sum, c) => sum + (c.totalStreams || 0), 0) / selectedIds.size
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  avg. streams
+                </div>
+              </div>
+              
+              <div className="h-10 w-px bg-border" />
+              
+              <div>
+                <div className="text-lg font-semibold mb-1 flex items-center gap-1">
+                  <Flame className="h-4 w-4 text-orange-500" />
+                  {contacts.filter(c => selectedIds.has(c.id) && c.hotLead > 0).length}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  hot leads
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Actions */}
+            <div className="flex items-center gap-2 flex-wrap">
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 className="gap-2"
                 data-testid="button-bulk-email"
@@ -301,7 +529,7 @@ export default function Contacts() {
                 Send Email
               </Button>
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 className="gap-2"
                 data-testid="button-bulk-message"
@@ -309,6 +537,19 @@ export default function Contacts() {
                 <MessageCircle className="h-4 w-4" />
                 Send DM
               </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1" data-testid="button-more-actions">
+                    More
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>Export selection</DropdownMenuItem>
+                  <DropdownMenuItem>Bulk update stage</DropdownMenuItem>
+                  <DropdownMenuItem>Mark as hot leads</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 onClick={clearSelection}
                 variant="ghost"

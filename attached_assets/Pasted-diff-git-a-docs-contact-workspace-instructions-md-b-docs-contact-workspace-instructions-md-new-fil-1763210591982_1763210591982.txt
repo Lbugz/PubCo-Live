@@ -1,0 +1,45 @@
+diff --git a/docs/contact-workspace-instructions.md b/docs/contact-workspace-instructions.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..d1873ed1cd67f17c3c6a5e9654cc7bf841a109d5
+--- /dev/null
++++ b/docs/contact-workspace-instructions.md
+@@ -0,0 +1,39 @@
++# Contact Workspace Improvement Instructions
++
++Copy everything between the `BEGIN` / `END` markers when sharing the plan with Replit (or any other) agents so they have the full brief in one paste.
++
++BEGIN CONTACT WORKSPACE SPEC
++
++1. **Hero + Highlights** (file: `client/src/pages/contacts.tsx`)
++   - Introduce the page as a "relationship workspace" that mentions lead cadence and funnel coverage.
++   - Add two quick actions on the right (e.g., "Add contact" and "Import CSV").
++   - Replace the flat five-card stat row with **three** highlight cards. Each highlight card includes:
++     - Title, big value, and short subtitle (e.g., "Avg. WoW growth")
++     - A trend pill (Δ vs. prior period) so the hero communicates momentum.
++     - Optional icon or sparkline for visual interest.
++
++2. **Filter Toolbar & Saved View Banner** (same file)
++   - Wrap the search input, filter toggles, and view metadata in a Card so it reads like a saved view.
++   - Include: saved view label + microcopy, "Share view" and "Export CSV" buttons, search input with icon, "Advanced filters" button, and a "Clear view" chip that appears only when any filter is active.
++   - Provide pill-style quick filters (Hot leads, Chartmetric linked, Positive WoW). Each pill toggles local state and visibly changes when active.
++
++3. **Stage Selector Cards** (still in `contacts.tsx`)
++   - Beneath the toolbar, show four evenly spaced cards: All Contacts, Discovery Pool, Watch List, Active Search.
++   - Clicking a card updates `selectedStage` (or equivalent) and resets pagination.
++   - Each card includes a label, count, and 1-line description so it feels like a pipeline summary rather than tabs.
++
++4. **Bulk Selection Banner** (`contacts.tsx`)
++   - Add a sticky, high-contrast banner that appears when any rows are selected.
++   - Surface: number selected, average streams, and count of hot leads within the selection.
++   - Provide obvious CTAs (Send Email, Send DM) plus a Clear button; tuck secondary actions behind a kebab if needed.
++
++5. **Contact Detail Drawer** (file: `client/src/components/contact-detail-drawer.tsx`)
++   - Start with an "Engagement snapshot" hero summarizing stage, time-in-stage, tracked tracks, and hot-lead status.
++   - Follow with two info cards:
++     1. Performance pulse (total streams, track count, WoW growth).
++     2. Relationship panel (owner, created date, contact ID, last updated).
++   - Include quick actions: Send Email, Send DM, Toggle Hot Lead, Re-enrich; plus a stage selector dropdown.
++   - Add an "Identifiers" card with Chartmetric + songwriter IDs, showing external links when available.
++   - Tabs (Tracks, Performance, Activity, Notes) live below the identifiers card. Tracks support skeleton/loading states, and the Notes tab offers a textarea + Save button (POST `/notes`).
++
++END CONTACT WORKSPACE SPEC
