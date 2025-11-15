@@ -179,6 +179,16 @@ export class EnrichmentWorker {
 
   private async executeJob(job: EnrichmentJob) {
     try {
+      // Broadcast job started
+      if (this.wsBroadcast) {
+        this.wsBroadcast('enrichment_job_started', {
+          type: 'enrichment_job_started',
+          jobId: job.id,
+          trackCount: job.trackIds.length,
+          playlistId: job.playlistId,
+        });
+      }
+
       const tracks = await this.storage.getTracksByIds(job.trackIds);
 
       if (tracks.length === 0) {
@@ -190,6 +200,15 @@ export class EnrichmentWorker {
           progress: 0,
           message: 'No tracks found',
         });
+        
+        // Broadcast job failed
+        if (this.wsBroadcast) {
+          this.wsBroadcast('enrichment_job_failed', {
+            type: 'enrichment_job_failed',
+            jobId: job.id,
+            error: 'No tracks found',
+          });
+        }
         return;
       }
 
@@ -393,6 +412,16 @@ export class EnrichmentWorker {
         logs: [`[${new Date().toISOString()}] Starting Phase 3 enrichment (MusicBrainz artist social links)...`],
       });
 
+      // Broadcast Phase 3 start
+      if (this.wsBroadcast) {
+        this.wsBroadcast('enrichment_phase_started', {
+          type: 'enrichment_phase_started',
+          jobId: job.id,
+          phase: 3,
+          phaseName: 'MusicBrainz Artist Links',
+        });
+      }
+
       this.broadcastProgress(job.id, {
         status: 'running',
         progress: 72,
@@ -482,6 +511,16 @@ export class EnrichmentWorker {
         progress: 75,
         logs: [`[${new Date().toISOString()}] Starting Phase 4 enrichment (Chartmetric analytics)...`],
       });
+
+      // Broadcast Phase 4 start
+      if (this.wsBroadcast) {
+        this.wsBroadcast('enrichment_phase_started', {
+          type: 'enrichment_phase_started',
+          jobId: job.id,
+          phase: 4,
+          phaseName: 'Chartmetric Analytics',
+        });
+      }
 
       this.broadcastProgress(job.id, {
         status: 'running',
@@ -584,6 +623,16 @@ export class EnrichmentWorker {
         progress: 82,
         logs: [`[${new Date().toISOString()}] Starting Phase 5 enrichment (MLC publisher status)...`],
       });
+
+      // Broadcast Phase 5 start
+      if (this.wsBroadcast) {
+        this.wsBroadcast('enrichment_phase_started', {
+          type: 'enrichment_phase_started',
+          jobId: job.id,
+          phase: 5,
+          phaseName: 'MLC Publisher Lookup',
+        });
+      }
 
       this.broadcastProgress(job.id, {
         status: 'running',
@@ -745,6 +794,17 @@ export class EnrichmentWorker {
         message: `Job complete: ${result.tracksEnriched} tracks enriched${result.errors > 0 ? `, ${result.errors} errors` : ''}`,
       });
 
+      // Broadcast job completed
+      if (this.wsBroadcast) {
+        this.wsBroadcast('enrichment_job_completed', {
+          type: 'enrichment_job_completed',
+          jobId: job.id,
+          tracksEnriched: result.tracksEnriched,
+          errors: result.errors,
+          success,
+        });
+      }
+
       console.log(`✅ Job ${job.id} completed: ${result.tracksEnriched} enriched, ${result.errors} errors`);
     } catch (error) {
       console.error(`❌ Job ${job.id} failed:`, error);
@@ -758,6 +818,15 @@ export class EnrichmentWorker {
         progress: job.progress || 0,
         message: `Job failed: ${error instanceof Error ? error.message : String(error)}`,
       });
+
+      // Broadcast job failed
+      if (this.wsBroadcast) {
+        this.wsBroadcast('enrichment_job_failed', {
+          type: 'enrichment_job_failed',
+          jobId: job.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
   }
 

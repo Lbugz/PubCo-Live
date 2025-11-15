@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 
 interface WebSocketMessage {
-  type: 'connected' | 'track_enriched' | 'batch_complete' | 'enrichment_progress' | 'metric_update' | 'playlist_error' | 'playlist_updated' | 'playlist_quality_updated' | 'playlist_fetch_complete';
+  type: 'connected' | 'track_enriched' | 'batch_complete' | 'enrichment_progress' | 'metric_update' | 'playlist_error' | 'playlist_updated' | 'playlist_quality_updated' | 'playlist_fetch_complete' | 'enrichment_job_started' | 'enrichment_job_completed' | 'enrichment_job_failed' | 'enrichment_phase_started';
   trackId?: string;
   trackName?: string;
   artistName?: string;
@@ -19,6 +19,13 @@ interface WebSocketMessage {
     name?: string;
     artist?: string;
   };
+  jobId?: string;
+  trackCount?: number;
+  tracksEnriched?: number;
+  errors?: number;
+  success?: boolean;
+  phase?: number;
+  phaseName?: string;
 }
 
 interface UseWebSocketOptions {
@@ -28,6 +35,10 @@ interface UseWebSocketOptions {
   onMetricUpdate?: (data: WebSocketMessage) => void;
   onPlaylistError?: (data: WebSocketMessage) => void;
   onPlaylistUpdated?: (data: WebSocketMessage) => void;
+  onJobStarted?: (data: WebSocketMessage) => void;
+  onJobCompleted?: (data: WebSocketMessage) => void;
+  onJobFailed?: (data: WebSocketMessage) => void;
+  onPhaseStarted?: (data: WebSocketMessage) => void;
   onConnected?: () => void;
   onMessage?: (data: WebSocketMessage) => void;
 }
@@ -122,6 +133,26 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
             case 'playlist_fetch_complete':
               if (callbacksRef.current.onMessage) {
                 callbacksRef.current.onMessage(data);
+              }
+              break;
+            case 'enrichment_job_started':
+              if (callbacksRef.current.onJobStarted) {
+                callbacksRef.current.onJobStarted(data);
+              }
+              break;
+            case 'enrichment_job_completed':
+              if (callbacksRef.current.onJobCompleted) {
+                callbacksRef.current.onJobCompleted(data);
+              }
+              break;
+            case 'enrichment_job_failed':
+              if (callbacksRef.current.onJobFailed) {
+                callbacksRef.current.onJobFailed(data);
+              }
+              break;
+            case 'enrichment_phase_started':
+              if (callbacksRef.current.onPhaseStarted) {
+                callbacksRef.current.onPhaseStarted(data);
               }
               break;
           }

@@ -79,6 +79,7 @@ export default function Dashboard() {
   const [recentEnrichments, setRecentEnrichments] = useState<Array<{ trackName: string; artistName: string; timestamp: number }>>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [enrichmentProgress, setEnrichmentProgress] = useState<{ message: string; progress?: number } | null>(null);
+  const [activeJobs, setActiveJobs] = useState<Array<{ jobId: string; trackCount: number; phase: number }>>([]);
   const [showMetrics, setShowMetrics] = useState(() => {
     const stored = localStorage.getItem('tracksMetricsVisible');
     return stored !== null ? stored === 'true' : true;
@@ -124,6 +125,45 @@ export default function Dashboard() {
         progress: data.enrichedCount && data.totalCount 
           ? Math.round((data.enrichedCount / data.totalCount) * 100)
           : undefined
+      });
+    },
+    onJobStarted: (data) => {
+      console.log('Job started:', data);
+      setActiveJobs(prev => [...prev, { jobId: data.jobId || '', trackCount: data.trackCount || 0, phase: 1 }]);
+      toast({
+        title: "Enrichment Started",
+        description: `Processing ${data.trackCount} tracks through all enrichment phases`,
+      });
+    },
+    onJobCompleted: (data) => {
+      console.log('Job completed:', data);
+      setActiveJobs(prev => prev.filter(job => job.jobId !== data.jobId));
+      setEnrichmentProgress(null);
+      toast({
+        title: data.success ? "Enrichment Complete!" : "Enrichment Completed with Errors",
+        description: `${data.tracksEnriched} tracks enriched${data.errors ? `, ${data.errors} errors` : ''}`,
+        variant: data.success ? "default" : "destructive",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
+    },
+    onJobFailed: (data) => {
+      console.log('Job failed:', data);
+      setActiveJobs(prev => prev.filter(job => job.jobId !== data.jobId));
+      setEnrichmentProgress(null);
+      toast({
+        title: "Enrichment Failed",
+        description: data.error || "Unknown error occurred",
+        variant: "destructive",
+      });
+    },
+    onPhaseStarted: (data) => {
+      console.log('Phase started:', data);
+      setActiveJobs(prev => prev.map(job => 
+        job.jobId === data.jobId ? { ...job, phase: data.phase || 1 } : job
+      ));
+      toast({
+        title: `Phase ${data.phase} Started`,
+        description: data.phaseName || `Processing phase ${data.phase}`,
       });
     },
     onMessage: (message) => {
@@ -550,6 +590,37 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Persistent Active Jobs Indicator in Header */}
+      {activeJobs.length > 0 && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-2xl w-full px-4">
+          <Card className="glass-panel backdrop-blur-xl border-primary/20 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 flex-1">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">
+                      {activeJobs.length} {activeJobs.length === 1 ? 'Job' : 'Jobs'} Active
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Processing {activeJobs.reduce((sum, job) => sum + job.trackCount, 0)} tracks • Phase {Math.max(...activeJobs.map(j => j.phase))}/5
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setActiveJobs([])}
+                  data-testid="button-dismiss-active-jobs"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Enrichment Progress Notification */}
       {enrichmentProgress && (
         <div className="fixed top-4 right-4 z-50 max-w-md">
