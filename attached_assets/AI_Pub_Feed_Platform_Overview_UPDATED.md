@@ -484,11 +484,53 @@ Track writer discovery, growth, and outreach in a structured publishing pipeline
 ### **Automation**
 - **Node-Cron Scheduler** — Weekly Fresh Finds updates (Fridays 9AM)
 - **Failed Enrichment Retry** — Daily retry job (2AM)
+- **Weekly Performance Snapshots** — Mondays 1AM for WoW % tracking
 - **Auto-Enrichment** — Triggers immediately after playlist fetch
 
 ---
 
-# **7️⃣ Key Differentiators**
+# **7️⃣ Known Issues & Support Status**
+
+### **Chartmetric API**
+
+**Current Status:** ⚠️ Limited Functionality
+
+**Known Technical Limitations:**
+- **Enterprise Tier Requirement:** Playlist metadata endpoint (`/playlist/:id`) requires Enterprise-level access, limiting playlist-level analytics availability
+- **Rate Limiting:** API implements 429 rate limit errors; system has automatic retry logic with 3-5 second delays
+- **5xx Server Errors:** Occasional server errors handled with automatic retry mechanism
+- **Token Expiration:** 401 Unauthorized errors trigger automatic token refresh and retry
+
+**Mitigation Strategies:**
+- Intelligent fallback to Spotify API for public playlist data
+- Tiered rate limiting (2-second throttle) to prevent blocks
+- Automatic retry logic for transient failures
+- Graceful degradation when Chartmetric unavailable
+
+**Support Ticket:** Opened November 14, 2025 (pending resolution)
+
+---
+
+### **MLC API (Mechanical Licensing Collective)**
+
+**Current Status:** ✅ Operational
+
+**Implementation Details:**
+- OAuth 2.0 authentication with token caching
+- Graceful degradation when credentials not configured
+- Automatic retry on 401 errors with cached token refresh
+- Skips MLC enrichment if `MLC_USERNAME`/`MLC_PASSWORD` not set
+
+**Known Behaviors:**
+- Enrichment continues without MLC data if API unavailable
+- Detailed error logging for troubleshooting
+- No current functional issues reported
+
+**Support Ticket:** Opened November 14, 2025 (proactive monitoring)
+
+---
+
+# **8️⃣ Key Differentiators**
 
 ### **Editorial Playlist Capture**
 - GraphQL network interception for restricted playlists
