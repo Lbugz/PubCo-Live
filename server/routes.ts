@@ -1318,9 +1318,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         allTracks = allTracks.filter(t => t.playlistId === playlistId);
       }
 
-      // Filter to only tracks missing Phase 2 data
+      // Filter to only tracks missing Phase 2 data (including 'Unknown' values)
       const unenrichedTracks = allTracks.filter(t => 
-        !t.songwriter && !t.producer && !t.publisher && !t.spotifyStreams
+        (!t.songwriter || t.songwriter === 'Unknown') && 
+        (!t.producer || t.producer === 'Unknown') && 
+        (!t.publisher || t.publisher === 'Unknown') && 
+        !t.spotifyStreams
       ).slice(0, limit);
 
       if (unenrichedTracks.length === 0) {
