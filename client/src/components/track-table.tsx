@@ -9,6 +9,7 @@ import { type PlaylistSnapshot, type Tag } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { TrackActionsDropdown } from "./track-actions-dropdown";
 import { SongwriterDisplay } from "./songwriter-display";
+import { SortableHeaderForGrid } from "@/components/ui/sortable-table-header";
 import { useQuery } from "@tanstack/react-query";
 import { getTagColorClass } from "./tag-manager";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -22,6 +23,9 @@ interface TrackTableProps {
   onToggleSelectAll?: () => void;
   onEnrich?: (trackId: string) => void;
   onRowClick?: (track: PlaylistSnapshot) => void;
+  sortField?: string;
+  sortDirection?: "asc" | "desc";
+  onSort?: (field: string) => void;
 }
 
 function getScoreBadgeVariant(score: number): "high" | "medium" | "low" {
@@ -62,7 +66,10 @@ export const TrackTable = memo(function TrackTable({
   onToggleSelection, 
   onToggleSelectAll,
   onEnrich, 
-  onRowClick 
+  onRowClick,
+  sortField,
+  sortDirection,
+  onSort
 }: TrackTableProps) {
   const allSelected = tracks.length > 0 && tracks.every(track => selectedTrackIds.has(track.id));
   const someSelected = !allSelected && tracks.some(track => selectedTrackIds.has(track.id));
@@ -129,12 +136,42 @@ export const TrackTable = memo(function TrackTable({
             />
           )}
         </div>
-        <div>Track</div>
-        <div>Artist</div>
-        <div>Playlist</div>
-        <div>Label</div>
-        <div>Songwriter</div>
-        <div>Score</div>
+        <SortableHeaderForGrid
+          label="Track"
+          field="trackName"
+          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
+          onSort={onSort}
+        />
+        <SortableHeaderForGrid
+          label="Artist"
+          field="artistName"
+          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
+          onSort={onSort}
+        />
+        <SortableHeaderForGrid
+          label="Playlist"
+          field="playlistName"
+          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
+          onSort={onSort}
+        />
+        <SortableHeaderForGrid
+          label="Label"
+          field="albumLabel"
+          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
+          onSort={onSort}
+        />
+        <SortableHeaderForGrid
+          label="Songwriter"
+          field="songwriter"
+          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
+          onSort={onSort}
+        />
+        <SortableHeaderForGrid
+          label="Score"
+          field="score"
+          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
+          onSort={onSort}
+        />
         <div className="text-right">Actions</div>
       </div>
 

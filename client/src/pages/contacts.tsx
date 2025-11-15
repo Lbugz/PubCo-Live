@@ -41,6 +41,7 @@ import type { ContactWithSongwriter } from "@shared/schema";
 import { ContactDetailDrawer } from "@/components/contact-detail-drawer";
 import { PageContainer } from "@/components/layout/page-container";
 import { FilterBar } from "@/components/layout/filter-bar";
+import { SortableTableHeader } from "@/components/ui/sortable-table-header";
 
 const STAGE_CONFIG = {
   discovery: {
@@ -75,6 +76,10 @@ export default function Contacts() {
   const [showHotLeads, setShowHotLeads] = useState(false);
   const [showChartmetricLinked, setShowChartmetricLinked] = useState(false);
   const [showPositiveWow, setShowPositiveWow] = useState(false);
+  
+  // Sorting
+  const [sortField, setSortField] = useState<string>("totalStreams");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   
   // Metrics visibility toggle
   const [showMetrics, setShowMetrics] = useState(() => {
@@ -139,6 +144,47 @@ export default function Contacts() {
     unsignedPct: 0,
   };
 
+  // Sort contacts
+  const sortedContacts = useMemo(() => {
+    if (!contacts || contacts.length === 0) return [];
+    
+    const sorted = [...contacts].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case "songwriterName":
+          aValue = a.songwriterName?.toLowerCase() || "";
+          bValue = b.songwriterName?.toLowerCase() || "";
+          break;
+        case "totalStreams":
+          aValue = a.totalStreams || 0;
+          bValue = b.totalStreams || 0;
+          break;
+        case "trackCount":
+          aValue = a.trackCount || 0;
+          bValue = b.trackCount || 0;
+          break;
+        case "stage":
+          aValue = a.stage || "";
+          bValue = b.stage || "";
+          break;
+        case "wowGrowth":
+          aValue = a.wowGrowth || 0;
+          bValue = b.wowGrowth || 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  }, [contacts, sortField, sortDirection]);
+
   // Bulk update mutation
   const updateContactMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
@@ -174,10 +220,10 @@ export default function Contacts() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === contacts.length) {
+    if (selectedIds.size === sortedContacts.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(contacts.map(c => c.id)));
+      setSelectedIds(new Set(sortedContacts.map(c => c.id)));
     }
   };
 
@@ -213,6 +259,16 @@ export default function Contacts() {
     setSelectedStage("all");
     setSearchQuery("");
     setOffset(0);
+  };
+
+  // Handle sorting
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection(field === "totalStreams" || field === "trackCount" || field === "wowGrowth" ? "desc" : "asc");
+    }
   };
 
   return (
@@ -513,7 +569,7 @@ export default function Contacts() {
               <div>
                 <div className="text-lg font-semibold mb-1 flex items-center gap-1">
                   <Flame className="h-4 w-4 text-orange-500" />
-                  {contacts.filter(c => selectedIds.has(c.id) && c.hotLead > 0).length}
+                  {sortedContacts.filter(c => selectedIds.has(c.id) && c.hotLead > 0).length}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   hot leads
@@ -590,22 +646,50 @@ export default function Contacts() {
                 <TableRow>
                   <TableHead className="w-12">
                     <Checkbox
-                      checked={selectedIds.size === contacts.length}
+                      checked={selectedIds.size === sortedContacts.length}
                       onCheckedChange={toggleSelectAll}
                       data-testid="checkbox-select-all"
                     />
                   </TableHead>
-                  <TableHead>Songwriter</TableHead>
-                  <TableHead className="text-right">Total Streams</TableHead>
-                  <TableHead className="text-right">Tracks</TableHead>
-                  <TableHead>Stage</TableHead>
-                  <TableHead className="text-right">WoW Growth</TableHead>
+                  <SortableTableHeader
+                    label="Songwriter"
+                    field="songwriterName"
+                    currentSort={{ field: sortField, direction: sortDirection }}
+                    onSort={handleSort}
+                  />
+                  <SortableTableHeader
+                    label="Total Streams"
+                    field="totalStreams"
+                    currentSort={{ field: sortField, direction: sortDirection }}
+                    onSort={handleSort}
+                    className="text-right"
+                  />
+                  <SortableTableHeader
+                    label="Tracks"
+                    field="trackCount"
+                    currentSort={{ field: sortField, direction: sortDirection }}
+                    onSort={handleSort}
+                    className="text-right"
+                  />
+                  <SortableTableHeader
+                    label="Stage"
+                    field="stage"
+                    currentSort={{ field: sortField, direction: sortDirection }}
+                    onSort={handleSort}
+                  />
+                  <SortableTableHeader
+                    label="WoW Growth"
+                    field="wowGrowth"
+                    currentSort={{ field: sortField, direction: sortDirection }}
+                    onSort={handleSort}
+                    className="text-right"
+                  />
                   <TableHead className="text-center">Hot Lead</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {contacts.map((contact) => {
+                {sortedContacts.map((contact) => {
                   const stageConfig = STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG];
                   const Icon = stageConfig?.icon;
 

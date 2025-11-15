@@ -80,6 +80,8 @@ export default function Dashboard() {
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeJobs, setActiveJobs] = useState<EnrichmentJob[]>([]);
+  const [sortField, setSortField] = useState<string>("score");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [showMetrics, setShowMetrics] = useState(() => {
     const stored = localStorage.getItem('tracksMetricsVisible');
     return stored !== null ? stored === 'true' : true;
@@ -403,22 +405,79 @@ export default function Dashboard() {
     };
   }, [tracks, debouncedSearchQuery, scoreRange, activeFilters]);
 
+  // Sort filtered tracks
+  const sortedTracks = useMemo(() => {
+    if (!filteredTracks || filteredTracks.length === 0) return [];
+    
+    const sorted = [...filteredTracks].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case "trackName":
+          aValue = a.trackName?.toLowerCase() || "";
+          bValue = b.trackName?.toLowerCase() || "";
+          break;
+        case "artistName":
+          aValue = a.artistName?.toLowerCase() || "";
+          bValue = b.artistName?.toLowerCase() || "";
+          break;
+        case "playlistName":
+          aValue = a.playlistName?.toLowerCase() || "";
+          bValue = b.playlistName?.toLowerCase() || "";
+          break;
+        case "albumLabel":
+          aValue = a.albumLabel?.toLowerCase() || "";
+          bValue = b.albumLabel?.toLowerCase() || "";
+          break;
+        case "songwriter":
+          aValue = a.songwriter?.toLowerCase() || "";
+          bValue = b.songwriter?.toLowerCase() || "";
+          break;
+        case "score":
+          aValue = a.unsignedScore || 0;
+          bValue = b.unsignedScore || 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  }, [filteredTracks, sortField, sortDirection]);
+
+  // Handle sorting
+  const handleSort = useCallback((field: string) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      // New field - start with descending for scores, ascending for text
+      setSortField(field);
+      setSortDirection(field === "score" ? "desc" : "asc");
+    }
+  }, [sortField]);
+
   // toggleSelectAll depends on filteredTracks, so define it after the useMemo
   const toggleSelectAll = useCallback(() => {
     setSelectedTrackIds(prev => {
-      const allFilteredSelected = filteredTracks.length > 0 && filteredTracks.every(t => prev.has(t.id));
+      const allFilteredSelected = sortedTracks.length > 0 && sortedTracks.every(t => prev.has(t.id));
       
       const newSet = new Set(prev);
       if (allFilteredSelected) {
         // All filtered tracks selected - deselect them (keep other selections)
-        filteredTracks.forEach(t => newSet.delete(t.id));
+        sortedTracks.forEach(t => newSet.delete(t.id));
       } else {
         // Not all filtered tracks selected - select all filtered tracks (keep existing selections)
-        filteredTracks.forEach(t => newSet.add(t.id));
+        sortedTracks.forEach(t => newSet.add(t.id));
       }
       return newSet;
     });
-  }, [filteredTracks]);
+  }, [sortedTracks]);
 
   // Check if any filter is active
   const hasActiveFilters = 
@@ -833,7 +892,7 @@ export default function Dashboard() {
           {/* View Content */}
           {viewMode === "table" && (
             <TrackTable 
-              tracks={filteredTracks} 
+              tracks={sortedTracks} 
               isLoading={tracksLoading}
               selectedTrackIds={selectedTrackIds}
               onToggleSelection={toggleTrackSelection}
@@ -843,12 +902,15 @@ export default function Dashboard() {
                 setSelectedTrack(track);
                 setDrawerOpen(true);
               }}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              onSort={handleSort}
             />
           )}
 
           {viewMode === "card" && (
             <CardView
-              tracks={filteredTracks}
+              tracks={sortedTracks}
               isLoading={tracksLoading}
               selectedTrackIds={selectedTrackIds}
               onToggleSelection={toggleTrackSelection}
@@ -863,7 +925,7 @@ export default function Dashboard() {
 
           {viewMode === "kanban" && (
             <KanbanView
-              tracks={filteredTracks}
+              tracks={sortedTracks}
               selectedTrackIds={selectedTrackIds}
               onToggleSelection={toggleTrackSelection}
               onToggleSelectAll={toggleSelectAll}
