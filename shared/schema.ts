@@ -271,6 +271,12 @@ export type SpotifyToken = typeof spotifyTokens.$inferSelect;
 export const jobTypeEnum = pgEnum('job_type', ['enrich-playlist', 'enrich-tracks']);
 export const jobStatusEnum = pgEnum('job_status', ['queued', 'running', 'completed', 'failed']);
 
+// CRM Enums
+export const contactStageEnum = pgEnum('contact_stage', ['discovery', 'watch', 'search']);
+export const outreachActivityTypeEnum = pgEnum('outreach_activity_type', ['dm', 'email', 'call', 'meeting', 'social_touch', 'other']);
+export const alertTypeEnum = pgEnum('alert_type', ['stream_threshold', 'velocity_spike', 'inactivity', 'manual']);
+export const alertStatusEnum = pgEnum('alert_status', ['pending', 'resolved', 'dismissed']);
+
 export const enrichmentJobs = pgTable("enrichment_jobs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   type: jobTypeEnum("type").notNull(),
@@ -295,6 +301,161 @@ export const insertEnrichmentJobSchema = createInsertSchema(enrichmentJobs).omit
 
 export type InsertEnrichmentJob = z.infer<typeof insertEnrichmentJobSchema>;
 export type EnrichmentJob = typeof enrichmentJobs.$inferSelect;
+
+// CRM System Tables
+export const contacts = pgTable("contacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  artistId: varchar("artist_id").notNull().references(() => artists.id, { onDelete: "cascade" }).unique(),
+  stage: contactStageEnum("stage").notNull().default('discovery'),
+  stageUpdatedAt: timestamp("stage_updated_at").notNull().defaultNow(),
+  wowGrowthPct: integer("wow_growth_pct"),
+  hotLead: integer("hot_lead").notNull().default(0),
+  assignedUserId: varchar("assigned_user_id"),
+  totalStreams: integer("total_streams"),
+  totalTracks: integer("total_tracks").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const contactTracks = pgTable("contact_tracks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  trackId: varchar("track_id").notNull().references(() => playlistSnapshots.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  uniqueContactTrack: sql`UNIQUE (${table.contactId}, ${table.trackId})`,
+}));
+
+export const contactStageHistory = pgTable("contact_stage_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  previousStage: contactStageEnum("previous_stage"),
+  newStage: contactStageEnum("new_stage").notNull(),
+  reason: text("reason"),
+  changedByUserId: varchar("changed_by_user_id"),
+  changedAt: timestamp("changed_at").notNull().defaultNow(),
+});
+
+export const outreachActivities = pgTable("outreach_activities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  performedByUserId: varchar("performed_by_user_id"),
+  activityType: outreachActivityTypeEnum("activity_type").notNull(),
+  channel: text("channel"),
+  subject: text("subject"),
+  body: text("body"),
+  outcome: text("outcome"),
+  metadata: text("metadata"),
+  relatedTrackId: varchar("related_track_id").references(() => playlistSnapshots.id, { onDelete: "set null" }),
+  performedAt: timestamp("performed_at").notNull().defaultNow(),
+});
+
+export const contactNotes = pgTable("contact_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  authorUserId: varchar("author_user_id"),
+  content: text("content").notNull(),
+  isPinned: integer("is_pinned").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const trackPerformanceSnapshots = pgTable("track_performance_snapshots", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  trackId: varchar("track_id").notNull().references(() => playlistSnapshots.id, { onDelete: "cascade" }),
+  week: date("week").notNull(),
+  spotifyStreams: integer("spotify_streams"),
+  followers: integer("followers"),
+  wowStreams: integer("wow_streams"),
+  wowPct: integer("wow_pct"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  uniqueSnapshot: sql`UNIQUE (${table.contactId}, ${table.trackId}, ${table.week})`,
+}));
+
+export const contactAlerts = pgTable("contact_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  alertType: alertTypeEnum("alert_type").notNull(),
+  relatedTrackId: varchar("related_track_id").references(() => playlistSnapshots.id, { onDelete: "set null" }),
+  thresholdValue: integer("threshold_value"),
+  actualValue: integer("actual_value"),
+  message: text("message").notNull(),
+  status: alertStatusEnum("status").notNull().default('pending'),
+  triggeredAt: timestamp("triggered_at").notNull().defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+});
+
+export const contactTags = pgTable("contact_tags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  tagId: varchar("tag_id").notNull().references(() => tags.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  uniqueContactTag: sql`UNIQUE (${table.contactId}, ${table.tagId})`,
+}));
+
+// Insert schemas for CRM tables
+export const insertContactSchema = createInsertSchema(contacts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertContactTrackSchema = createInsertSchema(contactTracks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertContactStageHistorySchema = createInsertSchema(contactStageHistory).omit({
+  id: true,
+  changedAt: true,
+});
+
+export const insertOutreachActivitySchema = createInsertSchema(outreachActivities).omit({
+  id: true,
+  performedAt: true,
+});
+
+export const insertContactNoteSchema = createInsertSchema(contactNotes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrackPerformanceSnapshotSchema = createInsertSchema(trackPerformanceSnapshots).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertContactAlertSchema = createInsertSchema(contactAlerts).omit({
+  id: true,
+  triggeredAt: true,
+});
+
+export const insertContactTagSchema = createInsertSchema(contactTags).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for CRM tables
+export type Contact = typeof contacts.$inferSelect;
+export type InsertContact = z.infer<typeof insertContactSchema>;
+export type ContactTrack = typeof contactTracks.$inferSelect;
+export type InsertContactTrack = z.infer<typeof insertContactTrackSchema>;
+export type ContactStageHistory = typeof contactStageHistory.$inferSelect;
+export type InsertContactStageHistory = z.infer<typeof insertContactStageHistorySchema>;
+export type OutreachActivity = typeof outreachActivities.$inferSelect;
+export type InsertOutreachActivity = z.infer<typeof insertOutreachActivitySchema>;
+export type ContactNote = typeof contactNotes.$inferSelect;
+export type InsertContactNote = z.infer<typeof insertContactNoteSchema>;
+export type TrackPerformanceSnapshot = typeof trackPerformanceSnapshots.$inferSelect;
+export type InsertTrackPerformanceSnapshot = z.infer<typeof insertTrackPerformanceSnapshotSchema>;
+export type ContactAlert = typeof contactAlerts.$inferSelect;
+export type InsertContactAlert = z.infer<typeof insertContactAlertSchema>;
+export type ContactTag = typeof contactTags.$inferSelect;
+export type InsertContactTag = z.infer<typeof insertContactTagSchema>;
 
 export const playlists = [
   {
