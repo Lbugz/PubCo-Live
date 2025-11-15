@@ -16,7 +16,7 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   albumImages: text("album_images"),
   isrc: text("isrc"),
   label: text("label"),
-  releaseDate: date("release_date"),
+  releaseDate: varchar("release_date"),
   popularity: integer("popularity"),
   duration: integer("duration"),
   explicit: integer("explicit"),

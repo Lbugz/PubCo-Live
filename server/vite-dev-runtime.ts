@@ -41,6 +41,11 @@ export async function setupVite(app: Express, server: Server) {
   const fs = await import("fs");
   
   app.use("*", async (req, res, next) => {
+    // Skip API routes - they should be handled by Express routes
+    if (req.originalUrl.startsWith('/api/')) {
+      return next();
+    }
+    
     const url = req.originalUrl;
 
     try {

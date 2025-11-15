@@ -469,6 +469,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/contacts", async (req, res) => {
+    try {
+      const { stage, search, limit, offset } = req.query;
+      
+      const parsedLimit = limit ? parseInt(limit as string, 10) : 50;
+      const parsedOffset = offset ? parseInt(offset as string, 10) : 0;
+      
+      const contacts = await storage.getContacts({
+        stage: stage as string | undefined,
+        search: search as string | undefined,
+        limit: parsedLimit,
+        offset: parsedOffset,
+      });
+      
+      const total = await storage.getContactsCount({
+        stage: stage as string | undefined,
+        search: search as string | undefined,
+      });
+      
+      const globalStats = await storage.getContactsCountWithHotLead();
+      
+      res.json({
+        contacts,
+        total,
+        limit: parsedLimit,
+        offset: parsedOffset,
+        hasMore: (parsedOffset + parsedLimit) < total,
+        globalStats,
+      });
+    } catch (error) {
+      console.error("Error fetching contacts:", error);
+      res.status(500).json({ error: "Failed to fetch contacts" });
+    }
+  });
+
+  app.get("/api/contacts/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const contact = await storage.getContactById(id);
+      
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      
+      res.json(contact);
+    } catch (error) {
+      console.error("Error fetching contact:", error);
+      res.status(500).json({ error: "Failed to fetch contact" });
+    }
+  });
+
+  app.patch("/api/contacts/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      await storage.updateContact(id, updates);
+      const contact = await storage.getContactById(id);
+      
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      
+      res.json(contact);
+    } catch (error) {
+      console.error("Error updating contact:", error);
+      res.status(500).json({ error: "Failed to update contact" });
+    }
+  });
+
+  app.post("/api/contacts/:id/notes", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { content } = req.body;
+      
+      if (!content || typeof content !== 'string') {
+        return res.status(400).json({ error: "Note content is required" });
+      }
+      
+      const note = await storage.createContactNote(id, content);
+      res.json(note);
+    } catch (error) {
+      console.error("Error adding note:", error);
+      res.status(500).json({ error: "Failed to add note" });
+    }
+  });
+
+  app.get("/api/contacts/:id/notes", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const notes = await storage.getContactNotesById(id);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+      res.status(500).json({ error: "Failed to fetch notes" });
+    }
+  });
+
   app.get("/api/playlists", async (req, res) => {
     try {
       const playlistNames = await storage.getAllPlaylists();
