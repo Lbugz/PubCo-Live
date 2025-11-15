@@ -731,8 +731,7 @@ export default function Dashboard() {
 
           {/* Enhanced Stats Cards with Trends and Toggle */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-muted-foreground">TOP METRICS</h2>
+            <div className="flex items-center justify-end">
               <Button
                 variant="ghost"
                 size="icon"
@@ -744,7 +743,8 @@ export default function Dashboard() {
               </Button>
             </div>
             <Collapsible open={showMetrics}>
-              <CollapsibleContent>
+              <CollapsibleContent className="space-y-3">
+                <h2 className="text-sm font-semibold text-muted-foreground">TOP METRICS</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   <StatsCard
                     title="Deal-Ready Tracks"
