@@ -33,6 +33,7 @@ import { DetailsDrawer } from "@/components/details-drawer";
 import { TagManager } from "@/components/tag-manager";
 import { PlaylistManager } from "@/components/playlist-manager";
 import { PageContainer } from "@/components/layout/page-container";
+import { ActivityPanel, type EnrichmentJob } from "@/components/activity-panel";
 import { type PlaylistSnapshot, type Tag, type TrackedPlaylist } from "@shared/schema";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -79,7 +80,7 @@ export default function Dashboard() {
   const [recentEnrichments, setRecentEnrichments] = useState<Array<{ trackName: string; artistName: string; timestamp: number }>>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [enrichmentProgress, setEnrichmentProgress] = useState<{ message: string; progress?: number } | null>(null);
-  const [activeJobs, setActiveJobs] = useState<Array<{ jobId: string; trackCount: number; phase: number }>>([]);
+  const [activeJobs, setActiveJobs] = useState<EnrichmentJob[]>([]);
   const [showMetrics, setShowMetrics] = useState(() => {
     const stored = localStorage.getItem('tracksMetricsVisible');
     return stored !== null ? stored === 'true' : true;
@@ -120,10 +121,26 @@ export default function Dashboard() {
           ? Math.round((data.enrichedCount / data.totalCount) * 100)
           : undefined
       });
+      // Update active job progress
+      if (data.jobId) {
+        setActiveJobs(prev => prev.map(job => 
+          job.jobId === data.jobId 
+            ? { ...job, enrichedCount: data.enrichedCount || 0 }
+            : job
+        ));
+      }
     },
     onJobStarted: (data) => {
       console.log('Job started:', data);
-      setActiveJobs(prev => [...prev, { jobId: data.jobId || '', trackCount: data.trackCount || 0, phase: 1 }]);
+      setActiveJobs(prev => [...prev, { 
+        jobId: data.jobId || '', 
+        playlistName: data.playlistName,
+        trackCount: data.trackCount || 0, 
+        enrichedCount: 0,
+        phase: 1,
+        status: 'running',
+        startTime: Date.now(),
+      }]);
       toast({
         title: "Enrichment started",
         description: `${data.trackCount} tracks · All phases queued`,
@@ -132,7 +149,11 @@ export default function Dashboard() {
     },
     onJobCompleted: (data) => {
       console.log('Job completed:', data);
-      setActiveJobs(prev => prev.filter(job => job.jobId !== data.jobId));
+      setActiveJobs(prev => prev.map(job => 
+        job.jobId === data.jobId
+          ? { ...job, status: data.success ? 'success' : 'error', enrichedCount: data.tracksEnriched || job.trackCount }
+          : job
+      ));
       setEnrichmentProgress(null);
       toast({
         title: data.success ? "Enrichment complete" : "Enrichment completed with errors",
@@ -143,7 +164,11 @@ export default function Dashboard() {
     },
     onJobFailed: (data) => {
       console.log('Job failed:', data);
-      setActiveJobs(prev => prev.filter(job => job.jobId !== data.jobId));
+      setActiveJobs(prev => prev.map(job => 
+        job.jobId === data.jobId
+          ? { ...job, status: 'error', errorMessage: data.error }
+          : job
+      ));
       setEnrichmentProgress(null);
       toast({
         title: "Enrichment failed",
@@ -156,7 +181,6 @@ export default function Dashboard() {
       setActiveJobs(prev => prev.map(job => 
         job.jobId === data.jobId ? { ...job, phase: data.phase || 1 } : job
       ));
-      // Phase started toasts removed - will show in Activity Panel (Phase 2)
     },
     onMessage: (message) => {
       // Handle metric_update events from WebSocket
@@ -998,6 +1022,11 @@ export default function Dashboard() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         onEnrich={handleEnrichTrack}
+      />
+
+      <ActivityPanel 
+        jobs={activeJobs}
+        onDismiss={(jobId) => setActiveJobs(prev => prev.filter(job => job.jobId !== jobId))}
       />
     </div>
   );
