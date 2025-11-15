@@ -56,8 +56,8 @@ export interface IStorage {
   claimNextEnrichmentJob(): Promise<EnrichmentJob | null>;
   
   // Contact management methods
-  getContacts(options?: { stage?: string; search?: string; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]>;
-  getContactsCount(options?: { stage?: string; search?: string }): Promise<number>;
+  getContacts(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]>;
+  getContactsCount(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean }): Promise<number>;
   getContactsCountWithHotLead(): Promise<number>;
   getContactById(id: string): Promise<ContactWithSongwriter | null>;
   updateContact(id: string, updates: Partial<Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void>;
@@ -861,13 +861,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Contact management methods
-  async getContacts(options?: { stage?: string; search?: string; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]> {
-    const { stage, search, limit, offset } = options || {};
+  async getContacts(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]> {
+    const { stage, search, hotLeads, chartmetricLinked, positiveWow, limit, offset } = options || {};
     
     let query = db.select({
       id: contacts.id,
       songwriterId: contacts.songwriterId,
       songwriterName: songwriterProfiles.name,
+      songwriterChartmetricId: songwriterProfiles.chartmetricId,
       stage: contacts.stage,
       stageUpdatedAt: contacts.stageUpdatedAt,
       wowGrowthPct: contacts.wowGrowthPct,
@@ -892,6 +893,19 @@ export class DatabaseStorage implements IStorage {
       conditions.push(
         sql`LOWER(${songwriterProfiles.name}) LIKE LOWER(${searchPattern})`
       );
+    }
+    
+    // Quick filters
+    if (hotLeads) {
+      conditions.push(sql`${contacts.hotLead} > 0`);
+    }
+    
+    if (chartmetricLinked) {
+      conditions.push(sql`${songwriterProfiles.chartmetricId} IS NOT NULL`);
+    }
+    
+    if (positiveWow) {
+      conditions.push(sql`${contacts.wowGrowthPct} > 0`);
     }
     
     if (conditions.length > 0) {
@@ -923,8 +937,8 @@ export class DatabaseStorage implements IStorage {
     return typeof raw === "bigint" ? Number(raw) : Number(raw);
   }
 
-  async getContactsCount(options?: { stage?: string; search?: string }): Promise<number> {
-    const { stage, search } = options || {};
+  async getContactsCount(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean }): Promise<number> {
+    const { stage, search, hotLeads, chartmetricLinked, positiveWow } = options || {};
     
     const conditions = [];
     if (stage) {
@@ -936,6 +950,19 @@ export class DatabaseStorage implements IStorage {
       conditions.push(
         sql`LOWER(${songwriterProfiles.name}) LIKE LOWER(${searchPattern})`
       );
+    }
+    
+    // Quick filters
+    if (hotLeads) {
+      conditions.push(sql`${contacts.hotLead} > 0`);
+    }
+    
+    if (chartmetricLinked) {
+      conditions.push(sql`${songwriterProfiles.chartmetricId} IS NOT NULL`);
+    }
+    
+    if (positiveWow) {
+      conditions.push(sql`${contacts.wowGrowthPct} > 0`);
     }
     
     let query = db.select({ count: count() })

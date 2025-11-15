@@ -87,7 +87,9 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
       return apiRequest("PATCH", `/api/contacts/${contactId}`, updates);
     },
     onSuccess: () => {
+      // Invalidate both the list and the specific contact detail query
       queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts", contactId] });
       toast({
         title: "Contact updated",
         description: "Contact has been updated successfully",
@@ -366,16 +368,15 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                       <LinkIcon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">Chartmetric ID</span>
                     </div>
-                    <Button variant="link" size="sm" className="h-auto p-0 text-sm" asChild>
-                      <a 
-                        href={`https://app.chartmetric.com/artist/${contact.songwriterChartmetricId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {contact.songwriterChartmetricId}
-                        <ExternalLink className="h-3 w-3 ml-1" />
-                      </a>
-                    </Button>
+                    <a 
+                      href={`https://app.chartmetric.com/artist/${contact.songwriterChartmetricId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline flex items-center gap-1"
+                    >
+                      {contact.songwriterChartmetricId}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
                   </div>
                 )}
               </div>

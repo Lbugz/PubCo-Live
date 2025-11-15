@@ -471,23 +471,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/contacts", async (req, res) => {
     try {
-      const { stage, search, limit, offset } = req.query;
+      const { stage, search, hotLeads, chartmetricLinked, positiveWow, limit, offset } = req.query;
       
       const parsedLimit = limit ? parseInt(limit as string, 10) : 50;
       const parsedOffset = offset ? parseInt(offset as string, 10) : 0;
       
-      const contacts = await storage.getContacts({
+      const filters = {
         stage: stage as string | undefined,
         search: search as string | undefined,
+        hotLeads: hotLeads === 'true',
+        chartmetricLinked: chartmetricLinked === 'true',
+        positiveWow: positiveWow === 'true',
         limit: parsedLimit,
         offset: parsedOffset,
-      });
+      };
       
-      const total = await storage.getContactsCount({
-        stage: stage as string | undefined,
-        search: search as string | undefined,
-      });
-      
+      const contacts = await storage.getContacts(filters);
+      const total = await storage.getContactsCount(filters);
       const globalStats = await storage.getContactsCountWithHotLead();
       
       res.json({

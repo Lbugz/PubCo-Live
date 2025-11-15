@@ -91,6 +91,9 @@ export default function Contacts() {
     queryKey: ["/api/contacts", { 
       stage: selectedStage === "all" ? undefined : selectedStage,
       search: debouncedSearchQuery || undefined,
+      hotLeads: showHotLeads,
+      chartmetricLinked: showChartmetricLinked,
+      positiveWow: showPositiveWow,
       limit,
       offset 
     }],
@@ -98,6 +101,9 @@ export default function Contacts() {
       const params = new URLSearchParams();
       if (selectedStage !== "all") params.append("stage", selectedStage);
       if (debouncedSearchQuery) params.append("search", debouncedSearchQuery);
+      if (showHotLeads) params.append("hotLeads", "true");
+      if (showChartmetricLinked) params.append("chartmetricLinked", "true");
+      if (showPositiveWow) params.append("positiveWow", "true");
       params.append("limit", limit.toString());
       params.append("offset", offset.toString());
       
