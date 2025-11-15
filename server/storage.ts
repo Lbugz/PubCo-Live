@@ -59,6 +59,7 @@ export interface IStorage {
   getContacts(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]>;
   getContactsCount(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean }): Promise<number>;
   getContactsCountWithHotLead(): Promise<number>;
+  getContactStats(): Promise<{ total: number; hotLeads: number; discovery: number; watch: number; search: number; avgWowGrowth: number | null }>;
   getContactById(id: string): Promise<ContactWithSongwriter | null>;
   updateContact(id: string, updates: Partial<Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void>;
   getContactTracks(contactId: string): Promise<PlaylistSnapshot[]>;
@@ -935,6 +936,65 @@ export class DatabaseStorage implements IStorage {
     
     const raw = result[0]?.count ?? 0;
     return typeof raw === "bigint" ? Number(raw) : Number(raw);
+  }
+
+  async getContactStats(): Promise<{
+    total: number;
+    hotLeads: number;
+    discovery: number;
+    watch: number;
+    search: number;
+    avgWowGrowth: number | null;
+  }> {
+    // Get counts by stage
+    const stageCounts = await db.select({
+      stage: contacts.stage,
+      count: count(),
+    })
+      .from(contacts)
+      .groupBy(contacts.stage);
+    
+    // Get hot leads count
+    const hotLeadsResult = await db.select({ count: count() })
+      .from(contacts)
+      .where(sql`${contacts.hotLead} > 0`);
+    
+    // Get average WoW growth (only for contacts with non-null wowGrowthPct)
+    const avgWowResult = await db.select({
+      avg: sql<number>`AVG(${contacts.wowGrowthPct})`.as('avg')
+    })
+      .from(contacts)
+      .where(sql`${contacts.wowGrowthPct} IS NOT NULL`);
+    
+    // Calculate totals
+    let total = 0;
+    let discovery = 0;
+    let watch = 0;
+    let search = 0;
+    
+    for (const row of stageCounts) {
+      const countValue = typeof row.count === "bigint" ? Number(row.count) : Number(row.count);
+      total += countValue;
+      
+      if (row.stage === 'discovery') discovery = countValue;
+      else if (row.stage === 'watch') watch = countValue;
+      else if (row.stage === 'search') search = countValue;
+    }
+    
+    const hotLeads = typeof hotLeadsResult[0]?.count === "bigint" 
+      ? Number(hotLeadsResult[0].count) 
+      : Number(hotLeadsResult[0]?.count ?? 0);
+    
+    const avgWowGrowth = avgWowResult[0]?.avg ?? null;
+    
+    return {
+      total,
+      hotLeads,
+      discovery,
+      watch,
+      search,
+      avgWowGrowth,
+    };
   }
 
   async getContactsCount(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean }): Promise<number> {

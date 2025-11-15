@@ -488,7 +488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const contacts = await storage.getContacts(filters);
       const total = await storage.getContactsCount(filters);
-      const globalStats = await storage.getContactsCountWithHotLead();
+      const stats = await storage.getContactStats();
       
       res.json({
         contacts,
@@ -496,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         limit: parsedLimit,
         offset: parsedOffset,
         hasMore: (parsedOffset + parsedLimit) < total,
-        globalStats,
+        stats,
       });
     } catch (error) {
       console.error("Error fetching contacts:", error);
@@ -564,6 +564,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching notes:", error);
       res.status(500).json({ error: "Failed to fetch notes" });
+    }
+  });
+
+  app.get("/api/contacts/:id/tracks", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const tracks = await storage.getContactTracks(id);
+      res.json(tracks);
+    } catch (error) {
+      console.error("Error fetching contact tracks:", error);
+      res.status(500).json({ error: "Failed to fetch contact tracks" });
     }
   });
 

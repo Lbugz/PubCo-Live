@@ -86,6 +86,7 @@ export default function Contacts() {
       discovery: number;
       watch: number;
       search: number;
+      avgWowGrowth: number | null;
     };
   }>({
     queryKey: ["/api/contacts", { 
@@ -121,6 +122,7 @@ export default function Contacts() {
     discovery: 0,
     watch: 0,
     search: 0,
+    avgWowGrowth: null,
   };
 
   // Bulk update mutation
@@ -266,13 +268,22 @@ export default function Contacts() {
               <TrendingUp className="h-5 w-5 text-chart-2" />
               <span className="text-sm font-medium text-muted-foreground">Avg. WoW Growth</span>
             </div>
-            <Badge variant="outline" className="gap-1 border-chart-2/30 text-chart-2">
-              <ArrowUpRight className="h-3 w-3" />
-              +2.1%
-            </Badge>
+            {stats.avgWowGrowth !== null && stats.avgWowGrowth > 0 && (
+              <Badge variant="outline" className="gap-1 border-chart-2/30 text-chart-2">
+                <ArrowUpRight className="h-3 w-3" />
+                +{stats.avgWowGrowth.toFixed(1)}%
+              </Badge>
+            )}
           </div>
-          <div className="text-4xl font-bold mb-1 text-chart-2" data-testid="text-highlight-avg-growth">
-            +15.3%
+          <div className={cn(
+            "text-4xl font-bold mb-1",
+            stats.avgWowGrowth !== null && stats.avgWowGrowth > 0 && "text-chart-2",
+            stats.avgWowGrowth !== null && stats.avgWowGrowth < 0 && "text-red-400"
+          )} data-testid="text-highlight-avg-growth">
+            {stats.avgWowGrowth !== null 
+              ? `${stats.avgWowGrowth > 0 ? "+" : ""}${stats.avgWowGrowth.toFixed(1)}%`
+              : "—"
+            }
           </div>
           <p className="text-sm text-muted-foreground">Across active contacts</p>
         </Card>
