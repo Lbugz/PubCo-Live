@@ -236,7 +236,6 @@ export default function Contacts() {
             size="icon"
             onClick={() => setShowMetrics(!showMetrics)}
             data-testid="button-toggle-contact-metrics"
-            className="h-8 w-8"
           >
             {showMetrics ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </Button>
@@ -680,9 +679,8 @@ export default function Contacts() {
                       <TableCell className="text-center">
                         <Button
                           variant={contact.hotLead > 0 ? "default" : "ghost"}
-                          size="sm"
+                          size="icon"
                           onClick={() => handleHotLeadToggle(contact.id, contact.hotLead)}
-                          className="h-7 w-7 p-0"
                           data-testid={`button-hot-lead-${contact.id}`}
                         >
                           <TrendingUp className={cn(
@@ -696,8 +694,7 @@ export default function Contacts() {
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
+                              size="icon"
                               data-testid={`button-actions-${contact.id}`}
                             >
                               <ChevronDown className="h-4 w-4" />

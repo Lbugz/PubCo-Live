@@ -615,7 +615,6 @@ export default function Dashboard() {
                 size="icon"
                 onClick={() => setShowMetrics(!showMetrics)}
                 data-testid="button-toggle-track-metrics"
-                className="h-8 w-8"
               >
                 {showMetrics ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>

@@ -105,7 +105,7 @@ export default function Comparison() {
           <div className="flex h-16 items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Music2 className="h-7 w-7 text-primary" data-testid="icon-logo" />
-              <h1 className="text-xl font-bold" data-testid="text-comparison-title">Week Comparison</h1>
+              <h1 className="text-3xl font-bold" data-testid="text-comparison-title">Week Comparison</h1>
             </div>
             
             <div className="flex items-center gap-3">
@@ -124,7 +124,7 @@ export default function Comparison() {
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Select Weeks to Compare</h2>
+            <h2 className="text-xl font-semibold mb-4">Select Weeks to Compare</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {weeksLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
@@ -162,7 +162,7 @@ export default function Comparison() {
             <Card className="p-12">
               <div className="flex flex-col items-center justify-center text-center">
                 <TrendingUp className="h-16 w-16 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Select at least 2 weeks</h3>
+                <h3 className="text-sm font-semibold mb-2">Select at least 2 weeks</h3>
                 <p className="text-sm text-muted-foreground max-w-md">
                   Choose two or more weeks above to compare track progression and identify trends.
                 </p>
@@ -198,7 +198,7 @@ export default function Comparison() {
               </div>
 
               <Card className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Track Progression</h2>
+                <h2 className="text-xl font-semibold mb-4">Track Progression</h2>
                 <div className="space-y-3">
                   {trackComparisons.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">

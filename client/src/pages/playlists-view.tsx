@@ -685,7 +685,6 @@ export default function PlaylistsView() {
             size="icon"
             onClick={() => setShowMetrics(!showMetrics)}
             data-testid="button-toggle-playlist-metrics"
-            className="h-8 w-8"
           >
             {showMetrics ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </Button>
