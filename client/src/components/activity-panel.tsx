@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { X, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 export interface EnrichmentJob {
   jobId: string;
@@ -14,6 +15,7 @@ export interface EnrichmentJob {
   status: 'running' | 'success' | 'error';
   errorMessage?: string;
   startTime: number;
+  completedAt?: number;
 }
 
 interface ActivityPanelProps {
@@ -39,6 +41,20 @@ function formatDuration(ms: number): string {
 }
 
 export function ActivityPanel({ jobs, onDismiss, className }: ActivityPanelProps) {
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  const hasRunningJobs = jobs.some(job => job.status === 'running');
+
+  // Update current time every second to refresh elapsed times, but only if there are running jobs
+  useEffect(() => {
+    if (!hasRunningJobs) return;
+    
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [hasRunningJobs]);
+
   if (jobs.length === 0) return null;
 
   return (
@@ -47,8 +63,11 @@ export function ActivityPanel({ jobs, onDismiss, className }: ActivityPanelProps
         const progress = job.trackCount > 0 
           ? Math.round((job.enrichedCount / job.trackCount) * 100)
           : 0;
-        const elapsed = Date.now() - job.startTime;
         const isComplete = job.status === 'success' || job.status === 'error';
+        // Use completedAt for finished jobs to freeze elapsed time, currentTime for running jobs
+        const elapsed = isComplete && job.completedAt 
+          ? job.completedAt - job.startTime 
+          : currentTime - job.startTime;
         
         return (
           <Card 

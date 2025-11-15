@@ -88,6 +88,18 @@ export default function Dashboard() {
   const { toast} = useToast();
   const isMobile = useMobile(768);
   
+  // Auto-dismiss completed jobs after 10 seconds
+  useEffect(() => {
+    const completedJobs = activeJobs.filter(job => job.status === 'success' || job.status === 'error');
+    if (completedJobs.length === 0) return;
+    
+    const timeout = setTimeout(() => {
+      setActiveJobs(prev => prev.filter(job => job.status === 'running'));
+    }, 10000);
+    
+    return () => clearTimeout(timeout);
+  }, [activeJobs]);
+  
   // Persist metrics visibility to localStorage
   useEffect(() => {
     localStorage.setItem('tracksMetricsVisible', showMetrics.toString());
@@ -151,7 +163,7 @@ export default function Dashboard() {
       console.log('Job completed:', data);
       setActiveJobs(prev => prev.map(job => 
         job.jobId === data.jobId
-          ? { ...job, status: data.success ? 'success' : 'error', enrichedCount: data.tracksEnriched || job.trackCount }
+          ? { ...job, status: data.success ? 'success' : 'error', enrichedCount: data.tracksEnriched || job.trackCount, completedAt: Date.now() }
           : job
       ));
       setEnrichmentProgress(null);
@@ -166,7 +178,7 @@ export default function Dashboard() {
       console.log('Job failed:', data);
       setActiveJobs(prev => prev.map(job => 
         job.jobId === data.jobId
-          ? { ...job, status: 'error', errorMessage: data.error }
+          ? { ...job, status: 'error', errorMessage: data.error, completedAt: Date.now() }
           : job
       ));
       setEnrichmentProgress(null);

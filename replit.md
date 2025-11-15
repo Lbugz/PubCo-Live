@@ -15,6 +15,13 @@ The application features a modern full-stack architecture with a React, TypeScri
 ### UI/UX Decisions
 The frontend is a single-page React application with a modular component architecture, a professional design system inspired by Linear/Notion patterns, and dark/light theme toggle. It emphasizes clean information hierarchy, fast data scanning, filtering, and actionable export features. Key UI features include consolidated track actions, songwriter display, bulk selection with a sticky glassmorphism toolbar, fixed left-hand sidebar navigation, comprehensive playlist management, album art thumbnails with lazy loading, a redesigned details drawer, and a dedicated songwriter panel.
 
+**Toast Notification System (Nov 15, 2025)**: Implemented comprehensive toast system overhaul matching professional apps like Linear/Notion:
+- **4-Tier Severity System**: success (green), info (blue), warning (yellow), destructive (red) variants with distinct colored left borders and icons
+- **ActivityPanel Component**: Persistent job tracking panel in bottom-right corner showing live enrichment progress, reducing toast noise for long-running operations
+- **Badge Component Enhancement**: Added success/info/warning variants to maintain consistency with toast design language
+- **Normalized Copy**: Consistent toast messaging across all workflows using sentence case and bullet notation (e.g., "3 playlists · 45 new tracks · 12 duplicates skipped")
+- **Reduced Toast Noise**: Individual track enrichments and phase transitions now show in ActivityPanel instead of toasts, only toasting on job start/completion/failure
+
 ### Technical Implementations
 - **Data Fetching**: Utilizes TanStack Query.
 - **Scoring Algorithm**: Proprietary algorithm ranks tracks based on Fresh Finds appearance, independent label status, and missing publisher/writer data.
