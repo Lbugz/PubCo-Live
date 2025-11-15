@@ -32,6 +32,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PageContainer } from "@/components/layout/page-container";
+import { PageHeaderControls, type ViewMode } from "@/components/layout/page-header-controls";
+import { FilterBar } from "@/components/layout/filter-bar";
 import { AddPlaylistDialog } from "@/components/add-playlist-dialog";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -42,7 +44,7 @@ export default function PlaylistsView() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<TrackedPlaylist | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [selectedPlaylistIds, setSelectedPlaylistIds] = useState<Set<string>>(new Set());
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const [showMetrics, setShowMetrics] = useState(() => {
@@ -725,52 +727,48 @@ export default function PlaylistsView() {
       </div>
 
       {/* Filters */}
-      <Card className="glass-panel backdrop-blur-xl border border-primary/20">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-3 items-center">
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search playlists..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                  data-testid="input-playlist-search"
-                />
-              </div>
-            </div>
-
-            <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-source-filter">
-                <SelectValue placeholder="All Sources" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sources</SelectItem>
-                {sources.map(source => (
-                  <SelectItem key={source} value={source}>
-                    {source.charAt(0).toUpperCase() + source.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {(searchQuery || sourceFilter !== "all") && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSourceFilter("all");
-                }}
-                data-testid="button-clear-filters"
-              >
-                Clear Filters
-              </Button>
-            )}
+      <FilterBar>
+        <div className="flex-1 min-w-[200px]">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search playlists..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+              data-testid="input-playlist-search"
+            />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <Select value={sourceFilter} onValueChange={setSourceFilter}>
+          <SelectTrigger className="w-[180px]" data-testid="select-source-filter">
+            <SelectValue placeholder="All Sources" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Sources</SelectItem>
+            {sources.map(source => (
+              <SelectItem key={source} value={source}>
+                {source.charAt(0).toUpperCase() + source.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {(searchQuery || sourceFilter !== "all") && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearchQuery("");
+              setSourceFilter("all");
+            }}
+            data-testid="button-clear-filters"
+          >
+            Clear Filters
+          </Button>
+        )}
+      </FilterBar>
 
       {/* Bulk Actions Toolbar */}
       <PlaylistBulkActionsToolbar
@@ -785,36 +783,15 @@ export default function PlaylistsView() {
       />
 
       {/* View Toggle and Count */}
+      <PageHeaderControls
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        availableViews={["table", "card"]}
+        count={filteredPlaylists.length}
+        countLabel={filteredPlaylists.length === 1 ? "playlist" : "playlists"}
+      />
+
       <Card className="glass-panel backdrop-blur-xl border border-primary/20">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
-              {filteredPlaylists.length} Playlist{filteredPlaylists.length !== 1 ? 's' : ''}
-            </h2>
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === "table" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("table")}
-                className="gap-2"
-                data-testid="button-view-table"
-              >
-                <LayoutList className="h-4 w-4" />
-                Table
-              </Button>
-              <Button
-                variant={viewMode === "cards" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("cards")}
-                className="gap-2"
-                data-testid="button-view-cards"
-              >
-                <LayoutGrid className="h-4 w-4" />
-                Cards
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">Loading playlists...</div>
