@@ -84,15 +84,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
               break;
             case 'track_enriched':
               console.log('[WebSocket] Track enriched:', data);
-              // queryClient.invalidateQueries({ queryKey: ['/api/tracks'] }); // Assuming queryClient is available in this scope
-              // queryClient.invalidateQueries({ queryKey: ['/api/playlists'] }); // Assuming queryClient is available in this scope
-              if (data.track?.name && data.track?.artist) {
-                // Assuming toast is available in this scope
-                // toast({
-                //   title: 'Track Enriched!',
-                //   description: `${data.track.name} by ${data.track.artist}`,
-                // });
-              }
               if (callbacksRef.current.onTrackEnriched) {
                 callbacksRef.current.onTrackEnriched(data);
               }

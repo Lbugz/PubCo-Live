@@ -350,11 +350,9 @@ wss.on('connection', (ws) => {
   // Broadcast the enriched track information
   wss.broadcast({
     type: 'track_enriched',
-    track: {
-      id: enrichedTrack.id,
-      name: enrichedTrack.name,
-      artist: enrichedTrack.artist,
-    },
+    trackId: enrichedTrack.id,
+    trackName: enrichedTrack.name,
+    artistName: enrichedTrack.artist,
   });
 });
 */

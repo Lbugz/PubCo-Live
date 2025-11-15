@@ -81,6 +81,18 @@ export default function PlaylistsView() {
     onMetricUpdate: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/metrics/playlists"] });
     },
+    onTrackEnriched: (data) => {
+      // Show toast when a track is enriched
+      if (data.trackName && data.artistName) {
+        toast({
+          title: "Track Enriched!",
+          description: `${data.trackName} by ${data.artistName}`,
+        });
+      }
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/playlists"] });
+    },
     onMessage: (message) => {
       // Handle playlist_quality_updated to refresh quality metrics in drawer
       if (message.type === 'playlist_quality_updated' && message.playlistId) {
