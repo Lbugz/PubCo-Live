@@ -703,8 +703,11 @@ export default function Contacts() {
                         />
                       </TableCell>
                       <TableCell className="font-medium">
-                        <div className="flex flex-col">
-                          <span className="text-sm" data-testid={`text-songwriter-name-${contact.id}`}>
+                        <div 
+                          className="flex flex-col cursor-pointer hover-elevate rounded-md p-1 -m-1"
+                          onClick={() => handleViewContact(contact.id)}
+                        >
+                          <span className="text-sm text-primary" data-testid={`text-songwriter-name-${contact.id}`}>
                             {contact.songwriterName}
                           </span>
                           {contact.songwriterChartmetricId && (

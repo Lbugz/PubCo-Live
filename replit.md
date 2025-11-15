@@ -15,6 +15,8 @@ The application features a modern full-stack architecture with a React, TypeScri
 ### UI/UX Decisions
 The frontend is a single-page React application with a modular component architecture, a professional design system inspired by Linear/Notion patterns, and dark/light theme toggle. It emphasizes clean information hierarchy, fast data scanning, filtering, and actionable export features. Key UI features include consolidated track actions, songwriter display, bulk selection with a sticky glassmorphism toolbar, fixed left-hand sidebar navigation, comprehensive playlist management, album art thumbnails with lazy loading, a redesigned details drawer, and a dedicated songwriter panel.
 
+**Clickable Songwriter Names (Nov 15, 2025)**: Enhanced Contacts table UX by making songwriter names interactive - clicking a songwriter name opens the contact detail drawer, providing quick access to full contact information without requiring users to use the dropdown actions menu. Visual feedback includes cursor-pointer, hover-elevate animation, text-primary color, and expanded clickable area.
+
 **Toast Notification System (Nov 15, 2025)**: Implemented comprehensive toast system overhaul matching professional apps like Linear/Notion:
 - **4-Tier Severity System**: success (green), info (blue), warning (yellow), destructive (red) variants with distinct colored left borders and icons
 - **ActivityPanel Component**: Persistent job tracking panel in bottom-right corner showing live enrichment progress, reducing toast noise for long-running operations
