@@ -7,6 +7,7 @@ import { enrichTracksWithSpotifyAPI } from "./spotifyBatchEnrichment";
 import { getUncachableSpotifyClient } from "../spotify";
 import { searchArtistByName, getArtistExternalLinks } from "../musicbrainz";
 import { enrichTrackWithChartmetric } from "../chartmetric";
+import { notificationService } from "../services/notificationService";
 import type { WebSocket } from "ws";
 
 export interface WorkerOptions {
@@ -832,6 +833,22 @@ export class EnrichmentWorker {
         });
       }
 
+      // Create notification for completed enrichment
+      try {
+        if (job.playlistId) {
+          const playlist = await this.storage.getPlaylistById(job.playlistId);
+          if (playlist) {
+            await notificationService.notifyEnrichmentComplete(
+              job.playlistId,
+              playlist.playlistName,
+              result.tracksEnriched
+            );
+          }
+        }
+      } catch (notifError) {
+        console.error('Failed to create enrichment completion notification:', notifError);
+      }
+
       console.log(`✅ Job ${job.id} completed: ${result.tracksEnriched} enriched, ${result.errors} errors`);
     } catch (error) {
       console.error(`❌ Job ${job.id} failed:`, error);
@@ -853,6 +870,22 @@ export class EnrichmentWorker {
           jobId: job.id,
           error: error instanceof Error ? error.message : String(error),
         });
+      }
+
+      // Create notification for failed enrichment
+      try {
+        if (job.playlistId) {
+          const playlist = await this.storage.getPlaylistById(job.playlistId);
+          if (playlist) {
+            await notificationService.notifyEnrichmentFailed(
+              job.playlistId,
+              playlist.playlistName,
+              error instanceof Error ? error.message : String(error)
+            );
+          }
+        }
+      } catch (notifError) {
+        console.error('Failed to create enrichment failure notification:', notifError);
       }
     }
   }

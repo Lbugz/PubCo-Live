@@ -16,6 +16,7 @@ import { getAuthStatus, isAuthHealthy } from "./auth-monitor";
 import { enrichTrackWithChartmetric, getSongwriterProfile, getSongwriterCollaborators, getSongwriterPublishers, getPlaylistMetadata, getPlaylistTracks, searchPlaylists } from "./chartmetric";
 import { getPlaylistMetrics, getTrackMetrics, invalidateMetricsCache } from "./metricsService";
 import { triggerMetricsUpdate, scheduleMetricsUpdate, flushMetricsUpdate } from "./metricsUpdateManager";
+import { notificationService } from "./services/notificationService";
 
 // Helper function to fetch all tracks from a playlist with pagination
 async function fetchAllPlaylistTracks(spotify: any, playlistId: string): Promise<any[]> {
@@ -397,6 +398,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching track metrics:", error);
       res.status(500).json({ error: "Failed to fetch track metrics" });
+    }
+  });
+
+  // Notification API routes
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const unreadOnly = req.query.unreadOnly === 'true';
+      
+      const notifications = unreadOnly 
+        ? await notificationService.getUnreadNotifications(limit)
+        : await notificationService.getAllNotifications(limit);
+      
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  app.get("/api/notifications/count", async (req, res) => {
+    try {
+      const count = await notificationService.getUnreadCount();
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching notification count:", error);
+      res.status(500).json({ error: "Failed to fetch notification count" });
+    }
+  });
+
+  app.post("/api/notifications/:id/read", async (req, res) => {
+    try {
+      await notificationService.markAsRead(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  app.post("/api/notifications/read-all", async (req, res) => {
+    try {
+      await notificationService.markAllAsRead();
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ error: "Failed to mark all notifications as read" });
+    }
+  });
+
+  app.delete("/api/notifications", async (req, res) => {
+    try {
+      await notificationService.clearAll();
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error clearing notifications:", error);
+      res.status(500).json({ error: "Failed to clear notifications" });
     }
   });
 
