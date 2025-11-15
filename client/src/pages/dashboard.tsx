@@ -142,11 +142,6 @@ export default function Dashboard() {
         status: 'running',
         startTime: Date.now(),
       }]);
-      toast({
-        title: "Enrichment started",
-        description: `${data.trackCount} tracks · All phases queued`,
-        variant: "info",
-      });
     },
     onJobCompleted: (data) => {
       console.log('Job completed:', data);
@@ -155,11 +150,6 @@ export default function Dashboard() {
           ? { ...job, status: data.success ? 'success' : 'error', enrichedCount: data.tracksEnriched || job.trackCount, completedAt: Date.now() }
           : job
       ));
-      toast({
-        title: data.success ? "Enrichment complete" : "Enrichment completed with errors",
-        description: `${data.tracksEnriched} tracks enriched${data.errors ? ` · ${data.errors} errors` : ''}`,
-        variant: data.success ? "success" : "warning",
-      });
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
     },
     onJobFailed: (data) => {
@@ -169,11 +159,6 @@ export default function Dashboard() {
           ? { ...job, status: 'error', errorMessage: data.error, completedAt: Date.now() }
           : job
       ));
-      toast({
-        title: "Enrichment failed",
-        description: data.error || "Unknown error occurred",
-        variant: "destructive",
-      });
     },
     onPhaseStarted: (data) => {
       console.log('Phase started:', data);
