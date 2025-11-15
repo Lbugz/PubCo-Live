@@ -74,7 +74,7 @@ export async function getPlaylistMetrics() {
       .from(trackedPlaylists);
     const totalPlaylists = totalPlaylistsResult[0]?.count || 0;
     
-    // Unsigned songwriters (distinct songwriters with no publisher, only enriched) (current week)
+    // Unsigned songwriters (distinct songwriters with no publisher, only successfully enriched) (current week)
     const unsignedSongwritersResult = await db.select({ 
       count: sql<number>`count(distinct ${playlistSnapshots.songwriter})::int` 
     })
@@ -82,7 +82,7 @@ export async function getPlaylistMetrics() {
       .where(
         and(
           eq(playlistSnapshots.week, latestWeek),
-          eq(playlistSnapshots.enrichmentStatus, 'enriched'),
+          sql`(${playlistSnapshots.creditsStatus} = 'success' OR ${playlistSnapshots.creditsStatus} IS NULL)`,
           sql`${playlistSnapshots.publisher} IS NULL OR ${playlistSnapshots.publisher} = ''`
         )
       );
@@ -98,7 +98,7 @@ export async function getPlaylistMetrics() {
         .where(
           and(
             eq(playlistSnapshots.week, previousWeek),
-            eq(playlistSnapshots.enrichmentStatus, 'enriched'),
+            sql`(${playlistSnapshots.creditsStatus} = 'success' OR ${playlistSnapshots.creditsStatus} IS NULL)`,
             sql`${playlistSnapshots.publisher} IS NULL OR ${playlistSnapshots.publisher} = ''`
           )
         );
@@ -208,13 +208,13 @@ export async function getTrackMetrics() {
       changeAvgScore = calculatePercentChange(avgScore, prevAvgScore);
     }
     
-    // Missing publisher tracks (tracks with no publisher data, only enriched)
+    // Missing publisher tracks (tracks with no publisher data, only successfully enriched)
     const missingPublisherResult = await db.select({ count: sql<number>`count(*)::int` })
       .from(playlistSnapshots)
       .where(
         and(
           eq(playlistSnapshots.week, latestWeek),
-          eq(playlistSnapshots.enrichmentStatus, 'enriched'),
+          sql`(${playlistSnapshots.creditsStatus} = 'success' OR ${playlistSnapshots.creditsStatus} IS NULL)`,
           sql`${playlistSnapshots.publisher} IS NULL OR ${playlistSnapshots.publisher} = ''`
         )
       );
@@ -228,7 +228,7 @@ export async function getTrackMetrics() {
         .where(
           and(
             eq(playlistSnapshots.week, previousWeek),
-            eq(playlistSnapshots.enrichmentStatus, 'enriched'),
+            sql`(${playlistSnapshots.creditsStatus} = 'success' OR ${playlistSnapshots.creditsStatus} IS NULL)`,
             sql`${playlistSnapshots.publisher} IS NULL OR ${playlistSnapshots.publisher} = ''`
           )
         );

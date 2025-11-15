@@ -130,7 +130,7 @@ export class EnrichmentWorker {
 
       if (jobId) {
         try {
-          await this.jobQueue.completeJob(job.id, false, [
+          await this.jobQueue.completeJob(jobId, false, [
             `[${new Date().toISOString()}] Fatal worker error: ${error instanceof Error ? error.message : String(error)}`,
           ]);
 
@@ -326,6 +326,11 @@ export class EnrichmentWorker {
 
       const result = await enrichTracksWithCredits(tracksForEnrichment);
 
+      // Create sets to track enrichment outcomes
+      const enrichedTrackIds = new Set(result.enrichedTracks.map(t => t.trackId));
+      const failedTrackIds = new Set(result.errorDetails.map(e => e.trackId));
+
+      // Update tracks with credits data AND set creditsStatus
       for (const enrichedTrack of result.enrichedTracks) {
         ctx.applyPatch(enrichedTrack.trackId, {
           songwriter: enrichedTrack.songwriter || undefined,
@@ -335,6 +340,28 @@ export class EnrichmentWorker {
           spotifyStreams: enrichedTrack.spotifyStreams || undefined,
           enrichedAt: new Date(),
           enrichmentStatus: 'enriched',
+          creditsStatus: 'success',
+          lastEnrichmentAttempt: new Date(),
+        });
+      }
+
+      // Mark tracks that were processed but found no data
+      for (const track of tracksForEnrichment) {
+        if (!enrichedTrackIds.has(track.id) && !failedTrackIds.has(track.id)) {
+          ctx.applyPatch(track.id, {
+            enrichmentStatus: 'partial',
+            creditsStatus: 'no_data',
+            lastEnrichmentAttempt: new Date(),
+          });
+        }
+      }
+
+      // Mark tracks that failed
+      for (const errorDetail of result.errorDetails) {
+        ctx.applyPatch(errorDetail.trackId, {
+          enrichmentStatus: 'partial',
+          creditsStatus: 'failed',
+          lastEnrichmentAttempt: new Date(),
         });
       }
 
@@ -555,7 +582,7 @@ export class EnrichmentWorker {
               ctx.applyPatch(track.id, {
                 chartmetricId: chartmetricData.chartmetricId,
                 spotifyStreams: chartmetricData.spotifyStreams,
-                streamingVelocity: chartmetricData.streamingVelocity,
+                streamingVelocity: chartmetricData.streamingVelocity?.toString(),
                 youtubeViews: chartmetricData.youtubeViews,
                 trackStage: chartmetricData.trackStage,
                 moods: chartmetricData.moods,

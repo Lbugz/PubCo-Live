@@ -34,6 +34,8 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   enrichedAt: timestamp("enriched_at"),
   enrichmentStatus: text("enrichment_status").default("pending"),
   enrichmentTier: text("enrichment_tier"),
+  creditsStatus: text("credits_status").default("pending"),
+  lastEnrichmentAttempt: timestamp("last_enrichment_attempt"),
   instagram: text("instagram"),
   twitter: text("twitter"),
   tiktok: text("tiktok"),

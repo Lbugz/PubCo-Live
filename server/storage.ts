@@ -14,8 +14,10 @@ export interface IStorage {
   getAllPlaylists(): Promise<string[]>;
   insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<string[]>;
   deleteTracksByWeek(week: string): Promise<void>;
-  updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; publisherStatus?: string; mlcSongCode?: string; songwriter?: string; producer?: string; spotifyStreams?: number; enrichedAt?: Date; enrichmentStatus?: string; enrichmentTier?: string }): Promise<void>;
+  updateTrackMetadata(id: string, metadata: { isrc?: string | null; label?: string | null; spotifyUrl?: string; publisher?: string | null; publisherStatus?: string | null; mlcSongCode?: string | null; songwriter?: string | null; producer?: string | null; spotifyStreams?: number | null; enrichedAt?: Date | null; enrichmentStatus?: string | null; enrichmentTier?: string | null; creditsStatus?: string | null; lastEnrichmentAttempt?: Date | null }): Promise<void>;
+  updateBatchLastEnrichmentAttempt(trackIds: string[]): Promise<void>;
   getUnenrichedTracks(limit?: number): Promise<PlaylistSnapshot[]>;
+  getTracksNeedingRetry(beforeDate: Date): Promise<PlaylistSnapshot[]>;
   getAllTags(): Promise<Tag[]>;
   createTag(tag: InsertTag): Promise<Tag>;
   deleteTag(id: string): Promise<void>;
@@ -322,17 +324,37 @@ export class DatabaseStorage implements IStorage {
     await db.delete(playlistSnapshots).where(eq(playlistSnapshots.week, week));
   }
 
-  async updateTrackMetadata(id: string, metadata: { isrc?: string; label?: string; spotifyUrl?: string; publisher?: string; publisherStatus?: string; mlcSongCode?: string; songwriter?: string; producer?: string; spotifyStreams?: number; enrichedAt?: Date; enrichmentStatus?: string; enrichmentTier?: string }): Promise<void> {
+  async updateTrackMetadata(id: string, metadata: { isrc?: string | null; label?: string | null; spotifyUrl?: string; publisher?: string | null; publisherStatus?: string | null; mlcSongCode?: string | null; songwriter?: string | null; producer?: string | null; spotifyStreams?: number | null; enrichedAt?: Date | null; enrichmentStatus?: string | null; enrichmentTier?: string | null; creditsStatus?: string | null; lastEnrichmentAttempt?: Date | null }): Promise<void> {
     await db.update(playlistSnapshots)
       .set(metadata)
       .where(eq(playlistSnapshots.id, id));
   }
 
+  async updateBatchLastEnrichmentAttempt(trackIds: string[]): Promise<void> {
+    if (trackIds.length === 0) return;
+    await db.update(playlistSnapshots)
+      .set({ lastEnrichmentAttempt: new Date() })
+      .where(inArray(playlistSnapshots.id, trackIds));
+  }
+
   async getUnenrichedTracks(limit: number = 50): Promise<PlaylistSnapshot[]> {
     return db.select()
       .from(playlistSnapshots)
-      .where(sql`${playlistSnapshots.enrichedAt} IS NULL`)
+      .where(
+        sql`(${playlistSnapshots.enrichedAt} IS NULL AND ${playlistSnapshots.creditsStatus} IS NULL) OR (${playlistSnapshots.creditsStatus} != 'success' AND (${playlistSnapshots.lastEnrichmentAttempt} IS NULL OR ${playlistSnapshots.lastEnrichmentAttempt} < NOW() - INTERVAL '7 days'))`
+      )
       .limit(limit);
+  }
+
+  async getTracksNeedingRetry(beforeDate: Date): Promise<PlaylistSnapshot[]> {
+    return db.select()
+      .from(playlistSnapshots)
+      .where(
+        and(
+          sql`${playlistSnapshots.creditsStatus} IN ('no_data', 'failed')`,
+          sql`${playlistSnapshots.lastEnrichmentAttempt} < ${beforeDate.toISOString()}`
+        )
+      );
   }
 
   async getUnenrichedTracksByPlaylist(playlistId: string, limit: number = 50): Promise<PlaylistSnapshot[]> {

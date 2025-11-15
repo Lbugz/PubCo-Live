@@ -222,10 +222,56 @@ export async function initializeScheduler(storage: IStorage) {
     }
   );
   
-  // Future jobs can be registered here:
-  // - Other playlist updates
-  // - Data enrichment jobs
-  // - Cleanup/maintenance tasks
+  // Register failed enrichment retry job
+  registerJob(
+    "Failed Enrichment Retry",
+    "0 2 * * *", // Every day at 2:00 AM
+    "Daily at 2:00 AM",
+    async () => {
+      console.log("🔄 Starting failed enrichment retry job...");
+      
+      try {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        // Find tracks that need retry (failed or no_data, last attempt > 7 days ago)
+        const tracksNeedingRetry = await storage.getTracksNeedingRetry(sevenDaysAgo);
+        
+        if (tracksNeedingRetry.length === 0) {
+          console.log("✅ No tracks need retry");
+          return;
+        }
+        
+        console.log(`📋 Found ${tracksNeedingRetry.length} tracks needing retry`);
+        
+        // Queue them for enrichment (limit to 100 per day to avoid overwhelming the system)
+        const tracksToRetry = tracksNeedingRetry.slice(0, 100);
+        const trackIds = tracksToRetry.map(t => t.id);
+        
+        // Import job queue
+        const { getJobQueue } = await import("./enrichment/jobQueueManager");
+        const jobQueue = getJobQueue();
+        
+        if (jobQueue) {
+          await jobQueue.enqueue({
+            type: 'enrich-tracks',
+            trackIds,
+            playlistId: null, // Mixed playlists
+          });
+          
+          // Update lastEnrichmentAttempt to prevent duplicate queuing if worker crashes
+          await storage.updateBatchLastEnrichmentAttempt(trackIds);
+          
+          console.log(`✅ Queued ${trackIds.length} tracks for retry enrichment`);
+        } else {
+          console.error("❌ Job queue not initialized");
+        }
+      } catch (error) {
+        console.error("❌ Failed enrichment retry error:", error);
+        throw error;
+      }
+    }
+  );
   
   // Start the scheduler (will only actually start if ENABLE_AUTO_SCRAPE=true)
   startScheduler();
