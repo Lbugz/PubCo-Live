@@ -39,6 +39,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { ContactWithSongwriter } from "@shared/schema";
 import { ContactDetailDrawer } from "@/components/contact-detail-drawer";
+import { PageContainer } from "@/components/layout/page-container";
 
 const STAGE_CONFIG = {
   discovery: {
@@ -214,8 +215,8 @@ export default function Contacts() {
   };
 
   return (
-    <div className="p-8 space-y-6">
-      {/* Hero Section */}
+    <PageContainer className="space-y-6">
+      {/* Header Section */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold mb-2">Contact Workspace</h1>
@@ -775,6 +776,6 @@ export default function Contacts() {
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
       />
-    </div>
+    </PageContainer>
   );
 }
