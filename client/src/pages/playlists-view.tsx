@@ -81,18 +81,6 @@ export default function PlaylistsView() {
     onMetricUpdate: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/metrics/playlists"] });
     },
-    onTrackEnriched: (data) => {
-      // Show toast when a track is enriched
-      if (data.trackName && data.artistName) {
-        toast({
-          title: "Track Enriched!",
-          description: `${data.trackName} by ${data.artistName}`,
-        });
-      }
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/playlists"] });
-    },
     onMessage: (message) => {
       // Handle playlist_quality_updated to refresh quality metrics in drawer
       if (message.type === 'playlist_quality_updated' && message.playlistId) {
@@ -104,8 +92,9 @@ export default function PlaylistsView() {
       // Handle playlist_fetch_complete to show toast
       if (message.type === 'playlist_fetch_complete') {
         toast({
-          title: "Track data fetched",
-          description: `${message.playlistName}: ${message.tracksInserted || 0} new tracks added`,
+          title: "Playlist fetched",
+          description: `${message.playlistName} · ${message.tracksInserted || 0} tracks added`,
+          variant: "success",
         });
       }
     },
@@ -113,7 +102,7 @@ export default function PlaylistsView() {
       // Handle playlist errors (e.g., deleted from Spotify)
       if (data.data?.error) {
         toast({
-          title: "Playlist Error",
+          title: "Playlist error",
           description: data.data.error,
           variant: "destructive",
         });
@@ -137,17 +126,18 @@ export default function PlaylistsView() {
         queryClient.invalidateQueries({ queryKey: ["/api/playlists", data.playlistId] });
       }
     },
-    // Fix undefined enrichment toast message
     onTrackEnriched: (data) => {
       const enrichedCount = data.tracksEnriched || 0;
       const totalCount = data.totalTracks || 0;
       const phaseLabel = data.phase === 1 ? 'Spotify API' : data.phase === 2 ? 'Credits' : 'MLC';
 
       toast({
-        title: "Track Enriched!",
-        description: `${phaseLabel}: ${enrichedCount}/${totalCount} tracks enriched`,
+        title: `Enrichment ${data.phase === 3 ? 'complete' : 'in progress'}`,
+        description: `${phaseLabel} · ${enrichedCount}/${totalCount} tracks`,
+        variant: data.phase === 3 ? "success" : "info",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/playlist-snapshot"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
     },
   });
 
