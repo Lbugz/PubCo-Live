@@ -1,0 +1,46 @@
+Current toast implementation
+The project uses a custom wrapper around Radix UI’s toast primitives (useToast, ToastProvider, ToastViewport, etc.), limited to just default and destructive variants and a max stack of three notifications before older ones are discarded.
+
+Toasts are invoked across almost every workflow—WebSocket lifecycle events on the dashboard, playlist fetch/enrichment notifications in the playlists view, CRUD operations inside playlist-manager, and the fetch-playlist mutation hook—resulting in a high volume of similarly formatted “title + description” notifications without contextual visuals or actions.
+
+Issues limiting a professional feel
+Event storms & duplicate hooks – The playlists view registers two onTrackEnriched handlers that both fire toasts for the same event, so users can see redundant “Track Enriched!” popups whenever a socket update arrives.
+
+Flat severity taxonomy – Because toastVariants define only default and destructive, informational events like “Phase 2 credits started” compete visually with real errors; success, info, and warning states can’t be distinguished at a glance.
+
+No persistent status surface – Long-running enrichment jobs dispatch multiple toasts (start, each phase, completion/failure) on the dashboard, but there’s no central job panel; users rely on transient popups that disappear after five seconds, making it hard to audit what happened.
+
+Inconsistent copy & missing actions – CRUD flows reuse generic text (“Playlist Added!”, “Playlist Removed”) without icons or deep links. There’s no action button to jump into the affected playlist, export, or retry the failing request, which weakens the perceived polish.
+
+Stacking conflicts with high-volume operations – The three-toast limit means bulk fetches (which may trigger a success toast plus multiple error toasts) can cause important alerts to be auto-removed before the user sees them.
+
+Recommendations for a more professional integration
+Establish a notification design system
+
+Expand toastVariants to cover success, info, warning, and destructive, each with an icon (checkmark, info badge, warning triangle, error) and distinctive accent bar so severity is instantly legible.
+
+Normalize toast copy to a single tense/voice, e.g., “Enrichment job started · 128 tracks” and keep descriptions to one sentence with highlighted metadata (playlist name, phase). Provide a style sheet (aligned with design_guidelines.md) so every module uses the same format.
+
+Convert high-frequency toasts into inline status surfaces
+
+Dashboard: move job lifecycle messages into a persistent “Activity” rail or header chip showing phase, count, and ETA; reserve toasts for escalations (failures, manual actions required). Socket handlers at dashboard.tsx lines 102‑168 can update that surface instead of firing multiple toasts.
+
+Playlists view: show enrichment progress inside the drawer or list item (progress bar + timestamp), and only raise a toast when the job completes or fails; this avoids the duplicate onTrackEnriched popups.
+
+Bundle related events
+
+For fetch/playlists mutations, aggregate per-playlist results into a single “Fetch complete” toast with expandable details or a “View report” action that navigates to a modal/table; this prevents a cascade of near-identical notifications when multiple playlists finish simultaneously.
+
+Use the toast({ id, update }) pattern already available in use-toast.ts to progressively update one toast (e.g., “Fetching playlists… 2/5 complete”) instead of firing new ones per step.
+
+Add contextual actions
+
+Populate the optional action slot in Toast with small buttons: “Open playlist,” “Retry fetch,” “View job log.” That gives users an immediate next step and mirrors polished enterprise dashboards.
+
+Increase reliability & logging
+
+Raise TOAST_LIMIT or let destructive toasts bypass the limit so critical failures stay visible until dismissed manually; alternatively, mirror toast content into a persistent “Notifications” drawer that users can review later.
+
+Ensure every toast is also logged to telemetry (e.g., analytics event) so UX decisions on frequency/severity can be data-driven.
+
+Implementing the above shifts toast usage from a reactive flood of popups to a structured notification layer that complements inline UI surfaces, delivering the professional polish described in design_guidelines.md.
