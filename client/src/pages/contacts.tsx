@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   Users, TrendingUp, Target, Activity, Search, Filter, X, Mail, Phone, 
   MessageCircle, User, ChevronDown, Loader2, UserPlus, Upload, Share2, 
-  Download, Flame, Link as LinkIcon, ArrowUpRight, ArrowDownRight
+  Download, Flame, Link as LinkIcon, ArrowUpRight, ArrowDownRight, Eye, EyeOff
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { StatCard } from "@/components/stat-card";
+import { StatsCard } from "@/components/stats-card";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -72,6 +73,17 @@ export default function Contacts() {
   const [showHotLeads, setShowHotLeads] = useState(false);
   const [showChartmetricLinked, setShowChartmetricLinked] = useState(false);
   const [showPositiveWow, setShowPositiveWow] = useState(false);
+  
+  // Metrics visibility toggle
+  const [showMetrics, setShowMetrics] = useState(() => {
+    const stored = localStorage.getItem('contactsMetricsVisible');
+    return stored !== null ? stored === 'true' : true;
+  });
+
+  // Persist metrics visibility to localStorage
+  useEffect(() => {
+    localStorage.setItem('contactsMetricsVisible', showMetrics.toString());
+  }, [showMetrics]);
 
   // Fetch contacts with filters
   const { data: contactsData, isLoading } = useQuery<{
@@ -223,76 +235,53 @@ export default function Contacts() {
         </div>
       </div>
 
-      {/* Highlight Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Total Pipeline */}
-        <Card className="p-6">
-          <div className="mb-4">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground">Total Pipeline</span>
-              </div>
-              <Badge variant="outline" className="text-xs text-muted-foreground border-muted">
-                Current
-              </Badge>
+      {/* Stats Cards with Toggle */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-end">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowMetrics(!showMetrics)}
+            data-testid="button-toggle-contact-metrics"
+            className="h-8 w-8"
+          >
+            {showMetrics ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+        </div>
+        <Collapsible open={showMetrics}>
+          <CollapsibleContent className="space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground">TOP METRICS</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <StatsCard
+                title="Total Pipeline"
+                value={formatNumber(stats.total)}
+                icon={Users}
+                variant="blue"
+                tooltip="Total number of active songwriter contacts in the pipeline"
+                testId="stats-total-pipeline"
+              />
+              <StatsCard
+                title="Hot Leads"
+                value={formatNumber(stats.hotLeads)}
+                icon={Flame}
+                variant="warning"
+                tooltip="Priority outreach candidates marked as hot leads"
+                testId="stats-hot-leads"
+              />
+              <StatsCard
+                title="Avg. WoW Growth"
+                value={stats.avgWowGrowth !== null 
+                  ? `${stats.avgWowGrowth > 0 ? "+" : ""}${stats.avgWowGrowth.toFixed(1)}%`
+                  : "—"
+                }
+                icon={TrendingUp}
+                variant={stats.avgWowGrowth !== null && stats.avgWowGrowth > 0 ? "green" : "default"}
+                tooltip="Average week-over-week growth across active contacts"
+                testId="stats-avg-growth"
+              />
             </div>
-          </div>
-          <div className="text-4xl font-bold mb-1" data-testid="text-highlight-total">
-            {formatNumber(stats.total)}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Active songwriter contacts
-          </p>
-        </Card>
-
-        {/* Hot Leads */}
-        <Card className="p-6">
-          <div className="mb-4">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <div className="flex items-center gap-2">
-                <Flame className="h-5 w-5 text-orange-500" />
-                <span className="text-sm font-medium text-muted-foreground">Hot Leads</span>
-              </div>
-              <Badge variant="outline" className="text-xs text-muted-foreground border-muted">
-                Current
-              </Badge>
-            </div>
-          </div>
-          <div className="text-4xl font-bold mb-1" data-testid="text-highlight-hot-leads">
-            {formatNumber(stats.hotLeads)}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Priority outreach candidates
-          </p>
-        </Card>
-
-        {/* Avg WoW Growth */}
-        <Card className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-chart-2" />
-              <span className="text-sm font-medium text-muted-foreground">Avg. WoW Growth</span>
-            </div>
-            {stats.avgWowGrowth !== null && stats.avgWowGrowth > 0 && (
-              <Badge variant="outline" className="gap-1 border-chart-2/30 text-chart-2">
-                <ArrowUpRight className="h-3 w-3" />
-                +{stats.avgWowGrowth.toFixed(1)}%
-              </Badge>
-            )}
-          </div>
-          <div className={cn(
-            "text-4xl font-bold mb-1",
-            stats.avgWowGrowth !== null && stats.avgWowGrowth > 0 && "text-chart-2",
-            stats.avgWowGrowth !== null && stats.avgWowGrowth < 0 && "text-red-400"
-          )} data-testid="text-highlight-avg-growth">
-            {stats.avgWowGrowth !== null 
-              ? `${stats.avgWowGrowth > 0 ? "+" : ""}${stats.avgWowGrowth.toFixed(1)}%`
-              : "—"
-            }
-          </div>
-          <p className="text-sm text-muted-foreground">Across active contacts</p>
-        </Card>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {/* Saved View Banner / Filter Toolbar */}
