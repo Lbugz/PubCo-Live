@@ -130,7 +130,7 @@ export default function PlaylistsView() {
     },
     onTrackEnriched: (data) => {
       const enrichedCount = data.tracksEnriched || 0;
-      const totalCount = data.totalTracks || 0;
+      const totalCount = data.trackCount || 0;
       const phaseLabel = data.phase === 1 ? 'Spotify API' : data.phase === 2 ? 'Credits' : 'MLC';
 
       toast({
@@ -799,7 +799,7 @@ export default function PlaylistsView() {
             <div className="text-center py-8 text-muted-foreground">
               {playlists.length === 0 ? "No playlists tracked yet" : "No playlists match your filters"}
             </div>
-          ) : viewMode === "cards" ? (
+          ) : viewMode === "card" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredPlaylists.map(playlist => (
                 <Card 

@@ -33,6 +33,8 @@ import { DetailsDrawer } from "@/components/details-drawer";
 import { TagManager } from "@/components/tag-manager";
 import { PlaylistManager } from "@/components/playlist-manager";
 import { PageContainer } from "@/components/layout/page-container";
+import { PageHeaderControls, type ViewMode } from "@/components/layout/page-header-controls";
+import { FilterBar } from "@/components/layout/filter-bar";
 import { ActivityPanel, type EnrichmentJob } from "@/components/activity-panel";
 import { type PlaylistSnapshot, type Tag, type TrackedPlaylist } from "@shared/schema";
 import { Link, useLocation } from "wouter";
@@ -47,7 +49,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 
-type ViewMode = "table" | "card" | "kanban";
 
 const filterOptions = [
   { id: "has-isrc", label: "Has ISRC", section: "ISRC Code" },
@@ -671,9 +672,8 @@ export default function Dashboard() {
           </div>
 
           {/* Filters Row */}
-          <Card className="glass-panel backdrop-blur-xl border border-primary/20">
-            <CardContent className="p-3 md:p-4">
-              <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3">
+          <FilterBar>
+            <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3 w-full">
                 {/* Week Filter */}
                 <Select value={selectedWeek} onValueChange={setSelectedWeek}>
                   <SelectTrigger className="flex-1 md:w-[160px]" data-testid="select-week">
@@ -806,53 +806,18 @@ export default function Dashboard() {
                     </div>
                   </PopoverContent>
                 </Popover>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </FilterBar>
 
           {/* View Switcher */}
-          <div className="flex items-center justify-between glass-panel backdrop-blur-xl p-3 rounded-lg border border-primary/20 slide-in-right">
-            <div className="flex gap-2">
-              {/* Table view - hidden on mobile */}
-              <Button
-                variant={viewMode === "table" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("table")}
-                className="gap-2 hidden md:flex"
-                data-testid="button-view-table"
-              >
-                <LayoutList className="h-4 w-4" />
-                <span className="hidden lg:inline">Table</span>
-              </Button>
-              {/* Card view - always visible */}
-              <Button
-                variant={viewMode === "card" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("card")}
-                className="gap-2"
-                data-testid="button-view-card"
-              >
-                <LayoutGrid className="h-4 w-4" />
-                <span className="hidden sm:inline">Card</span>
-              </Button>
-              {/* Kanban view - hidden on mobile */}
-              <Button
-                variant={viewMode === "kanban" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("kanban")}
-                className="gap-2 hidden md:flex"
-                data-testid="button-view-kanban"
-              >
-                <Kanban className="h-4 w-4" />
-                <span className="hidden lg:inline">Kanban</span>
-              </Button>
-            </div>
-
-            <div className="text-sm text-muted-foreground whitespace-nowrap" data-testid="text-results-count">
-              <span className="hidden sm:inline">{filteredTracks.length} {filteredTracks.length === 1 ? "result" : "results"}</span>
-              <span className="sm:hidden">{filteredTracks.length}</span>
-            </div>
-          </div>
+          <PageHeaderControls
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            availableViews={["table", "card", "kanban"]}
+            count={filteredTracks.length}
+            countLabel={filteredTracks.length === 1 ? "result" : "results"}
+            className="slide-in-right"
+          />
 
           {/* Bulk Actions Toolbar */}
           <BulkActionsToolbar
