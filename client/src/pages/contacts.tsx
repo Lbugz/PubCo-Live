@@ -275,11 +275,11 @@ export default function Contacts() {
     <PageContainer className="space-y-6 fade-in">
       {/* Action Buttons */}
       <div className="flex items-center justify-end gap-2">
-        <Button variant="outline" size="sm" className="gap-2" data-testid="button-add-contact">
+        <Button variant="gradient" size="sm" className="gap-2" data-testid="button-add-contact">
           <UserPlus className="h-4 w-4" />
           Add Contact
         </Button>
-        <Button variant="outline" size="sm" className="gap-2" data-testid="button-import-csv">
+        <Button variant="gradient" size="sm" className="gap-2" data-testid="button-import-csv">
           <Upload className="h-4 w-4" />
           Import CSV
         </Button>

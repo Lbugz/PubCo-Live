@@ -427,8 +427,8 @@ export default function Dashboard() {
           bValue = b.playlistName?.toLowerCase() || "";
           break;
         case "albumLabel":
-          aValue = a.albumLabel?.toLowerCase() || "";
-          bValue = b.albumLabel?.toLowerCase() || "";
+          aValue = a.label?.toLowerCase() || "";
+          bValue = b.label?.toLowerCase() || "";
           break;
         case "songwriter":
           aValue = a.songwriter?.toLowerCase() || "";
