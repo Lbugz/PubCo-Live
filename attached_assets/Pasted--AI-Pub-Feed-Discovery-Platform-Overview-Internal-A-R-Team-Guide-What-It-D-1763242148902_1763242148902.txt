@@ -1,0 +1,195 @@
+# **AI Pub Feed — Discovery Platform Overview**
+
+## **Internal A&R Team Guide**
+
+---
+
+## **What It Does**
+
+AI Pub Feed automatically discovers unsigned artists and unpublished songwriters from Spotify playlists, enriches their metadata, scores their commercial potential, and manages outreach through a built-in CRM system.
+
+**Platform Link:** [https://pubco.replit.app](https://pubco.replit.app/playlists)
+
+---
+
+# **1️⃣ Playlist Tracking**
+
+### **Purpose**
+
+Ingest Spotify playlists (Fresh Finds, editorial, or custom) to detect emerging talent and build weekly snapshots of new tracks.
+
+### **How It Works**
+
+- Supports both public and editorial playlists (scraping fallback for restricted ones)
+- Automatically pulls all track metadata (artist, album, release date)
+- Tracks 150+ songs weekly across multiple Fresh Finds playlists
+- Optional weekly auto-refresh (`ENABLE_AUTO_SCRAPE`)
+
+### **During Fetch**
+
+### **Playlist Metadata Retrieval**
+
+- Attempts Chartmetric API first (analytics, cross‑platform identifiers)
+- Falls back to Spotify API for public playlists
+- Uses Puppeteer scraping for editorial playlists (RapCaviar, Fresh Finds)
+- Captures playlist name, curator, follower count, and track total
+
+### **Track Metadata Collection**
+
+- Pulls title, artist names, album data, Spotify URL
+- Saves album artwork thumbnails for UI
+- Stores playlist context for each track
+- Creates snapshot timestamps for historical comparisons
+
+### **Automatic Enrichment Trigger**
+
+- New tracks enter the enrichment queue instantly
+- Background worker processes up to 50 tracks at a time
+- Real-time progress visible in the **Activity** tab
+- Enrichment layers add ISRCs, credits, stream counts, and more
+
+### **Duplicate Prevention**
+
+- Detects existing tracks via Spotify Track ID
+- Cross-references tracks that appear across multiple playlists
+- Prevents redundant enrichment jobs
+
+### **Key User Actions**
+
+- Open **Playlists** page
+- Click **Add Playlist**, paste a Spotify URL
+- Fetch completes in 2–10 seconds
+- Enrichment begins immediately in the background
+
+---
+
+# **2️⃣ Multi‑Phase Enrichment Pipeline**
+
+### **Purpose**
+
+Convert raw playlist tracks into complete, rights‑relevant metadata for scouting and publishing decisions.
+
+---
+
+## **Phase 1 — Chartmetric + Spotify API (Batch)**
+
+### **What Happens**
+
+- **Chartmetric Integration:**
+    - Cross‑platform analytics
+    - ISRC lookup and matching
+    - Chartmetric ID stored for ongoing performance tracking
+- **Spotify API:**
+    - Recovers ISRCs
+    - Pulls labels, release dates, popularity, audio features
+    - Retrieves artist genres and follower counts
+
+### **Outcome**
+
+✔️ Nearly 100% ISRC recovery rate for valid tracks
+
+---
+
+## **Phase 2 — Web Scraping (Puppeteer)**
+
+### **What Happens**
+
+- Extracts songwriter/producer credits from Spotify track pages
+- Scrapes real‑time stream counts
+- Captures metadata missing from API responses
+
+### **Outcome**
+
+✔️ Reveals unsigned writers and missing publishing metadata
+
+---
+
+## **Phase 3 — MusicBrainz Lookup**
+
+### **What Happens**
+
+- Queries MusicBrainz by ISRC and track metadata
+- Retrieves songwriter/publisher details
+- Adds global creator identifiers
+
+### **Outcome**
+
+✔️ Provides deeper publishing context for rights evaluation
+
+---
+
+## **Phase 4 — MLC Publisher Search (In Development)**
+
+### **What Happens**
+
+- Queries The MLC API for authoritative publishing data
+- Identifies publisher relationships tied to ISRCs
+- Confirms unsigned/unpublished status via U.S. mechanical rights
+
+### **Status**
+
+Authentication working; search endpoints returning 401 (support ticket active).
+
+---
+
+### **Enrichment Actions**
+
+- Runs automatically after playlist ingestion
+- Monitor via **Activity** page (real‑time WebSocket)
+- Re-enrich any track via actions menu
+- Phase 1 completes in ~30 seconds per 50 tracks
+- Phase 2 takes ~2–3 minutes per track due to scraping
+
+---
+
+# **3️⃣ Proprietary Scoring Algorithm**
+
+### **Purpose**
+
+Assign a 1–10 score indicating unsigned/unpublished likelihood and commercial potential.
+
+### **Scoring Inputs**
+
+- **Fresh Finds Appearance (+3)** — editorial validation
+- **Independent Label (+2)** — proxy indicator for unsigned status
+- **Missing Writer/Publisher Data (+2)** — gap signals opportunity
+- **Stream Velocity (variable)** — growth acceleration triggers urgency
+
+### **User Actions**
+
+- View scores in **Tracks** page
+- Filter to high‑quality leads (score ≥7)
+- Export CSV lists for deeper research
+
+---
+
+# **4️⃣ Contacts CRM & Funnel Management**
+
+### **Purpose**
+
+Track writer discovery, growth, and outreach in a structured publishing pipeline.
+
+### **Stages**
+
+- **Discovery Pool** — <100K streams (775 contacts)
+- **Watch List** — 100K–1M streams or >20% WoW growth (1 contact)
+- **Active Search** — >1M streams or >50% WoW growth (0 contacts)
+
+### **CRM Features**
+
+- **Global Dashboard:** total contacts, hot leads, funnel breakdown
+- **Filterable Table:** search by name, stage, or growth
+- **Contact Drawer:**
+    - Stats: total streams, track count, WoW %
+    - Quick actions: set hot lead, move stage, start outreach
+    - Tabs: Tracks, Performance, Activity, Notes
+- **Performance Tracking:**
+    - Weekly snapshots of stream counts
+    - Automatic WoW calculations
+    - Auto‑promotion based on velocity
+
+---
+
+### **Final Note**
+
+This system provides an end‑to‑end pipeline for playlist‑driven A&R sourcing, metadata enrichment, publishing intelligence, and relationship management. It is designed to surface opportunities early and provide clear, data‑driven workflows for scouting and outreach.
