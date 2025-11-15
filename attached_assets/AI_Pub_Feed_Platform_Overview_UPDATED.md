@@ -222,22 +222,156 @@ Convert raw playlist tracks into complete, rights-relevant metadata for scouting
 
 ### **Purpose**
 
-Assign a 1–10 score indicating unsigned/unpublished likelihood and commercial potential.
+Assign a 1–10 score indicating unsigned/unpublished likelihood and commercial potential. The algorithm prioritizes publishing metadata gaps as the strongest signal of unsigned opportunity.
 
-### **Scoring Inputs**
+---
 
-- **Fresh Finds Appearance (+3)** — Editorial validation signal
-- **Independent Label (+2)** — Proxy indicator for unsigned status
-- **Missing Writer/Publisher Data (+2)** — Gap signals opportunity
-- **Stream Velocity (variable)** — Growth acceleration triggers urgency
-- **Chartmetric Integration:** Cross-platform analytics for deeper insights
+## **Scoring Methodology**
 
-### **User Actions**
+The algorithm uses a **point-based rubric system** that evaluates multiple signals. Scores are capped at 10 (maximum opportunity) and floored at 0.
 
-- View scores in **Tracks** page (sortable column)
-- Filter to high-quality leads (score ≥7) via filter bar
-- Export CSV lists with scores for deeper research
-- Track scores update after each enrichment phase
+### **Scoring Rubric**
+
+| Signal | Points | Criteria | Rationale |
+|--------|--------|----------|-----------|
+| **Missing Publisher** | +5 | No publisher listed in metadata | **Highest priority** - Direct indicator of unsigned publishing opportunity |
+| **Missing Writer** | +3 | No songwriter credits in metadata | Metadata gap suggesting potential self-written/DIY artist |
+| **Self-Written + Fresh Finds** | +3 | Artist wrote own song + appears on Fresh Finds playlist | Editorial validation + self-publishing signal |
+| **Self-Written + Indie Label** | +2 | Artist wrote own song + independent/DIY label | Self-released + self-written = strong unsigned indicator |
+| **High Stream Velocity** | +2 | >50% week-over-week growth | Urgent opportunity - rapid momentum |
+| **Medium Stream Velocity** | +1 | >20% week-over-week growth | Watch closely - building momentum |
+
+### **Self-Written Detection**
+
+The algorithm includes intelligent **artist-songwriter name matching** to identify self-written tracks:
+
+- Normalizes both artist name and songwriter field (lowercase, trimmed)
+- Handles common variations: "Artist Name, Other Writer"
+- Partial matching: checks if songwriter field contains artist name or vice versa
+- Only awards bonuses when artist is confirmed as songwriter
+
+**Example Matches:**
+- Artist: "Olivia Rodrigo" → Songwriter: "olivia rodrigo" ✅
+- Artist: "The 1975" → Songwriter: "The 1975, George Daniel" ✅
+- Artist: "Drake" → Songwriter: "Aubrey Graham" ❌ (different names)
+
+### **Label Classification**
+
+Independent/DIY labels are detected via regex pattern matching:
+- Keywords: `DK`, `DIY`, `indie`, `independent` (case-insensitive)
+- Only contributes points if **artist is also the songwriter**
+- Hired songwriters for major artists still score high (no major label penalty)
+
+---
+
+## **Scoring Examples**
+
+### **Score 10 — Highest Priority Lead**
+```
+✓ Missing Publisher (+5)
+✓ Missing Writer (+3)
+✓ High Stream Velocity (+2)
+= 10/10 (capped)
+```
+**Profile:** Self-released artist with no publishing metadata and explosive growth
+
+---
+
+### **Score 8 — Strong Unsigned Signal**
+```
+✓ Missing Publisher (+5)
+✓ Self-Written + Fresh Finds (+3)
+= 8/10
+```
+**Profile:** Editorial-validated emerging artist with publishing gap
+
+---
+
+### **Score 7 — Quality Lead**
+```
+✓ Missing Publisher (+5)
+✓ Self-Written + Indie Label (+2)
+= 7/10
+```
+**Profile:** Independent artist managing own publishing
+
+---
+
+### **Score 5 — Moderate Opportunity**
+```
+✓ Missing Publisher (+5)
+= 5/10
+```
+**Profile:** Basic publishing metadata gap, needs investigation
+
+---
+
+### **Score 3 — Low Priority**
+```
+✓ Missing Writer (+3)
+= 3/10
+```
+**Profile:** Minor metadata gap, likely hired songwriter on major label
+
+---
+
+## **Score Distribution Guide**
+
+| Score Range | Priority | Recommended Action |
+|-------------|----------|-------------------|
+| **9-10** | 🔥 Hot Lead | Immediate outreach - multiple high-value signals |
+| **7-8** | ⭐ Strong Lead | Prioritize for research and contact |
+| **5-6** | ⚡ Moderate Lead | Add to watch list, monitor growth |
+| **3-4** | 📊 Low Lead | Track for metadata updates |
+| **0-2** | ❄️ Minimal Lead | Likely signed or insufficient data |
+
+---
+
+## **Algorithm Philosophy**
+
+### **Why Publisher > Writer?**
+Missing publisher metadata is weighted **5 points** (vs. 3 for missing writer) because:
+- Direct indicator of unsigned publishing opportunity
+- More actionable for A&R outreach
+- Clearer business opportunity signal
+
+### **No Major Label Penalty**
+The algorithm intentionally **does not penalize major label tracks** because:
+- Hired songwriters can write for major artists and still be unsigned publishers
+- Publishing rights are independent of master recording rights
+- Focuses on songwriter/publisher gaps, not artist's label status
+
+### **Fresh Finds Bonus Logic**
+Fresh Finds bonus only applies when **artist wrote the song themselves** because:
+- Combines editorial validation (Spotify curation) with self-publishing signal
+- Self-written + editorial placement = strong emerging talent indicator
+- Filters out hired songwriters on curated playlists
+
+### **Stream Velocity Multiplier**
+Growth velocity adds urgency to existing signals:
+- >50% WoW growth = act now (momentum building)
+- >20% WoW growth = watch closely (steady growth)
+- Complements metadata gaps with market validation
+
+---
+
+## **User Actions**
+
+- **View Scores:** Tracks page with sortable "Score" column
+- **Filter Leads:** Use filter bar to show only score ≥7 (quality leads)
+- **Export CSV:** Download enriched metadata with scores for external research
+- **Auto-Updates:** Scores recalculate after each enrichment phase
+- **Chartmetric Integration:** Cross-platform analytics provide additional context
+
+---
+
+## **Technical Implementation**
+
+- **Location:** `server/scoring.ts`
+- **Trigger:** Calculated during enrichment Phase 1 (Spotify API)
+- **Updates:** Recalculated when metadata changes (publisher, writer, WoW %)
+- **Storage:** Persisted in `playlist_snapshots.unsigned_score` column
+- **Range:** Always between 0-10 (min/max constraints)
 
 ---
 

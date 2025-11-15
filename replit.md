@@ -42,7 +42,18 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
     3.  **MusicBrainz Lookup:** Queries for songwriter/publisher details and global creator identifiers.
     4.  **MLC Publisher Search:** Confirms unsigned/unpublished status via U.S. mechanical rights, with OAuth 2.0 authentication and graceful degradation.
 - **Real-Time UX:** Features an Activity Panel for persistent job tracking and a 4-tier toast notification system. WebSocket broadcasts provide live updates for `track_enriched` events and job progress.
-- **Proprietary Scoring Algorithm:** Assigns a 1-10 score indicating unsigned/unpublished likelihood and commercial potential based on factors like Fresh Finds appearance, independent label status, missing writer/publisher data, and stream velocity.
+- **Proprietary Scoring Algorithm:** Point-based rubric system (0-10 score) prioritizing publishing metadata gaps as strongest unsigned signal:
+    - **Missing Publisher (+5):** Highest priority - direct unsigned publishing indicator
+    - **Missing Writer (+3):** Metadata gap suggesting self-written/DIY artist
+    - **Self-Written + Fresh Finds (+3):** Artist wrote own song + editorial validation
+    - **Self-Written + Indie Label (+2):** Self-released + self-written = strong unsigned signal
+    - **High Stream Velocity (+2):** >50% WoW growth = urgent opportunity
+    - **Medium Stream Velocity (+1):** >20% WoW growth = building momentum
+    - **Self-Written Detection:** Intelligent artist-songwriter name matching (normalized, handles variations)
+    - **Label Classification:** Regex pattern for indie/DIY/DK keywords
+    - **No Major Label Penalty:** Hired songwriters for majors can still be unsigned publishers
+    - **Score Distribution:** 9-10 (hot lead), 7-8 (strong lead), 5-6 (moderate), 3-4 (low), 0-2 (minimal)
+    - **Implementation:** `server/scoring.ts`, calculated in Phase 1, persisted in `playlist_snapshots.unsigned_score`
 - **Contacts CRM & Funnel Management:** Tracks writer discovery, growth, and outreach through pipeline stages (Discovery Pool, Watch List, Active Search). Includes a global dashboard, filterable tables, and detailed contact drawers with performance metrics, activity logs, notes, and alerts. Supports bulk actions for stage updates and tag assignments.
 - **Technical Optimizations:** Includes database-level pagination, search query debouncing, component memoization, native image lazy loading, foreign key constraints, duplicate prevention, atomic job claiming, batch Spotify API calls, and tiered rate limiting for external APIs. Editorial playlist handling uses browser-sharing architecture with GraphQL network interception and cookie persistence.
 - **Automation:** Utilizes `node-cron` for weekly Fresh Finds updates and daily retry jobs for failed enrichments. Auto-enrichment triggers immediately after playlist fetch.
