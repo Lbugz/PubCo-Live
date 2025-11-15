@@ -106,17 +106,11 @@ export default function Dashboard() {
       // Invalidate tracks query to trigger refetch
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
       
-      // Add to recent enrichments
+      // Add to recent enrichments (no toast needed - will be shown in Activity Panel)
       setRecentEnrichments(prev => [
         { trackName: data.trackName || '', artistName: data.artistName || '', timestamp: Date.now() },
         ...prev.slice(0, 4) // Keep last 5 enrichments
       ]);
-      
-      // Show toast notification
-      toast({
-        title: "Track Enriched!",
-        description: `${data.trackName} by ${data.artistName}`,
-      });
     },
     onEnrichmentProgress: (data) => {
       console.log('Enrichment progress:', data);
@@ -131,8 +125,9 @@ export default function Dashboard() {
       console.log('Job started:', data);
       setActiveJobs(prev => [...prev, { jobId: data.jobId || '', trackCount: data.trackCount || 0, phase: 1 }]);
       toast({
-        title: "Enrichment Started",
-        description: `Processing ${data.trackCount} tracks through all enrichment phases`,
+        title: "Enrichment started",
+        description: `${data.trackCount} tracks · All phases queued`,
+        variant: "info",
       });
     },
     onJobCompleted: (data) => {
@@ -140,9 +135,9 @@ export default function Dashboard() {
       setActiveJobs(prev => prev.filter(job => job.jobId !== data.jobId));
       setEnrichmentProgress(null);
       toast({
-        title: data.success ? "Enrichment Complete!" : "Enrichment Completed with Errors",
-        description: `${data.tracksEnriched} tracks enriched${data.errors ? `, ${data.errors} errors` : ''}`,
-        variant: data.success ? "default" : "destructive",
+        title: data.success ? "Enrichment complete" : "Enrichment completed with errors",
+        description: `${data.tracksEnriched} tracks enriched${data.errors ? ` · ${data.errors} errors` : ''}`,
+        variant: data.success ? "success" : "warning",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
     },
@@ -151,7 +146,7 @@ export default function Dashboard() {
       setActiveJobs(prev => prev.filter(job => job.jobId !== data.jobId));
       setEnrichmentProgress(null);
       toast({
-        title: "Enrichment Failed",
+        title: "Enrichment failed",
         description: data.error || "Unknown error occurred",
         variant: "destructive",
       });
@@ -161,10 +156,7 @@ export default function Dashboard() {
       setActiveJobs(prev => prev.map(job => 
         job.jobId === data.jobId ? { ...job, phase: data.phase || 1 } : job
       ));
-      toast({
-        title: `Phase ${data.phase} Started`,
-        description: data.phaseName || `Processing phase ${data.phase}`,
-      });
+      // Phase started toasts removed - will show in Activity Panel (Phase 2)
     },
     onMessage: (message) => {
       // Handle metric_update events from WebSocket

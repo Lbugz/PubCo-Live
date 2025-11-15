@@ -23,11 +23,11 @@ export function useFetchPlaylistsMutation() {
         0
       ) || 0;
 
+      const playlistCount = data.completenessResults?.length || 1;
       toast({
-        title: "Playlist data fetched successfully",
-        description: data.completenessResults
-          ?.map((r: any) => `${r.name}: ${r.fetchCount} new tracks added, ${r.skipped} duplicates skipped`)
-          .join('\n') || `${totalTracks} tracks fetched`,
+        title: "Playlist fetch complete",
+        description: `${playlistCount} playlist${playlistCount > 1 ? 's' : ''} · ${totalTracks} new tracks · ${totalSkipped} duplicates skipped`,
+        variant: "success",
       });
 
       // Invalidate all related queries to refresh UI
@@ -46,7 +46,7 @@ export function useFetchPlaylistsMutation() {
     onError: (error: Error) => {
       console.error("Fetch playlists mutation error:", error);
       toast({
-        title: "Fetch failed",
+        title: "Playlist fetch failed",
         description: error.message,
         variant: "destructive",
       });
