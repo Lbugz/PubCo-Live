@@ -148,7 +148,7 @@ async function fetchSinglePlaylist(
         console.log(`[Playlist ${playlist.playlistId}] Trying Spotify API...`);
 
         const playlistData = await spotifyLimiter(() =>
-          spotify.playlists.getPlaylist(playlist.playlistId, "from_token" as any)
+          spotify.playlists.getPlaylist(playlist.playlistId)
         );
         playlistTotalTracks = playlistData.tracks?.total || 0;
 
@@ -162,8 +162,7 @@ async function fetchSinglePlaylist(
               undefined,
               `items(track(id,name,artists(name),album(name,images),external_urls,external_ids,duration_ms,explicit,popularity))`,
               limit,
-              offset,
-              "from_token" as any
+              offset
             )
           );
 
