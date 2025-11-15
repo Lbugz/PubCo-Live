@@ -99,7 +99,7 @@ export default function Contacts() {
       discovery: number;
       watch: number;
       search: number;
-      avgWowGrowth: number | null;
+      unsignedPct: number;
     };
   }>({
     queryKey: ["/api/contacts", { 
@@ -135,7 +135,7 @@ export default function Contacts() {
     discovery: 0,
     watch: 0,
     search: 0,
-    avgWowGrowth: null,
+    unsignedPct: 0,
   };
 
   // Bulk update mutation
@@ -262,15 +262,12 @@ export default function Contacts() {
                 testId="stats-hot-leads"
               />
               <StatsCard
-                title="Avg. WoW Growth"
-                value={stats.avgWowGrowth !== null 
-                  ? `${stats.avgWowGrowth > 0 ? "+" : ""}${stats.avgWowGrowth.toFixed(1)}%`
-                  : "—"
-                }
+                title="Unsigned in Pipeline"
+                value={`${stats.unsignedPct.toFixed(1)}%`}
                 icon={TrendingUp}
-                variant={stats.avgWowGrowth !== null && stats.avgWowGrowth > 0 ? "green" : "default"}
-                tooltip="Average week-over-week growth across active contacts"
-                testId="stats-avg-growth"
+                variant={stats.unsignedPct >= 50 ? "green" : stats.unsignedPct >= 25 ? "warning" : "default"}
+                tooltip="Percentage of contacts with tracks missing publisher data - pipeline quality indicator"
+                testId="stats-unsigned-pct"
               />
             </div>
           </CollapsibleContent>

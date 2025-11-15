@@ -60,9 +60,9 @@ export async function getPlaylistMetrics() {
     if (!latestWeek) {
       return {
         totalPlaylists: 0,
-        uniqueSongwriters: 0,
+        unsignedSongwriters: 0,
         highImpactPlaylists: 0,
-        changeSongwriters: 0,
+        changeUnsigned: 0,
         changeHighImpact: 0,
       };
     }
@@ -74,24 +74,34 @@ export async function getPlaylistMetrics() {
       .from(trackedPlaylists);
     const totalPlaylists = totalPlaylistsResult[0]?.count || 0;
     
-    // Unique songwriters (current week)
-    const uniqueSongwritersResult = await db.select({ 
+    // Unsigned songwriters (distinct songwriters with no publisher) (current week)
+    const unsignedSongwritersResult = await db.select({ 
       count: sql<number>`count(distinct ${playlistSnapshots.songwriter})::int` 
     })
       .from(playlistSnapshots)
-      .where(eq(playlistSnapshots.week, latestWeek));
-    const uniqueSongwriters = uniqueSongwritersResult[0]?.count || 0;
+      .where(
+        and(
+          eq(playlistSnapshots.week, latestWeek),
+          sql`${playlistSnapshots.publisher} IS NULL OR ${playlistSnapshots.publisher} = ''`
+        )
+      );
+    const unsignedSongwriters = unsignedSongwritersResult[0]?.count || 0;
     
-    // Unique songwriters (previous week) for trend
-    let changeSongwriters = 0;
+    // Unsigned songwriters (previous week) for trend
+    let changeUnsigned = 0;
     if (previousWeek) {
-      const prevSongwritersResult = await db.select({ 
+      const prevUnsignedResult = await db.select({ 
         count: sql<number>`count(distinct ${playlistSnapshots.songwriter})::int` 
       })
         .from(playlistSnapshots)
-        .where(eq(playlistSnapshots.week, previousWeek));
-      const prevUniqueSongwriters = prevSongwritersResult[0]?.count || 0;
-      changeSongwriters = calculatePercentChange(uniqueSongwriters, prevUniqueSongwriters);
+        .where(
+          and(
+            eq(playlistSnapshots.week, previousWeek),
+            sql`${playlistSnapshots.publisher} IS NULL OR ${playlistSnapshots.publisher} = ''`
+          )
+        );
+      const prevUnsigned = prevUnsignedResult[0]?.count || 0;
+      changeUnsigned = calculatePercentChange(unsignedSongwriters, prevUnsigned);
     }
     
     // High-impact playlists (avg unsigned score >= 7)
@@ -122,9 +132,9 @@ export async function getPlaylistMetrics() {
     
     return {
       totalPlaylists,
-      uniqueSongwriters,
+      unsignedSongwriters,
       highImpactPlaylists,
-      changeSongwriters,
+      changeUnsigned,
       changeHighImpact,
     };
   });
@@ -139,10 +149,10 @@ export async function getTrackMetrics() {
       return {
         dealReady: 0,
         avgScore: 0,
-        enrichedPercent: 0,
+        missingPublisher: 0,
         changeDealReady: 0,
         changeAvgScore: 0,
-        changeEnriched: 0,
+        changeMissingPublisher: 0,
       };
     }
     
@@ -196,51 +206,39 @@ export async function getTrackMetrics() {
       changeAvgScore = calculatePercentChange(avgScore, prevAvgScore);
     }
     
-    // Enriched tracks percentage
-    const totalTracksResult = await db.select({ count: sql<number>`count(*)::int` })
-      .from(playlistSnapshots)
-      .where(eq(playlistSnapshots.week, latestWeek));
-    const totalTracks = totalTracksResult[0]?.count || 0;
-    
-    const enrichedTracksResult = await db.select({ count: sql<number>`count(*)::int` })
+    // Missing publisher tracks (tracks with no publisher data)
+    const missingPublisherResult = await db.select({ count: sql<number>`count(*)::int` })
       .from(playlistSnapshots)
       .where(
         and(
           eq(playlistSnapshots.week, latestWeek),
-          sql`${playlistSnapshots.enrichedAt} IS NOT NULL`
+          sql`${playlistSnapshots.publisher} IS NULL OR ${playlistSnapshots.publisher} = ''`
         )
       );
-    const enrichedTracks = enrichedTracksResult[0]?.count || 0;
-    const enrichedPercent = totalTracks > 0 ? (enrichedTracks / totalTracks) * 100 : 0;
+    const missingPublisher = missingPublisherResult[0]?.count || 0;
     
-    // Enriched percentage (previous week) for trend
-    let changeEnriched = 0;
+    // Missing publisher tracks (previous week) for trend
+    let changeMissingPublisher = 0;
     if (previousWeek) {
-      const prevTotalResult = await db.select({ count: sql<number>`count(*)::int` })
-        .from(playlistSnapshots)
-        .where(eq(playlistSnapshots.week, previousWeek));
-      const prevTotal = prevTotalResult[0]?.count || 0;
-      
-      const prevEnrichedResult = await db.select({ count: sql<number>`count(*)::int` })
+      const prevMissingPublisherResult = await db.select({ count: sql<number>`count(*)::int` })
         .from(playlistSnapshots)
         .where(
           and(
             eq(playlistSnapshots.week, previousWeek),
-            sql`${playlistSnapshots.enrichedAt} IS NOT NULL`
+            sql`${playlistSnapshots.publisher} IS NULL OR ${playlistSnapshots.publisher} = ''`
           )
         );
-      const prevEnriched = prevEnrichedResult[0]?.count || 0;
-      const prevEnrichedPercent = prevTotal > 0 ? (prevEnriched / prevTotal) * 100 : 0;
-      changeEnriched = calculatePercentChange(enrichedPercent, prevEnrichedPercent);
+      const prevMissingPublisher = prevMissingPublisherResult[0]?.count || 0;
+      changeMissingPublisher = calculatePercentChange(missingPublisher, prevMissingPublisher);
     }
     
     return {
       dealReady,
       avgScore: parseFloat(avgScore.toFixed(1)),
-      enrichedPercent: parseFloat(enrichedPercent.toFixed(1)),
+      missingPublisher,
       changeDealReady,
       changeAvgScore,
-      changeEnriched,
+      changeMissingPublisher,
     };
   });
 }

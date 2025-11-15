@@ -67,9 +67,9 @@ export default function PlaylistsView() {
   // Fetch real-time playlist metrics
   const { data: playlistMetrics } = useQuery<{
     totalPlaylists: number;
-    uniqueSongwriters: number;
+    unsignedSongwriters: number;
     highImpactPlaylists: number;
-    changeSongwriters: number;
+    changeUnsigned: number;
     changeHighImpact: number;
   }>({
     queryKey: ["/api/metrics/playlists"],
@@ -703,13 +703,13 @@ export default function PlaylistsView() {
                 testId="stats-total-playlists"
               />
               <StatsCard
-                title="Unique Songwriters"
-                value={playlistMetrics?.uniqueSongwriters ?? 0}
+                title="Unsigned Songwriters"
+                value={playlistMetrics?.unsignedSongwriters ?? 0}
                 icon={UserCheck}
                 variant="green"
-                tooltip="Total unique songwriters discovered across all tracked playlists this week"
-                change={playlistMetrics?.changeSongwriters}
-                testId="stats-unique-songwriters"
+                tooltip="Distinct songwriters with no publisher across all tracked playlists - prime discovery targets"
+                change={playlistMetrics?.changeUnsigned}
+                testId="stats-unsigned-songwriters"
               />
               <StatsCard
                 title="High-Impact Playlists"

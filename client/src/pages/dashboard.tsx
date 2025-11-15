@@ -283,10 +283,10 @@ export default function Dashboard() {
   const { data: trackMetrics } = useQuery<{
     dealReady: number;
     avgScore: number;
-    enrichedPercent: number;
+    missingPublisher: number;
     changeDealReady: number;
     changeAvgScore: number;
-    changeEnriched: number;
+    changeMissingPublisher: number;
   }>({
     queryKey: ["/api/metrics/tracks"],
     staleTime: 60000, // 60 seconds - aligned with backend cache TTL
@@ -651,13 +651,20 @@ export default function Dashboard() {
                     testId="stats-avg-score"
                   />
                   <StatsCard
-                    title="Enriched Tracks"
-                    value={`${trackMetrics?.enrichedPercent?.toFixed(0) || "0"}%`}
+                    title="Missing Publisher"
+                    value={trackMetrics?.missingPublisher?.toLocaleString() || "0"}
                     icon={Sparkles}
                     variant="blue"
-                    tooltip="Percentage of tracks that have been enriched with songwriter/publisher metadata"
-                    change={trackMetrics?.changeEnriched}
-                    testId="stats-enriched"
+                    tooltip="Tracks with no publisher data - your highest priority signal for unsigned opportunities"
+                    change={trackMetrics?.changeMissingPublisher}
+                    onClick={() => {
+                      setActiveFilters(['missing-publisher']);
+                      toast({
+                        title: "Filtered to missing publisher tracks",
+                        description: "Showing tracks with no publisher data",
+                      });
+                    }}
+                    testId="stats-missing-publisher"
                   />
                 </div>
               </CollapsibleContent>

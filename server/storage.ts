@@ -59,7 +59,7 @@ export interface IStorage {
   getContacts(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]>;
   getContactsCount(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean }): Promise<number>;
   getContactsCountWithHotLead(): Promise<number>;
-  getContactStats(): Promise<{ total: number; hotLeads: number; discovery: number; watch: number; search: number; avgWowGrowth: number | null }>;
+  getContactStats(): Promise<{ total: number; hotLeads: number; discovery: number; watch: number; search: number; unsignedPct: number }>;
   getContactById(id: string): Promise<ContactWithSongwriter | null>;
   updateContact(id: string, updates: Partial<Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void>;
   getContactTracks(contactId: string): Promise<PlaylistSnapshot[]>;
@@ -944,7 +944,7 @@ export class DatabaseStorage implements IStorage {
     discovery: number;
     watch: number;
     search: number;
-    avgWowGrowth: number | null;
+    unsignedPct: number;
   }> {
     // Get counts by stage
     const stageCounts = await db.select({
@@ -959,12 +959,14 @@ export class DatabaseStorage implements IStorage {
       .from(contacts)
       .where(sql`${contacts.hotLead} > 0`);
     
-    // Get average WoW growth (only for contacts with non-null wowGrowthPct)
-    const avgWowResult = await db.select({
-      avg: sql<number>`AVG(${contacts.wowGrowthPct})`.as('avg')
+    // Get unsigned contacts percentage (contacts with at least one track with missing publisher)
+    const unsignedContactsResult = await db.select({
+      count: sql<number>`COUNT(DISTINCT ${contacts.id})::int`
     })
       .from(contacts)
-      .where(sql`${contacts.wowGrowthPct} IS NOT NULL`);
+      .innerJoin(contactTracks, eq(contacts.id, contactTracks.contactId))
+      .innerJoin(playlistSnapshots, eq(contactTracks.trackId, playlistSnapshots.id))
+      .where(sql`${playlistSnapshots.publisher} IS NULL OR ${playlistSnapshots.publisher} = ''`);
     
     // Calculate totals
     let total = 0;
@@ -985,7 +987,8 @@ export class DatabaseStorage implements IStorage {
       ? Number(hotLeadsResult[0].count) 
       : Number(hotLeadsResult[0]?.count ?? 0);
     
-    const avgWowGrowth = avgWowResult[0]?.avg ?? null;
+    const unsignedContacts = unsignedContactsResult[0]?.count || 0;
+    const unsignedPct = total > 0 ? parseFloat(((unsignedContacts / total) * 100).toFixed(1)) : 0;
     
     return {
       total,
@@ -993,7 +996,7 @@ export class DatabaseStorage implements IStorage {
       discovery,
       watch,
       search,
-      avgWowGrowth,
+      unsignedPct,
     };
   }
 

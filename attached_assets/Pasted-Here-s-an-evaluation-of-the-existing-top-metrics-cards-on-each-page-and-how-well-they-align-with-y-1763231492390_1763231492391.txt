@@ -1,0 +1,85 @@
+Here’s an evaluation of the existing “top metrics” cards on each page and how well they align with your new songwriter‑oriented scoring rubric, followed by concrete suggestions for improvement.
+
+---
+
+## 🎵 Playlist View – Existing Metrics
+
+| Metric Card                      | Current Purpose                                                                                   | Alignment with Songwriter Scoring | Comments                                                                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Total Tracked** (`22`)         | Counts total playlists under management.                                                          | Neutral                           | Useful for operations but does not reveal any songwriter‑specific insights.                                                 |
+| **Unique Songwriters** (`884`)   | Counts distinct songwriter names across all tracked playlists.                                    | Moderate                          | Gives a sense of catalog breadth, but doesn’t surface whether those writers are unsigned or missing publishers.             |
+| **High‑Impact Playlists** (`15`) | Highlights playlists meeting “High‑Impact” threshold (likely driven by artist‑centric algorithm). | Misaligned                        | This likely uses the old artist scoring; it doesn’t identify playlists rich in unsigned songwriters or self‑written tracks. |
+
+### 📌 Recommendations
+
+* **Replace “High‑Impact Playlists” with a songwriter metric.**
+  For example, surface playlists where ≥X% of tracks have *missing publisher* or *missing writer* metadata. These lists are prime fishing grounds for publishing A&R.
+
+* **Introduce an “Unsigned Songwriters in Playlists” card.**
+  Show the total number of distinct songwriters in your playlist universe who have no publisher listed. This directly ties to your highest‑priority signal (missingPublisher).
+
+* **Add a “Self‑Written Tracks Count” card.**
+  Highlight how many self‑written tracks appear in your tracked playlists (artist = songwriter). Those songwriters are easier to approach and should be prioritized.
+
+---
+
+## 🎧 Tracks View – Existing Metrics
+
+| Metric Card                | Current Purpose                             | Alignment with Songwriter Scoring | Comments                                                                                                        |
+| -------------------------- | ------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Deal‑Ready Tracks** (0)  | Flag tracks ready for outreach.             | Unclear                           | Appears to use the older artist rubric (e.g., Fresh Finds + indie label). Needs songwriter‑specific thresholds. |
+| **Avg Unsigned Score** (0) | Average of scoring algorithm across tracks. | Misaligned                        | If this uses the old artist‑based scoring, it’s no longer meaningful.                                           |
+| **Enriched Tracks** (0)    | Tracks with fully enriched metadata.        | Neutral                           | Useful operationally but doesn’t reflect new prioritization logic.                                              |
+
+### 📌 Recommendations
+
+* **Recompute “Avg Score” using the songwriter rubric.**
+  Rename it to “Avg Songwriter Score” and calculate based on your new `RUBRIC` (missingPublisher, missingWriter, artistIsWriter_FreshFinds, etc.). This will give an accurate measure of catalog potential.
+
+* **Define “Deal‑Ready” threshold for songwriters.**
+  For example, classify any track with a score ≥7 as deal‑ready (missing publisher + any other bonus). Update the card to show the count of such tracks.
+
+* **Replace “Enriched Tracks” with “Missing Publisher Tracks”.**
+  Count how many tracks lack publisher data. This is your single strongest signal; seeing the volume of opportunity at a glance will help A&R prioritize.
+
+* **Optional: Add a “Velocity Hot List” card.**
+  Show how many tracks have week‑over‑week stream growth >20%. Combined with missing publisher, this helps your team act fast on rising songs.
+
+---
+
+## 👥 Contacts (Contact Workspace) – Existing Metrics
+
+| Metric Card             | Current Purpose                                       | Alignment with Songwriter Scoring | Comments                                                                                     |
+| ----------------------- | ----------------------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------- |
+| **Total Pipeline** (0)  | Total contacts in the A&R pipeline.                   | Neutral                           | Good basic metric, but doesn’t highlight songwriter opportunity.                             |
+| **Hot Leads** (0)       | Likely counts contacts flagged as ready for outreach. | Unclear                           | If based on old scoring or manual flags, it may not reflect updated criteria.                |
+| **Avg. WoW Growth** (—) | Average week‑over‑week stream growth of contacts.     | Neutral                           | Velocity is useful, but only meaningful when combined with missing publisher/writer signals. |
+
+### 📌 Recommendations
+
+* **Re‑define “Hot Leads” using the new scoring threshold.**
+  E.g., label contacts as “Hot” when any of their tracks score ≥8 (missing publisher + self‑written + velocity). This ensures your CRM highlights the most attractive songwriter leads.
+
+* **Add a “Unsigned Songwriters in Pipeline” card.**
+  Track the number (and percentage) of contacts whose songs lack publisher data. This aligns with your primary business objective and helps manage funnel coverage.
+
+* **Surface “Avg Songwriter Score” for pipeline contacts.**
+  Use the new rubric to compute an average score for each contact (across all their compositions) and display the mean value across the pipeline. This provides a quick health check of the pipeline quality.
+
+* **Keep “Avg. WoW Growth” but contextualize it.**
+  Pair it with the count of unsigned songwriters experiencing >20% growth, so you can focus outreach where momentum and opportunity intersect.
+
+---
+
+## 🎯 Overall Guidance
+
+1. **Shift from artist‑centric metrics to songwriter‑centric metrics.**
+   The core signals (missing publisher, missing writer, self‑written, indie + self‑written, and stream velocity) should directly inform every “top metric” card.
+
+2. **Use threshold‑based tiers.**
+   Adopt your new scoring thresholds (e.g., ≥7 = high priority) for labeling “High Impact” or “Deal Ready” items across playlists, tracks, and contacts.
+
+3. **Highlight opportunities, not just inventory.**
+   Metrics like “total tracked” and “total pipeline” are helpful operationally, but for A&R you want to know where the *opportunities* lie — missing publisher, incomplete metadata, fast‑growing compositions.
+
+By refocusing the top metric cards around these songwriter‑specific signals, your dashboard will better serve the publishing A&R workflow and help prioritize outreach efforts effectively.
