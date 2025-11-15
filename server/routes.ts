@@ -3265,6 +3265,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Performance snapshot endpoint
+  app.post("/api/performance/snapshots", async (req, res) => {
+    try {
+      console.log("📊 Manual performance snapshot triggered...");
+      
+      const { performanceTrackingService } = await import("./services/performanceTracking");
+      await performanceTrackingService.captureWeeklySnapshots();
+      
+      res.json({
+        success: true,
+        message: "Weekly performance snapshots captured successfully"
+      });
+    } catch (error: any) {
+      console.error("Error capturing performance snapshots:", error);
+      res.status(500).json({ 
+        error: error.message || "Failed to capture performance snapshots" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

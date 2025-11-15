@@ -273,6 +273,25 @@ export async function initializeScheduler(storage: IStorage) {
     }
   );
   
+  // Register weekly performance snapshot job
+  registerJob(
+    "Weekly Performance Snapshots",
+    "0 1 * * 1", // Every Monday at 1:00 AM
+    "Mondays at 1:00 AM",
+    async () => {
+      console.log("📊 Starting weekly performance snapshot capture...");
+      
+      try {
+        const { performanceTrackingService } = await import("./services/performanceTracking");
+        await performanceTrackingService.captureWeeklySnapshots();
+        console.log("✅ Weekly performance snapshots captured successfully");
+      } catch (error) {
+        console.error("❌ Weekly performance snapshot error:", error);
+        throw error;
+      }
+    }
+  );
+  
   // Start the scheduler (will only actually start if ENABLE_AUTO_SCRAPE=true)
   startScheduler();
 }

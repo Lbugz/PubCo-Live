@@ -56,7 +56,13 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
     - **Implementation:** `server/scoring.ts`, calculated in Phase 1, persisted in `playlist_snapshots.unsigned_score`
 - **Contacts CRM & Funnel Management:** Tracks writer discovery, growth, and outreach through pipeline stages (Discovery Pool, Watch List, Active Search). Includes a global dashboard, filterable tables, and detailed contact drawers with performance metrics, activity logs, notes, and alerts. Supports bulk actions for stage updates and tag assignments.
 - **Technical Optimizations:** Includes database-level pagination, search query debouncing, component memoization, native image lazy loading, foreign key constraints, duplicate prevention, atomic job claiming, batch Spotify API calls, and tiered rate limiting for external APIs. Editorial playlist handling uses browser-sharing architecture with GraphQL network interception and cookie persistence.
-- **Automation:** Utilizes `node-cron` for weekly Fresh Finds updates and daily retry jobs for failed enrichments. Auto-enrichment triggers immediately after playlist fetch.
+- **Automation:** Utilizes `node-cron` for scheduled jobs:
+    - **Fresh Finds Weekly Update** (Fridays 9AM): Auto-scrapes Fresh Finds playlists
+    - **Failed Enrichment Retry** (Daily 2AM): Re-queues failed enrichments
+    - **Weekly Performance Snapshots** (Mondays 1AM): Captures stream counts for WoW % calculations
+    - Auto-enrichment triggers immediately after playlist fetch
+    - Stream velocity data sources: Chartmetric API → Puppeteer scraping → stored in `playlist_snapshots.spotifyStreams`
+    - WoW % formula: `(Current Week Streams - Previous Week Streams) / Previous Week Streams × 100`
 
 ### Database Schema
 - `tracked_playlists`
