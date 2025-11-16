@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   X, Mail, MessageCircle, RefreshCw, Edit, TrendingUp, Music, Activity, 
   FileText, ExternalLink, Instagram, Twitter, Music2, Flame, User, Clock,
-  Hash, Link as LinkIcon, Target
+  Hash, Link as LinkIcon, Target, ChevronDown
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import type { ContactWithSongwriter, PlaylistSnapshot } from "@shared/schema";
 
@@ -55,6 +56,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
   const { toast } = useToast();
   const [noteText, setNoteText] = useState("");
   const [activeTab, setActiveTab] = useState("tracks");
+  const [identifiersOpen, setIdentifiersOpen] = useState(false);
 
   // Fetch contact details
   const { data: contact, isLoading: loadingContact } = useQuery<ContactWithSongwriter>({
@@ -344,43 +346,50 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
               </Select>
             </div>
 
-            {/* Identifiers Card */}
-            <Card className="p-4 mt-4">
-              <h3 className="text-sm font-medium mb-3">Identifiers</h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Contact ID</span>
-                  </div>
-                  <span className="text-sm font-mono">{contact.id.slice(0, 8)}...</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Songwriter ID</span>
-                  </div>
-                  <span className="text-sm font-mono">{contact.songwriterId.slice(0, 8)}...</span>
-                </div>
-                {contact.songwriterChartmetricId && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Chartmetric ID</span>
+            {/* Identifiers Card - Collapsible */}
+            <Collapsible open={identifiersOpen} onOpenChange={setIdentifiersOpen}>
+              <Card className="p-4 mt-4">
+                <CollapsibleTrigger className="flex items-center justify-between w-full hover-elevate p-0">
+                  <h3 className="text-sm font-medium">Identifiers</h3>
+                  <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", identifiersOpen && "rotate-180")} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Hash className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Contact ID</span>
+                      </div>
+                      <span className="text-sm font-mono">{contact.id.slice(0, 8)}...</span>
                     </div>
-                    <a 
-                      href={`https://app.chartmetric.com/artist/${contact.songwriterChartmetricId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline flex items-center gap-1"
-                    >
-                      {contact.songwriterChartmetricId}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Hash className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Songwriter ID</span>
+                      </div>
+                      <span className="text-sm font-mono">{contact.songwriterId.slice(0, 8)}...</span>
+                    </div>
+                    {contact.songwriterChartmetricId && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Chartmetric ID</span>
+                        </div>
+                        <a 
+                          href={`https://app.chartmetric.com/artist/${contact.songwriterChartmetricId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline flex items-center gap-1"
+                        >
+                          {contact.songwriterChartmetricId}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </Card>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
