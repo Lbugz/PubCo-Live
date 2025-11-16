@@ -5,18 +5,21 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
 
 ## Recent Changes
 
-### Nov 16, 2025 - Sticky & Sortable Headers for All Tables
+### Nov 16, 2025 - Sticky & Sortable Headers with Full Visual Consistency
 - **Sticky Header Container**: Created reusable `StickyHeaderContainer` component for filters and metrics sections
 - **Dashboard**: Wrapped metrics and FilterBar in sticky header - stays visible while scrolling through tracks
 - **Playlists**: Wrapped metrics and FilterBar in sticky header - stays visible while scrolling through playlist table
 - **Contacts**: Wrapped metrics and FilterBar in sticky header - stays visible while scrolling through contact table
-- **Consistent Table Styling**: All tables now use `glass-panel` class consistently for unified backdrop blur, background, and border styling
-- **Removed Redundant Classes**: Simplified playlists table styling by removing duplicate `backdrop-blur-xl border border-primary/20` classes already covered by `glass-panel`
+- **Consistent Table Containers**: All tables wrapped in Card with `glass-panel` class for unified backdrop blur, background, and border styling
 - **Sticky Table Headers**: Added sticky headers to all tables (Dashboard TrackTable, Playlists Table, Contacts Table) - column headers freeze at top when scrolling
 - **Sortable Headers**: All tables now have full sorting functionality via `SortableTableHeader` and `SortableHeaderForGrid` components
   - Dashboard: Sort by Track Name, Artist, Score, Streams (already implemented)
   - Playlists: Sort by Name, Source, Tracks, Curator, Followers, Last Updated (newly added)
   - Contacts: Sort by Songwriter, Total Streams, Tracks, Stage, WoW Growth (already implemented)
+- **Unified Header Styling**: Applied consistent typography to all table headers across Dashboard, Playlists, and Contacts:
+  - `text-xs uppercase tracking-wider font-semibold` on all headers
+  - `glass-header` class for frosted glass background effect
+  - Same sort icon colors: `text-muted-foreground` (unsorted), `text-primary` (sorted)
 - **Consistent Row Styling**: Added alternating row striping (`bg-muted/30`) and hover effects (`hover-elevate`) to all tables for visual consistency
 
 ### Nov 16, 2025 - Publishing Intelligence System
