@@ -35,13 +35,6 @@ function getScoreBadgeVariant(score: number | null): "high" | "medium" | "low" |
   return "low";
 }
 
-function getScoreLabel(score: number | null): string {
-  if (score === null) return "Pending";
-  if (score >= 7) return "High";
-  if (score >= 4) return "Medium";
-  return "Low";
-}
-
 function TrackTags({ trackId, tags }: { trackId: string; tags?: Tag[] }) {
   if (!tags || tags.length === 0) return null;
 
