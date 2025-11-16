@@ -78,12 +78,30 @@ async function resolveSongwriterIdentity(
     }).onConflictDoNothing();
 
     if (matchResult.shouldCreateAlias) {
-      await db.insert(songwriterAliases).values({
-        songwriterId: matchResult.songwriterId,
-        alias: songwriterName,
-        normalizedAlias: normalizeSongwriterName(songwriterName),
-        source: matchResult.confidenceSource
-      }).onConflictDoNothing();
+      const normalizedAlias = normalizeSongwriterName(songwriterName);
+      
+      // Check for existing alias pointing to different songwriter
+      const existingAlias = await db
+        .select({ songwriterId: songwriterAliases.songwriterId })
+        .from(songwriterAliases)
+        .where(
+          and(
+            eq(songwriterAliases.normalizedAlias, normalizedAlias),
+            not(eq(songwriterAliases.songwriterId, matchResult.songwriterId))
+          )
+        )
+        .limit(1);
+
+      if (existingAlias.length > 0) {
+        console.warn(`[IdentityEnrichment] Alias conflict detected: "${songwriterName}" (normalized: "${normalizedAlias}") already exists for different songwriter. Skipping alias creation.`);
+      } else {
+        await db.insert(songwriterAliases).values({
+          songwriterId: matchResult.songwriterId,
+          alias: songwriterName,
+          normalizedAlias,
+          source: matchResult.confidenceSource
+        }).onConflictDoNothing();
+      }
     }
 
     return true;
@@ -158,7 +176,7 @@ async function matchViaMusicBrainzArtist(
   if (artistLinks.rows.length > 0 && artistLinks.rows[0].songwriter_id) {
     const row = artistLinks.rows[0];
     return {
-      songwriterId: row.songwriter_id,
+      songwriterId: row.songwriter_id as string, // Safe because we check for null above
       confidenceSource: 'musicbrainz_id',
       shouldCreateAlias: row.songwriter_name?.toLowerCase() !== songwriterName.toLowerCase()
     };
@@ -198,28 +216,41 @@ async function matchViaNormalizedName(
   confidenceSource: 'normalized_match';
   shouldCreateAlias: boolean;
 } | null> {
-  const allProfiles = await db
+  const normalizedInput = normalizeSongwriterName(songwriterName);
+  const inputTokens = normalizedInput.split(/\s+/).filter(t => t.length > 0);
+
+  // Prefilter: Query only profiles with matching normalized_name (indexed)
+  const candidates = await db
     .select()
-    .from(songwriterProfiles);
+    .from(songwriterProfiles)
+    .where(eq(songwriterProfiles.normalizedName, normalizedInput))
+    .limit(10);
 
-  let bestMatch: { profile: any; score: number } | null = null;
-
-  for (const profile of allProfiles) {
-    const matchResult = scoreNameMatch(songwriterName, profile.name);
-    
-    if (matchResult.matchType === 'normalized' && matchResult.score >= 0.9) {
-      if (!bestMatch || matchResult.score > bestMatch.score) {
-        bestMatch = { profile, score: matchResult.score };
-      }
-    }
+  if (candidates.length === 0) {
+    return null;
   }
 
-  if (bestMatch && bestMatch.score >= 0.9) {
-    return {
-      songwriterId: bestMatch.profile.id,
-      confidenceSource: 'normalized_match',
-      shouldCreateAlias: true
-    };
+  // Require exact normalized equality + token validation
+  for (const profile of candidates) {
+    if (!profile.normalizedName) continue;
+    
+    // Exact normalized match is required
+    if (profile.normalizedName === normalizedInput) {
+      const profileTokens = profile.normalizedName.split(/\s+/).filter(t => t.length > 0);
+      const commonTokens = inputTokens.filter(t => profileTokens.includes(t));
+      
+      // Allow single-token names (e.g., "Beyoncé") OR multi-token with ≥2 overlap
+      const isSingleToken = inputTokens.length === 1 && profileTokens.length === 1;
+      const hasMultiTokenOverlap = commonTokens.length >= 2;
+      
+      if (isSingleToken || hasMultiTokenOverlap) {
+        return {
+          songwriterId: profile.id,
+          confidenceSource: 'normalized_match',
+          shouldCreateAlias: true
+        };
+      }
+    }
   }
 
   return null;

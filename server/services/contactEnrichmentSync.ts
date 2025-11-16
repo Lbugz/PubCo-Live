@@ -29,6 +29,19 @@ export async function syncContactEnrichmentFlags(songwriterName: string): Promis
 
     const contactId = contact[0].id;
 
+    // Check if songwriter has ANY track_songwriters links or aliases
+    const hasIdLinks = await db.execute<{ has_links: number }>(sql`
+      SELECT CASE 
+        WHEN EXISTS (SELECT 1 FROM track_songwriters WHERE songwriter_id = ${songwriterId})
+          OR EXISTS (SELECT 1 FROM songwriter_aliases WHERE songwriter_id = ${songwriterId})
+        THEN 1 
+        ELSE 0 
+      END as has_links
+    `);
+    
+    const canUseFallback = hasIdLinks.rows[0]?.has_links === 0;
+    const normalizedName = profile[0].normalizedName || '';
+
     const enrichmentStats = await db.execute<{
       musicbrainz_searched: number;
       musicbrainz_found: number;
@@ -43,10 +56,13 @@ export async function syncContactEnrichmentFlags(songwriterName: string): Promis
         WHERE ts.songwriter_id = ${songwriterId}
       ),
       fallback_tracks AS (
-        -- Fallback: include tracks matched via text if no track_songwriters exist yet
+        -- Strict fallback: ONLY when zero ID links AND zero aliases
+        -- Use exact normalized match on indexed column (no fuzzy LIKE)
         SELECT DISTINCT ps.id as track_id
         FROM playlist_snapshots ps
-        WHERE ps.songwriter LIKE '%' || ${songwriterName} || '%'
+        JOIN songwriter_profiles sp_match ON sp_match.normalized_name = ${normalizedName}
+        WHERE ${canUseFallback ? sql`1=1` : sql`1=0`}
+          AND ps.songwriter = sp_match.name
           AND NOT EXISTS (SELECT 1 FROM track_songwriters WHERE track_id = ps.id)
       ),
       all_tracks AS (

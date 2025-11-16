@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, date, uniqueIndex, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, date, uniqueIndex, index, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -214,6 +214,7 @@ export const songwriterProfiles = pgTable("songwriter_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   chartmetricId: text("chartmetric_id").unique().notNull(),
   name: text("name").notNull(),
+  normalizedName: text("normalized_name"),
   totalTracks: integer("total_tracks"),
   playlistFollowers: integer("playlist_followers"),
   youtubeViews: integer("youtube_views"),
@@ -222,7 +223,9 @@ export const songwriterProfiles = pgTable("songwriter_profiles", {
   genres: text("genres").array(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  normalizedNameIdx: index("idx_songwriter_profiles_normalized_name").on(table.normalizedName),
+}));
 
 export const songwriterCollaborations = pgTable("songwriter_collaborations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -279,6 +282,7 @@ export const songwriterAliases = pgTable("songwriter_aliases", {
   source: confidenceSourceEnum("source").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => ({
+  uniqueAliasPerSongwriter: sql`UNIQUE (${table.songwriterId}, ${table.normalizedAlias})`,
   uniqueAlias: sql`UNIQUE (${table.alias})`,
 }));
 
