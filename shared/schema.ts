@@ -252,6 +252,51 @@ export type SongwriterProfile = typeof songwriterProfiles.$inferSelect;
 export type InsertSongwriterCollaboration = z.infer<typeof insertSongwriterCollaborationSchema>;
 export type SongwriterCollaboration = typeof songwriterCollaborations.$inferSelect;
 
+export const confidenceSourceEnum = pgEnum('confidence_source', [
+  'musicbrainz_id',      // Matched via MusicBrainz artist.id (highest confidence)
+  'chartmetric_id',      // Matched via Chartmetric songwriter_profile.id (high confidence)
+  'exact_name_match',    // Exact case-insensitive name match (medium confidence)
+  'normalized_match',    // Normalized text match with tokenization (low confidence)
+  'manual_override'      // Manually curated mapping (highest confidence)
+]);
+
+export const trackSongwriters = pgTable("track_songwriters", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  trackId: varchar("track_id").notNull().references(() => playlistSnapshots.id, { onDelete: "cascade" }),
+  songwriterId: varchar("songwriter_id").notNull().references(() => songwriterProfiles.id, { onDelete: "cascade" }),
+  confidenceSource: confidenceSourceEnum("confidence_source").notNull(),
+  sourceText: text("source_text"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  uniqueTrackSongwriter: sql`UNIQUE (${table.trackId}, ${table.songwriterId})`,
+}));
+
+export const songwriterAliases = pgTable("songwriter_aliases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  songwriterId: varchar("songwriter_id").notNull().references(() => songwriterProfiles.id, { onDelete: "cascade" }),
+  alias: text("alias").notNull(),
+  normalizedAlias: text("normalized_alias").notNull(),
+  source: confidenceSourceEnum("source").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  uniqueAlias: sql`UNIQUE (${table.alias})`,
+}));
+
+export const insertTrackSongwriterSchema = createInsertSchema(trackSongwriters).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSongwriterAliasSchema = createInsertSchema(songwriterAliases).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTrackSongwriter = z.infer<typeof insertTrackSongwriterSchema>;
+export type TrackSongwriter = typeof trackSongwriters.$inferSelect;
+export type InsertSongwriterAlias = z.infer<typeof insertSongwriterAliasSchema>;
+export type SongwriterAlias = typeof songwriterAliases.$inferSelect;
+
 export const spotifyTokens = pgTable("spotify_tokens", {
   id: varchar("id").primaryKey().default("singleton"),
   encryptedAccessToken: text("encrypted_access_token").notNull(),

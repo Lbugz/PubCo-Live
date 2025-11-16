@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { contacts, songwriterProfiles, playlistSnapshots } from "@shared/schema";
+import { contacts, songwriterProfiles, playlistSnapshots, trackSongwriters } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import { invalidateMetricsCache } from "../metricsService";
 
@@ -37,15 +37,27 @@ export async function syncContactEnrichmentFlags(songwriterName: string): Promis
       collaboration_count: number;
     }>(sql`
       WITH songwriter_tracks AS (
-        -- Get all tracks where this songwriter appears (using songwriter_profiles link)
+        -- Get all tracks for this songwriter using ID-based track_songwriters table
+        SELECT DISTINCT ts.track_id
+        FROM track_songwriters ts
+        WHERE ts.songwriter_id = ${songwriterId}
+      ),
+      fallback_tracks AS (
+        -- Fallback: include tracks matched via text if no track_songwriters exist yet
         SELECT DISTINCT ps.id as track_id
         FROM playlist_snapshots ps
         WHERE ps.songwriter LIKE '%' || ${songwriterName} || '%'
+          AND NOT EXISTS (SELECT 1 FROM track_songwriters WHERE track_id = ps.id)
+      ),
+      all_tracks AS (
+        SELECT track_id FROM songwriter_tracks
+        UNION
+        SELECT track_id FROM fallback_tracks
       )
       SELECT 
         -- MusicBrainz: checked if artist_songwriters link exists (Phase 3 attempted)
         CASE 
-          WHEN COUNT(DISTINCT as2.artist_id) > 0 THEN 1 
+          WHEN COUNT(DISTINCT asw.artist_id) > 0 THEN 1 
           ELSE 0 
         END as musicbrainz_searched,
         
@@ -67,24 +79,21 @@ export async function syncContactEnrichmentFlags(songwriterName: string): Promis
           ELSE 0 
         END as mlc_found,
         
-        -- Collaboration count: Count unique co-writers excluding the songwriter themselves
-        -- This counts OTHER artist IDs that appear on the same tracks
+        -- Collaboration count: Count unique co-writers using ID-based track_songwriters
+        -- This is the authoritative, accurate count based on resolved songwriter identities
         COALESCE(
-          (SELECT COUNT(DISTINCT cowriter.artist_id)
-           FROM songwriter_tracks st
-           JOIN artist_songwriters cowriter ON cowriter.track_id = st.track_id
-           JOIN artists cowriter_artist ON cowriter_artist.id = cowriter.artist_id
-           -- Exclude the songwriter themselves by name matching
-           WHERE LOWER(cowriter_artist.name) != LOWER(${songwriterName})
-             AND cowriter_artist.name NOT LIKE '%' || ${songwriterName} || '%'
-             AND ${songwriterName} NOT LIKE '%' || cowriter_artist.name || '%'
+          (SELECT COUNT(DISTINCT ts_cowriter.songwriter_id)
+           FROM all_tracks at
+           JOIN track_songwriters ts_cowriter ON ts_cowriter.track_id = at.track_id
+           -- Exclude the songwriter themselves by ID
+           WHERE ts_cowriter.songwriter_id != ${songwriterId}
           ), 0
         ) as collaboration_count
         
-      FROM songwriter_tracks st
-      JOIN playlist_snapshots ps ON ps.id = st.track_id
-      LEFT JOIN artist_songwriters as2 ON as2.track_id = st.track_id
-      LEFT JOIN artists a ON a.id = as2.artist_id
+      FROM all_tracks at
+      JOIN playlist_snapshots ps ON ps.id = at.track_id
+      LEFT JOIN artist_songwriters asw ON asw.track_id = at.track_id
+      LEFT JOIN artists a ON a.id = asw.artist_id
     `);
 
     if (enrichmentStats.rows.length === 0) {
