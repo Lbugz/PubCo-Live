@@ -718,10 +718,10 @@ export default function Dashboard() {
 
           {/* Filters Row */}
           <FilterBar>
-            <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3 w-full">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
                 {/* Week Filter */}
                 <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                  <SelectTrigger className="flex-1 md:w-[160px]" data-testid="select-week">
+                  <SelectTrigger className="w-full sm:flex-1 md:w-[160px]" data-testid="select-week">
                     <SelectValue placeholder="All Dates" />
                   </SelectTrigger>
                   <SelectContent>
@@ -736,7 +736,7 @@ export default function Dashboard() {
 
                 {/* Playlist Filter */}
                 <Select value={selectedPlaylist} onValueChange={setSelectedPlaylist}>
-                  <SelectTrigger className="flex-1 md:w-[160px]" data-testid="select-playlist">
+                  <SelectTrigger className="w-full sm:flex-1 md:w-[160px]" data-testid="select-playlist">
                     <SelectValue placeholder="All Playlists" />
                   </SelectTrigger>
                   <SelectContent>
@@ -751,7 +751,7 @@ export default function Dashboard() {
 
                 {/* Tag Filter */}
                 <Select value={selectedTag} onValueChange={setSelectedTag}>
-                  <SelectTrigger className="flex-1 md:w-[160px]" data-testid="select-tag">
+                  <SelectTrigger className="w-full sm:flex-1 md:w-[160px]" data-testid="select-tag">
                     <SelectValue placeholder="All Tags" />
                   </SelectTrigger>
                   <SelectContent>
@@ -765,7 +765,7 @@ export default function Dashboard() {
                 </Select>
 
                 {/* Search Bar */}
-                <div className="relative flex-1 md:min-w-[240px]">
+                <div className="relative w-full sm:flex-1 md:min-w-[240px]">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="search"
@@ -783,11 +783,12 @@ export default function Dashboard() {
                     <Button
                       variant="outline"
                       size="default"
-                      className="gap-2"
+                      className="gap-2 w-full sm:w-auto"
                       data-testid="button-completeness-filters"
                     >
                       <Filter className="h-4 w-4" />
-                      Completeness Filters
+                      <span className="hidden sm:inline">Completeness Filters</span>
+                      <span className="sm:hidden">Filters</span>
                       {activeFilters.length > 0 && (
                         <Badge variant="default" className="ml-1 px-1.5 py-0">
                           {activeFilters.length}
