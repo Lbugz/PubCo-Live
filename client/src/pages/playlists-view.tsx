@@ -37,6 +37,7 @@ import { Separator } from "@/components/ui/separator";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeaderControls, type ViewMode } from "@/components/layout/page-header-controls";
 import { FilterBar } from "@/components/layout/filter-bar";
+import { StickyHeaderContainer } from "@/components/layout/sticky-header-container";
 import { AddPlaylistDialog } from "@/components/add-playlist-dialog";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -726,8 +727,10 @@ export default function PlaylistsView() {
 
   return (
     <PageContainer className="space-y-6 fade-in">
-      {/* Stats Cards with Toggle */}
-      <div className="space-y-3">
+      {/* Sticky Header: Metrics & Filters */}
+      <StickyHeaderContainer className="pb-4 border-b">
+        {/* Stats Cards with Toggle */}
+        <div className="space-y-3">
         <div className="flex items-center justify-end">
           <Button
             variant="ghost"
@@ -984,6 +987,7 @@ export default function PlaylistsView() {
           />
         </FilterBar.Actions>
       </FilterBar>
+      </StickyHeaderContainer>
 
       {/* Bulk Actions Toolbar */}
       <PlaylistBulkActionsToolbar
