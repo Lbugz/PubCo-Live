@@ -126,7 +126,7 @@ export const TrackTable = memo(function TrackTable({
   return (
     <div className="relative">
       {/* Sticky Header - Desktop Only */}
-      <div className="hidden lg:grid lg:grid-cols-[auto_2fr_2fr_2fr_2fr_2fr_1fr_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
+      <div className="hidden lg:grid lg:grid-cols-[auto_2fr_2fr_2fr_2fr_1fr_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
         <div className="flex items-center">
           {onToggleSelectAll && (
             <Checkbox
@@ -153,12 +153,6 @@ export const TrackTable = memo(function TrackTable({
         <SortableHeaderForGrid
           label="Playlist"
           field="playlistName"
-          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
-          onSort={onSort}
-        />
-        <SortableHeaderForGrid
-          label="Label"
-          field="albumLabel"
           currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
           onSort={onSort}
         />
@@ -219,7 +213,7 @@ export const TrackTable = memo(function TrackTable({
                   data-testid={`card-track-${track.id}`}
                   onClick={() => onRowClick?.(track)}
                 >
-              <div className="grid grid-cols-1 lg:grid-cols-[auto_2fr_2fr_2fr_2fr_2fr_1fr_auto] gap-4 p-4 items-center">
+              <div className="grid grid-cols-1 lg:grid-cols-[auto_2fr_2fr_2fr_2fr_1fr_auto] gap-4 p-4 items-center">
                 {/* Checkbox Column - Desktop Only */}
                 <div 
                   className="hidden lg:flex items-center" 
@@ -300,12 +294,6 @@ export const TrackTable = memo(function TrackTable({
                 <Badge variant="outline" className="font-normal" data-testid={`badge-playlist-${track.id}`}>
                   {track.playlistName}
                 </Badge>
-              </div>
-              
-              <div className="col-span-1 lg:col-span-1">
-                <div className="text-sm" data-testid={`text-label-${track.id}`}>
-                  {track.label || <span className="text-muted-foreground italic">Unknown</span>}
-                </div>
               </div>
               
               <div className="col-span-1 lg:col-span-1">
