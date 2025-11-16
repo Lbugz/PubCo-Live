@@ -752,12 +752,19 @@ export default function Contacts() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedContacts.map((contact) => {
+                {sortedContacts.map((contact, index) => {
                   const stageConfig = STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG];
                   const Icon = stageConfig?.icon;
 
                   return (
-                    <TableRow key={contact.id} data-testid={`row-contact-${contact.id}`}>
+                    <TableRow 
+                      key={contact.id} 
+                      className={cn(
+                        "hover-elevate",
+                        index % 2 === 0 && "bg-muted/30"
+                      )}
+                      data-testid={`row-contact-${contact.id}`}
+                    >
                       <TableCell>
                         <Checkbox
                           checked={selectedIds.has(contact.id)}

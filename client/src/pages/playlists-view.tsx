@@ -1236,10 +1236,13 @@ export default function PlaylistsView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedPlaylists.map(playlist => (
+                {sortedPlaylists.map((playlist, index) => (
                   <TableRow 
                     key={playlist.id} 
-                    className="hover-elevate cursor-pointer"
+                    className={cn(
+                      "hover-elevate cursor-pointer",
+                      index % 2 === 0 && "bg-muted/30"
+                    )}
                     onClick={() => openDrawer(playlist)}
                     data-testid={`row-playlist-${playlist.id}`}
                   >
