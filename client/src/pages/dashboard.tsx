@@ -315,6 +315,9 @@ export default function Dashboard() {
     highConfidenceUnsigned: number;
     publishingOpportunities: number;
     enrichmentBacklog: number;
+    soloWriters: number;
+    activeCollaborators: number;
+    withTopPublisher: number;
   }>({
     queryKey: ["/api/metrics/contacts"],
     staleTime: 60000, // 60 seconds - aligned with backend cache TTL
@@ -750,40 +753,40 @@ export default function Dashboard() {
                                 testId="stats-enrichment-backlog"
                               />
                             );
-                          case 'mlc-verified-unsigned':
+                          case 'solo-writers':
                             return (
                               <StatsCard
                                 key={`pub-${index}`}
-                                title="MLC Verified Unsigned"
-                                value={contactMetrics?.publishingOpportunities?.toLocaleString() || "0"}
-                                icon={Target}
+                                title="Solo Writers"
+                                value={contactMetrics?.soloWriters?.toLocaleString() || "0"}
+                                icon={Music2}
+                                variant="default"
+                                tooltip="Songwriters with no co-writer collaborations (0 collaborators). These writers work independently."
+                                testId="stats-solo-writers"
+                              />
+                            );
+                          case 'active-collaborators':
+                            return (
+                              <StatsCard
+                                key={`pub-${index}`}
+                                title="Active Collaborators"
+                                value={contactMetrics?.activeCollaborators?.toLocaleString() || "0"}
+                                icon={Users}
                                 variant="blue"
-                                tooltip="Songwriters verified as unsigned through MLC API"
-                                testId="stats-mlc-verified-unsigned"
+                                tooltip="Songwriters with 3+ co-writers. Frequent collaborators often have broader industry connections."
+                                testId="stats-active-collaborators"
                               />
                             );
-                          case 'musicbrainz-found':
+                          case 'with-top-publisher':
                             return (
                               <StatsCard
                                 key={`pub-${index}`}
-                                title="MusicBrainz Found"
-                                value="0"
-                                icon={Activity}
+                                title="With Top Publisher"
+                                value={contactMetrics?.withTopPublisher?.toLocaleString() || "0"}
+                                icon={TrendingUp}
                                 variant="default"
-                                tooltip="Songwriters found in MusicBrainz database"
-                                testId="stats-musicbrainz-found"
-                              />
-                            );
-                          case 'total-songwriters':
-                            return (
-                              <StatsCard
-                                key={`pub-${index}`}
-                                title="Total Songwriters"
-                                value={contactMetrics?.enrichmentBacklog?.toLocaleString() || "0"}
-                                icon={Sparkles}
-                                variant="default"
-                                tooltip="Total unique songwriters in the database"
-                                testId="stats-total-songwriters"
+                                tooltip="Songwriters with identified top publisher data. Useful for understanding publisher market share."
+                                testId="stats-with-top-publisher"
                               />
                             );
                           default:
