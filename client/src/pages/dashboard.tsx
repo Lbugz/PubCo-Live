@@ -133,15 +133,23 @@ export default function Dashboard() {
     },
     onJobStarted: (data) => {
       console.log('Job started:', data);
-      setActiveJobs(prev => [...prev, { 
-        jobId: data.jobId || '', 
-        playlistName: data.playlistName,
-        trackCount: data.trackCount || 0, 
-        enrichedCount: 0,
-        phase: 1,
-        status: 'running',
-        startTime: Date.now(),
-      }]);
+      setActiveJobs(prev => {
+        // Prevent duplicate jobs from being added
+        const exists = prev.some(job => job.jobId === data.jobId);
+        if (exists) {
+          console.log('Job already exists, skipping duplicate:', data.jobId);
+          return prev;
+        }
+        return [...prev, { 
+          jobId: data.jobId || '', 
+          playlistName: data.playlistName,
+          trackCount: data.trackCount || 0, 
+          enrichedCount: 0,
+          phase: 1,
+          status: 'running',
+          startTime: Date.now(),
+        }];
+      });
     },
     onJobCompleted: (data) => {
       console.log('Job completed:', data);
@@ -673,14 +681,13 @@ export default function Dashboard() {
                     value={trackMetrics?.dealReady?.toLocaleString() || "0"}
                     icon={Target}
                     variant="green"
-                    tooltip="Immediate outreach opportunities: Tracks with verified contact email and unsigned score of 7-10 indicating strong publishing potential. Click to filter."
+                    tooltip="Immediate outreach opportunities: Tracks with unsigned score of 7-10 indicating strong publishing potential. Click to filter."
                     change={trackMetrics?.changeDealReady}
                     onClick={() => {
-                      setActiveFilters(['has-email']);
                       setScoreRange([7, 10]);
                       toast({
                         title: "Filtered to deal-ready tracks",
-                        description: "Showing tracks with score 7+ and contact email",
+                        description: "Showing tracks with unsigned score 7-10",
                       });
                     }}
                     testId="stats-deal-ready"

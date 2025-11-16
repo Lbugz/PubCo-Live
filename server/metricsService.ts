@@ -160,13 +160,12 @@ export async function getTrackMetrics() {
     
     const previousWeek = await getPreviousWeek(latestWeek);
     
-    // Deal-ready tracks (contactEmail != null AND unsignedScore >= 7)
+    // Deal-ready tracks (unsignedScore >= 7)
     const dealReadyResult = await db.select({ count: sql<number>`count(*)::int` })
       .from(playlistSnapshots)
       .where(
         and(
           eq(playlistSnapshots.week, latestWeek),
-          sql`${playlistSnapshots.email} IS NOT NULL`,
           gte(playlistSnapshots.unsignedScore, 7)
         )
       );
@@ -180,7 +179,6 @@ export async function getTrackMetrics() {
         .where(
           and(
             eq(playlistSnapshots.week, previousWeek),
-            sql`${playlistSnapshots.email} IS NOT NULL`,
             gte(playlistSnapshots.unsignedScore, 7)
           )
         );
