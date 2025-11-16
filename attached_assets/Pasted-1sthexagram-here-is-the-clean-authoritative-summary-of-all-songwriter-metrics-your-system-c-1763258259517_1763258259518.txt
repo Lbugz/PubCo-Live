@@ -1,0 +1,241 @@
+1sthexagram — here is the **clean, authoritative summary** of *all* songwriter metrics your system currently supports, plus what’s missing and what should be added. This is structured for internal documentation, metrics dashboards, and dev team alignment.
+
+---
+
+# ✅ **Complete Songwriter Metrics in Your Codebase**
+
+Below is the full taxonomy grouped by **Data Source**, **Current Usage**, and **Strategic Purpose**.
+This reflects exactly what exists today in PubCo Live.
+
+---
+
+# **1. Core Count Metrics**
+
+### **1. Total Songwriters (Contacts)**
+
+* **Source:** `contacts`
+* **Query:** `SELECT COUNT(*) FROM contacts`
+* **Current Value:** 807
+* **Use:** Base population of your publishing pipeline.
+
+---
+
+# **2. Publishing Status Metrics**
+
+### **2. Unsigned Songwriters (No Publisher)**
+
+* **Source:** `playlist_snapshots.publisher`
+* **Logic:** `publisher IS NULL OR publisher = ''` **AND** `creditsStatus = 'success'`
+* **Implementation:** `metricsService.ts → unsigned songwriters`
+* **Use:** Identify publishing opportunities.
+
+### **7. Songwriters by Publisher Status**
+
+* **Source:** `playlist_snapshots.publisher_status`
+* **Use:** Metadata from enrichment phases for deeper publishing insights.
+
+---
+
+# **3. Pipeline Stage Metrics (Funnel / CRM)**
+
+### **3. Songwriters by Pipeline Stage**
+
+* **Source:** `contacts.stage`
+* **Stages & Criteria:**
+
+  * **Discovery Pool:** <100K streams
+  * **Watch List:** 100K–1M streams OR WoW > 20%
+  * **Active Search:** >1M streams OR WoW > 50%
+
+---
+
+# **4. Data Quality & Coverage Metrics**
+
+### **4. Songwriters with Stream Data**
+
+* **Source:** `playlist_snapshots.spotify_streams`
+* **Coverage:** ~35%
+* **Use:** Indicator of enrichment completeness.
+
+### **5. Songwriters with Contact Information**
+
+* **Sources:** `playlist_snapshots`, `artists`
+* **Fields:** Instagram, Twitter, Email, Facebook, LinkedIn, YouTube, Bandcamp, Website
+* **Use:** Outreach-ready profiles.
+
+---
+
+# **5. Lead Scoring & Prioritization**
+
+### **6. Deal-Ready Songwriters**
+
+* **Source:** `metricsService.ts`
+* **Logic:** `unsignedScore ≥ 7 AND email IS NOT NULL`
+* **Note:**
+  You're correct that **email as gating criteria is flawed**, because enrichment never provides email.
+  This metric should be redefined to **score-only**, or replaced entirely.
+
+---
+
+# **6. Output, Popularity & Velocity Metrics**
+
+### **9. Songwriters by Total Tracks**
+
+* **Source:** `contacts.totalTracks`
+* **Use:** Productivity indicator.
+
+### **10. Songwriters by Total Streams**
+
+* **Source:** `contacts.totalStreams`
+* **Use:** Commercial footprint.
+
+### **11. Songwriters with WoW Growth**
+
+* **Source:** `contacts.wowGrowthPct`
+* **Use:** Detect rising momentum.
+
+---
+
+# **7. Cross-Platform Identity Metrics**
+
+### **12. Songwriters with Chartmetric IDs**
+
+* **Source:** `songwriter_profiles.chartmetricId`
+* **Use:** Analytics linking (cross-platform).
+
+### **13. Songwriters by Top Publisher**
+
+* **Source:** `songwriter_profiles.topPublisher`, `topPublisherWorks`
+* **Use:** Publisher market share analysis.
+
+---
+
+# **8. Collaboration & Network Metrics**
+
+### **14. Songwriters with Collaborations**
+
+* **Source:** `songwriter_collaborations`
+* **Metrics:**
+
+  * Collaboration count
+  * Frequency
+  * Co-writer network graph
+* **Use:** Relationship mapping.
+
+---
+
+# ❌ Missing but Needed (Publishing Gap Intelligence)
+
+### **Missing Metric #1:**
+
+**Songwriters found in MLC search but have no publisher listed**
+→ *Partially captured but not explicitly grouped as a metric.*
+
+### **Missing Metric #2:**
+
+**Songwriters NOT found in MLC search at all**
+→ *Not currently tracked.*
+
+To solve these, you need the explicit enrichment flags:
+
+```ts
+// In shared/schema.ts - contacts table
+mlcSearched: integer("mlc_searched").default(0),      // 0 = not searched, 1 = searched
+mlcFoundInSearch: integer("mlc_found").default(0),     // 0 = not found, 1 = found
+musicbrainzSearched: integer("mb_searched").default(0),
+musicbrainzFound: integer("mb_found").default(0),
+```
+
+### These unlock four new metrics:
+
+| Metric                                | Definition                     | Opportunity Type                |
+| ------------------------------------- | ------------------------------ | ------------------------------- |
+| **MLC: Searched & Not Found**         | `mlcSearched=1 AND mlcFound=0` | 🔥 High-value unsigned targets  |
+| **MLC: Never Searched**               | `mlcSearched=0`                | 📋 Enrichment backlog           |
+| **MusicBrainz: Searched & Not Found** | Similar pattern                | 🟡 Secondary unsigned indicator |
+| **MusicBrainz: Never Searched**       | Similar pattern                | 📋 Enrichment backlog           |
+
+---
+
+# ✅ **Summary of All Songwriter Metrics (Total: 18)**
+
+Here’s the clean, canonical list for your dashboard:
+
+### **A. Core**
+
+1. Total Songwriters
+2. Unsigned Songwriters (No Publisher)
+
+### **B. Pipeline (CRM)**
+
+3. Songwriters by Stage
+4. Hot Lead Songwriters
+
+### **C. Metadata Coverage**
+
+5. With Stream Data
+6. With Contact Information
+7. With Chartmetric IDs
+
+### **D. Performance**
+
+8. WoW Growth
+9. Total Streams
+10. Total Tracks
+
+### **E. Publishing Intelligence**
+
+11. Publisher Status
+12. Top Publisher
+13. MLC Searched
+14. MLC Found
+15. MLC Not Found
+16. MusicBrainz Searched
+17. MusicBrainz Found
+18. MusicBrainz Not Found
+
+### **F. Network**
+
+19. Collaboration Network
+
+### **G. Lead Scoring**
+
+20. Deal-Ready (should be updated)
+
+---
+
+# 🔥 Recommended Next Steps (Opinionated)
+
+### **1. Replace Deal-Ready with Score-Based + Enrichment Flags**
+
+Current logic is flawed because emails never appear from enrichment.
+
+**Recommended:**
+`unsignedScore ≥ 7 AND mlcFoundInSearch = 0`
+
+### **2. Add Missing MLC / MB Flags ASAP**
+
+This will unlock the *actual* value of PubCo Live as a publishing intelligence engine.
+
+### **3. Add New Metric: “Verified Self-Written Songs”**
+
+Pairs with your scoring engine.
+
+### **4. Add UI Filters:**
+
+* “MLC Not Found”
+* “Publisher Missing”
+* “Writer Missing”
+* “High Velocity Writers”
+* “Self-Written + Emerging Artists”
+
+---
+
+If you want, I can:
+
+💻 **Generate the new schema migration**
+📊 **Design a new metrics dashboard layout**
+📈 **Define KPI formulas for A&R outreach**
+🧠 **Suggest a new scoring model specifically for songwriter discovery**
+
+Just tell me which direction you want to go.
