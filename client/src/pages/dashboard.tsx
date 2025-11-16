@@ -35,6 +35,7 @@ import { PlaylistManager } from "@/components/playlist-manager";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeaderControls, type ViewMode } from "@/components/layout/page-header-controls";
 import { FilterBar } from "@/components/layout/filter-bar";
+import { StickyHeaderContainer } from "@/components/layout/sticky-header-container";
 import { ActivityPanel, type EnrichmentJob } from "@/components/activity-panel";
 import { type PlaylistSnapshot, type Tag, type TrackedPlaylist } from "@shared/schema";
 import { Link, useLocation } from "wouter";
@@ -681,19 +682,21 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <PageContainer>
         <div className="space-y-6 fade-in">
-          {/* Enhanced Stats Cards with Trends and Toggle */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-end">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowMetrics(!showMetrics)}
-                data-testid="button-toggle-track-metrics"
-              >
-                {showMetrics ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
-            <Collapsible open={showMetrics}>
+          {/* Sticky Header: Metrics & Filters */}
+          <StickyHeaderContainer className="pb-4 border-b">
+            {/* Enhanced Stats Cards with Trends and Toggle */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-end">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowMetrics(!showMetrics)}
+                  data-testid="button-toggle-track-metrics"
+                >
+                  {showMetrics ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              <Collapsible open={showMetrics}>
               <CollapsibleContent className="space-y-3">
                 {metricPreferences.publishingIntelligence.some(m => m !== null) && (
                   <>
@@ -1031,6 +1034,7 @@ export default function Dashboard() {
               </Button>
             </FilterBar.Actions>
           </FilterBar>
+          </StickyHeaderContainer>
 
           {/* View Switcher */}
           <PageHeaderControls
