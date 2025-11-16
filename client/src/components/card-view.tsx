@@ -28,13 +28,15 @@ export const CardView = memo(function CardView({
   onTrackClick,
   onEnrich,
 }: CardViewProps) {
-  const getScoreBadgeVariant = (score: number) => {
+  const getScoreBadgeVariant = (score: number | null) => {
+    if (score === null) return "outline";
     if (score >= 7) return "high";
     if (score >= 4) return "medium";
     return "low";
   };
 
-  const getScoreLabel = (score: number) => {
+  const getScoreLabel = (score: number | null) => {
+    if (score === null) return "Pending";
     if (score >= 7) return "High";
     if (score >= 4) return "Medium";
     return "Low";
@@ -126,7 +128,7 @@ export const CardView = memo(function CardView({
                 className="shrink-0"
                 data-testid={`badge-score-${track.id}`}
               >
-                {getScoreLabel(track.unsignedScore)} {track.unsignedScore}
+                {track.unsignedScore !== null ? `${getScoreLabel(track.unsignedScore)} ${track.unsignedScore}` : 'Pending'}
               </Badge>
             </div>
 

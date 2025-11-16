@@ -28,13 +28,15 @@ interface TrackTableProps {
   onSort?: (field: string) => void;
 }
 
-function getScoreBadgeVariant(score: number): "high" | "medium" | "low" {
+function getScoreBadgeVariant(score: number | null): "high" | "medium" | "low" | "outline" {
+  if (score === null) return "outline";
   if (score >= 7) return "high";
   if (score >= 4) return "medium";
   return "low";
 }
 
-function getScoreLabel(score: number): string {
+function getScoreLabel(score: number | null): string {
+  if (score === null) return "Pending";
   if (score >= 7) return "High";
   if (score >= 4) return "Medium";
   return "Low";
@@ -322,7 +324,7 @@ export const TrackTable = memo(function TrackTable({
                     className="font-semibold min-w-[4rem] justify-center"
                     data-testid={`badge-score-${track.id}`}
                   >
-                    {getScoreLabel(track.unsignedScore)} {track.unsignedScore}
+                    {track.unsignedScore !== null ? `${getScoreLabel(track.unsignedScore)} ${track.unsignedScore}` : 'Pending'}
                   </Badge>
                 </div>
               </div>

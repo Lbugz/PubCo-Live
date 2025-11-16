@@ -375,12 +375,12 @@ export class EnrichmentWorker {
       for (const track of ctx.getAllTracks()) {
         const score = calculateUnsignedScore({
           playlistName: track.playlistName,
-          label: track.label || null,
-          publisher: track.publisher || null,
-          writer: track.songwriter || null,
+          label: track.label ?? null,
+          publisher: track.publisher ?? undefined,
+          writer: track.songwriter ?? undefined,
           artistName: track.artistName,
-          songwriter: track.songwriter || null,
-          wowGrowthPct: null, // Will be calculated in performance tracking
+          songwriter: track.songwriter ?? undefined,
+          wowGrowthPct: undefined, // Will be calculated in performance tracking
         });
 
         ctx.applyPatch(track.id, {

@@ -124,13 +124,15 @@ export function DetailsDrawer({
   const activity = fullTrack?.activity || [];
   const artists = fullTrack?.artists || [];
 
-  const getScoreBadgeVariant = (score: number) => {
+  const getScoreBadgeVariant = (score: number | null) => {
+    if (score === null) return "outline";
     if (score >= 7) return "high";
     if (score >= 4) return "medium";
     return "low";
   };
 
-  const getScoreLabel = (score: number) => {
+  const getScoreLabel = (score: number | null) => {
+    if (score === null) return "Pending";
     if (score >= 7) return "High";
     if (score >= 4) return "Medium";
     return "Low";
@@ -177,12 +179,13 @@ export function DetailsDrawer({
                       variant="outline"
                       className={cn(
                         "text-xs font-semibold",
+                        displayTrack.unsignedScore === null ? "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20" :
                         displayTrack.unsignedScore >= 7 ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20" :
                         displayTrack.unsignedScore >= 4 ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20" :
                         "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
                       )}
                     >
-                      Score: {displayTrack.unsignedScore}/10
+                      {displayTrack.unsignedScore !== null ? `Score: ${displayTrack.unsignedScore}/10` : 'Pending Enrichment'}
                     </Badge>
 
                     {displayTrack.label && (
@@ -377,12 +380,13 @@ export function DetailsDrawer({
                                     variant="outline"
                                     className={cn(
                                       "text-xs",
+                                      displayTrack.unsignedScore === null ? "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20" :
                                       displayTrack.unsignedScore >= 7 ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20" :
                                       displayTrack.unsignedScore >= 4 ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20" :
                                       "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
                                     )}
                                   >
-                                    Score {displayTrack.unsignedScore}/10
+                                    {displayTrack.unsignedScore !== null ? `Score ${displayTrack.unsignedScore}/10` : 'Pending'}
                                   </Badge>
                                 </div>
                               </AccordionTrigger>
@@ -548,12 +552,13 @@ export function DetailsDrawer({
                                       variant="outline"
                                       className={cn(
                                         "text-xs",
+                                        displayTrack.unsignedScore === null ? "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20" :
                                         displayTrack.unsignedScore >= 7 ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20" :
                                         displayTrack.unsignedScore >= 4 ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20" :
                                         "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
                                       )}
                                     >
-                                      Score {displayTrack.unsignedScore}/10
+                                      {displayTrack.unsignedScore !== null ? `Score ${displayTrack.unsignedScore}/10` : 'Pending'}
                                     </Badge>
                                   </div>
                                 </AccordionTrigger>
