@@ -440,4 +440,62 @@
   .hover-gradient:hover::before {
     transform: translateX(100%);
   }
+
+  /* Mobile-friendly utilities */
+  .touch-target {
+    @apply min-h-11 min-w-11;
+  }
+
+  .mobile-hidden {
+    @apply hidden md:block;
+  }
+
+  .mobile-only {
+    @apply block md:hidden;
+  }
+
+  .mobile-full-width {
+    @apply w-full md:w-auto;
+  }
+
+  .mobile-px {
+    @apply px-4 md:px-6;
+  }
+
+  .mobile-py {
+    @apply py-3 md:py-4;
+  }
+
+  .mobile-text-sm {
+    @apply text-sm md:text-base;
+  }
+
+  .mobile-scroll {
+    @apply overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0;
+  }
+
+  /* Safe area insets for notched devices */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Touch-friendly tap targets (minimum 44x44px) */
+  @media (hover: none) and (pointer: coarse) {
+    button:not(.no-touch-target),
+    a:not(.no-touch-target),
+    [role="button"]:not(.no-touch-target) {
+      @apply min-h-11;
+    }
+  }
+
+  /* Disable hover effects on touch devices */
+  @media (hover: none) {
+    .hover-elevate:hover::after {
+      background-color: transparent;
+    }
+  }
 }
