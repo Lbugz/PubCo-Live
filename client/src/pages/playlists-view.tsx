@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortableTableHeader } from "@/components/ui/sortable-table-header";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -127,6 +128,10 @@ export default function PlaylistsView() {
   const [showLargePlaylists, setShowLargePlaylists] = useState(false);
   const [showHasTracks, setShowHasTracks] = useState(false);
   const [showFailed, setShowFailed] = useState(false);
+
+  // Sorting state
+  const [sortField, setSortField] = useState<string>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   // Quick filter preferences
   const {
@@ -650,10 +655,65 @@ export default function PlaylistsView() {
     return filtered;
   }, [playlists, searchQuery, sourceFilter, showEditorialOnly, showChartmetric, showHighFollowers, showRecentlyUpdated, showIncomplete, showLargePlaylists, showHasTracks, showFailed]);
 
+  // Sort playlists
+  const sortedPlaylists = useMemo(() => {
+    const sorted = [...filteredPlaylists];
+    
+    sorted.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case "name":
+          aValue = a.name?.toLowerCase() || "";
+          bValue = b.name?.toLowerCase() || "";
+          break;
+        case "totalTracks":
+          aValue = a.totalTracks || 0;
+          bValue = b.totalTracks || 0;
+          break;
+        case "followers":
+          aValue = a.followers || 0;
+          bValue = b.followers || 0;
+          break;
+        case "lastChecked":
+          aValue = a.lastChecked ? new Date(a.lastChecked).getTime() : 0;
+          bValue = b.lastChecked ? new Date(b.lastChecked).getTime() : 0;
+          break;
+        case "curator":
+          aValue = a.curator?.toLowerCase() || "";
+          bValue = b.curator?.toLowerCase() || "";
+          break;
+        case "source":
+          aValue = normalizeSource(a.source).toLowerCase();
+          bValue = normalizeSource(b.source).toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  }, [filteredPlaylists, sortField, sortDirection]);
+
+  // Handle sort
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
   // Calculate selected playlists from filtered set
   const selectedFilteredPlaylists = useMemo(() => {
-    return filteredPlaylists.filter(p => selectedPlaylistIds.has(p.id));
-  }, [filteredPlaylists, selectedPlaylistIds]);
+    return sortedPlaylists.filter(p => selectedPlaylistIds.has(p.id));
+  }, [sortedPlaylists, selectedPlaylistIds]);
 
   // Reconcile selections with filtered playlists (strict filter-aligned selection)
   useEffect(() => {
@@ -1006,21 +1066,21 @@ export default function PlaylistsView() {
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         availableViews={["table", "card"]}
-        count={filteredPlaylists.length}
-        countLabel={filteredPlaylists.length === 1 ? "playlist" : "playlists"}
+        count={sortedPlaylists.length}
+        countLabel={sortedPlaylists.length === 1 ? "playlist" : "playlists"}
       />
 
       <Card className="glass-panel">
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">Loading playlists...</div>
-          ) : filteredPlaylists.length === 0 ? (
+          ) : sortedPlaylists.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {playlists.length === 0 ? "No playlists tracked yet" : "No playlists match your filters"}
             </div>
           ) : viewMode === "card" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredPlaylists.map(playlist => (
+              {sortedPlaylists.map(playlist => (
                 <Card 
                   key={playlist.id} 
                   className="glass-panel hover-elevate cursor-pointer relative"
@@ -1128,23 +1188,55 @@ export default function PlaylistsView() {
                 <TableRow>
                   <TableHead className="w-[50px]">
                     <Checkbox
-                      checked={filteredPlaylists.length > 0 && filteredPlaylists.every(p => selectedPlaylistIds.has(p.id))}
+                      checked={sortedPlaylists.length > 0 && sortedPlaylists.every(p => selectedPlaylistIds.has(p.id))}
                       onCheckedChange={toggleSelectAll}
                       aria-label="Select all playlists"
                       data-testid="checkbox-select-all"
                     />
                   </TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Source</TableHead>
-                  <TableHead className="text-right">Tracks</TableHead>
-                  <TableHead>Curator</TableHead>
-                  <TableHead className="text-right">Followers</TableHead>
-                  <TableHead>Last Updated</TableHead>
+                  <SortableTableHeader
+                    label="Name"
+                    field="name"
+                    currentSort={{ field: sortField, direction: sortDirection }}
+                    onSort={handleSort}
+                  />
+                  <SortableTableHeader
+                    label="Source"
+                    field="source"
+                    currentSort={{ field: sortField, direction: sortDirection }}
+                    onSort={handleSort}
+                  />
+                  <SortableTableHeader
+                    label="Tracks"
+                    field="totalTracks"
+                    currentSort={{ field: sortField, direction: sortDirection }}
+                    onSort={handleSort}
+                    className="text-right"
+                  />
+                  <SortableTableHeader
+                    label="Curator"
+                    field="curator"
+                    currentSort={{ field: sortField, direction: sortDirection }}
+                    onSort={handleSort}
+                  />
+                  <SortableTableHeader
+                    label="Followers"
+                    field="followers"
+                    currentSort={{ field: sortField, direction: sortDirection }}
+                    onSort={handleSort}
+                    className="text-right"
+                  />
+                  <SortableTableHeader
+                    label="Last Updated"
+                    field="lastChecked"
+                    currentSort={{ field: sortField, direction: sortDirection }}
+                    onSort={handleSort}
+                  />
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPlaylists.map(playlist => (
+                {sortedPlaylists.map(playlist => (
                   <TableRow 
                     key={playlist.id} 
                     className="hover-elevate cursor-pointer"
