@@ -291,7 +291,11 @@ export function DetailsDrawer({
           <ScrollArea className="flex-1 px-4">
             {(() => {
               // Merge songwriter string with artists array
-              const songwriterNames = displayTrack.songwriter?.split(",").map((name) => name.trim().toLowerCase()).filter(Boolean) ?? [];
+              const songwriterNames = displayTrack.songwriter
+                ?.split(",")
+                .map((name) => name.trim().toLowerCase())
+                .filter((name) => name && name !== "-" && name !== "—" && name !== "unknown")
+                ?? [];
               const songwriterRefs = new Map(artists.map((artist) => [artist.name.trim().toLowerCase(), artist]));
               const songwriterEntries = songwriterNames.length 
                 ? songwriterNames.map((name) => {
@@ -506,7 +510,11 @@ export function DetailsDrawer({
                         ))}
                       </div>
                     ) : (() => {
-                      const producerNames = displayTrack.producer?.split(",").map((name) => name.trim().toLowerCase()).filter(Boolean) ?? [];
+                      const producerNames = displayTrack.producer
+                        ?.split(",")
+                        .map((name) => name.trim().toLowerCase())
+                        .filter((name) => name && name !== "-" && name !== "—" && name !== "unknown")
+                        ?? [];
                       const producerRefs = new Map(artists.map((artist) => [artist.name.trim().toLowerCase(), artist]));
                       const producerEntries = producerNames.length 
                         ? producerNames.map((name) => {
