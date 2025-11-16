@@ -83,7 +83,7 @@ export default function SettingsPreferences() {
       .filter((m): m is TrackMetricId => m !== null);
     
     return TRACK_METRIC_OPTIONS.filter(
-      option => !selectedInOtherPositions.includes(option.id)
+      option => !selectedInOtherPositions.includes(option.id as TrackMetricId)
     );
   };
 
@@ -93,7 +93,7 @@ export default function SettingsPreferences() {
       .filter((m): m is PublishingMetricId => m !== null);
     
     return PUBLISHING_METRIC_OPTIONS.filter(
-      option => !selectedInOtherPositions.includes(option.id)
+      option => !selectedInOtherPositions.includes(option.id as PublishingMetricId)
     );
   };
 

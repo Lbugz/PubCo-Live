@@ -26,22 +26,89 @@ const DEFAULT_PREFERENCES: MetricPreferences = {
   publishingIntelligence: ['high-confidence-unsigned', 'publishing-opportunities', 'enrichment-backlog'],
 };
 
-export const TRACK_METRIC_OPTIONS: { id: TrackMetricId; label: string }[] = [
-  { id: 'deal-ready-tracks', label: 'Deal-Ready Tracks' },
-  { id: 'avg-unsigned-score', label: 'Avg Unsigned Score' },
-  { id: 'missing-publisher', label: 'Missing Publisher' },
-  { id: 'high-stream-velocity', label: 'High Stream Velocity' },
-  { id: 'self-written-tracks', label: 'Self-Written Tracks' },
-  { id: 'indie-label-tracks', label: 'Indie Label Tracks' },
+export interface MetricOption {
+  id: TrackMetricId | PublishingMetricId;
+  label: string;
+  description: string;
+  category: 'Playlist' | 'Tracks' | 'Contacts';
+}
+
+export const TRACK_METRIC_OPTIONS: MetricOption[] = [
+  { 
+    id: 'deal-ready-tracks', 
+    label: 'Deal-Ready Tracks', 
+    description: 'Tracks with unsigned score 7-10 (strong publishing signals)',
+    category: 'Tracks'
+  },
+  { 
+    id: 'avg-unsigned-score', 
+    label: 'Avg Unsigned Score', 
+    description: 'Average unsigned score (0-10) across all tracks',
+    category: 'Tracks'
+  },
+  { 
+    id: 'missing-publisher', 
+    label: 'Missing Publisher', 
+    description: 'Tracks with no publisher data after enrichment (+5 points)',
+    category: 'Tracks'
+  },
+  { 
+    id: 'high-stream-velocity', 
+    label: 'High Stream Velocity', 
+    description: 'Tracks with >50% week-over-week stream growth',
+    category: 'Tracks'
+  },
+  { 
+    id: 'self-written-tracks', 
+    label: 'Self-Written Tracks', 
+    description: 'Tracks where artist wrote their own song (+3 points)',
+    category: 'Tracks'
+  },
+  { 
+    id: 'indie-label-tracks', 
+    label: 'Indie Label Tracks', 
+    description: 'Tracks released on independent/DIY labels (+2 points)',
+    category: 'Tracks'
+  },
 ];
 
-export const PUBLISHING_METRIC_OPTIONS: { id: PublishingMetricId; label: string }[] = [
-  { id: 'high-confidence-unsigned', label: 'High-Confidence Unsigned' },
-  { id: 'publishing-opportunities', label: 'Publishing Opportunities' },
-  { id: 'enrichment-backlog', label: 'Enrichment Backlog' },
-  { id: 'mlc-verified-unsigned', label: 'MLC Verified Unsigned' },
-  { id: 'musicbrainz-found', label: 'MusicBrainz Found' },
-  { id: 'total-songwriters', label: 'Total Songwriters' },
+export const PUBLISHING_METRIC_OPTIONS: MetricOption[] = [
+  { 
+    id: 'high-confidence-unsigned', 
+    label: 'High-Confidence Unsigned', 
+    description: 'MLC-verified unsigned songwriters with scores 7-10 (hottest leads)',
+    category: 'Contacts'
+  },
+  { 
+    id: 'publishing-opportunities', 
+    label: 'Publishing Opportunities', 
+    description: 'All MLC-verified unsigned songwriters ready for outreach',
+    category: 'Contacts'
+  },
+  { 
+    id: 'enrichment-backlog', 
+    label: 'Enrichment Backlog', 
+    description: 'Songwriters not yet searched in MLC (run enrichment to discover)',
+    category: 'Contacts'
+  },
+  { 
+    id: 'mlc-verified-unsigned', 
+    label: 'MLC Verified Unsigned', 
+    description: 'Songwriters confirmed unsigned through MLC API verification',
+    category: 'Contacts'
+  },
+  { 
+    id: 'musicbrainz-found', 
+    label: 'MusicBrainz Found', 
+    description: 'Songwriters found in MusicBrainz database with metadata',
+    category: 'Contacts'
+  },
+  { 
+    id: 'total-songwriters', 
+    label: 'Total Songwriters', 
+    description: 'Total unique songwriters discovered across all playlists',
+    category: 'Contacts'
+  },
 ];
 
 const STORAGE_KEY = 'metric-preferences';
