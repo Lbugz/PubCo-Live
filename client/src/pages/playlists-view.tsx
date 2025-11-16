@@ -89,14 +89,14 @@ const AVAILABLE_QUICK_FILTERS: QuickFilterDefinition[] = [
     label: "Has tracks",
     icon: CheckCircle,
     variant: "default",
-    defaultVisible: false,
+    defaultVisible: true,
   },
   {
     id: "failed",
     label: "Failed",
     icon: XCircle,
     variant: "default",
-    defaultVisible: false,
+    defaultVisible: true,
   },
 ];
 
