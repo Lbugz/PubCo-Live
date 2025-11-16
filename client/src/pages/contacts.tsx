@@ -705,7 +705,7 @@ export default function Contacts() {
           <>
             <div className="overflow-x-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 z-10 glass-header">
                 <TableRow>
                   <TableHead className="w-12">
                     <Checkbox

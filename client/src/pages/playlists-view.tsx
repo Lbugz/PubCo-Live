@@ -1124,7 +1124,7 @@ export default function PlaylistsView() {
             </div>
           ) : (
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 z-10 glass-header">
                 <TableRow>
                   <TableHead className="w-[50px]">
                     <Checkbox
