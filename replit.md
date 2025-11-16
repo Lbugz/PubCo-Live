@@ -13,7 +13,11 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
 - **Consistent Table Styling**: All tables now use `glass-panel` class consistently for unified backdrop blur, background, and border styling
 - **Removed Redundant Classes**: Simplified playlists table styling by removing duplicate `backdrop-blur-xl border border-primary/20` classes already covered by `glass-panel`
 - **Sticky Table Headers**: Added sticky headers to all tables (Dashboard TrackTable, Playlists Table, Contacts Table) - column headers freeze at top when scrolling
-- **Sortable Headers**: All tables already had sorting functionality via `SortableTableHeader` and `SortableHeaderForGrid` components - clicking column headers toggles sort direction
+- **Sortable Headers**: All tables now have full sorting functionality via `SortableTableHeader` and `SortableHeaderForGrid` components
+  - Dashboard: Sort by Track Name, Artist, Score, Streams (already implemented)
+  - Playlists: Sort by Name, Source, Tracks, Curator, Followers, Last Updated (newly added)
+  - Contacts: Sort by Songwriter, Total Streams, Tracks, Stage, WoW Growth (already implemented)
+- **Consistent Row Styling**: Added alternating row striping (`bg-muted/30`) and hover effects (`hover-elevate`) to all tables for visual consistency
 
 ### Nov 16, 2025 - Publishing Intelligence System
 - **Contact-Level Enrichment Tracking**: Added 4 boolean flags to contacts table (`mlcSearched`, `mlcFound`, `musicbrainzSearched`, `musicbrainzFound`) to track verified unsigned status at songwriter level
