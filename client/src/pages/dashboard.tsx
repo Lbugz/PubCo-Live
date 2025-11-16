@@ -62,6 +62,10 @@ const filterOptions = [
   { id: "no-songwriter", label: "No Songwriter", section: "Songwriter Info" },
   { id: "has-email", label: "Has Contact Email", section: "Contact Info" },
   { id: "no-email", label: "No Contact Email", section: "Contact Info" },
+  { id: "has-streams", label: "Has Stream Count", section: "Stream Data" },
+  { id: "high-score", label: "High Score (7+)", section: "Scoring" },
+  { id: "enriched", label: "Fully Enriched", section: "Enrichment Status" },
+  { id: "failed-enrichment", label: "Failed Enrichment", section: "Enrichment Status" },
 ];
 
 export default function Dashboard() {
@@ -390,6 +394,10 @@ export default function Dashboard() {
         const hasPublisher = !!track.publisher;
         const hasSongwriter = !!track.songwriter;
         const hasEmail = !!track.email;
+        const hasStreams = track.spotifyStreams !== null && track.spotifyStreams !== undefined;
+        const isHighScore = track.unsignedScore !== null && track.unsignedScore >= 7;
+        const isEnriched = track.creditsStatus === 'success';
+        const hasFailed = track.creditsStatus === 'failed' || track.enrichmentStatus === 'failed';
         
         const filterMatches: Record<string, boolean> = {
           "has-isrc": hasIsrc,
@@ -402,6 +410,10 @@ export default function Dashboard() {
           "no-songwriter": !hasSongwriter,
           "has-email": hasEmail,
           "no-email": !hasEmail,
+          "has-streams": hasStreams,
+          "high-score": isHighScore,
+          "enriched": isEnriched,
+          "failed-enrichment": hasFailed,
         };
         
         matchesAdvancedFilters = activeFilters.every(filter => filterMatches[filter]);
