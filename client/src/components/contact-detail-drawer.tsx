@@ -418,26 +418,62 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 ) : (
                   tracks.map((track) => (
                     <Card key={track.id} className="p-4 hover-elevate" data-testid={`card-track-${track.id}`}>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium mb-1" data-testid={`text-track-name-${track.id}`}>
+                      <div className="flex items-start gap-3">
+                        {/* Album Art */}
+                        {track.albumArt ? (
+                          <img
+                            src={track.albumArt}
+                            alt={track.trackName}
+                            className="w-12 h-12 rounded object-cover flex-shrink-0"
+                            loading="lazy"
+                            width="48"
+                            height="48"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                            <Music className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        
+                        {/* Stacked Track Info */}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          {/* Track Name - Primary */}
+                          <h4 className="font-medium text-base leading-tight" data-testid={`text-track-name-${track.id}`}>
                             {track.trackName}
                           </h4>
-                          <p className="text-sm text-muted-foreground" data-testid={`text-track-artist-${track.id}`}>
+                          
+                          {/* Artist Name - Secondary */}
+                          <p className="text-sm text-muted-foreground leading-tight" data-testid={`text-track-artist-${track.id}`}>
                             {track.artistName}
                           </p>
+                          
+                          {/* Playlist Badge - Tertiary */}
+                          {track.playlistName && (
+                            <div>
+                              <Badge variant="outline" className="text-xs font-normal">
+                                {track.playlistName}
+                              </Badge>
+                            </div>
+                          )}
+                          
+                          {/* Stream Count */}
                           {track.spotifyStreams && (
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-xs text-muted-foreground">
                               {formatNumber(track.spotifyStreams)} streams
                             </p>
                           )}
                         </div>
-                        {track.albumArt && (
-                          <img
-                            src={track.albumArt}
-                            alt={track.trackName}
-                            className="w-12 h-12 rounded object-cover"
-                          />
+                        
+                        {/* Score Badge */}
+                        {track.unsignedScore !== null && (
+                          <div className="flex-shrink-0">
+                            <Badge
+                              variant={track.unsignedScore >= 7 ? "high" : track.unsignedScore >= 4 ? "medium" : "low"}
+                              className="font-semibold min-w-[2.5rem] justify-center"
+                            >
+                              {track.unsignedScore}
+                            </Badge>
+                          </div>
                         )}
                       </div>
                     </Card>
