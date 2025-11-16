@@ -863,6 +863,22 @@ export default function PlaylistsView() {
                 active = showChartmetric;
                 onClick = () => setShowChartmetric(!showChartmetric);
                 testId = "badge-filter-chartmetric";
+              } else if (filter.id === "highFollowers") {
+                active = showHighFollowers;
+                onClick = () => setShowHighFollowers(!showHighFollowers);
+                testId = "badge-filter-high-followers";
+              } else if (filter.id === "recentlyUpdated") {
+                active = showRecentlyUpdated;
+                onClick = () => setShowRecentlyUpdated(!showRecentlyUpdated);
+                testId = "badge-filter-recently-updated";
+              } else if (filter.id === "incomplete") {
+                active = showIncomplete;
+                onClick = () => setShowIncomplete(!showIncomplete);
+                testId = "badge-filter-incomplete";
+              } else if (filter.id === "largePlaylists") {
+                active = showLargePlaylists;
+                onClick = () => setShowLargePlaylists(!showLargePlaylists);
+                testId = "badge-filter-large-playlists";
               }
 
               return {
@@ -880,22 +896,15 @@ export default function PlaylistsView() {
               setSourceFilter("all");
               setShowEditorialOnly(false);
               setShowChartmetric(false);
+              setShowHighFollowers(false);
+              setShowRecentlyUpdated(false);
+              setShowIncomplete(false);
+              setShowLargePlaylists(false);
             }}
           />
 
           <FilterBar.AdvancedFilters testId="button-advanced-filters">
             <div className="space-y-4">
-              <div>
-                <h4 className="font-medium mb-3">Advanced Filters</h4>
-                <p className="text-xs text-muted-foreground mb-4">
-                  Refine your playlist search with additional criteria
-                </p>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Coming soon: Follower count, Track count, Score range filters
-              </div>
-
-              <Separator />
 
               <div>
                 <div className="flex items-center justify-between mb-3">
