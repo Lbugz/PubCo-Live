@@ -34,6 +34,7 @@ export async function syncContactEnrichmentFlags(songwriterName: string): Promis
       musicbrainz_found: number;
       mlc_searched: number;
       mlc_found: number;
+      collaboration_count: number;
     }>(sql`
       SELECT 
         -- MusicBrainz: checked if artist_songwriters link exists (Phase 3 attempted)
@@ -58,7 +59,10 @@ export async function syncContactEnrichmentFlags(songwriterName: string): Promis
         CASE 
           WHEN COUNT(*) FILTER (WHERE ps.publisher IS NOT NULL AND ps.publisher != '') > 0 THEN 1 
           ELSE 0 
-        END as mlc_found
+        END as mlc_found,
+        
+        -- Collaboration count: unique co-writers from artist_songwriters table
+        COALESCE(COUNT(DISTINCT as2.artist_id) FILTER (WHERE as2.artist_id IS NOT NULL), 0) as collaboration_count
         
       FROM playlist_snapshots ps
       LEFT JOIN artist_songwriters as2 ON as2.track_id = ps.id
@@ -79,6 +83,7 @@ export async function syncContactEnrichmentFlags(songwriterName: string): Promis
         musicbrainzFound: stats.musicbrainz_found,
         mlcSearched: stats.mlc_searched,
         mlcFound: stats.mlc_found,
+        collaborationCount: stats.collaboration_count,
         updatedAt: new Date(),
       })
       .where(eq(contacts.id, contactId));
@@ -86,7 +91,7 @@ export async function syncContactEnrichmentFlags(songwriterName: string): Promis
     // Invalidate metrics cache so dashboard reflects updated data immediately
     invalidateMetricsCache();
 
-    console.log(`[ContactEnrichmentSync] Updated flags for ${songwriterName}: MB(${stats.musicbrainz_searched}/${stats.musicbrainz_found}), MLC(${stats.mlc_searched}/${stats.mlc_found})`);
+    console.log(`[ContactEnrichmentSync] Updated flags for ${songwriterName}: MB(${stats.musicbrainz_searched}/${stats.musicbrainz_found}), MLC(${stats.mlc_searched}/${stats.mlc_found}), Collabs(${stats.collaboration_count})`);
   } catch (error) {
     console.error(`[ContactEnrichmentSync] Error syncing enrichment flags for ${songwriterName}:`, error);
   }
