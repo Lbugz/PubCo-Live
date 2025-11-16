@@ -364,7 +364,7 @@ export default function Dashboard() {
         track.trackName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         track.artistName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         track.label?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-      const matchesScore = track.unsignedScore >= scoreRange[0] && track.unsignedScore <= scoreRange[1];
+      const matchesScore = track.unsignedScore !== null && track.unsignedScore >= scoreRange[0] && track.unsignedScore <= scoreRange[1];
       
       // Advanced filters
       let matchesAdvancedFilters = true;
@@ -395,10 +395,10 @@ export default function Dashboard() {
     }) || [];
 
     // Calculate stats based on filtered tracks in a single pass
-    const highPotential = filtered.filter(t => t.unsignedScore >= 7).length;
-    const mediumPotential = filtered.filter(t => t.unsignedScore >= 4 && t.unsignedScore < 7).length;
+    const highPotential = filtered.filter(t => t.unsignedScore !== null && t.unsignedScore >= 7).length;
+    const mediumPotential = filtered.filter(t => t.unsignedScore !== null && t.unsignedScore >= 4 && t.unsignedScore < 7).length;
     const average = filtered.length 
-      ? (filtered.reduce((sum, t) => sum + t.unsignedScore, 0) / filtered.length)
+      ? (filtered.reduce((sum, t) => sum + (t.unsignedScore ?? 0), 0) / filtered.length)
       : 0;
 
     return {
@@ -562,7 +562,7 @@ export default function Dashboard() {
         track.songwriter || "",
         "",
         "",
-        track.unsignedScore.toString(),
+        track.unsignedScore?.toString() ?? "",
         track.instagram || "",
         track.twitter || "",
         track.tiktok || "",
