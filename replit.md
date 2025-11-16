@@ -3,6 +3,17 @@
 ## Overview
 The AI Pub Feed is an automated platform designed to discover unsigned artists and unpublished songwriters from Spotify playlists. It collects trending Spotify playlist data, enriches track metadata with essential details like ISRCs, labels, and writers, and ranks contributors based on their likelihood of being unsigned or unpublished. The system provides actionable publishing leads for A&R professionals, streamlining new talent discovery with real-time progress tracking and comprehensive relationship management.
 
+## Recent Changes
+
+### Nov 16, 2025 - Scoring Pipeline Fix & UX Improvements
+- **Fixed premature scoring bug**: Removed incorrect score calculations during playlist fetch that assigned "High 8" scores to unenriched tracks
+- **Post-enrichment scoring**: Scores now calculated only after Phase 2 (credits scraping) completes, ensuring accuracy based on real enriched metadata
+- **Nullable score schema**: Updated `unsignedScore` column to allow null values, enabling "Pending" state for tracks awaiting enrichment
+- **UI updates**: All components (track-table, card-view, details-drawer) show "Pending" badge for null scores instead of inflated values
+- **Removed email requirement**: Deal-Ready Tracks filter no longer requires contact email (which enrichment never collects), now filters only by unsigned score 7-10
+- **Fixed toast stacking**: Activity Panel job notifications no longer duplicate when WebSocket events are received multiple times
+- **Mobile responsiveness**: All touch targets WCAG-compliant (48px), responsive layouts across all pages using pseudo-element technique
+
 ## User Preferences
 
 - Professional, data-focused UI inspired by Linear/Notion
