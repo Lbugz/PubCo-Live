@@ -10,9 +10,9 @@ export type PublishingMetricId =
   | 'high-confidence-unsigned'
   | 'publishing-opportunities'
   | 'enrichment-backlog'
-  | 'mlc-verified-unsigned'
-  | 'musicbrainz-found'
-  | 'total-songwriters';
+  | 'solo-writers'
+  | 'active-collaborators'
+  | 'with-top-publisher';
 
 export type MetricId = TrackMetricId | PublishingMetricId;
 
@@ -92,21 +92,21 @@ export const PUBLISHING_METRIC_OPTIONS: MetricOption[] = [
     category: 'Contacts'
   },
   { 
-    id: 'mlc-verified-unsigned', 
-    label: 'MLC Verified Unsigned', 
-    description: 'Songwriters confirmed unsigned through MLC API verification',
+    id: 'solo-writers', 
+    label: 'Solo Writers', 
+    description: 'Songwriters with no co-writer collaborations (0 collaborators)',
     category: 'Contacts'
   },
   { 
-    id: 'musicbrainz-found', 
-    label: 'MusicBrainz Found', 
-    description: 'Songwriters found in MusicBrainz database with metadata',
+    id: 'active-collaborators', 
+    label: 'Active Collaborators', 
+    description: 'Songwriters with 3+ co-writers (frequent collaborators)',
     category: 'Contacts'
   },
   { 
-    id: 'total-songwriters', 
-    label: 'Total Songwriters', 
-    description: 'Total unique songwriters discovered across all playlists',
+    id: 'with-top-publisher', 
+    label: 'With Top Publisher', 
+    description: 'Songwriters with identified top publisher (market share data available)',
     category: 'Contacts'
   },
 ];
