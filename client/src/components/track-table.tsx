@@ -119,7 +119,7 @@ export const TrackTable = memo(function TrackTable({
   return (
     <div className="relative">
       {/* Sticky Header - Desktop Only */}
-      <div className="hidden lg:grid lg:grid-cols-[auto_2fr_2fr_2fr_2fr_1fr_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
+      <div className="hidden lg:grid lg:grid-cols-[auto_3fr_2fr_1fr_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
         <div className="flex items-center">
           {onToggleSelectAll && (
             <Checkbox
@@ -132,20 +132,8 @@ export const TrackTable = memo(function TrackTable({
           )}
         </div>
         <SortableHeaderForGrid
-          label="Track"
+          label="Track Info"
           field="trackName"
-          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
-          onSort={onSort}
-        />
-        <SortableHeaderForGrid
-          label="Artist"
-          field="artistName"
-          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
-          onSort={onSort}
-        />
-        <SortableHeaderForGrid
-          label="Playlist"
-          field="playlistName"
           currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
           onSort={onSort}
         />
@@ -206,10 +194,10 @@ export const TrackTable = memo(function TrackTable({
                   data-testid={`card-track-${track.id}`}
                   onClick={() => onRowClick?.(track)}
                 >
-              <div className="grid grid-cols-1 lg:grid-cols-[auto_2fr_2fr_2fr_2fr_1fr_auto] gap-4 p-4 items-center">
+              <div className="grid grid-cols-1 lg:grid-cols-[auto_3fr_2fr_1fr_auto] gap-4 p-4 items-start">
                 {/* Checkbox Column - Desktop Only */}
                 <div 
-                  className="hidden lg:flex items-center" 
+                  className="hidden lg:flex items-center pt-1" 
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
@@ -222,101 +210,114 @@ export const TrackTable = memo(function TrackTable({
                     />
                   )}
                 </div>
-              <div className="col-span-1 lg:col-span-1 flex items-center gap-3">
-                {/* Album Art - Reduced Size */}
-                {track.albumArt ? (
-                  <img 
-                    src={track.albumArt} 
-                    alt={`${track.trackName} album art`}
-                    className="w-8 h-8 rounded object-cover flex-shrink-0"
-                    loading="lazy"
-                    decoding="async"
-                    width="32"
-                    height="32"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                    <Music className="w-4 h-4 text-muted-foreground" />
+
+                {/* Stacked Track Info Column */}
+                <div className="col-span-1 lg:col-span-1 flex items-start gap-3">
+                  {/* Album Art */}
+                  {track.albumArt ? (
+                    <img 
+                      src={track.albumArt} 
+                      alt={`${track.trackName} album art`}
+                      className="w-12 h-12 rounded object-cover flex-shrink-0"
+                      loading="lazy"
+                      decoding="async"
+                      width="48"
+                      height="48"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                      <Music className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                  )}
+                  
+                  {/* Stacked Info */}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    {/* Track Name - Primary */}
+                    <div className="font-medium text-base leading-tight" data-testid={`text-track-name-${track.id}`}>
+                      {track.trackName}
+                    </div>
+                    
+                    {/* Artist Name - Secondary */}
+                    <div className="text-sm text-muted-foreground leading-tight" data-testid={`text-artist-${track.id}`}>
+                      {track.artistName}
+                    </div>
+                    
+                    {/* Playlist Badge - Tertiary */}
+                    <div>
+                      <Badge variant="outline" className="text-xs font-normal" data-testid={`badge-playlist-${track.id}`}>
+                        {track.playlistName}
+                      </Badge>
+                    </div>
+
+                    {/* Metadata Badges */}
+                    <div className="flex flex-wrap gap-1">
+                      {track.isrc ? (
+                        <Badge 
+                          variant="outline" 
+                          className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 text-xs"
+                          data-testid={`badge-has-isrc-${track.id}`}
+                        >
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          ISRC
+                        </Badge>
+                      ) : (
+                        <Badge 
+                          variant="outline" 
+                          className="bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20 text-xs"
+                          data-testid={`badge-no-isrc-${track.id}`}
+                        >
+                          <XCircle className="w-3 h-3 mr-1" />
+                          No ISRC
+                        </Badge>
+                      )}
+                      {track.dataSource === "scraped" && (
+                        <Badge 
+                          variant="outline" 
+                          className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-xs"
+                          data-testid={`badge-source-scraped-${track.id}`}
+                        >
+                          <Cloud className="w-3 h-3 mr-1" />
+                          Scraped
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {/* Tags */}
+                    <TrackTags trackId={track.id} tags={tagsMap[track.id]} />
                   </div>
-                )}
-                
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate" data-testid={`text-track-name-${track.id}`}>{track.trackName}</div>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {track.isrc ? (
-                      <Badge 
-                        variant="outline" 
-                        className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 text-xs"
-                        data-testid={`badge-has-isrc-${track.id}`}
-                      >
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                        ISRC
-                      </Badge>
-                    ) : (
-                      <Badge 
-                        variant="outline" 
-                        className="bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20 text-xs"
-                        data-testid={`badge-no-isrc-${track.id}`}
-                      >
-                        <XCircle className="w-3 h-3 mr-1" />
-                        No ISRC
-                      </Badge>
-                    )}
-                    {track.dataSource === "scraped" && (
-                      <Badge 
-                        variant="outline" 
-                        className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-xs"
-                        data-testid={`badge-source-scraped-${track.id}`}
-                      >
-                        <Cloud className="w-3 h-3 mr-1" />
-                        Scraped
-                      </Badge>
-                    )}
+                </div>
+              
+                {/* Songwriter Column */}
+                <div className="col-span-1 lg:col-span-1 pt-1">
+                  <div className="text-sm">
+                    <SongwriterDisplay
+                      songwriters={track.songwriter}
+                      testId={`text-songwriter-${track.id}`}
+                    />
                   </div>
-                  <TrackTags trackId={track.id} tags={tagsMap[track.id]} />
                 </div>
-              </div>
               
-              <div className="col-span-1 lg:col-span-1">
-                <div className="text-sm text-muted-foreground" data-testid={`text-artist-${track.id}`}>
-                  {track.artistName}
+                {/* Score Column */}
+                <div className="col-span-1 lg:col-span-1 pt-1">
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={getScoreBadgeVariant(track.unsignedScore)}
+                      className="font-semibold min-w-[3rem] justify-center"
+                      data-testid={`badge-score-${track.id}`}
+                    >
+                      {track.unsignedScore !== null ? track.unsignedScore : 'Pending'}
+                    </Badge>
+                  </div>
                 </div>
-              </div>
               
-              <div className="col-span-1 lg:col-span-1">
-                <Badge variant="outline" className="font-normal" data-testid={`badge-playlist-${track.id}`}>
-                  {track.playlistName}
-                </Badge>
-              </div>
-              
-              <div className="col-span-1 lg:col-span-1">
-                <div className="text-sm">
-                  <SongwriterDisplay
-                    songwriters={track.songwriter}
-                    testId={`text-songwriter-${track.id}`}
+                {/* Actions Column */}
+                <div className="col-span-1 lg:col-span-1 flex justify-start lg:justify-end gap-2 flex-wrap pt-1" onClick={(e) => e.stopPropagation()}>
+                  <TrackActionsDropdown
+                    track={track}
+                    onEnrich={onEnrich}
                   />
                 </div>
               </div>
-              
-              <div className="col-span-1 lg:col-span-1">
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={getScoreBadgeVariant(track.unsignedScore)}
-                    className="font-semibold min-w-[3rem] justify-center"
-                    data-testid={`badge-score-${track.id}`}
-                  >
-                    {track.unsignedScore !== null ? track.unsignedScore : 'Pending'}
-                  </Badge>
-                </div>
-              </div>
-              
-              <div className="col-span-1 lg:col-span-1 flex justify-start lg:justify-end gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
-                <TrackActionsDropdown
-                  track={track}
-                  onEnrich={onEnrich}
-                />
-              </div>
-            </div>
           </Card>
         </div>
             );
