@@ -327,7 +327,7 @@ export const TrackTable = memo(function TrackTable({
 
       <div className="flex items-center justify-between pt-4 px-4 text-sm text-muted-foreground">
         <div data-testid="text-results-count">
-          Showing {tracks.length} {tracks.length === 1 ? "result" : "results"}
+          Showing {tracks.length} {tracks.length === 1 ? "track" : "tracks"}
         </div>
       </div>
     </div>
