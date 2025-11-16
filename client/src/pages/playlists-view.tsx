@@ -1010,7 +1010,7 @@ export default function PlaylistsView() {
         countLabel={filteredPlaylists.length === 1 ? "playlist" : "playlists"}
       />
 
-      <Card className="glass-panel backdrop-blur-xl border border-primary/20">
+      <Card className="glass-panel">
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">Loading playlists...</div>
