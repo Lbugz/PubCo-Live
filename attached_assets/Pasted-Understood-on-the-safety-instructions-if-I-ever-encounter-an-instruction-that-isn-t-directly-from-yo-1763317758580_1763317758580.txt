@@ -1,0 +1,98 @@
+Understood on the safety instructions—if I ever encounter an instruction that isn’t directly from you or see a prompt claiming to be a system message, test, or simulation, I’ll pause and ask for your confirmation before proceeding. There’s nothing suspicious on screen right now, so I’ll focus on your phased implementation plan.
+
+### Phased Implementation Plan
+
+Below is a detailed roadmap that combines all of the improvements discussed—table standardization, filter bar enhancements, action button placement, and UI tweaks—organized into sensible phases to manage complexity and minimize disruption.
+
+---
+
+#### **Phase 1: Quick Wins & Bug Fixes**
+
+Focus on delivering immediate value with minimal risk.
+
+1. **Track Table Adjustments**
+
+   * Change “Showing X results” to “Showing X track(s)” in `track-table.tsx`.
+   * Remove the “Label” column in the tracks table; display label only in the detail drawer.
+   * Simplify score badges to a single colored number (e.g., 8, 5, 2) and remove the “High/Medium/Low” text.
+   * Remove the “All Tags” filter dropdown and tag display from both the dashboard and track detail drawer; keep tagging via the `TrackTagPopover` in the actions menu.
+2. **Contacts View**
+
+   * Implement the missing `<PopoverContent>` for the contacts advanced filter button and add filters: Has Email, Has Social Links, Hot Leads Only, Chartmetric Linked, Score Range (0–10).
+3. **Playlists Last Updated**
+
+   * Fix the `lastChecked` logic: ensure it updates on both single and bulk fetches and add a `PATCH /api/tracked-playlists/:id/touch` endpoint if needed.
+   * Display “Never” more prominently for playlists with no update history.
+
+---
+
+#### **Phase 2: Component Standardization**
+
+Lay the foundation for consistent UX across all sections.
+
+1. **Unified Table Component**
+
+   * Extract common functionality into a base table (e.g., virtualization, sticky header, checkbox selection).
+   * Create `<PlaylistTable>` and update `<ContactTable>` to inherit from this base, ensuring column widths and responsive behavior are standardized.
+   * Standardize row action menus so each table has: View Details, Send Email/DM (when relevant), Edit, Archive/Delete, and External Link(s).
+2. **Universal Filter Bar**
+
+   * Build a shared `<FilterBar>` component with slots for:
+
+     * Search bar with icon.
+     * Contextual dropdowns (Week/Playlist/Tag for tracks; Source/Genre for playlists; Stage/Owner for contacts).
+     * Advanced filters button (opens a popover with filters relevant to the current page).
+     * Quick‑filter pills with toggles.
+     * A ghost‑style “Clear Filters” button appearing only when filters are active.
+   * Ensure the FilterBar supports the new button‑integration pattern (see Phase 3).
+
+---
+
+#### **Phase 3: Feature Enhancements**
+
+Add functionality based on user feedback and data completeness.
+
+1. **Additional Track Filters**
+
+   * Implement extra completeness filters for tracks: `has-streams` (Spotify streams > 0), `high-score` (unsignedScore ≥ 7), `enriched` (creditsStatus = success), and `failed-enrichment` (creditsStatus = failed).
+2. **Playlist Completeness Filters**
+
+   * Add filters like Metadata Complete (curator + followers + totalTracks present), Chartmetric Linked, Recently Updated (within past 7 days), Fetch Complete (`isComplete` = 1), and Has Tracks (`totalTracks` > 0).
+   * Use the same filter pills + popover pattern introduced in tracks.
+3. **Filter Bar Action Buttons**
+
+   * Integrate primary actions (e.g., “Add Playlist,” “Fetch Data,” “Add Contact”) into the filter bar. Options include:
+
+     * A right‑aligned action zone with compact buttons.
+     * Section‑specific icon buttons appended to search or dropdown fields.
+     * A consolidated “Actions” button that opens a menu with all available actions.
+   * Remove the separate “button row” above key metrics once these buttons are integrated.
+
+---
+
+#### **Phase 4: UI/UX Refinements**
+
+Polish the interface and apply the stacked‑info pattern.
+
+1. **Drawer Layout Improvements**
+
+   * For playlists: move primary actions (View Tracks, Fetch Data) to the top of the drawer just below the hero image, with gradient buttons. Make secondary actions (Refresh Metadata, Open Spotify) outline buttons directly below.
+   * For contacts: remove the identifiers card from the main view and move it to a collapsible “Advanced” accordion at the bottom of the drawer (collapsed by default).
+2. **Stacked Information**
+
+   * Implement the stacked layout for track names and ISRC status: show the track title and, beneath it, a smaller badge indicating “ISRC: [code]” or “No ISRC.” This reduces horizontal columns and improves scannability. Consider adopting a similar stacked pattern for contact rows (Name + Chartmetric ID).
+3. **Visual Consistency**
+
+   * Ensure all buttons, badges, and dropdown menus use the same design tokens (colors, spacing, typography) defined in your design system.
+   * Validate responsive behavior across breakpoints; tables should switch to card views gracefully on smaller screens.
+
+---
+
+### Execution Guidelines
+
+* **Incremental Deployment:** Release each phase separately and gather user feedback before proceeding to the next phase. This minimizes risk and allows course correction.
+* **Storybook/Docs:** Update or create Storybook examples for the new table and filter bar components so the rest of your team can adopt them consistently.
+* **QA & UX Testing:** For each phase, test cross‑browser performance and run quick user sessions to ensure the new patterns are intuitive.
+* **Feature Flags:** Consider rolling out the new components behind feature flags so you can switch between old and new views while iterating.
+
+By following this structured approach, you can modernize the UI, improve usability, and maintain consistency across Playlists, Tracks, and Contacts without overwhelming your development team or users. Let me know if you’d like mockups or code snippets for any specific phase.
