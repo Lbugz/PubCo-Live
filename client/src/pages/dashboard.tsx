@@ -68,7 +68,6 @@ export default function Dashboard() {
   const [location] = useLocation();
   const [selectedWeek, setSelectedWeek] = useState<string>("all");
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("all");
-  const [selectedTag, setSelectedTag] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [scoreRange, setScoreRange] = useState<[number, number]>([0, 10]);
@@ -222,7 +221,6 @@ export default function Dashboard() {
   const clearAllFilters = useCallback(() => {
     setSelectedWeek("all");
     setSelectedPlaylist("all");
-    setSelectedTag("all");
     setSearchQuery("");
     setScoreRange([0, 10]);
     setActiveFilters([]);
@@ -258,17 +256,11 @@ export default function Dashboard() {
   });
 
   const { data: tracksData, isLoading: tracksLoading } = useQuery<{ tracks: PlaylistSnapshot[]; total: number; hasMore: boolean } | PlaylistSnapshot[]>({
-    queryKey: selectedTag !== "all" 
-      ? ["/api/tracks", "tag", selectedTag]
-      : selectedPlaylist !== "all"
+    queryKey: selectedPlaylist !== "all"
       ? ["/api/tracks", "playlist", selectedPlaylist, selectedWeek]
       : ["/api/tracks", selectedWeek],
     queryFn: async ({ queryKey }) => {
-      if (queryKey[1] === "tag") {
-        const response = await fetch(`/api/tracks?tagId=${queryKey[2]}`);
-        if (!response.ok) throw new Error("Failed to fetch tracks by tag");
-        return response.json();
-      } else if (queryKey[1] === "playlist") {
+      if (queryKey[1] === "playlist") {
         const response = await fetch(`/api/tracks?playlist=${queryKey[2]}`);
         if (!response.ok) throw new Error("Failed to fetch tracks by playlist");
         return response.json();
@@ -278,7 +270,7 @@ export default function Dashboard() {
         return response.json();
       }
     },
-    enabled: !!selectedWeek || selectedTag !== "all" || selectedPlaylist !== "all",
+    enabled: !!selectedWeek || selectedPlaylist !== "all",
   });
 
   // Extract tracks array from paginated response (supports both old and new format)
@@ -511,7 +503,6 @@ export default function Dashboard() {
   const hasActiveFilters = 
     selectedWeek !== "all" || 
     selectedPlaylist !== "all" || 
-    selectedTag !== "all" || 
     searchQuery !== "" || 
     activeFilters.length > 0 ||
     (scoreRange[0] !== 0 || scoreRange[1] !== 10);
@@ -917,21 +908,6 @@ export default function Dashboard() {
                     {trackedPlaylists.map((playlist) => (
                       <SelectItem key={playlist.playlistId} value={playlist.playlistId}>
                         {playlist.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Tag Filter */}
-                <Select value={selectedTag} onValueChange={setSelectedTag}>
-                  <SelectTrigger className="w-full sm:flex-1 md:w-[160px]" data-testid="select-tag">
-                    <SelectValue placeholder="All Tags" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Tags</SelectItem>
-                    {tags.map((tag) => (
-                      <SelectItem key={tag.id} value={tag.id}>
-                        {tag.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
