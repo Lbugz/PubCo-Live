@@ -293,11 +293,40 @@ export async function getContactMetrics() {
       .where(eq(contacts.mlcSearched, 0));
     const enrichmentBacklog = enrichmentBacklogResult[0]?.count || 0;
 
+    // Solo Writers (no collaborations)
+    const soloWritersResult = await db.select({ 
+      count: sql<number>`count(*)::int` 
+    })
+      .from(contacts)
+      .where(eq(contacts.collaborationCount, 0));
+    const soloWriters = soloWritersResult[0]?.count || 0;
+
+    // Active Collaborators (3+ co-writers)
+    const activeCollaboratorsResult = await db.select({ 
+      count: sql<number>`count(*)::int` 
+    })
+      .from(contacts)
+      .where(gte(contacts.collaborationCount, 3));
+    const activeCollaborators = activeCollaboratorsResult[0]?.count || 0;
+
+    // Writers with Top Publisher (has topPublisher field populated)
+    const withTopPublisherResult = await db.execute<{ count: number }>(sql`
+      SELECT COUNT(DISTINCT c.id)::int as count
+      FROM contacts c
+      INNER JOIN songwriter_profiles sp ON sp.id = c.songwriter_id
+      WHERE sp.top_publisher IS NOT NULL 
+        AND sp.top_publisher != ''
+    `);
+    const withTopPublisher = withTopPublisherResult.rows[0]?.count || 0;
+
     return {
       totalContacts,
       highConfidenceUnsigned,
       publishingOpportunities,
       enrichmentBacklog,
+      soloWriters,
+      activeCollaborators,
+      withTopPublisher,
     };
   });
 }
