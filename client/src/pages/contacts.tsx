@@ -8,6 +8,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -63,6 +64,7 @@ const STAGE_CONFIG = {
 
 export default function Contacts() {
   const { toast } = useToast();
+  const isMobile = useMobile(768);
   const [selectedStage, setSelectedStage] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -277,11 +279,11 @@ export default function Contacts() {
       <div className="flex items-center justify-end gap-2">
         <Button variant="gradient" size="sm" className="gap-2" data-testid="button-add-contact">
           <UserPlus className="h-4 w-4" />
-          Add Contact
+          <span className="hidden sm:inline">Add Contact</span>
         </Button>
         <Button variant="gradient" size="sm" className="gap-2" data-testid="button-import-csv">
           <Upload className="h-4 w-4" />
-          Import CSV
+          <span className="hidden sm:inline">Import CSV</span>
         </Button>
       </div>
 
@@ -342,7 +344,7 @@ export default function Contacts() {
 
         {/* Search and filters */}
         <FilterBar>
-          <div className="flex flex-col md:flex-row gap-3 w-full">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
           {/* Search */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -355,9 +357,10 @@ export default function Contacts() {
             />
           </div>
 
-            <Button variant="outline" size="sm" className="gap-2" data-testid="button-advanced-filters">
+            <Button variant="outline" size="sm" className="gap-2 w-full sm:w-auto" data-testid="button-advanced-filters">
               <Filter className="h-4 w-4" />
-              Advanced Filters
+              <span className="hidden sm:inline">Advanced Filters</span>
+              <span className="sm:hidden">Filters</span>
             </Button>
           </div>
 
@@ -629,6 +632,7 @@ export default function Contacts() {
           </div>
         ) : (
           <>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -801,6 +805,7 @@ export default function Contacts() {
                 })}
               </TableBody>
             </Table>
+            </div>
 
             {/* Pagination */}
             {total > limit && (
