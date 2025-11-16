@@ -48,9 +48,9 @@ export async function syncContactEnrichmentFlags(songwriterName: string): Promis
           ELSE 0 
         END as musicbrainz_found,
         
-        -- MLC: searched if any track has non-null publisher_status OR mlc_song_code
+        -- MLC: searched if any track has completed MLC enrichment (status success/error/not_found or has mlc_song_code)
         CASE 
-          WHEN COUNT(*) FILTER (WHERE ps.publisher_status IS NOT NULL OR ps.mlc_song_code IS NOT NULL) > 0 THEN 1 
+          WHEN COUNT(*) FILTER (WHERE ps.publisher_status IN ('success', 'error', 'not_found') OR ps.mlc_song_code IS NOT NULL) > 0 THEN 1 
           ELSE 0 
         END as mlc_searched,
         
