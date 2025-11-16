@@ -1,0 +1,230 @@
+I'll review each of your points and provide recommendations without making any changes. Let me analyze the current state and suggest improvements:
+
+Playlist Section Issues
+1. Last Updated Not Showing for Multiple Playlists
+Current Issue: The lastChecked field exists in the schema but may not be updating correctly during bulk operations.
+
+Recommendation:
+
+Ensure lastChecked is set during both individual and bulk playlist fetches
+Add a PATCH /api/tracked-playlists/:id/touch endpoint to update timestamps
+Consider showing "Never" vs formatted date more prominently
+2. Table Structure Standardization
+Current State: Comparing playlists-view.tsx vs dashboard.tsx (tracks):
+
+Playlists: Uses custom grid layout with checkboxes in separate column
+Tracks: Uses track-table.tsx with virtualization and different column structure
+Recommendation:
+
+Create a <PlaylistTable> component similar to <TrackTable>
+Use same checkbox column pattern, sticky header, and virtualization
+Standardize column widths and responsive behavior
+Both should use <SortableTableHeader> from ui/sortable-table-header.tsx
+3. Playlist Detail View Actions UI
+Current State: Actions are in accordion sections with ghost buttons
+
+Recommendation:
+
+Move primary actions (View Tracks, Fetch Data) to top of drawer below hero image
+Use gradient buttons for primary actions: variant="gradient"
+Secondary actions (Refresh Metadata, Open Spotify) can use variant="outline"
+Remove accordion for Actions section - keep actions always visible
+Match the button layout from contact-detail-drawer.tsx (Quick Actions section)
+4. Completeness Filter for Playlists
+Current State: No completeness filtering exists for playlists
+
+Recommendation:
+
+Add similar filter pattern to tracks but with playlist-specific metrics:
+Metadata Complete (has curator, followers, totalTracks)
+Chartmetric Linked (has chartmetricUrl)
+Recently Updated (lastChecked within 7 days)
+Fetch Complete (isComplete = 1)
+Has Tracks (totalTracks > 0)
+Use same <Popover> + filter pills pattern from dashboard.tsx
+Tracks Section Issues
+1. Completeness Filter Review
+Current Filters:
+
+has-isrc, no-isrc
+has-credits, no-credits
+has-publisher, no-publisher
+has-songwriter, no-songwriter
+Recommendation - Add:
+
+has-streams (spotifyStreams > 0)
+high-score (unsignedScore >= 7)
+enriched (creditsStatus = 'success')
+failed-enrichment (creditsStatus = 'failed')
+Recommendation - Remove:
+
+None - all current filters are useful
+2. "1706 Results" → "1706 Tracks"
+Location: track-table.tsx line ~400
+
+Current:
+
+<div data-testid="text-results-count">
+  Showing {tracks.length} {tracks.length === 1 ? "result" : "results"}
+</div>
+Proposed:
+
+<div data-testid="text-results-count">
+  Showing {tracks.length} {tracks.length === 1 ? "track" : "tracks"}
+</div>
+3. Remove Label from Track Header
+Current: Takes up a full column in desktop view
+
+Recommendation:
+
+Remove <TableHead>Label</TableHead> from track-table.tsx
+Remove corresponding <TableCell> for label column
+This will give more space for songwriter/other columns
+Label can still appear in detail drawer
+4. Score Badge "High 8" → Shorter Format
+Current: High 8 takes up too much space
+
+Recommendation Options:
+
+Option A: Just show number with color-coded badge: 8 (green), 5 (yellow), 2 (gray)
+Option B: Icon + number: ⭐ 8 or 🎯 8
+Option C: Number with small label: 8 with tooltip "High potential"
+Best Choice: Option A - Most compact, color already indicates level
+
+5. Remove "All Tags" Filter
+Locations:
+
+dashboard.tsx (main view)
+details-drawer.tsx
+Recommendation:
+
+Remove the tag <Select> filter entirely from dashboard.tsx
+Remove tag display from details-drawer.tsx track info section
+Keep tag management in <TrackTagPopover> accessible via actions menu
+This simplifies the UI since tags are primarily for organization, not discovery
+Contacts Section Issues
+1. Advanced Filter Not Working
+Current: Button exists but doesn't show filter options
+
+Recommendation:
+
+The button at contacts.tsx line ~260 doesn't have proper <PopoverContent> implementation
+Copy the completeness filter pattern from dashboard.tsx
+Add contact-specific filters:
+Has Email
+Has Social Links (Instagram/Twitter)
+Hot Leads Only
+Chartmetric Linked
+Score Range (slider 0-10)
+2. Standardize Filter/Search Component
+Current State: Contacts uses a nice <FilterBar> wrapper with search + quick filter pills
+
+Recommendation - Standardize Across All Pages:
+
+Standard Pattern:
+
+<FilterBar>
+  {/* Search Input */}
+  <div className="flex-1 min-w-[200px]">
+    <Search icon + Input />
+  </div>
+  
+  {/* Dropdowns (page-specific) */}
+  <Select /> {/* Week/Playlist/Stage */}
+  
+  {/* Advanced Filters Button */}
+  <Popover>
+    <Button>Filters + Badge</Button>
+    <PopoverContent>...</PopoverContent>
+  </Popover>
+  
+  {/* Quick Filter Pills (page-specific) */}
+  <div className="flex gap-2">
+    <Badge onClick={...} />
+  </div>
+  
+  {/* Clear Filters */}
+  {hasFilters && <Button variant="ghost">Clear</Button>}
+</FilterBar>
+Page-Specific Dropdowns:
+
+Dashboard (Tracks): Week, Playlist, Tag
+Playlists: Source, Genre (new)
+Contacts: Stage, Owner (future)
+Quick Filter Pills:
+
+Dashboard: has-isrc, high-score, enriched
+Contacts: Hot Leads, Chartmetric Linked, Positive WoW
+Playlists: Editorial Only, Recently Updated, Complete
+3. Contact Menu Actions Different from Other Tables
+Current: Contacts uses <DropdownMenu> with different items than playlists/tracks
+
+Recommendation - Standardize:
+All tables should have:
+
+Primary Action: View Details (opens drawer)
+Communication: Send Email, Send DM
+Management: Edit, Archive/Delete
+External: Open in Spotify/Chartmetric (if applicable)
+Pattern:
+
+<DropdownMenuContent>
+  <DropdownMenuItem>View Details</DropdownMenuItem>
+  <DropdownMenuSeparator />
+  <DropdownMenuItem>Send Email</DropdownMenuItem>
+  <DropdownMenuItem>Send DM</DropdownMenuItem>
+  <DropdownMenuSeparator />
+  <DropdownMenuItem>External Link</DropdownMenuItem>
+</DropdownMenuContent>
+4. Contact Detail Drawer - Identifiers Section
+Current: Takes up full card with 3 hash IDs
+
+Recommendation:
+
+Remove the Identifiers card entirely from main view
+Move to a collapsible "Advanced" accordion at bottom of drawer (collapsed by default)
+Most users don't need to see UUIDs during normal workflow
+Saves significant vertical space for more important info (tracks, performance, notes)
+5. Stacked Songwriter Name + Chartmetric ID Pattern
+Current: Works well in contact detail drawer
+
+Recommendation for Track Table:
+
+{/* Track Name Column */}
+<div className="flex-1 min-w-0">
+  <div className="font-medium truncate">{track.trackName}</div>
+  <div className="flex items-center gap-2 mt-1">
+    {track.isrc ? (
+      <Badge variant="outline" className="text-xs">
+        <CheckCircle2 className="w-3 h-3 mr-1" />
+        ISRC: {track.isrc}
+      </Badge>
+    ) : (
+      <Badge variant="outline" className="text-xs text-muted-foreground">
+        No ISRC
+      </Badge>
+    )}
+  </div>
+</div>
+This pattern:
+
+Stacks primary info (track name) with secondary metadata (ISRC confirmation)
+Reduces horizontal column count
+More scannable than separate columns
+Similar to how contact cards show songwriter name + chartmetric ID
+Summary of Recommendations
+High Priority:
+✅ Standardize table structures across all views
+✅ Implement <FilterBar> component pattern universally
+✅ Update score badges to just show numbers (remove "High" text)
+✅ Remove label column from tracks table
+✅ Fix contact advanced filters
+Medium Priority:
+✅ Remove "All Tags" filter dropdown
+✅ Improve playlist detail drawer actions layout
+✅ Add completeness filters for playlists
+✅ Standardize dropdown menu actions across tables
+✅ Change "results" to "tracks"
+Low Priority:
+✅ Remove/collapse identifiers in contact drawer
+✅ Implement stacked track name + ISRC pattern
