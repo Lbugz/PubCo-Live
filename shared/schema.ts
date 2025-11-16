@@ -315,6 +315,10 @@ export const contacts = pgTable("contacts", {
   assignedUserId: varchar("assigned_user_id"),
   totalStreams: integer("total_streams"),
   totalTracks: integer("total_tracks").notNull().default(0),
+  mlcSearched: integer("mlc_searched").notNull().default(0),
+  mlcFound: integer("mlc_found").notNull().default(0),
+  musicbrainzSearched: integer("musicbrainz_searched").notNull().default(0),
+  musicbrainzFound: integer("musicbrainz_found").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

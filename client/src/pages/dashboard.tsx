@@ -288,6 +288,17 @@ export default function Dashboard() {
     staleTime: 60000, // 60 seconds - aligned with backend cache TTL
   });
 
+  // Fetch contact metrics for publishing intelligence
+  const { data: contactMetrics } = useQuery<{
+    totalContacts: number;
+    highConfidenceUnsigned: number;
+    publishingOpportunities: number;
+    enrichmentBacklog: number;
+  }>({
+    queryKey: ["/api/metrics/contacts"],
+    staleTime: 60000, // 60 seconds - aligned with backend cache TTL
+  });
+
   const enrichMutation = useMutation({
     mutationFn: async ({ trackId, trackIds }: { trackId?: string; trackIds?: string[] }) => {
       console.log("Starting Phase 2 credits enrichment:", { trackId, trackIds });
@@ -674,14 +685,42 @@ export default function Dashboard() {
             </div>
             <Collapsible open={showMetrics}>
               <CollapsibleContent className="space-y-3">
-                <h2 className="text-sm font-semibold text-muted-foreground">TOP METRICS</h2>
+                <h2 className="text-sm font-semibold text-muted-foreground">PUBLISHING INTELLIGENCE</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <StatsCard
+                    title="High-Confidence Unsigned"
+                    value={contactMetrics?.highConfidenceUnsigned?.toLocaleString() || "0"}
+                    icon={Target}
+                    variant="green"
+                    tooltip="Songwriters verified as unsigned through MLC search with high-quality scores (7-10). These are your hottest publishing leads backed by authoritative data."
+                    testId="stats-high-confidence-unsigned"
+                  />
+                  <StatsCard
+                    title="Publishing Opportunities"
+                    value={contactMetrics?.publishingOpportunities?.toLocaleString() || "0"}
+                    icon={Sparkles}
+                    variant="blue"
+                    tooltip="All songwriter publishing opportunities: MLC verified unsigned + found in MLC but no publisher listed. Ready for outreach."
+                    testId="stats-publishing-opportunities"
+                  />
+                  <StatsCard
+                    title="Enrichment Backlog"
+                    value={contactMetrics?.enrichmentBacklog?.toLocaleString() || "0"}
+                    icon={Activity}
+                    variant="default"
+                    tooltip="Songwriters not yet searched in MLC. Run enrichment to discover more unsigned opportunities."
+                    testId="stats-enrichment-backlog"
+                  />
+                </div>
+
+                <h2 className="text-sm font-semibold text-muted-foreground mt-6">TRACK METRICS</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   <StatsCard
                     title="Deal-Ready Tracks"
                     value={trackMetrics?.dealReady?.toLocaleString() || "0"}
                     icon={Target}
                     variant="green"
-                    tooltip="Immediate outreach opportunities: Tracks with unsigned score of 7-10 indicating strong publishing potential. Click to filter."
+                    tooltip="Tracks with unsigned score 7-10 - strong publishing signals. Click to filter."
                     change={trackMetrics?.changeDealReady}
                     onClick={() => {
                       setScoreRange([7, 10]);
@@ -697,7 +736,7 @@ export default function Dashboard() {
                     value={trackMetrics?.avgScore?.toFixed(1) || "0.0"}
                     icon={Activity}
                     variant="default"
-                    tooltip="Average unsigned score (0-10 scale) across all tracks this week. Higher scores indicate stronger unsigned publishing signals based on missing metadata, indie labels, and stream velocity."
+                    tooltip="Average unsigned score (0-10) across all tracks. Based on missing metadata, indie labels, stream velocity."
                     change={trackMetrics?.changeAvgScore}
                     testId="stats-avg-score"
                   />
@@ -706,7 +745,7 @@ export default function Dashboard() {
                     value={trackMetrics?.missingPublisher?.toLocaleString() || "0"}
                     icon={Sparkles}
                     variant="blue"
-                    tooltip="Tracks with no publisher data after successful enrichment - the strongest signal (+5 points) for unsigned publishing opportunities. Click to filter."
+                    tooltip="Tracks with no publisher data after enrichment - strongest unsigned signal (+5 points). Click to filter."
                     change={trackMetrics?.changeMissingPublisher}
                     onClick={() => {
                       setActiveFilters(['no-publisher']);

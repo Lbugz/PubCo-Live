@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { playlistSnapshots, trackedPlaylists } from "@shared/schema";
+import { playlistSnapshots, trackedPlaylists, contacts } from "@shared/schema";
 import { sql, eq, and, gte, desc } from "drizzle-orm";
 
 interface MetricsCache {
@@ -241,6 +241,63 @@ export async function getTrackMetrics() {
       changeDealReady,
       changeAvgScore,
       changeMissingPublisher,
+    };
+  });
+}
+
+export async function getContactMetrics() {
+  return getCachedOrCompute('contact-metrics', async () => {
+    // Total contacts
+    const totalContactsResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(contacts);
+    const totalContacts = totalContactsResult[0]?.count || 0;
+
+    // High-Confidence Unsigned
+    // Criteria: mlcSearched=1 AND mlcFound=0 (verified unsigned) AND has high-scoring tracks
+    // Using mlc_found=0 as authoritative unsigned signal from MLC API
+    const highConfidenceUnsignedResult = await db.execute<{ count: number }>(sql`
+      SELECT COUNT(DISTINCT c.id)::int as count
+      FROM contacts c
+      INNER JOIN songwriter_profiles sp ON sp.id = c.songwriter_id
+      WHERE c.mlc_searched = 1
+        AND c.mlc_found = 0
+        AND EXISTS (
+          SELECT 1 FROM playlist_snapshots ps
+          WHERE ps.songwriter LIKE '%' || sp.name || '%'
+            AND ps.unsigned_score >= 7
+            AND ps.unsigned_score IS NOT NULL
+        )
+    `);
+    const highConfidenceUnsigned = highConfidenceUnsignedResult.rows[0]?.count || 0;
+
+    // Publishing Opportunities (MLC Verified Unsigned)
+    // Criteria: mlcSearched=1 AND mlcFound=0 (not found in MLC = unsigned)
+    // This is the authoritative unsigned signal from MLC search
+    const publishingOpportunitiesResult = await db.select({ 
+      count: sql<number>`count(*)::int` 
+    })
+      .from(contacts)
+      .where(
+        and(
+          eq(contacts.mlcSearched, 1),
+          eq(contacts.mlcFound, 0)
+        )
+      );
+    const publishingOpportunities = publishingOpportunitiesResult[0]?.count || 0;
+
+    // Enrichment Backlog (never searched in MLC)
+    const enrichmentBacklogResult = await db.select({ 
+      count: sql<number>`count(*)::int` 
+    })
+      .from(contacts)
+      .where(eq(contacts.mlcSearched, 0));
+    const enrichmentBacklog = enrichmentBacklogResult[0]?.count || 0;
+
+    return {
+      totalContacts,
+      highConfidenceUnsigned,
+      publishingOpportunities,
+      enrichmentBacklog,
     };
   });
 }

@@ -9,6 +9,7 @@ import { searchArtistByName, getArtistExternalLinks } from "../musicbrainz";
 import { enrichTrackWithChartmetric } from "../chartmetric";
 import { notificationService } from "../services/notificationService";
 import { calculateUnsignedScore } from "../scoring";
+import { syncContactEnrichmentFlags } from "../services/contactEnrichmentSync";
 import type { WebSocket } from "ws";
 
 export interface WorkerOptions {
@@ -873,6 +874,25 @@ export class EnrichmentWorker {
         }
       } catch (notifError) {
         console.error('Failed to create enrichment completion notification:', notifError);
+      }
+
+      // Sync contact enrichment flags after job completion
+      try {
+        const uniqueSongwriters = new Set<string>();
+        for (const track of ctx.getAllTracks()) {
+          if (track.songwriter) {
+            const songwriters = track.songwriter.split(',').map(s => s.trim()).filter(Boolean);
+            songwriters.forEach(s => uniqueSongwriters.add(s));
+          }
+        }
+
+        console.log(`[ContactEnrichmentSync] Syncing flags for ${uniqueSongwriters.size} songwriters...`);
+        for (const songwriterName of uniqueSongwriters) {
+          await syncContactEnrichmentFlags(songwriterName);
+        }
+        console.log(`[ContactEnrichmentSync] ✅ Flags synced for ${uniqueSongwriters.size} songwriters`);
+      } catch (syncError) {
+        console.error('Failed to sync contact enrichment flags:', syncError);
       }
 
       console.log(`✅ Job ${job.id} completed: ${result.tracksEnriched} enriched, ${result.errors} errors`);

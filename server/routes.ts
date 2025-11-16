@@ -14,7 +14,7 @@ import { harvestVirtualizedRows } from "./scrapers/spotifyEditorialDom";
 import { broadcastEnrichmentUpdate, broadcast } from "./websocket";
 import { getAuthStatus, isAuthHealthy } from "./auth-monitor";
 import { enrichTrackWithChartmetric, getSongwriterProfile, getSongwriterCollaborators, getSongwriterPublishers, getPlaylistMetadata, getPlaylistTracks, searchPlaylists } from "./chartmetric";
-import { getPlaylistMetrics, getTrackMetrics, invalidateMetricsCache } from "./metricsService";
+import { getPlaylistMetrics, getTrackMetrics, getContactMetrics, invalidateMetricsCache } from "./metricsService";
 import { triggerMetricsUpdate, scheduleMetricsUpdate, flushMetricsUpdate } from "./metricsUpdateManager";
 import { notificationService } from "./services/notificationService";
 
@@ -398,6 +398,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching track metrics:", error);
       res.status(500).json({ error: "Failed to fetch track metrics" });
+    }
+  });
+
+  app.get("/api/metrics/contacts", async (req, res) => {
+    try {
+      const metrics = await getContactMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching contact metrics:", error);
+      res.status(500).json({ error: "Failed to fetch contact metrics" });
     }
   });
 
