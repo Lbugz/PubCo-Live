@@ -17,7 +17,7 @@ export function FilterBar({ children, className }: FilterBarProps) {
   return (
     <Card className={cn("border-primary/20", className)}>
       <CardContent className="p-4">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        <div className="flex items-center gap-4 min-h-[40px]">
           {children}
         </div>
       </CardContent>
@@ -117,48 +117,50 @@ function FilterBarPills({ pills, showClear, onClearAll, className }: FilterBarPi
   const hasActiveFilters = pills.some(p => p.active);
 
   return (
-    <div className={cn("flex items-center gap-2 flex-wrap", className)}>
-      <span className="text-xs text-muted-foreground">Quick filters:</span>
-      {pills.map((pill) => {
-        const Icon = pill.icon;
-        let variantClass = "";
-        
-        if (pill.active) {
-          if (pill.variant === "hot") {
-            variantClass = "bg-orange-500/20 text-orange-400 border-orange-500/30";
-          } else if (pill.variant === "success") {
-            variantClass = "bg-chart-2/20 text-chart-2 border-chart-2/30";
+    <div className={cn("flex items-center gap-2 overflow-x-auto scrollbar-hide", className)}>
+      <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">Quick filters:</span>
+      <div className="flex items-center gap-2">
+        {pills.map((pill) => {
+          const Icon = pill.icon;
+          let variantClass = "";
+          
+          if (pill.active) {
+            if (pill.variant === "hot") {
+              variantClass = "bg-orange-500/20 text-orange-400 border-orange-500/30";
+            } else if (pill.variant === "success") {
+              variantClass = "bg-chart-2/20 text-chart-2 border-chart-2/30";
+            }
           }
-        }
 
-        return (
+          return (
+            <Badge
+              key={pill.label}
+              variant={pill.active ? "default" : "outline"}
+              className={cn(
+                "cursor-pointer hover-elevate active-elevate-2 whitespace-nowrap flex-shrink-0",
+                variantClass
+              )}
+              onClick={pill.onClick}
+              data-testid={pill.testId}
+            >
+              {Icon && <Icon className="h-3 w-3 mr-1" />}
+              {pill.label}
+            </Badge>
+          );
+        })}
+
+        {showClear && hasActiveFilters && onClearAll && (
           <Badge
-            key={pill.label}
-            variant={pill.active ? "default" : "outline"}
-            className={cn(
-              "cursor-pointer hover-elevate active-elevate-2",
-              variantClass
-            )}
-            onClick={pill.onClick}
-            data-testid={pill.testId}
+            variant="outline"
+            className="cursor-pointer hover-elevate active-elevate-2 gap-1 whitespace-nowrap flex-shrink-0"
+            onClick={onClearAll}
+            data-testid="badge-clear-filters"
           >
-            {Icon && <Icon className="h-3 w-3 mr-1" />}
-            {pill.label}
+            <X className="h-3 w-3" />
+            Clear filters
           </Badge>
-        );
-      })}
-
-      {showClear && hasActiveFilters && onClearAll && (
-        <Badge
-          variant="outline"
-          className="cursor-pointer hover-elevate active-elevate-2 gap-1"
-          onClick={onClearAll}
-          data-testid="badge-clear-filters"
-        >
-          <X className="h-3 w-3" />
-          Clear filters
-        </Badge>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -206,7 +208,7 @@ interface FilterBarFiltersGroupProps {
 
 function FilterBarFiltersGroup({ children, className }: FilterBarFiltersGroupProps) {
   return (
-    <div className={cn("flex flex-wrap items-center gap-3", className)}>
+    <div className={cn("flex items-center gap-3 flex-1 min-w-0", className)}>
       {children}
     </div>
   );

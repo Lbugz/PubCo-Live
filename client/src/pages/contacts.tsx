@@ -3,12 +3,13 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   Users, TrendingUp, Target, Activity, Search, Filter, X, Mail, Phone, 
   MessageCircle, User, ChevronDown, Loader2, UserPlus, Upload,
-  Flame, Link as LinkIcon, ArrowUpRight, ArrowDownRight, Eye, EyeOff
+  Flame, Link as LinkIcon, ArrowUpRight, ArrowDownRight, Eye, EyeOff, Settings2
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useMobile } from "@/hooks/use-mobile";
+import { useQuickFilterPreferences, type QuickFilterDefinition } from "@/hooks/use-quick-filter-preferences";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatsCard } from "@/components/stats-card";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -62,6 +64,30 @@ const STAGE_CONFIG = {
   },
 };
 
+const AVAILABLE_QUICK_FILTERS: QuickFilterDefinition[] = [
+  {
+    id: "hotLeads",
+    label: "Hot leads",
+    icon: Flame,
+    variant: "hot",
+    defaultVisible: true,
+  },
+  {
+    id: "chartmetricLinked",
+    label: "Chartmetric linked",
+    icon: LinkIcon,
+    variant: "default",
+    defaultVisible: true,
+  },
+  {
+    id: "positiveWow",
+    label: "Positive WoW",
+    icon: TrendingUp,
+    variant: "success",
+    defaultVisible: true,
+  },
+];
+
 export default function Contacts() {
   const { toast } = useToast();
   const isMobile = useMobile(768);
@@ -78,6 +104,15 @@ export default function Contacts() {
   const [showHotLeads, setShowHotLeads] = useState(false);
   const [showChartmetricLinked, setShowChartmetricLinked] = useState(false);
   const [showPositiveWow, setShowPositiveWow] = useState(false);
+  
+  // Quick filter preferences
+  const {
+    visibleFilters,
+    visibleFilterIds,
+    toggleFilterVisibility,
+    resetToDefaults,
+    allFilters,
+  } = useQuickFilterPreferences("contacts", AVAILABLE_QUICK_FILTERS);
   
   // Sorting
   const [sortField, setSortField] = useState<string>("totalStreams");
@@ -341,31 +376,34 @@ export default function Contacts() {
             />
 
             <FilterBar.Pills
-              pills={[
-                {
-                  label: "Hot leads",
-                  active: showHotLeads,
-                  onClick: () => setShowHotLeads(!showHotLeads),
-                  icon: Flame,
-                  variant: "hot",
-                  testId: "badge-filter-hot-leads"
-                },
-                {
-                  label: "Chartmetric linked",
-                  active: showChartmetricLinked,
-                  onClick: () => setShowChartmetricLinked(!showChartmetricLinked),
-                  icon: LinkIcon,
-                  testId: "badge-filter-chartmetric"
-                },
-                {
-                  label: "Positive WoW",
-                  active: showPositiveWow,
-                  onClick: () => setShowPositiveWow(!showPositiveWow),
-                  icon: TrendingUp,
-                  variant: "success",
-                  testId: "badge-filter-positive-wow"
+              pills={visibleFilters.map((filter) => {
+                let active = false;
+                let onClick = () => {};
+                let testId = "";
+
+                if (filter.id === "hotLeads") {
+                  active = showHotLeads;
+                  onClick = () => setShowHotLeads(!showHotLeads);
+                  testId = "badge-filter-hot-leads";
+                } else if (filter.id === "chartmetricLinked") {
+                  active = showChartmetricLinked;
+                  onClick = () => setShowChartmetricLinked(!showChartmetricLinked);
+                  testId = "badge-filter-chartmetric";
+                } else if (filter.id === "positiveWow") {
+                  active = showPositiveWow;
+                  onClick = () => setShowPositiveWow(!showPositiveWow);
+                  testId = "badge-filter-positive-wow";
                 }
-              ]}
+
+                return {
+                  label: filter.label,
+                  active,
+                  onClick,
+                  icon: filter.icon,
+                  variant: filter.variant,
+                  testId,
+                };
+              })}
               showClear={true}
               onClearAll={() => {
                 setShowHotLeads(false);
@@ -385,6 +423,54 @@ export default function Contacts() {
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Coming soon: Has Email, Score Range, Social Links filters
+                </div>
+
+                <Separator />
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Settings2 className="h-4 w-4 text-muted-foreground" />
+                      <h4 className="font-medium">Customize Quick Filters</h4>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetToDefaults}
+                      className="h-7 text-xs"
+                      data-testid="button-reset-filters"
+                    >
+                      Reset
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Choose which quick filters appear in the filter bar
+                  </p>
+                  <div className="space-y-2">
+                    {allFilters.map((filter) => {
+                      const Icon = filter.icon;
+                      return (
+                        <div
+                          key={filter.id}
+                          className="flex items-center gap-2"
+                        >
+                          <Checkbox
+                            id={`filter-${filter.id}`}
+                            checked={visibleFilterIds.has(filter.id)}
+                            onCheckedChange={() => toggleFilterVisibility(filter.id)}
+                            data-testid={`checkbox-filter-${filter.id}`}
+                          />
+                          <label
+                            htmlFor={`filter-${filter.id}`}
+                            className="flex items-center gap-2 text-sm cursor-pointer flex-1"
+                          >
+                            {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
+                            <span>{filter.label}</span>
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </FilterBar.AdvancedFilters>
