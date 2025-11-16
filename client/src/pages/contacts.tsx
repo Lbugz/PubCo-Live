@@ -706,7 +706,7 @@ export default function Contacts() {
             <div className="overflow-x-auto">
             <Table>
               <TableHeader className="sticky top-0 z-10 glass-header">
-                <TableRow>
+                <TableRow className="text-xs font-semibold uppercase tracking-wider">
                   <TableHead className="w-12">
                     <Checkbox
                       checked={selectedIds.size === sortedContacts.length}

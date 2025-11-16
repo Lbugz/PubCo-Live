@@ -1185,7 +1185,7 @@ export default function PlaylistsView() {
           ) : (
             <Table>
               <TableHeader className="sticky top-0 z-10 glass-header">
-                <TableRow>
+                <TableRow className="text-xs font-semibold uppercase tracking-wider">
                   <TableHead className="w-[50px]">
                     <Checkbox
                       checked={sortedPlaylists.length > 0 && sortedPlaylists.every(p => selectedPlaylistIds.has(p.id))}
