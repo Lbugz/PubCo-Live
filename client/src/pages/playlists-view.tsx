@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, EyeOff, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Clock, Settings2, Flame, Link as LinkIcon, AlertTriangle } from "lucide-react";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, EyeOff, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Clock, Settings2, Flame, Link as LinkIcon, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -84,6 +84,20 @@ const AVAILABLE_QUICK_FILTERS: QuickFilterDefinition[] = [
     variant: "default",
     defaultVisible: false,
   },
+  {
+    id: "hasTracks",
+    label: "Has tracks",
+    icon: CheckCircle,
+    variant: "default",
+    defaultVisible: false,
+  },
+  {
+    id: "failed",
+    label: "Failed",
+    icon: XCircle,
+    variant: "default",
+    defaultVisible: false,
+  },
 ];
 
 export default function PlaylistsView() {
@@ -110,6 +124,8 @@ export default function PlaylistsView() {
   const [showRecentlyUpdated, setShowRecentlyUpdated] = useState(false);
   const [showIncomplete, setShowIncomplete] = useState(false);
   const [showLargePlaylists, setShowLargePlaylists] = useState(false);
+  const [showHasTracks, setShowHasTracks] = useState(false);
+  const [showFailed, setShowFailed] = useState(false);
 
   // Quick filter preferences
   const {
@@ -622,8 +638,16 @@ export default function PlaylistsView() {
       filtered = filtered.filter(p => (p.totalTracks || 0) >= 50);
     }
 
+    if (showHasTracks) {
+      filtered = filtered.filter(p => (p.totalTracks || 0) > 0);
+    }
+
+    if (showFailed) {
+      filtered = filtered.filter(p => p.status === 'failed' || p.status === 'error');
+    }
+
     return filtered;
-  }, [playlists, searchQuery, sourceFilter, showEditorialOnly, showChartmetric, showHighFollowers, showRecentlyUpdated, showIncomplete, showLargePlaylists]);
+  }, [playlists, searchQuery, sourceFilter, showEditorialOnly, showChartmetric, showHighFollowers, showRecentlyUpdated, showIncomplete, showLargePlaylists, showHasTracks, showFailed]);
 
   // Calculate selected playlists from filtered set
   const selectedFilteredPlaylists = useMemo(() => {
@@ -802,6 +826,14 @@ export default function PlaylistsView() {
                 active = showLargePlaylists;
                 onClick = () => setShowLargePlaylists(!showLargePlaylists);
                 testId = "badge-filter-large-playlists";
+              } else if (filter.id === "hasTracks") {
+                active = showHasTracks;
+                onClick = () => setShowHasTracks(!showHasTracks);
+                testId = "badge-filter-has-tracks";
+              } else if (filter.id === "failed") {
+                active = showFailed;
+                onClick = () => setShowFailed(!showFailed);
+                testId = "badge-filter-failed";
               }
 
               return {
@@ -823,6 +855,8 @@ export default function PlaylistsView() {
               setShowRecentlyUpdated(false);
               setShowIncomplete(false);
               setShowLargePlaylists(false);
+              setShowHasTracks(false);
+              setShowFailed(false);
             }}
           />
 
