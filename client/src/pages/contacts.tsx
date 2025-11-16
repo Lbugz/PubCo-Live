@@ -44,6 +44,7 @@ import type { ContactWithSongwriter } from "@shared/schema";
 import { ContactDetailDrawer } from "@/components/contact-detail-drawer";
 import { PageContainer } from "@/components/layout/page-container";
 import { FilterBar } from "@/components/layout/filter-bar";
+import { StickyHeaderContainer } from "@/components/layout/sticky-header-container";
 import { SortableTableHeader } from "@/components/ui/sortable-table-header";
 
 const STAGE_CONFIG = {
@@ -310,8 +311,10 @@ export default function Contacts() {
 
   return (
     <PageContainer className="space-y-6 fade-in">
-      {/* Stats Cards with Toggle */}
-      <div className="space-y-3">
+      {/* Sticky Header: Metrics & Filters */}
+      <StickyHeaderContainer className="pb-4 border-b">
+        {/* Stats Cards with Toggle */}
+        <div className="space-y-3">
         <div className="flex items-center justify-end">
           <Button
             variant="ghost"
@@ -488,6 +491,7 @@ export default function Contacts() {
           </FilterBar.Actions>
         </FilterBar>
       </div>
+      </StickyHeaderContainer>
 
       {/* Stage Selector Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
