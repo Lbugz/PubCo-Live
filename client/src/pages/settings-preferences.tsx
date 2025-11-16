@@ -1,67 +1,27 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Target, Activity, Sparkles, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   getMetricPreferences,
   saveMetricPreferences,
-  type MetricId,
   type MetricPreferences,
+  type TrackMetricId,
+  type PublishingMetricId,
+  TRACK_METRIC_OPTIONS,
+  PUBLISHING_METRIC_OPTIONS,
 } from "@/lib/metricPreferences";
 import { useToast } from "@/hooks/use-toast";
-
-interface MetricOption {
-  id: MetricId;
-  label: string;
-  description: string;
-  icon: typeof Target;
-}
-
-const TRACK_METRICS: MetricOption[] = [
-  {
-    id: 'deal-ready-tracks',
-    label: 'Deal-Ready Tracks',
-    description: 'Tracks with unsigned score 7-10 - strong publishing signals',
-    icon: Target,
-  },
-  {
-    id: 'avg-unsigned-score',
-    label: 'Avg Unsigned Score',
-    description: 'Average unsigned score (0-10) across all tracks',
-    icon: Activity,
-  },
-  {
-    id: 'missing-publisher',
-    label: 'Missing Publisher',
-    description: 'Tracks with no publisher data - strongest unsigned signal (+5 points)',
-    icon: Sparkles,
-  },
-];
-
-const PUBLISHING_INTELLIGENCE_METRICS: MetricOption[] = [
-  {
-    id: 'high-confidence-unsigned',
-    label: 'High-Confidence Unsigned',
-    description: 'Songwriters verified as unsigned through MLC search with high-quality scores (7-10)',
-    icon: Target,
-  },
-  {
-    id: 'publishing-opportunities',
-    label: 'Publishing Opportunities',
-    description: 'All songwriter publishing opportunities: MLC verified unsigned',
-    icon: Sparkles,
-  },
-  {
-    id: 'enrichment-backlog',
-    label: 'Enrichment Backlog',
-    description: 'Songwriters not yet searched in MLC',
-    icon: Activity,
-  },
-];
 
 export default function SettingsPreferences() {
   const { toast } = useToast();
@@ -71,47 +31,70 @@ export default function SettingsPreferences() {
     setPreferences(getMetricPreferences());
   }, []);
 
-  const toggleMetric = (metricId: MetricId, section: 'trackMetrics' | 'publishingIntelligence') => {
+  const handleTrackMetricChange = (position: 0 | 1 | 2, value: string) => {
+    const newValue = value === 'none' ? null : (value as TrackMetricId);
+    
     setPreferences((prev) => {
-      const currentList = prev[section];
-      const isEnabled = currentList.includes(metricId);
-      
-      if (isEnabled && currentList.length === 1) {
-        toast({
-          title: "Cannot disable",
-          description: "At least one metric must be enabled in each section",
-          variant: "destructive",
-        });
-        return prev;
-      }
-
-      if (!isEnabled && currentList.length >= 3) {
-        toast({
-          title: "Maximum reached",
-          description: "You can select up to 3 metrics per section",
-          variant: "destructive",
-        });
-        return prev;
-      }
-
-      const newList = isEnabled
-        ? currentList.filter((id) => id !== metricId)
-        : [...currentList, metricId];
+      const newMetrics: [TrackMetricId | null, TrackMetricId | null, TrackMetricId | null] = [...prev.trackMetrics];
+      newMetrics[position] = newValue;
 
       const newPreferences = {
         ...prev,
-        [section]: newList,
+        trackMetrics: newMetrics,
       };
 
       saveMetricPreferences(newPreferences);
-
+      
       toast({
-        title: isEnabled ? "Metric hidden" : "Metric shown",
-        description: `${metricId} ${isEnabled ? 'removed from' : 'added to'} dashboard`,
+        title: "Metric updated",
+        description: `Position ${position + 1} updated`,
       });
 
       return newPreferences;
     });
+  };
+
+  const handlePublishingMetricChange = (position: 0 | 1 | 2, value: string) => {
+    const newValue = value === 'none' ? null : (value as PublishingMetricId);
+    
+    setPreferences((prev) => {
+      const newMetrics: [PublishingMetricId | null, PublishingMetricId | null, PublishingMetricId | null] = [...prev.publishingIntelligence];
+      newMetrics[position] = newValue;
+
+      const newPreferences = {
+        ...prev,
+        publishingIntelligence: newMetrics,
+      };
+
+      saveMetricPreferences(newPreferences);
+      
+      toast({
+        title: "Metric updated",
+        description: `Position ${position + 1} updated`,
+      });
+
+      return newPreferences;
+    });
+  };
+
+  const getAvailableTrackMetrics = (currentPosition: number) => {
+    const selectedInOtherPositions = preferences.trackMetrics
+      .filter((_, idx) => idx !== currentPosition)
+      .filter((m): m is TrackMetricId => m !== null);
+    
+    return TRACK_METRIC_OPTIONS.filter(
+      option => !selectedInOtherPositions.includes(option.id)
+    );
+  };
+
+  const getAvailablePublishingMetrics = (currentPosition: number) => {
+    const selectedInOtherPositions = preferences.publishingIntelligence
+      .filter((_, idx) => idx !== currentPosition)
+      .filter((m): m is PublishingMetricId => m !== null);
+    
+    return PUBLISHING_METRIC_OPTIONS.filter(
+      option => !selectedInOtherPositions.includes(option.id)
+    );
   };
 
   return (
@@ -119,14 +102,14 @@ export default function SettingsPreferences() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Dashboard Preferences</h1>
         <p className="text-muted-foreground">
-          Customize which metrics appear on your dashboard
+          Choose which 3 metrics appear on your dashboard and in what order
         </p>
       </div>
 
       <Alert className="mb-6">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Select up to 3 metrics per section. Changes are saved automatically and appear on the dashboard immediately.
+          Select a metric for each of the 3 positions. You can choose from 6 available options per section. Changes save automatically.
         </AlertDescription>
       </Alert>
 
@@ -134,48 +117,42 @@ export default function SettingsPreferences() {
         <CardHeader>
           <CardTitle>Track Metrics</CardTitle>
           <CardDescription>
-            Metrics based on track-level enrichment data and scoring
+            Choose which track metrics appear in positions 1, 2, and 3 on your dashboard
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">
-              Selected: {preferences.trackMetrics.length}/3
-            </span>
-          </div>
-          <Separator />
-          {TRACK_METRICS.map((metric) => {
-            const isEnabled = preferences.trackMetrics.includes(metric.id);
-            const Icon = metric.icon;
-            
-            return (
-              <div
-                key={metric.id}
-                className="flex items-start space-x-3 p-3 rounded-md hover-elevate transition-colors"
+        <CardContent className="space-y-6">
+          {[0, 1, 2].map((position) => (
+            <div key={position} className="space-y-2">
+              <Label htmlFor={`track-metric-${position}`} className="text-sm font-medium">
+                Position {position + 1}
+              </Label>
+              <Select
+                value={preferences.trackMetrics[position] || 'none'}
+                onValueChange={(value) => handleTrackMetricChange(position as 0 | 1 | 2, value)}
               >
-                <Checkbox
-                  id={metric.id}
-                  checked={isEnabled}
-                  onCheckedChange={() => toggleMetric(metric.id, 'trackMetrics')}
-                  data-testid={`checkbox-${metric.id}`}
-                />
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                    <Label
-                      htmlFor={metric.id}
-                      className="font-medium cursor-pointer"
+                <SelectTrigger 
+                  id={`track-metric-${position}`}
+                  data-testid={`select-track-metric-${position}`}
+                  className="w-full"
+                >
+                  <SelectValue placeholder="Select a metric..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None (hide this position)</SelectItem>
+                  <Separator className="my-1" />
+                  {getAvailableTrackMetrics(position).map((option) => (
+                    <SelectItem 
+                      key={option.id} 
+                      value={option.id}
+                      data-testid={`option-${option.id}`}
                     >
-                      {metric.label}
-                    </Label>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {metric.description}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
         </CardContent>
       </Card>
 
@@ -186,48 +163,42 @@ export default function SettingsPreferences() {
             <Badge variant="outline" className="text-xs">Experimental</Badge>
           </div>
           <CardDescription>
-            Contact-level metrics based on MLC/MusicBrainz enrichment verification. Currently being tested while MLC API issues are resolved.
+            Choose which publishing intelligence metrics appear in positions 1, 2, and 3 on your dashboard
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">
-              Selected: {preferences.publishingIntelligence.length}/3
-            </span>
-          </div>
-          <Separator />
-          {PUBLISHING_INTELLIGENCE_METRICS.map((metric) => {
-            const isEnabled = preferences.publishingIntelligence.includes(metric.id);
-            const Icon = metric.icon;
-            
-            return (
-              <div
-                key={metric.id}
-                className="flex items-start space-x-3 p-3 rounded-md hover-elevate transition-colors"
+        <CardContent className="space-y-6">
+          {[0, 1, 2].map((position) => (
+            <div key={position} className="space-y-2">
+              <Label htmlFor={`publishing-metric-${position}`} className="text-sm font-medium">
+                Position {position + 1}
+              </Label>
+              <Select
+                value={preferences.publishingIntelligence[position] || 'none'}
+                onValueChange={(value) => handlePublishingMetricChange(position as 0 | 1 | 2, value)}
               >
-                <Checkbox
-                  id={metric.id}
-                  checked={isEnabled}
-                  onCheckedChange={() => toggleMetric(metric.id, 'publishingIntelligence')}
-                  data-testid={`checkbox-${metric.id}`}
-                />
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                    <Label
-                      htmlFor={metric.id}
-                      className="font-medium cursor-pointer"
+                <SelectTrigger 
+                  id={`publishing-metric-${position}`}
+                  data-testid={`select-publishing-metric-${position}`}
+                  className="w-full"
+                >
+                  <SelectValue placeholder="Select a metric..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None (hide this position)</SelectItem>
+                  <Separator className="my-1" />
+                  {getAvailablePublishingMetrics(position).map((option) => (
+                    <SelectItem 
+                      key={option.id} 
+                      value={option.id}
+                      data-testid={`option-${option.id}`}
                     >
-                      {metric.label}
-                    </Label>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {metric.description}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
         </CardContent>
       </Card>
     </div>
