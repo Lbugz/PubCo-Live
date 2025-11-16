@@ -5,6 +5,17 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
 
 ## Recent Changes
 
+### Nov 16, 2025 - Publishing Intelligence System
+- **Contact-Level Enrichment Tracking**: Added 4 boolean flags to contacts table (`mlcSearched`, `mlcFound`, `musicbrainzSearched`, `musicbrainzFound`) to track verified unsigned status at songwriter level
+- **Automated Contact Sync**: Created `contactEnrichmentSync` service to aggregate track-level enrichment data to contact flags after each enrichment job completes
+- **New Publishing Intelligence Metrics**:
+  - **High-Confidence Unsigned**: Songwriters verified as unsigned through MLC search (mlcFound=0) with high-quality tracks (score ≥7)
+  - **Publishing Opportunities**: All MLC-verified unsigned songwriters (mlcSearched=1 AND mlcFound=0)
+  - **Enrichment Backlog**: Songwriters never searched in MLC (mlcSearched=0)
+- **Dashboard UI Updates**: Added dedicated "Publishing Intelligence" section with contact-level metrics, separate from track metrics
+- **Real-Time Cache Invalidation**: Metrics cache automatically invalidated after enrichment sync for immediate dashboard updates
+- **Authoritative MLC Signals**: Metrics use contact-level MLC flags as source of truth for unsigned status, with EXISTS checks for score validation
+
 ### Nov 16, 2025 - Scoring Pipeline Fix & UX Improvements
 - **Fixed premature scoring bug**: Removed incorrect score calculations during playlist fetch that assigned "High 8" scores to unenriched tracks
 - **Post-enrichment scoring**: Scores now calculated only after Phase 2 (credits scraping) completes, ensuring accuracy based on real enriched metadata
