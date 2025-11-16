@@ -1,4 +1,4 @@
-import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, artists, artistSongwriters, enrichmentJobs, contacts, contactTracks, songwriterProfiles, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory, type Artist, type InsertArtist, type EnrichmentJob, type InsertEnrichmentJob, type Contact, type ContactWithSongwriter } from "@shared/schema";
+import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, artists, artistSongwriters, enrichmentJobs, contacts, contactTracks, contactNotes, songwriterProfiles, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory, type Artist, type InsertArtist, type EnrichmentJob, type InsertEnrichmentJob, type Contact, type ContactWithSongwriter, type ContactNote } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, inArray, and, count } from "drizzle-orm";
 
@@ -31,7 +31,7 @@ export interface IStorage {
   getPlaylistById(id: string): Promise<TrackedPlaylist | null>;
   addTrackedPlaylist(playlist: InsertTrackedPlaylist): Promise<TrackedPlaylist>;
   updatePlaylistCompleteness(playlistId: string, fetchCount: number, totalTracks: number | null, lastChecked: Date): Promise<void>;
-  updatePlaylistMetadata(id: string, metadata: { totalTracks?: number | null; isEditorial?: number; fetchMethod?: string | null }): Promise<void>;
+  updatePlaylistMetadata(id: string, metadata: { totalTracks?: number | null; isEditorial?: number; fetchMethod?: string | null; lastChecked?: Date | null; isComplete?: number; lastFetchCount?: number | null }): Promise<void>;
   updateTrackedPlaylistMetadata(id: string, metadata: { name?: string; curator?: string | null; followers?: number | null; totalTracks?: number | null; imageUrl?: string | null }): Promise<void>;
   deleteTrackedPlaylist(id: string): Promise<void>;
   updateTrackContact(id: string, contact: { instagram?: string; twitter?: string; tiktok?: string; email?: string; contactNotes?: string }): Promise<void>;
@@ -65,6 +65,8 @@ export interface IStorage {
   getContactById(id: string): Promise<ContactWithSongwriter | null>;
   updateContact(id: string, updates: Partial<Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void>;
   getContactTracks(contactId: string): Promise<PlaylistSnapshot[]>;
+  createContactNote(contactId: string, content: string, options?: { authorUserId?: string | null; isPinned?: boolean }): Promise<ContactNote>;
+  getContactNotesById(contactId: string): Promise<ContactNote[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -505,7 +507,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(trackedPlaylists.playlistId, playlistId));
   }
 
-  async updatePlaylistMetadata(id: string, metadata: { totalTracks?: number | null; isEditorial?: number; fetchMethod?: string | null }): Promise<void> {
+  async updatePlaylistMetadata(id: string, metadata: { totalTracks?: number | null; isEditorial?: number; fetchMethod?: string | null; lastChecked?: Date | null; isComplete?: number; lastFetchCount?: number | null }): Promise<void> {
     await db.update(trackedPlaylists)
       .set(metadata)
       .where(eq(trackedPlaylists.id, id));
@@ -1118,8 +1120,28 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(playlistSnapshots, eq(contactTracks.trackId, playlistSnapshots.id))
       .where(eq(contactTracks.contactId, contactId))
       .orderBy(desc(playlistSnapshots.spotifyStreams));
-    
+
     return result.map(r => r.track);
+  }
+
+  async createContactNote(contactId: string, content: string, options?: { authorUserId?: string | null; isPinned?: boolean }): Promise<ContactNote> {
+    const [note] = await db.insert(contactNotes)
+      .values({
+        contactId,
+        content,
+        authorUserId: options?.authorUserId ?? null,
+        isPinned: options?.isPinned ? 1 : 0,
+      })
+      .returning();
+
+    return note;
+  }
+
+  async getContactNotesById(contactId: string): Promise<ContactNote[]> {
+    return db.select()
+      .from(contactNotes)
+      .where(eq(contactNotes.contactId, contactId))
+      .orderBy(desc(contactNotes.createdAt));
   }
 }
 

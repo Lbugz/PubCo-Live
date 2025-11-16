@@ -75,3 +75,19 @@ The frontend is a single-page React application with a modular component archite
 - **Neon (PostgreSQL)**: Managed PostgreSQL database for persistent data storage.
 - **GPT-4o-mini (via Replit AI Integrations)**: For AI-powered lead prioritization and insights generation.
 - **Puppeteer + Chromium**: Used for web scraping Spotify track credits and editorial playlist data.
+
+## External Integration Issues & Workarounds (Nov 2025)
+
+### Chartmetric
+- **Enterprise-only playlist metadata**: Chartmetric's `/playlist/:id` metadata endpoint now requires Enterprise-tier access, so `resolvePlaylistId` resolves Spotify IDs via the public search endpoint and we gracefully fall back to `null` when metadata cannot be fetched. [server/chartmetric.ts](server/chartmetric.ts)
+- **Search metadata fallback**: When the `/playlist/:id` call returns 401/empty because we're below the Enterprise tier, we hydrate a cache with the best available data (name, curator, followers, image) from the search endpoint so UI consumers still see context even without the privileged response. [server/chartmetric.ts](server/chartmetric.ts)
+- **Rate limiting**: A dedicated `ChartmetricRateLimiter` and `makeChartmetricRequest` helper throttle calls, retry 429s with jitter, and cache tokens/ID lookups so long-running enrichment jobs do not overwhelm the API. [server/chartmetric.ts](server/chartmetric.ts)
+- **Publisher/credit gaps**: Because Chartmetric no longer exposes publisher or detailed credit data publicly, we lean on our Spotify credits scraper and MLC pipeline to keep publisher, writer, and composer fields fresh. [server/scraper.ts](server/scraper.ts), [server/enrichment/mlcApi.ts](server/enrichment/mlcApi.ts)
+- **401s on ISRC lookups**: `getTrackByISRC` caches failures and returns `null` for 401/404 responses instead of throwing so playlist enrichment can continue with fallback data sources. [server/chartmetric.ts](server/chartmetric.ts)
+
+### The MLC (Mechanical Licensing Collective)
+- **OAuth 2.0 resilience**: The `MLCApiClient` keeps access tokens per job and wraps all fetches with explicit error logging so we can retry failed batches without stopping the worker. When credentials are missing, the enrichment phase short-circuits and reports a descriptive error for each track so operators know configuration is required. [server/enrichment/mlcApi.ts](server/enrichment/mlcApi.ts)
+- **Graceful degradation**: `enrichSingleTrack` falls back from ISRC queries to title/writer searches and still records `hasPublisher: false` with the upstream error message if both fail, keeping downstream analytics consistent. [server/enrichment/mlcApi.ts](server/enrichment/mlcApi.ts)
+
+### Spotify
+- **Managed connector outage**: Replit's managed Spotify connector still reports "Active" yet returns no credentials, so we documented a custom Authorization Code OAuth flow (client secrets stored in Replit Secrets, HTTPS redirect URIs, manual re-auth) as the supported workaround until the connector stabilizes. [SPOTIFY_SETUP.md](SPOTIFY_SETUP.md)

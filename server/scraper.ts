@@ -111,6 +111,23 @@ interface CreditsResult {
   error?: string;
 }
 
+type CreditRoleEntry = { name: string; role: string };
+
+interface CreditsExtractionResult {
+  writers: string[];
+  composers: string[];
+  producers: string[];
+  labels: string[];
+  publishers: string[];
+  allCredits: CreditRoleEntry[];
+}
+
+declare global {
+  interface Window {
+    splitConcatenatedNames(fullName: string): string[];
+  }
+}
+
 export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<ScrapeResult> {
   let browser: Browser | null = null;
   
@@ -516,8 +533,9 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         })();
       `;
       
-      spotifyStreams = await page.evaluate(streamCountScript);
-      
+      const streamCountResult = await page.evaluate(streamCountScript);
+      spotifyStreams = typeof streamCountResult === "number" ? streamCountResult : null;
+
       if (spotifyStreams) {
         console.log(`✅ Found Spotify stream count: ${spotifyStreams.toLocaleString()}`);
       } else {
@@ -656,12 +674,12 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
     // PHASE 3: Extract credits information from modal
     console.log("Phase 3: Extracting credits data from modal...");
     const credits = await page.evaluate(() => {
-      const writers = [];
-      const composers = [];
-      const producers = [];
-      const labels = [];
-      const publishers = [];
-      const allCredits = [];
+      const writers: string[] = [];
+      const composers: string[] = [];
+      const producers: string[] = [];
+      const labels: string[] = [];
+      const publishers: string[] = [];
+      const allCredits: CreditRoleEntry[] = [];
       
       // Get all text nodes in the modal to parse credit structure
       const allText = document.body.innerText;
@@ -681,14 +699,14 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
             // Split by commas first, then apply concatenated name detection to each segment
             const segments = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
-            const finalNames = [];
-            
+            const finalNames: string[] = [];
+
             for (let k = 0; k < segments.length; k++) {
               const splitResult = window.splitConcatenatedNames(segments[k]);
-              finalNames.push.apply(finalNames, splitResult);
+              finalNames.push(...splitResult);
             }
-            
-            writers.push.apply(writers, finalNames);
+
+            writers.push(...finalNames);
             finalNames.forEach(function(name) { allCredits.push({ name: name, role: 'Writer' }); });
           }
         }
@@ -697,14 +715,14 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
             // Split by commas first, then apply concatenated name detection to each segment
             const segments = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
-            const finalNames = [];
-            
+            const finalNames: string[] = [];
+
             for (let k = 0; k < segments.length; k++) {
               const splitResult = window.splitConcatenatedNames(segments[k]);
-              finalNames.push.apply(finalNames, splitResult);
+              finalNames.push(...splitResult);
             }
-            
-            producers.push.apply(producers, finalNames);
+
+            producers.push(...finalNames);
             finalNames.forEach(function(name) { allCredits.push({ name: name, role: 'Producer' }); });
           }
         }
@@ -713,14 +731,14 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
           if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
             // Split by commas first, then apply concatenated name detection to each segment
             const segments = nextLine.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
-            const finalNames = [];
-            
+            const finalNames: string[] = [];
+
             for (let k = 0; k < segments.length; k++) {
               const splitResult = window.splitConcatenatedNames(segments[k]);
-              finalNames.push.apply(finalNames, splitResult);
+              finalNames.push(...splitResult);
             }
-            
-            composers.push.apply(composers, finalNames);
+
+            composers.push(...finalNames);
             finalNames.forEach(function(name) { allCredits.push({ name: name, role: 'Composer' }); });
           }
         }
@@ -743,7 +761,7 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
               const singleName = names[0];
               const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
               if (capitalTransitions >= 2) {
-                const splitNames = [];
+                const splitNames: string[] = [];
                 let currentName = '';
                 for (let j = 0; j < singleName.length; j++) {
                   const char = singleName[j];
@@ -760,7 +778,7 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
               }
             }
             
-            publishers.push.apply(publishers, names);
+            publishers.push(...names);
             names.forEach(function(name) { allCredits.push({ name: name, role: 'Publisher' }); });
           }
         }
@@ -786,7 +804,7 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
               const singleName = names[0];
               const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
               if (capitalTransitions >= 2) {
-                const splitNames = [];
+                const splitNames: string[] = [];
                 let currentName = '';
                 for (let j = 0; j < singleName.length; j++) {
                   const char = singleName[j];
@@ -826,7 +844,7 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
               const singleName = names[0];
               const capitalTransitions = (singleName.match(/[a-z][A-Z]/g) || []).length;
               if (capitalTransitions >= 2) {
-                const splitNames = [];
+                const splitNames: string[] = [];
                 let currentName = '';
                 for (let j = 0; j < singleName.length; j++) {
                   const char = singleName[j];
@@ -861,7 +879,7 @@ export async function scrapeTrackCredits(trackUrl: string): Promise<CreditsResul
         publishers: Array.from(new Set(publishers)),
         allCredits
       };
-    });
+    }) as CreditsExtractionResult;
     
     console.log(`Extracted ${credits.allCredits.length} credits`);
     

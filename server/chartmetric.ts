@@ -625,6 +625,54 @@ export function parseChartmetricPlaylistUrl(url: string): { platform: string; id
 }
 
 const playlistIdCache = new Map<string, string | null>();
+const playlistSearchMetadataCache = new Map<string, ChartmetricPlaylistMetadata>();
+
+function cachePlaylistSearchMetadata(
+  chartmetricId: string,
+  playlist: any,
+  platform: string,
+  platformIdFallback?: string,
+): void {
+  const normalizeImage = (images?: any) => {
+    if (!images) return undefined;
+    if (typeof images === 'string') return images;
+    if (Array.isArray(images) && images.length > 0) {
+      const first = images[0];
+      return typeof first === 'string' ? first : first?.url;
+    }
+    if (typeof images === 'object' && images.url) {
+      return images.url;
+    }
+    return undefined;
+  };
+
+  const normalizeGenres = (genres?: any[]): string[] | undefined => {
+    if (!Array.isArray(genres)) return undefined;
+    const normalized = genres
+      .map((genre: any) => typeof genre === 'string' ? genre : genre?.name)
+      .filter((value): value is string => Boolean(value));
+    return normalized.length > 0 ? normalized : undefined;
+  };
+
+  const fallbackMetadata: ChartmetricPlaylistMetadata = {
+    id: chartmetricId,
+    name: playlist?.name
+      || playlist?.title
+      || playlist?.display_name
+      || platformIdFallback
+      || chartmetricId,
+    curator: playlist?.curator_name || playlist?.curator,
+    platform: playlist?.platform || platform,
+    followerCount: playlist?.follower_count ?? playlist?.followers,
+    trackCount: playlist?.track_count ?? playlist?.tracks,
+    type: playlist?.type,
+    genres: normalizeGenres(playlist?.genres),
+    imageUrl: playlist?.image_url ?? normalizeImage(playlist?.images),
+    description: playlist?.description,
+  };
+
+  playlistSearchMetadataCache.set(chartmetricId, fallbackMetadata);
+}
 
 async function resolvePlaylistId(platformIdOrChartmetricId: string, platform: string = 'spotify'): Promise<string | null> {
   const cacheKey = `${platform}:${platformIdOrChartmetricId}`;
@@ -653,23 +701,25 @@ async function resolvePlaylistId(platformIdOrChartmetricId: string, platform: st
     
     if (searchResults && searchResults.playlists && Array.isArray(searchResults.playlists) && searchResults.playlists.length > 0) {
       // Find exact match by platform_id (Spotify playlist ID)
-      const exactMatch = searchResults.playlists.find((p: any) => 
+      const exactMatch = searchResults.playlists.find((p: any) =>
         p.platform_id === platformIdOrChartmetricId || p.code === platformIdOrChartmetricId
       );
-      
+
       if (exactMatch && exactMatch.id) {
         const chartmetricId = exactMatch.id.toString();
         console.log(`✅ Chartmetric: Resolved ${platform}:${platformIdOrChartmetricId} → Chartmetric ID ${chartmetricId} (via search)`);
         playlistIdCache.set(cacheKey, chartmetricId);
+        cachePlaylistSearchMetadata(chartmetricId, exactMatch, platform, platformIdOrChartmetricId);
         return chartmetricId;
       }
-      
+
       // If no exact match, try the first result as a fallback
       const firstResult = searchResults.playlists[0];
       if (firstResult && firstResult.id) {
         const chartmetricId = firstResult.id.toString();
         console.log(`⚠️  Chartmetric: Using best-match result for ${platform}:${platformIdOrChartmetricId} → ID ${chartmetricId}`);
         playlistIdCache.set(cacheKey, chartmetricId);
+        cachePlaylistSearchMetadata(chartmetricId, firstResult, platform, platformIdOrChartmetricId);
         return chartmetricId;
       }
     }
@@ -690,19 +740,33 @@ async function resolvePlaylistId(platformIdOrChartmetricId: string, platform: st
 }
 
 export async function getPlaylistMetadata(playlistId: string, platform: string = 'spotify'): Promise<ChartmetricPlaylistMetadata | null> {
+  const chartmetricId = await resolvePlaylistId(playlistId, platform);
+  if (!chartmetricId) {
+    console.log(`⚠️  Chartmetric: Could not resolve playlist ID ${playlistId}`);
+    return null;
+  }
+
+  const fallbackMetadata = playlistSearchMetadataCache.get(chartmetricId);
+
   try {
-    const chartmetricId = await resolvePlaylistId(playlistId, platform);
-    if (!chartmetricId) {
-      console.log(`⚠️  Chartmetric: Could not resolve playlist ID ${playlistId}`);
+    console.log(`📋 Chartmetric: Fetching playlist metadata for ${chartmetricId}`);
+    const metadata = await makeChartmetricRequest<any>(`/playlist/${chartmetricId}`);
+
+    if (!metadata) {
+      if (fallbackMetadata) {
+        console.log(`ℹ️  Chartmetric: Using cached search metadata for playlist ${chartmetricId} (empty API response)`);
+        return fallbackMetadata;
+      }
       return null;
     }
 
-    console.log(`📋 Chartmetric: Fetching playlist metadata for ${chartmetricId}`);
-    const metadata = await makeChartmetricRequest<any>(`/playlist/${chartmetricId}`);
-    
-    if (!metadata) {
-      return null;
-    }
+    const normalizeGenres = (genres?: any[]): string[] | undefined => {
+      if (!Array.isArray(genres)) return undefined;
+      const normalized = genres
+        .map((genre: any) => typeof genre === 'string' ? genre : genre?.name)
+        .filter((value): value is string => Boolean(value));
+      return normalized.length > 0 ? normalized : undefined;
+    };
 
     // Extract image URL from images array (Chartmetric provides array like Spotify)
     let imageUrl: string | undefined;
@@ -714,24 +778,33 @@ export async function getPlaylistMetadata(playlistId: string, platform: string =
       imageUrl = metadata.image_url;
     }
 
-    return {
+    const normalizedMetadata: ChartmetricPlaylistMetadata = {
       id: metadata.id?.toString() || chartmetricId,
-      name: metadata.name || '',
-      curator: metadata.curator_name || metadata.curator,
+      name: metadata.name || fallbackMetadata?.name || '',
+      curator: metadata.curator_name || metadata.curator || fallbackMetadata?.curator,
       platform: metadata.platform || platform,
-      followerCount: metadata.follower_count || metadata.followers,
-      trackCount: metadata.track_count || metadata.tracks,
-      type: metadata.type,
-      genres: metadata.genres || [],
-      imageUrl,
-      description: metadata.description,
+      followerCount: metadata.follower_count ?? metadata.followers ?? fallbackMetadata?.followerCount,
+      trackCount: metadata.track_count ?? metadata.tracks ?? fallbackMetadata?.trackCount,
+      type: metadata.type || fallbackMetadata?.type,
+      genres: normalizeGenres(metadata.genres) ?? fallbackMetadata?.genres,
+      imageUrl: imageUrl || fallbackMetadata?.imageUrl,
+      description: metadata.description || fallbackMetadata?.description,
     };
+
+    playlistSearchMetadataCache.set(chartmetricId, normalizedMetadata);
+    return normalizedMetadata;
   } catch (error: any) {
-    if (error.message?.includes('401') && error.message?.includes('internal API endpoint')) {
-      console.log(`ℹ️  Chartmetric: Playlist metadata endpoint requires Enterprise tier access (playlist: ${playlistId})`);
+    if (error.message?.includes('401')) {
+      console.log(`ℹ️  Chartmetric: Playlist metadata endpoint requires higher tier access (playlist: ${playlistId})`);
     } else {
       console.error(`❌ Chartmetric: Error fetching playlist metadata for ${playlistId}:`, error.message);
     }
+
+    if (fallbackMetadata) {
+      console.log(`ℹ️  Chartmetric: Falling back to cached search metadata for playlist ${chartmetricId}`);
+      return fallbackMetadata;
+    }
+
     return null;
   }
 }
