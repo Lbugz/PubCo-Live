@@ -1572,57 +1572,48 @@ export default function PlaylistsView() {
                   </AccordionContent>
                 </AccordionItem>
 
-                {/* Actions Section */}
-                <AccordionItem value="actions" className="border rounded-lg overflow-hidden bg-background/60 backdrop-blur">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate" data-testid="accordion-actions">
-                    <span className="font-medium">Actions</span>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        className="w-full justify-start"
-                        variant="outline"
-                        onClick={() => viewTracks(selectedPlaylist.playlistId)}
-                        data-testid="button-drawer-view-tracks"
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Tracks
-                      </Button>
-                      <Button
-                        className="w-full justify-start"
-                        variant="outline"
-                        onClick={() => fetchPlaylistDataMutation.mutate(selectedPlaylist.playlistId)}
-                        disabled={fetchPlaylistDataMutation.isPending}
-                        data-testid="button-drawer-fetch-data"
-                      >
-                        <RefreshCw className={cn("h-4 w-4 mr-2", fetchPlaylistDataMutation.isPending && "animate-spin")} />
-                        {fetchPlaylistDataMutation.isPending ? "Fetching..." : "Fetch Data"}
-                      </Button>
-                      <Button
-                        className="w-full justify-start"
-                        variant="outline"
-                        onClick={() => refreshMetadataMutation.mutate(selectedPlaylist.id)}
-                        disabled={refreshMetadataMutation.isPending}
-                        data-testid="button-drawer-refresh-metadata"
-                      >
-                        <RefreshCw className={cn("h-4 w-4 mr-2", refreshMetadataMutation.isPending && "animate-spin")} />
-                        {refreshMetadataMutation.isPending ? "Refreshing..." : "Refresh Metadata"}
-                      </Button>
-                      <Button
-                        className="w-full justify-start"
-                        variant="outline"
-                        onClick={() => window.open(selectedPlaylist.spotifyUrl, "_blank")}
-                        data-testid="button-drawer-open-spotify"
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Open in Spotify
-                      </Button>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-
               </Accordion>
+
+              {/* Actions Section */}
+              <div className="border rounded-lg overflow-hidden bg-background/60 backdrop-blur p-4">
+                <p className="font-medium mb-4">Actions</p>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    className="w-full justify-start bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                    onClick={() => viewTracks(selectedPlaylist.playlistId)}
+                    data-testid="button-drawer-view-tracks"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Tracks
+                  </Button>
+                  <Button
+                    className="w-full justify-start bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                    onClick={() => fetchPlaylistDataMutation.mutate(selectedPlaylist.playlistId)}
+                    disabled={fetchPlaylistDataMutation.isPending}
+                    data-testid="button-drawer-fetch-data"
+                  >
+                    <RefreshCw className={cn("h-4 w-4 mr-2", fetchPlaylistDataMutation.isPending && "animate-spin")} />
+                    {fetchPlaylistDataMutation.isPending ? "Fetching..." : "Fetch Data"}
+                  </Button>
+                  <Button
+                    className="w-full justify-start bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                    onClick={() => refreshMetadataMutation.mutate(selectedPlaylist.id)}
+                    disabled={refreshMetadataMutation.isPending}
+                    data-testid="button-drawer-refresh-metadata"
+                  >
+                    <RefreshCw className={cn("h-4 w-4 mr-2", refreshMetadataMutation.isPending && "animate-spin")} />
+                    {refreshMetadataMutation.isPending ? "Refreshing..." : "Refresh Metadata"}
+                  </Button>
+                  <Button
+                    className="w-full justify-start bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                    onClick={() => window.open(selectedPlaylist.spotifyUrl, "_blank")}
+                    data-testid="button-drawer-open-spotify"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Open in Spotify
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </SheetContent>
