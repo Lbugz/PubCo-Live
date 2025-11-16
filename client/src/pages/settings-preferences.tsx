@@ -146,7 +146,10 @@ export default function SettingsPreferences() {
                       value={option.id}
                       data-testid={`option-${option.id}`}
                     >
-                      {option.label}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-medium">{option.label}</span>
+                        <span className="text-xs text-muted-foreground">{option.description}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -192,7 +195,10 @@ export default function SettingsPreferences() {
                       value={option.id}
                       data-testid={`option-${option.id}`}
                     >
-                      {option.label}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-medium">{option.label}</span>
+                        <span className="text-xs text-muted-foreground">{option.description}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
