@@ -275,18 +275,6 @@ export default function Contacts() {
 
   return (
     <PageContainer className="space-y-6 fade-in">
-      {/* Action Buttons */}
-      <div className="flex items-center justify-end gap-2">
-        <Button variant="gradient" size="sm" className="gap-2" data-testid="button-add-contact">
-          <UserPlus className="h-4 w-4" />
-          <span className="hidden sm:inline">Add Contact</span>
-        </Button>
-        <Button variant="gradient" size="sm" className="gap-2" data-testid="button-import-csv">
-          <Upload className="h-4 w-4" />
-          <span className="hidden sm:inline">Import CSV</span>
-        </Button>
-      </div>
-
       {/* Stats Cards with Toggle */}
       <div className="space-y-3">
         <div className="flex items-center justify-end">
@@ -344,81 +332,74 @@ export default function Contacts() {
 
         {/* Search and filters */}
         <FilterBar>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
+          <FilterBar.FiltersGroup>
+            <FilterBar.Search
               placeholder="Search by songwriter name..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-              data-testid="input-search-contacts"
+              onChange={setSearchQuery}
+              testId="input-search-contacts"
             />
-          </div>
 
-            <Button variant="outline" size="sm" className="gap-2 w-full sm:w-auto" data-testid="button-advanced-filters">
-              <Filter className="h-4 w-4" />
-              <span className="hidden sm:inline">Advanced Filters</span>
-              <span className="sm:hidden">Filters</span>
-            </Button>
-          </div>
-
-          {/* Quick Filter Pills */}
-          <div className="flex items-center gap-2 flex-wrap w-full">
-          <span className="text-xs text-muted-foreground">Quick filters:</span>
-          <Badge
-            variant={showHotLeads ? "default" : "outline"}
-            className={cn(
-              "cursor-pointer hover-elevate active-elevate-2",
-              showHotLeads && "bg-orange-500/20 text-orange-400 border-orange-500/30"
-            )}
-            onClick={() => setShowHotLeads(!showHotLeads)}
-            data-testid="badge-filter-hot-leads"
-          >
-            <Flame className="h-3 w-3 mr-1" />
-            Hot leads
-          </Badge>
-          <Badge
-            variant={showChartmetricLinked ? "default" : "outline"}
-            className="cursor-pointer hover-elevate active-elevate-2"
-            onClick={() => setShowChartmetricLinked(!showChartmetricLinked)}
-            data-testid="badge-filter-chartmetric"
-          >
-            <LinkIcon className="h-3 w-3 mr-1" />
-            Chartmetric linked
-          </Badge>
-          <Badge
-            variant={showPositiveWow ? "default" : "outline"}
-            className={cn(
-              "cursor-pointer hover-elevate active-elevate-2",
-              showPositiveWow && "bg-chart-2/20 text-chart-2 border-chart-2/30"
-            )}
-            onClick={() => setShowPositiveWow(!showPositiveWow)}
-            data-testid="badge-filter-positive-wow"
-          >
-            <TrendingUp className="h-3 w-3 mr-1" />
-            Positive WoW
-          </Badge>
-          
-          {/* Clear View chip */}
-          {(showHotLeads || showChartmetricLinked || showPositiveWow || searchQuery.length > 0) && (
-            <Badge
-              variant="outline"
-              className="cursor-pointer hover-elevate active-elevate-2 gap-1"
-              onClick={() => {
+            <FilterBar.Pills
+              pills={[
+                {
+                  label: "Hot leads",
+                  active: showHotLeads,
+                  onClick: () => setShowHotLeads(!showHotLeads),
+                  icon: Flame,
+                  variant: "hot",
+                  testId: "badge-filter-hot-leads"
+                },
+                {
+                  label: "Chartmetric linked",
+                  active: showChartmetricLinked,
+                  onClick: () => setShowChartmetricLinked(!showChartmetricLinked),
+                  icon: LinkIcon,
+                  testId: "badge-filter-chartmetric"
+                },
+                {
+                  label: "Positive WoW",
+                  active: showPositiveWow,
+                  onClick: () => setShowPositiveWow(!showPositiveWow),
+                  icon: TrendingUp,
+                  variant: "success",
+                  testId: "badge-filter-positive-wow"
+                }
+              ]}
+              showClear={true}
+              onClearAll={() => {
                 setShowHotLeads(false);
                 setShowChartmetricLinked(false);
                 setShowPositiveWow(false);
                 setSearchQuery("");
               }}
-              data-testid="badge-clear-view"
-            >
-              <X className="h-3 w-3" />
-              Clear view
-            </Badge>
-          )}
-          </div>
+            />
+
+            <FilterBar.AdvancedFilters testId="button-advanced-filters">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium mb-3">Advanced Filters</h4>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Refine your contact search with additional criteria
+                  </p>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Coming soon: Has Email, Score Range, Social Links filters
+                </div>
+              </div>
+            </FilterBar.AdvancedFilters>
+          </FilterBar.FiltersGroup>
+
+          <FilterBar.Actions>
+            <Button variant="gradient" size="sm" className="gap-2" data-testid="button-add-contact">
+              <UserPlus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add Contact</span>
+            </Button>
+            <Button variant="gradient" size="sm" className="gap-2" data-testid="button-import-csv">
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">Import CSV</span>
+            </Button>
+          </FilterBar.Actions>
         </FilterBar>
       </div>
 
