@@ -1038,7 +1038,7 @@ export default function Dashboard() {
             onViewModeChange={setViewMode}
             availableViews={["table", "card", "kanban"]}
             count={filteredTracks.length}
-            countLabel={filteredTracks.length === 1 ? "result" : "results"}
+            countLabel={filteredTracks.length === 1 ? "track" : "tracks"}
             className="slide-in-right"
           />
 
