@@ -5,6 +5,14 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
 
 ## Recent Changes
 
+### Nov 16, 2025 - Sticky Headers & Table Consistency
+- **Sticky Header Container**: Created reusable `StickyHeaderContainer` component for filters and metrics sections
+- **Dashboard**: Wrapped metrics and FilterBar in sticky header - stays visible while scrolling through tracks
+- **Playlists**: Wrapped metrics and FilterBar in sticky header - stays visible while scrolling through playlist table
+- **Contacts**: Wrapped metrics and FilterBar in sticky header - stays visible while scrolling through contact table
+- **Consistent Table Styling**: All tables now use `glass-panel` class consistently for unified backdrop blur, background, and border styling
+- **Removed Redundant Classes**: Simplified playlists table styling by removing duplicate `backdrop-blur-xl border border-primary/20` classes already covered by `glass-panel`
+
 ### Nov 16, 2025 - Publishing Intelligence System
 - **Contact-Level Enrichment Tracking**: Added 4 boolean flags to contacts table (`mlcSearched`, `mlcFound`, `musicbrainzSearched`, `musicbrainzFound`) to track verified unsigned status at songwriter level
 - **Automated Contact Sync**: Created `contactEnrichmentSync` service to aggregate track-level enrichment data to contact flags after each enrichment job completes
