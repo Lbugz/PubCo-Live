@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, EyeOff, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Clock } from "lucide-react";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, EyeOff, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Clock, Settings2, Flame, Link as LinkIcon } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -9,6 +9,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useFetchPlaylistsMutation } from "@/hooks/use-fetch-playlists-mutation";
 import { useMobile } from "@/hooks/use-mobile";
 import { useForm } from "react-hook-form";
+import { useQuickFilterPreferences, type QuickFilterDefinition } from "@/hooks/use-quick-filter-preferences";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,12 +33,30 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeaderControls, type ViewMode } from "@/components/layout/page-header-controls";
 import { FilterBar } from "@/components/layout/filter-bar";
 import { AddPlaylistDialog } from "@/components/add-playlist-dialog";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+
+const AVAILABLE_QUICK_FILTERS: QuickFilterDefinition[] = [
+  {
+    id: "editorial",
+    label: "Editorial only",
+    icon: Trophy,
+    variant: "default",
+    defaultVisible: true,
+  },
+  {
+    id: "chartmetric",
+    label: "Chartmetric linked",
+    icon: LinkIcon,
+    variant: "default",
+    defaultVisible: true,
+  },
+];
 
 export default function PlaylistsView() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,6 +74,19 @@ export default function PlaylistsView() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const isMobile = useMobile(768);
+
+  // Quick filters
+  const [showEditorialOnly, setShowEditorialOnly] = useState(false);
+  const [showChartmetric, setShowChartmetric] = useState(false);
+
+  // Quick filter preferences
+  const {
+    visibleFilters,
+    visibleFilterIds,
+    toggleFilterVisibility,
+    resetToDefaults,
+    allFilters,
+  } = useQuickFilterPreferences("playlists", AVAILABLE_QUICK_FILTERS);
 
   // Auto-switch to card view on mobile
   useEffect(() => {
@@ -531,8 +563,17 @@ export default function PlaylistsView() {
       filtered = filtered.filter(p => normalizeSource(p.source) === sourceFilter);
     }
 
+    // Quick filters
+    if (showEditorialOnly) {
+      filtered = filtered.filter(p => p.isEditorial === 1);
+    }
+
+    if (showChartmetric) {
+      filtered = filtered.filter(p => !!p.chartmetricUrl);
+    }
+
     return filtered;
-  }, [playlists, searchQuery, sourceFilter]);
+  }, [playlists, searchQuery, sourceFilter, showEditorialOnly, showChartmetric]);
 
   // Calculate selected playlists from filtered set
   const selectedFilteredPlaylists = useMemo(() => {
@@ -737,46 +778,136 @@ export default function PlaylistsView() {
 
       {/* Filters */}
       <FilterBar>
-        <div className="flex-1 min-w-[200px]">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search playlists..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-              data-testid="input-playlist-search"
-            />
-          </div>
-        </div>
+        <FilterBar.FiltersGroup>
+          <FilterBar.Search
+            placeholder="Search playlists..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+            testId="input-playlist-search"
+          />
 
-        <Select value={sourceFilter} onValueChange={setSourceFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-source-filter">
-            <SelectValue placeholder="All Sources" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Sources</SelectItem>
-            {sources.map(source => (
-              <SelectItem key={source} value={source}>
-                {source.charAt(0).toUpperCase() + source.slice(1)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <FilterBar.Dropdown
+            value={sourceFilter}
+            onChange={setSourceFilter}
+            options={[
+              { value: "all", label: "All Sources" },
+              ...sources.map(source => ({
+                value: source,
+                label: source.charAt(0).toUpperCase() + source.slice(1)
+              }))
+            ]}
+            testId="select-source-filter"
+          />
 
-        {(searchQuery || sourceFilter !== "all") && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
+          <FilterBar.Pills
+            pills={visibleFilters.map((filter) => {
+              let active = false;
+              let onClick = () => {};
+              let testId = "";
+
+              if (filter.id === "editorial") {
+                active = showEditorialOnly;
+                onClick = () => setShowEditorialOnly(!showEditorialOnly);
+                testId = "badge-filter-editorial";
+              } else if (filter.id === "chartmetric") {
+                active = showChartmetric;
+                onClick = () => setShowChartmetric(!showChartmetric);
+                testId = "badge-filter-chartmetric";
+              }
+
+              return {
+                label: filter.label,
+                active,
+                onClick,
+                icon: filter.icon,
+                variant: filter.variant,
+                testId,
+              };
+            })}
+            showClear={true}
+            onClearAll={() => {
               setSearchQuery("");
               setSourceFilter("all");
+              setShowEditorialOnly(false);
+              setShowChartmetric(false);
             }}
-            data-testid="button-clear-filters"
+          />
+
+          <FilterBar.AdvancedFilters testId="button-advanced-filters">
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-3">Advanced Filters</h4>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Refine your playlist search with additional criteria
+                </p>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Coming soon: Follower count, Track count, Score range filters
+              </div>
+
+              <Separator />
+
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Settings2 className="h-4 w-4 text-muted-foreground" />
+                    <h4 className="font-medium">Customize Quick Filters</h4>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetToDefaults}
+                    className="h-7 text-xs"
+                    data-testid="button-reset-filters"
+                  >
+                    Reset
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Choose which quick filters appear in the filter bar
+                </p>
+                <div className="space-y-2">
+                  {allFilters.map((filter) => {
+                    const Icon = filter.icon;
+                    return (
+                      <div
+                        key={filter.id}
+                        className="flex items-center gap-2"
+                      >
+                        <Checkbox
+                          id={`filter-${filter.id}`}
+                          checked={visibleFilterIds.has(filter.id)}
+                          onCheckedChange={() => toggleFilterVisibility(filter.id)}
+                          data-testid={`checkbox-filter-${filter.id}`}
+                        />
+                        <label
+                          htmlFor={`filter-${filter.id}`}
+                          className="flex items-center gap-2 text-sm cursor-pointer flex-1"
+                        >
+                          {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
+                          <span>{filter.label}</span>
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </FilterBar.AdvancedFilters>
+        </FilterBar.FiltersGroup>
+
+        <FilterBar.Actions>
+          <Button 
+            variant="gradient" 
+            size="sm" 
+            className="gap-2"
+            onClick={() => setAddDialogOpen(true)}
+            data-testid="button-add-playlist"
           >
-            Clear Filters
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Add Playlist</span>
           </Button>
-        )}
+        </FilterBar.Actions>
       </FilterBar>
 
       {/* Bulk Actions Toolbar */}
