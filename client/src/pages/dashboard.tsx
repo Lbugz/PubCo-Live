@@ -678,23 +678,6 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <PageContainer>
         <div className="space-y-6 fade-in">
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end">
-            <Button
-              onClick={() => enrichArtistsMutation.mutate({ limit: 50 })}
-              variant="gradient"
-              size="default"
-              className="gap-2"
-              disabled={enrichArtistsMutation.isPending || !tracks || tracks.length === 0}
-              data-testid="button-enrich-artists"
-            >
-              <Users className={`h-4 w-4 ${enrichArtistsMutation.isPending ? "animate-pulse" : ""}`} />
-              <span className="hidden md:inline">
-                {enrichArtistsMutation.isPending ? "Enriching Data..." : "Enrich Data"}
-              </span>
-            </Button>
-          </div>
-
           {/* Enhanced Stats Cards with Trends and Toggle */}
           <div className="space-y-3">
             <div className="flex items-center justify-end">
@@ -1043,6 +1026,22 @@ export default function Dashboard() {
                   </PopoverContent>
                 </Popover>
             </div>
+
+            <FilterBar.Actions>
+              <Button
+                onClick={() => enrichArtistsMutation.mutate({ limit: 50 })}
+                variant="gradient"
+                size="sm"
+                className="gap-2"
+                disabled={enrichArtistsMutation.isPending || !tracks || tracks.length === 0}
+                data-testid="button-enrich-artists"
+              >
+                <Users className={`h-4 w-4 ${enrichArtistsMutation.isPending ? "animate-pulse" : ""}`} />
+                <span className="hidden sm:inline">
+                  {enrichArtistsMutation.isPending ? "Enriching..." : "Enrich Data"}
+                </span>
+              </Button>
+            </FilterBar.Actions>
           </FilterBar>
 
           {/* View Switcher */}

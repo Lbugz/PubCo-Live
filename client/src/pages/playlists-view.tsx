@@ -702,83 +702,6 @@ export default function PlaylistsView() {
 
   return (
     <PageContainer className="space-y-6 fade-in">
-
-      {/* Action Buttons */}
-      <div className="flex items-center justify-end">
-        <div className="flex gap-2">
-          {/* Fetch Data Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="default"
-                className="gap-2"
-                disabled={fetchPlaylistsMutation.isPending}
-                data-testid="button-fetch-data"
-              >
-                <RefreshCw className={`h-4 w-4 ${fetchPlaylistsMutation.isPending ? "animate-spin" : ""}`} />
-                <span className="hidden sm:inline">
-                  {fetchPlaylistsMutation.isPending ? "Fetching..." : "Fetch Data"}
-                </span>
-                {!fetchPlaylistsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuLabel>Fetch Options</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'all' })} data-testid="menu-fetch-all">
-                Fetch All Playlists
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'editorial' })} data-testid="menu-fetch-editorial">
-                Fetch Editorial Playlists Only
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'non-editorial' })} data-testid="menu-fetch-non-editorial">
-                Fetch Non-Editorial Playlists Only
-              </DropdownMenuItem>
-              {playlists.length > 0 && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Fetch Specific Playlist</DropdownMenuLabel>
-                  {playlists.map((playlist) => (
-                    <DropdownMenuItem 
-                      key={playlist.id} 
-                      onClick={() => fetchPlaylistsMutation.mutate({ mode: 'specific', playlistId: playlist.id })}
-                      data-testid={`menu-fetch-playlist-${playlist.id}`}
-                    >
-                      {playlist.name}
-                    </DropdownMenuItem>
-                  ))}
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button 
-            variant="gradient" 
-            size="default" 
-            className="gap-2" 
-            data-testid="button-add-playlist"
-            onClick={() => setAddDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Add Playlist
-          </Button>
-
-          <AddPlaylistDialog 
-            open={addDialogOpen} 
-            onOpenChange={setAddDialogOpen}
-            onPlaylistsAdded={(spotifyPlaylistIds) => {
-              // Trigger automatic fetch/enrichment for each successfully added playlist
-              spotifyPlaylistIds.forEach((spotifyPlaylistId, index) => {
-                setTimeout(() => {
-                  fetchPlaylistDataMutation.mutate(spotifyPlaylistId);
-                }, index * 500); // Stagger requests by 500ms to avoid rate limiting
-              });
-            }}
-          />
-        </div>
-      </div>
-
       {/* Stats Cards with Toggle */}
       <div className="space-y-3">
         <div className="flex items-center justify-end">
@@ -956,6 +879,52 @@ export default function PlaylistsView() {
         </FilterBar.FiltersGroup>
 
         <FilterBar.Actions>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={fetchPlaylistsMutation.isPending}
+                data-testid="button-fetch-data"
+              >
+                <RefreshCw className={`h-4 w-4 ${fetchPlaylistsMutation.isPending ? "animate-spin" : ""}`} />
+                <span className="hidden sm:inline">
+                  {fetchPlaylistsMutation.isPending ? "Fetching..." : "Fetch Data"}
+                </span>
+                {!fetchPlaylistsMutation.isPending && <ChevronDown className="h-3 w-3 ml-1" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Fetch Options</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'all' })} data-testid="menu-fetch-all">
+                Fetch All Playlists
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'editorial' })} data-testid="menu-fetch-editorial">
+                Fetch Editorial Playlists Only
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => fetchPlaylistsMutation.mutate({ mode: 'non-editorial' })} data-testid="menu-fetch-non-editorial">
+                Fetch Non-Editorial Playlists Only
+              </DropdownMenuItem>
+              {playlists.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Fetch Specific Playlist</DropdownMenuLabel>
+                  {playlists.map((playlist) => (
+                    <DropdownMenuItem 
+                      key={playlist.id} 
+                      onClick={() => fetchPlaylistsMutation.mutate({ mode: 'specific', playlistId: playlist.id })}
+                      data-testid={`menu-fetch-playlist-${playlist.id}`}
+                    >
+                      {playlist.name}
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button 
             variant="gradient" 
             size="sm" 
@@ -966,6 +935,19 @@ export default function PlaylistsView() {
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Add Playlist</span>
           </Button>
+
+          <AddPlaylistDialog 
+            open={addDialogOpen} 
+            onOpenChange={setAddDialogOpen}
+            onPlaylistsAdded={(spotifyPlaylistIds) => {
+              // Trigger automatic fetch/enrichment for each successfully added playlist
+              spotifyPlaylistIds.forEach((spotifyPlaylistId, index) => {
+                setTimeout(() => {
+                  fetchPlaylistDataMutation.mutate(spotifyPlaylistId);
+                }, index * 500); // Stagger requests by 500ms to avoid rate limiting
+              });
+            }}
+          />
         </FilterBar.Actions>
       </FilterBar>
 
