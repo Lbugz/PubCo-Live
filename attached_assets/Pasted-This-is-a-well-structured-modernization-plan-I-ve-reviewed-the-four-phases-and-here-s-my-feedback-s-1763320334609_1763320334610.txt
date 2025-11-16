@@ -1,0 +1,34 @@
+This is a well-structured modernization plan! I've reviewed the four phases and here's my feedback specific to your AI Pub Feed platform:
+
+✅ Strong Foundations
+Phase 1 (Quick Wins) is spot-on:
+
+Removing the "Label" column from tracks table makes sense—it's better suited for the detail drawer
+Simplifying score badges to just colored numbers (8, 5, 2) will improve scannability
+The advanced filter popover for contacts is definitely needed—those filters (Has Email, Hot Leads, Score Range) are highly relevant for A&R workflows
+Phase 2 (Standardization) addresses real pain points:
+
+Your current tables (tracks, contacts, playlists) do have inconsistent patterns—a unified base component will help
+The universal FilterBar concept is smart given that all three sections need similar filter UX
+🤔 Considerations & Questions
+Tag Removal from Dashboard/Drawer
+
+You're proposing to remove "All Tags" filter and tag display, keeping tagging only via the action menu
+Question: Do you use tags frequently enough that they should remain visible, or are they rarely used? If tags are core to your workflow, hiding them might hurt discoverability.
+Action Button Integration (Phase 3)
+
+The plan suggests three options for integrating primary actions into the filter bar
+Recommendation: For A&R workflows, I'd lean toward the right-aligned action zone rather than a consolidated "Actions" menu—you want "Add Playlist" and "Fetch Data" to be immediately visible, not hidden behind a click.
+Stacked Information Pattern (Phase 4)
+
+Great for reducing horizontal space, but consideration: Track names can be long—stacking with ISRC badges might create very tall rows. May want to test with real data first.
+Missing from Plan:
+
+No mention of the Activity Panel or WebSocket updates—will those remain unchanged?
+The Publishing Intelligence metrics section we just built—should that get any UI treatment in this refresh?
+🚀 Recommended Adjustments
+Add to Phase 1: Fix the toast stacking issue that was mentioned in your progress notes (duplicate WebSocket notifications)
+
+Prioritize for Phase 2: The contacts advanced filter popover should maybe move to Phase 2 since it's part of the larger FilterBar standardization work
+
+Phase 3 Sequence: I'd tackle playlist completeness filters before track filters—playlists are the entry point, so improving that discoverability has higher ROI

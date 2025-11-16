@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, EyeOff, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Clock, Settings2, Flame, Link as LinkIcon } from "lucide-react";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, EyeOff, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Clock, Settings2, Flame, Link as LinkIcon, AlertTriangle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -55,6 +55,34 @@ const AVAILABLE_QUICK_FILTERS: QuickFilterDefinition[] = [
     icon: LinkIcon,
     variant: "default",
     defaultVisible: true,
+  },
+  {
+    id: "highFollowers",
+    label: "High followers",
+    icon: Flame,
+    variant: "hot",
+    defaultVisible: false,
+  },
+  {
+    id: "recentlyUpdated",
+    label: "Recently updated",
+    icon: Clock,
+    variant: "default",
+    defaultVisible: false,
+  },
+  {
+    id: "incomplete",
+    label: "Incomplete",
+    icon: AlertTriangle,
+    variant: "default",
+    defaultVisible: false,
+  },
+  {
+    id: "largePlaylists",
+    label: "Large playlists",
+    icon: Users,
+    variant: "default",
+    defaultVisible: false,
   },
 ];
 
