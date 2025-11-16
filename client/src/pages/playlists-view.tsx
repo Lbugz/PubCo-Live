@@ -106,6 +106,10 @@ export default function PlaylistsView() {
   // Quick filters
   const [showEditorialOnly, setShowEditorialOnly] = useState(false);
   const [showChartmetric, setShowChartmetric] = useState(false);
+  const [showHighFollowers, setShowHighFollowers] = useState(false);
+  const [showRecentlyUpdated, setShowRecentlyUpdated] = useState(false);
+  const [showIncomplete, setShowIncomplete] = useState(false);
+  const [showLargePlaylists, setShowLargePlaylists] = useState(false);
 
   // Quick filter preferences
   const {
@@ -600,8 +604,26 @@ export default function PlaylistsView() {
       filtered = filtered.filter(p => !!p.chartmetricUrl);
     }
 
+    if (showHighFollowers) {
+      filtered = filtered.filter(p => (p.followers || 0) >= 10000);
+    }
+
+    if (showRecentlyUpdated) {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      filtered = filtered.filter(p => p.lastChecked && new Date(p.lastChecked) >= sevenDaysAgo);
+    }
+
+    if (showIncomplete) {
+      filtered = filtered.filter(p => p.isComplete === 0);
+    }
+
+    if (showLargePlaylists) {
+      filtered = filtered.filter(p => (p.totalTracks || 0) >= 50);
+    }
+
     return filtered;
-  }, [playlists, searchQuery, sourceFilter, showEditorialOnly, showChartmetric]);
+  }, [playlists, searchQuery, sourceFilter, showEditorialOnly, showChartmetric, showHighFollowers, showRecentlyUpdated, showIncomplete, showLargePlaylists]);
 
   // Calculate selected playlists from filtered set
   const selectedFilteredPlaylists = useMemo(() => {
