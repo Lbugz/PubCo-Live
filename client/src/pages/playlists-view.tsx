@@ -7,6 +7,7 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { type TrackedPlaylist, type ActivityHistory } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { useFetchPlaylistsMutation } from "@/hooks/use-fetch-playlists-mutation";
+import { useMobile } from "@/hooks/use-mobile";
 import { useForm } from "react-hook-form";
 import {
   DropdownMenu,
@@ -53,6 +54,14 @@ export default function PlaylistsView() {
   });
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const isMobile = useMobile(768);
+
+  // Auto-switch to card view on mobile
+  useEffect(() => {
+    if (isMobile && viewMode !== "card") {
+      setViewMode("card");
+    }
+  }, [isMobile, viewMode]);
 
   // Persist metrics visibility to localStorage
   useEffect(() => {
