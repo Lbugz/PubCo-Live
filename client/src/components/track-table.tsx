@@ -309,10 +309,10 @@ export const TrackTable = memo(function TrackTable({
                 <div className="flex items-center gap-2">
                   <Badge
                     variant={getScoreBadgeVariant(track.unsignedScore)}
-                    className="font-semibold min-w-[4rem] justify-center"
+                    className="font-semibold min-w-[3rem] justify-center"
                     data-testid={`badge-score-${track.id}`}
                   >
-                    {track.unsignedScore !== null ? `${getScoreLabel(track.unsignedScore)} ${track.unsignedScore}` : 'Pending'}
+                    {track.unsignedScore !== null ? track.unsignedScore : 'Pending'}
                   </Badge>
                 </div>
               </div>
