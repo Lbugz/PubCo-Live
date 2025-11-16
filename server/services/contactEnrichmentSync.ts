@@ -36,6 +36,12 @@ export async function syncContactEnrichmentFlags(songwriterName: string): Promis
       mlc_found: number;
       collaboration_count: number;
     }>(sql`
+      WITH songwriter_tracks AS (
+        -- Get all tracks where this songwriter appears (using songwriter_profiles link)
+        SELECT DISTINCT ps.id as track_id
+        FROM playlist_snapshots ps
+        WHERE ps.songwriter LIKE '%' || ${songwriterName} || '%'
+      )
       SELECT 
         -- MusicBrainz: checked if artist_songwriters link exists (Phase 3 attempted)
         CASE 
@@ -61,13 +67,24 @@ export async function syncContactEnrichmentFlags(songwriterName: string): Promis
           ELSE 0 
         END as mlc_found,
         
-        -- Collaboration count: unique co-writers from artist_songwriters table
-        COALESCE(COUNT(DISTINCT as2.artist_id) FILTER (WHERE as2.artist_id IS NOT NULL), 0) as collaboration_count
+        -- Collaboration count: Count unique co-writers excluding the songwriter themselves
+        -- This counts OTHER artist IDs that appear on the same tracks
+        COALESCE(
+          (SELECT COUNT(DISTINCT cowriter.artist_id)
+           FROM songwriter_tracks st
+           JOIN artist_songwriters cowriter ON cowriter.track_id = st.track_id
+           JOIN artists cowriter_artist ON cowriter_artist.id = cowriter.artist_id
+           -- Exclude the songwriter themselves by name matching
+           WHERE LOWER(cowriter_artist.name) != LOWER(${songwriterName})
+             AND cowriter_artist.name NOT LIKE '%' || ${songwriterName} || '%'
+             AND ${songwriterName} NOT LIKE '%' || cowriter_artist.name || '%'
+          ), 0
+        ) as collaboration_count
         
-      FROM playlist_snapshots ps
-      LEFT JOIN artist_songwriters as2 ON as2.track_id = ps.id
+      FROM songwriter_tracks st
+      JOIN playlist_snapshots ps ON ps.id = st.track_id
+      LEFT JOIN artist_songwriters as2 ON as2.track_id = st.track_id
       LEFT JOIN artists a ON a.id = as2.artist_id
-      WHERE ps.songwriter LIKE '%' || ${songwriterName} || '%'
     `);
 
     if (enrichmentStats.rows.length === 0) {
