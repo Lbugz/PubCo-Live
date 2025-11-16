@@ -84,13 +84,6 @@ async function fetchSinglePlaylist(
             continue;
           }
 
-          const score = calculateUnsignedScore({
-            playlistName: playlist.name,
-            label: null,
-            publisher: null,
-            writer: null,
-          });
-
           const newTrack: InsertPlaylistSnapshot = {
             week: today,
             playlistName: playlist.name,
@@ -101,7 +94,7 @@ async function fetchSinglePlaylist(
             albumArt: cmTrack.album?.image_url || null,
             isrc: cmTrack.isrc || null,
             label: null,
-            unsignedScore: score,
+            unsignedScore: null,
             addedAt: new Date(),
             dataSource: "chartmetric",
             chartmetricId: cmTrack.chartmetricId ? String(cmTrack.chartmetricId) : null,
@@ -179,13 +172,6 @@ async function fetchSinglePlaylist(
               continue;
             }
 
-            const score = calculateUnsignedScore({
-              playlistName: playlist.name,
-              label: null,
-              publisher: null,
-              writer: null,
-            });
-
             const newTrack: InsertPlaylistSnapshot = {
               week: today,
               playlistName: playlist.name,
@@ -199,7 +185,7 @@ async function fetchSinglePlaylist(
               duration: (item.track as any).duration_ms || null,
               explicit: (item.track as any).explicit ? 1 : 0,
               popularity: (item.track as any).popularity || null,
-              unsignedScore: score,
+              unsignedScore: null,
               addedAt: new Date(),
               dataSource: "spotify_api",
             };
@@ -260,13 +246,6 @@ async function fetchSinglePlaylist(
               continue;
             }
 
-            const score = calculateUnsignedScore({
-              playlistName: playlist.name,
-              label: null,
-              publisher: null,
-              writer: null,
-            });
-
             const newTrack: InsertPlaylistSnapshot = {
               week: today,
               playlistName: playlist.name,
@@ -276,7 +255,7 @@ async function fetchSinglePlaylist(
               spotifyUrl: track.spotifyUrl,
               albumArt: track.albumArt,
               isrc: track.isrc,
-              unsignedScore: score,
+              unsignedScore: null,
               addedAt: new Date(),
               dataSource: "puppeteer",
             };

@@ -8,6 +8,7 @@ import { getUncachableSpotifyClient } from "../spotify";
 import { searchArtistByName, getArtistExternalLinks } from "../musicbrainz";
 import { enrichTrackWithChartmetric } from "../chartmetric";
 import { notificationService } from "../services/notificationService";
+import { calculateUnsignedScore } from "../scoring";
 import type { WebSocket } from "ws";
 
 export interface WorkerOptions {
@@ -368,12 +369,37 @@ export class EnrichmentWorker {
 
       const { persistedCount: phase2Persisted, failedTrackIds: phase2Failed } = await this.persistPhaseUpdates(ctx, job.id, 'Phase 2');
 
+      // SCORING STEP: Recalculate unsigned scores after Phase 2 enrichment
+      console.log('[Scoring] Recalculating unsigned scores with enriched metadata...');
+      let scoresUpdated = 0;
+      for (const track of ctx.getAllTracks()) {
+        const score = calculateUnsignedScore({
+          playlistName: track.playlistName,
+          label: track.label || null,
+          publisher: track.publisher || null,
+          writer: track.songwriter || null,
+          artistName: track.artistName,
+          songwriter: track.songwriter || null,
+          wowGrowthPct: null, // Will be calculated in performance tracking
+        });
+
+        ctx.applyPatch(track.id, {
+          unsignedScore: score,
+        });
+        scoresUpdated++;
+      }
+
+      // Persist score updates
+      const { persistedCount: scoresPersisted } = await this.persistPhaseUpdates(ctx, job.id, 'Scoring');
+      console.log(`[Scoring] ✅ Updated ${scoresUpdated} tracks, ${scoresPersisted} persisted`);
+
       await this.jobQueue.updateJobProgress(job.id, {
         progress: 70,
         enrichedTracks: result.tracksEnriched,
         errorCount: result.errors,
         logs: [
           `[${new Date().toISOString()}] Phase 2 complete: ${result.tracksEnriched}/${result.tracksProcessed} tracks enriched, ${phase2Persisted} persisted`,
+          `[${new Date().toISOString()}] Scoring complete: ${scoresPersisted} tracks scored`,
         ],
       });
 

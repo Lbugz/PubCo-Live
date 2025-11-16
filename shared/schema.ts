@@ -20,7 +20,7 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   popularity: integer("popularity"),
   duration: integer("duration"),
   explicit: integer("explicit"),
-  unsignedScore: integer("unsigned_score").notNull().default(0),
+  unsignedScore: integer("unsigned_score"),
   addedAt: timestamp("added_at").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   publisher: text("publisher"),
