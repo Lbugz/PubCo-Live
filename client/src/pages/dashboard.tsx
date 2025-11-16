@@ -706,96 +706,196 @@ export default function Dashboard() {
             </div>
             <Collapsible open={showMetrics}>
               <CollapsibleContent className="space-y-3">
-                {metricPreferences.publishingIntelligence.length > 0 && (
+                {metricPreferences.publishingIntelligence.some(m => m !== null) && (
                   <>
                     <h2 className="text-sm font-semibold text-muted-foreground">PUBLISHING INTELLIGENCE</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                      {metricPreferences.publishingIntelligence.includes('high-confidence-unsigned') && (
-                        <StatsCard
-                          title="High-Confidence Unsigned"
-                          value={contactMetrics?.highConfidenceUnsigned?.toLocaleString() || "0"}
-                          icon={Target}
-                          variant="green"
-                          tooltip="Songwriters verified as unsigned through MLC search with high-quality scores (7-10). These are your hottest publishing leads backed by authoritative data."
-                          testId="stats-high-confidence-unsigned"
-                        />
-                      )}
-                      {metricPreferences.publishingIntelligence.includes('publishing-opportunities') && (
-                        <StatsCard
-                          title="Publishing Opportunities"
-                          value={contactMetrics?.publishingOpportunities?.toLocaleString() || "0"}
-                          icon={Sparkles}
-                          variant="blue"
-                          tooltip="All songwriter publishing opportunities: MLC verified unsigned + found in MLC but no publisher listed. Ready for outreach."
-                          testId="stats-publishing-opportunities"
-                        />
-                      )}
-                      {metricPreferences.publishingIntelligence.includes('enrichment-backlog') && (
-                        <StatsCard
-                          title="Enrichment Backlog"
-                          value={contactMetrics?.enrichmentBacklog?.toLocaleString() || "0"}
-                          icon={Activity}
-                          variant="default"
-                          tooltip="Songwriters not yet searched in MLC. Run enrichment to discover more unsigned opportunities."
-                          testId="stats-enrichment-backlog"
-                        />
-                      )}
+                      {metricPreferences.publishingIntelligence.map((metricId, index) => {
+                        if (!metricId) return null;
+                        
+                        switch (metricId) {
+                          case 'high-confidence-unsigned':
+                            return (
+                              <StatsCard
+                                key={`pub-${index}`}
+                                title="High-Confidence Unsigned"
+                                value={contactMetrics?.highConfidenceUnsigned?.toLocaleString() || "0"}
+                                icon={Target}
+                                variant="green"
+                                tooltip="Songwriters verified as unsigned through MLC search with high-quality scores (7-10). These are your hottest publishing leads backed by authoritative data."
+                                testId="stats-high-confidence-unsigned"
+                              />
+                            );
+                          case 'publishing-opportunities':
+                            return (
+                              <StatsCard
+                                key={`pub-${index}`}
+                                title="Publishing Opportunities"
+                                value={contactMetrics?.publishingOpportunities?.toLocaleString() || "0"}
+                                icon={Sparkles}
+                                variant="blue"
+                                tooltip="All songwriter publishing opportunities: MLC verified unsigned + found in MLC but no publisher listed. Ready for outreach."
+                                testId="stats-publishing-opportunities"
+                              />
+                            );
+                          case 'enrichment-backlog':
+                            return (
+                              <StatsCard
+                                key={`pub-${index}`}
+                                title="Enrichment Backlog"
+                                value={contactMetrics?.enrichmentBacklog?.toLocaleString() || "0"}
+                                icon={Activity}
+                                variant="default"
+                                tooltip="Songwriters not yet searched in MLC. Run enrichment to discover more unsigned opportunities."
+                                testId="stats-enrichment-backlog"
+                              />
+                            );
+                          case 'mlc-verified-unsigned':
+                            return (
+                              <StatsCard
+                                key={`pub-${index}`}
+                                title="MLC Verified Unsigned"
+                                value={contactMetrics?.publishingOpportunities?.toLocaleString() || "0"}
+                                icon={Target}
+                                variant="blue"
+                                tooltip="Songwriters verified as unsigned through MLC API"
+                                testId="stats-mlc-verified-unsigned"
+                              />
+                            );
+                          case 'musicbrainz-found':
+                            return (
+                              <StatsCard
+                                key={`pub-${index}`}
+                                title="MusicBrainz Found"
+                                value="0"
+                                icon={Activity}
+                                variant="default"
+                                tooltip="Songwriters found in MusicBrainz database"
+                                testId="stats-musicbrainz-found"
+                              />
+                            );
+                          case 'total-songwriters':
+                            return (
+                              <StatsCard
+                                key={`pub-${index}`}
+                                title="Total Songwriters"
+                                value={contactMetrics?.enrichmentBacklog?.toLocaleString() || "0"}
+                                icon={Sparkles}
+                                variant="default"
+                                tooltip="Total unique songwriters in the database"
+                                testId="stats-total-songwriters"
+                              />
+                            );
+                          default:
+                            return null;
+                        }
+                      })}
                     </div>
                   </>
                 )}
 
-                {metricPreferences.trackMetrics.length > 0 && (
+                {metricPreferences.trackMetrics.some(m => m !== null) && (
                   <>
-                    <h2 className={cn("text-sm font-semibold text-muted-foreground", metricPreferences.publishingIntelligence.length > 0 && "mt-6")}>TRACK METRICS</h2>
+                    <h2 className={cn("text-sm font-semibold text-muted-foreground", metricPreferences.publishingIntelligence.some(m => m !== null) && "mt-6")}>TRACK METRICS</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                      {metricPreferences.trackMetrics.includes('deal-ready-tracks') && (
-                        <StatsCard
-                          title="Deal-Ready Tracks"
-                          value={trackMetrics?.dealReady?.toLocaleString() || "0"}
-                          icon={Target}
-                          variant="green"
-                          tooltip="Tracks with unsigned score 7-10 - strong publishing signals. Click to filter."
-                          change={trackMetrics?.changeDealReady}
-                          onClick={() => {
-                            setScoreRange([7, 10]);
-                            toast({
-                              title: "Filtered to deal-ready tracks",
-                              description: "Showing tracks with unsigned score 7-10",
-                            });
-                          }}
-                          testId="stats-deal-ready"
-                        />
-                      )}
-                      {metricPreferences.trackMetrics.includes('avg-unsigned-score') && (
-                        <StatsCard
-                          title="Avg Unsigned Score"
-                          value={trackMetrics?.avgScore?.toFixed(1) || "0.0"}
-                          icon={Activity}
-                          variant="default"
-                          tooltip="Average unsigned score (0-10) across all tracks. Based on missing metadata, indie labels, stream velocity."
-                          change={trackMetrics?.changeAvgScore}
-                          testId="stats-avg-score"
-                        />
-                      )}
-                      {metricPreferences.trackMetrics.includes('missing-publisher') && (
-                        <StatsCard
-                          title="Missing Publisher"
-                          value={trackMetrics?.missingPublisher?.toLocaleString() || "0"}
-                          icon={Sparkles}
-                          variant="blue"
-                          tooltip="Tracks with no publisher data after enrichment - strongest unsigned signal (+5 points). Click to filter."
-                          change={trackMetrics?.changeMissingPublisher}
-                          onClick={() => {
-                            setActiveFilters(['no-publisher']);
-                            toast({
-                              title: "Filtered to missing publisher tracks",
-                              description: "Showing tracks with no publisher data",
-                              variant: "info",
-                            });
-                          }}
-                          testId="stats-missing-publisher"
-                        />
-                      )}
+                      {metricPreferences.trackMetrics.map((metricId, index) => {
+                        if (!metricId) return null;
+                        
+                        switch (metricId) {
+                          case 'deal-ready-tracks':
+                            return (
+                              <StatsCard
+                                key={`track-${index}`}
+                                title="Deal-Ready Tracks"
+                                value={trackMetrics?.dealReady?.toLocaleString() || "0"}
+                                icon={Target}
+                                variant="green"
+                                tooltip="Tracks with unsigned score 7-10 - strong publishing signals. Click to filter."
+                                change={trackMetrics?.changeDealReady}
+                                onClick={() => {
+                                  setScoreRange([7, 10]);
+                                  toast({
+                                    title: "Filtered to deal-ready tracks",
+                                    description: "Showing tracks with unsigned score 7-10",
+                                  });
+                                }}
+                                testId="stats-deal-ready"
+                              />
+                            );
+                          case 'avg-unsigned-score':
+                            return (
+                              <StatsCard
+                                key={`track-${index}`}
+                                title="Avg Unsigned Score"
+                                value={trackMetrics?.avgScore?.toFixed(1) || "0.0"}
+                                icon={Activity}
+                                variant="default"
+                                tooltip="Average unsigned score (0-10) across all tracks. Based on missing metadata, indie labels, stream velocity."
+                                change={trackMetrics?.changeAvgScore}
+                                testId="stats-avg-score"
+                              />
+                            );
+                          case 'missing-publisher':
+                            return (
+                              <StatsCard
+                                key={`track-${index}`}
+                                title="Missing Publisher"
+                                value={trackMetrics?.missingPublisher?.toLocaleString() || "0"}
+                                icon={Sparkles}
+                                variant="blue"
+                                tooltip="Tracks with no publisher data after enrichment - strongest unsigned signal (+5 points). Click to filter."
+                                change={trackMetrics?.changeMissingPublisher}
+                                onClick={() => {
+                                  setActiveFilters(['no-publisher']);
+                                  toast({
+                                    title: "Filtered to missing publisher tracks",
+                                    description: "Showing tracks with no publisher data",
+                                    variant: "info",
+                                  });
+                                }}
+                                testId="stats-missing-publisher"
+                              />
+                            );
+                          case 'high-stream-velocity':
+                            return (
+                              <StatsCard
+                                key={`track-${index}`}
+                                title="High Stream Velocity"
+                                value="0"
+                                icon={Activity}
+                                variant="green"
+                                tooltip="Tracks with >50% week-over-week stream growth"
+                                testId="stats-high-stream-velocity"
+                              />
+                            );
+                          case 'self-written-tracks':
+                            return (
+                              <StatsCard
+                                key={`track-${index}`}
+                                title="Self-Written Tracks"
+                                value="0"
+                                icon={Sparkles}
+                                variant="blue"
+                                tooltip="Tracks where artist wrote their own song"
+                                testId="stats-self-written-tracks"
+                              />
+                            );
+                          case 'indie-label-tracks':
+                            return (
+                              <StatsCard
+                                key={`track-${index}`}
+                                title="Indie Label Tracks"
+                                value="0"
+                                icon={Target}
+                                variant="default"
+                                tooltip="Tracks released on independent labels"
+                                testId="stats-indie-label-tracks"
+                              />
+                            );
+                          default:
+                            return null;
+                        }
+                      })}
                     </div>
                   </>
                 )}
