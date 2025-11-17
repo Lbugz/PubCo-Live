@@ -40,6 +40,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // Types
@@ -185,12 +186,10 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div
-                  className="flex items-center gap-2 rounded-md px-2 py-3 cursor-pointer hover-elevate"
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2 px-2 h-auto py-3"
                   data-testid="sidebar-user-profile"
-                  role="button"
-                  tabIndex={0}
-                  aria-label="User profile menu"
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="" alt="User" />
@@ -201,7 +200,7 @@ export function AppSidebar() {
                   <div className="flex flex-col items-start gap-0.5 text-left flex-1 min-w-0">
                     <span className="text-sm font-medium">PubCo Live</span>
                   </div>
-                </div>
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem data-testid="dropdown-account-settings">
