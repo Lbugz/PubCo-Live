@@ -125,6 +125,8 @@ export class EnrichmentWorker {
         status: 'running',
         progress: 0,
         message: `Starting enrichment of ${job.trackIds.length} tracks...`,
+        enrichedCount: 0,
+        trackCount: job.trackIds.length,
       });
 
       await this.executeJob(job);
@@ -141,6 +143,8 @@ export class EnrichmentWorker {
             status: 'failed',
             progress: 0,
             message: `Fatal error: ${error instanceof Error ? error.message : String(error)}`,
+            enrichedCount: 0,
+            trackCount: 0,
           });
         } catch (cleanupError) {
           console.error("❌ Error during job cleanup:", cleanupError);
@@ -202,6 +206,8 @@ export class EnrichmentWorker {
           status: 'failed',
           progress: 0,
           message: 'No tracks found',
+          enrichedCount: 0,
+          trackCount: job.trackIds.length,
         });
         
         // Broadcast job failed
@@ -226,6 +232,8 @@ export class EnrichmentWorker {
         status: 'running',
         progress: 5,
         message: `Retrieved ${tracks.length} tracks, starting enrichment...`,
+        enrichedCount: 0,
+        trackCount: job.trackIds.length,
       });
 
       await this.jobQueue.updateJobProgress(job.id, {
@@ -237,6 +245,8 @@ export class EnrichmentWorker {
         status: 'running',
         progress: 10,
         message: 'Phase 1: Fetching metadata from Spotify API...',
+        enrichedCount: 0,
+        trackCount: job.trackIds.length,
       });
 
       try {
@@ -267,7 +277,7 @@ export class EnrichmentWorker {
           progress: 35,
           message: `Phase 1 complete: ${persistedCount} tracks persisted, ${phase1Result.isrcRecovered} ISRCs recovered`,
           enrichedCount: phase1Result.tracksEnriched,
-          totalCount: job.trackIds.length,
+          trackCount: job.trackIds.length,
         });
 
         for (const trackId of job.trackIds) {
@@ -308,6 +318,8 @@ export class EnrichmentWorker {
           status: 'running',
           progress: 35,
           message: 'Phase 1 failed, continuing to Phase 2...',
+          enrichedCount: 0,
+          trackCount: job.trackIds.length,
         });
       }
 
@@ -327,6 +339,8 @@ export class EnrichmentWorker {
         status: 'running',
         progress: 35,
         message: 'Starting Phase 2: Puppeteer scraping...',
+        enrichedCount: 0,
+        trackCount: job.trackIds.length,
       });
 
       const result = await enrichTracksWithCredits(tracksForEnrichment);
@@ -422,7 +436,7 @@ export class EnrichmentWorker {
         progress: 70,
         message: `Phase 2 complete: ${phase2Persisted} tracks persisted, starting MLC lookup...`,
         enrichedCount: result.tracksEnriched,
-        totalCount: job.trackIds.length,
+        trackCount: job.trackIds.length,
       });
 
       for (const enrichedTrack of result.enrichedTracks) {
@@ -496,6 +510,8 @@ export class EnrichmentWorker {
         status: 'running',
         progress: 72,
         message: 'Phase 3: Fetching artist social links from MusicBrainz...',
+        enrichedCount: 0,
+        trackCount: job.trackIds.length,
       });
 
       let phase3ArtistsCreated = 0;
@@ -552,6 +568,8 @@ export class EnrichmentWorker {
           status: 'running',
           progress: 75,
           message: `Phase 3 complete: ${phase3LinksFound} artists with social links found`,
+          enrichedCount: 0,
+          trackCount: job.trackIds.length,
         });
 
         console.log(`[Phase 3: MusicBrainz] ✅ Complete: ${phase3ArtistsCreated} artists, ${phase3LinksFound} with links`);
@@ -596,6 +614,8 @@ export class EnrichmentWorker {
         status: 'running',
         progress: 75,
         message: 'Phase 4: Fetching Chartmetric analytics...',
+        enrichedCount: 0,
+        trackCount: job.trackIds.length,
       });
 
       let phase4EnrichedCount = 0;
@@ -665,6 +685,8 @@ export class EnrichmentWorker {
           status: 'running',
           progress: 82,
           message: `Phase 4 complete: ${phase4EnrichedCount} tracks enriched with analytics`,
+          enrichedCount: phase4EnrichedCount,
+          trackCount: job.trackIds.length,
         });
 
         console.log(`[Phase 4: Chartmetric] ✅ Complete: ${phase4EnrichedCount} enriched, ${phase4NotFoundCount} not found, ${phase4FailedCount} failed`);
@@ -708,6 +730,8 @@ export class EnrichmentWorker {
         status: 'running',
         progress: 82,
         message: 'Phase 5: Checking publisher status with MLC API...',
+        enrichedCount: 0,
+        trackCount: job.trackIds.length,
       });
 
       let mlcResults: Array<{
@@ -758,6 +782,8 @@ export class EnrichmentWorker {
           status: 'running',
           progress: 92,
           message: `Phase 5 complete: ${mlcPersisted} tracks persisted`,
+          enrichedCount: mlcResults.filter(r => r.hasPublisher).length,
+          trackCount: job.trackIds.length,
         });
 
         for (const mlcResult of mlcResults) {
@@ -819,6 +845,8 @@ export class EnrichmentWorker {
           status: 'running',
           progress: 92,
           message: 'Phase 5 failed, finalizing job...',
+          enrichedCount: 0,
+          trackCount: job.trackIds.length,
         });
 
         for (const trackId of job.trackIds) {
@@ -851,6 +879,8 @@ export class EnrichmentWorker {
         status: 'running',
         progress: 95,
         message: 'Finalizing job...',
+        enrichedCount: result.tracksEnriched,
+        trackCount: job.trackIds.length,
       });
 
       const success = result.errors === 0;
@@ -862,6 +892,8 @@ export class EnrichmentWorker {
         status: success ? 'completed' : 'completed_with_errors',
         progress: 100,
         message: `Job complete: ${result.tracksEnriched} tracks enriched${result.errors > 0 ? `, ${result.errors} errors` : ''}`,
+        enrichedCount: result.tracksEnriched,
+        trackCount: job.trackIds.length,
       });
 
       // Broadcast job completed
@@ -922,6 +954,8 @@ export class EnrichmentWorker {
         status: 'failed',
         progress: job.progress || 0,
         message: `Job failed: ${error instanceof Error ? error.message : String(error)}`,
+        enrichedCount: 0,
+        trackCount: job.trackIds.length,
       });
 
       // Broadcast job failed
