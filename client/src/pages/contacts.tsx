@@ -220,6 +220,10 @@ export default function Contacts() {
           aValue = a.wowGrowthPct || 0;
           bValue = b.wowGrowthPct || 0;
           break;
+        case "unsignedScore":
+          aValue = a.unsignedScore ?? -1;
+          bValue = b.unsignedScore ?? -1;
+          break;
         default:
           return 0;
       }
@@ -355,6 +359,30 @@ export default function Contacts() {
       cell: (contact) => contact.totalTracks || 0,
       className: "text-right",
       headerClassName: "text-right",
+    },
+    {
+      id: "unsignedScore",
+      header: "Score",
+      sortField: "unsignedScore",
+      cell: (contact) => {
+        const score = contact.unsignedScore;
+        if (score === null || score === undefined) {
+          return (
+            <Badge variant="outline" className="font-medium" data-testid={`badge-score-${contact.id}`}>
+              Pending
+            </Badge>
+          );
+        }
+        
+        const variant = score >= 7 ? "high" : score >= 4 ? "medium" : "low";
+        return (
+          <Badge variant={variant} className="font-semibold min-w-[3rem] justify-center" data-testid={`badge-score-${contact.id}`}>
+            {score}
+          </Badge>
+        );
+      },
+      className: "text-center",
+      headerClassName: "text-center",
     },
     {
       id: "stage",

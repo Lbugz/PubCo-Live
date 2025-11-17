@@ -189,6 +189,25 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Target className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Unsigned Score</span>
+                  </div>
+                  {contact.unsignedScore !== null && contact.unsignedScore !== undefined ? (
+                    <Badge
+                      variant={contact.unsignedScore >= 7 ? "high" : contact.unsignedScore >= 4 ? "medium" : "low"}
+                      className="font-semibold text-base"
+                      data-testid="badge-contact-score"
+                    >
+                      {contact.unsignedScore}/10
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs" data-testid="badge-contact-score">
+                      Pending
+                    </Badge>
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Target className="h-4 w-4 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">Stage</span>
                   </div>
                   <Badge
@@ -472,18 +491,6 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                             </p>
                           )}
                         </div>
-                        
-                        {/* Score Badge */}
-                        {track.unsignedScore !== null && (
-                          <div className="flex-shrink-0">
-                            <Badge
-                              variant={track.unsignedScore >= 7 ? "high" : track.unsignedScore >= 4 ? "medium" : "low"}
-                              className="font-semibold min-w-[2.5rem] justify-center"
-                            >
-                              {track.unsignedScore}
-                            </Badge>
-                          </div>
-                        )}
                       </div>
                     </Card>
                   ))
