@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { CheckCircle2, Circle, Clock3, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
@@ -137,32 +136,24 @@ export interface ActionRailProps {
 export function ActionRail({ primaryAction, secondaryActions = [] }: ActionRailProps) {
   const PrimaryIcon = primaryAction.icon;
   return (
-    <div className="flex items-center gap-2 rounded-2xl border border-border/80 bg-muted/40 p-4">
-      <Button className="flex-1 justify-center gap-2" size="default" onClick={primaryAction.onClick} data-testid="action-rail-primary">
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/80 bg-muted/40 p-4">
+      <Button className="flex-1 justify-center gap-2" size="default" onClick={primaryAction.onClick}>
         {PrimaryIcon ? <PrimaryIcon className="h-4 w-4" /> : null}
         {primaryAction.label}
       </Button>
-      {secondaryActions.map((action, index) => {
+      {secondaryActions.map((action) => {
         const Icon = action.icon;
         return (
-          <TooltipProvider key={`${action.label}-${index}`}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={action.subtle ? "ghost" : "outline"}
-                  size="icon"
-                  onClick={action.onClick}
-                  aria-label={action.label}
-                  data-testid={`action-rail-secondary-${index}`}
-                >
-                  {Icon ? <Icon className="h-4 w-4" /> : null}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{action.label}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Button
+            key={action.label}
+            variant={action.subtle ? "ghost" : "outline"}
+            className="flex-1 justify-center gap-2"
+            size="default"
+            onClick={action.onClick}
+          >
+            {Icon ? <Icon className="h-4 w-4" /> : null}
+            {action.label}
+          </Button>
         );
       })}
     </div>
@@ -198,14 +189,11 @@ export function EnrichmentTimeline({ steps }: { steps: EnrichmentTimelineStep[] 
                   className={cn(
                     "flex h-8 w-8 items-center justify-center rounded-full border",
                     step.status === "done" && "border-emerald-400 bg-emerald-500/10 text-emerald-300",
-                    step.status === "active" && "border-amber-400 bg-amber-500/10 text-amber-300 animate-enrichment-pulse",
+                    step.status === "active" && "border-amber-400 bg-amber-500/10 text-amber-300",
                     step.status === "pending" && "border-border text-muted-foreground",
                   )}
                 >
-                  <Icon className={cn(
-                    "h-4 w-4",
-                    step.status === "active" && "animate-enrichment-pulse"
-                  )} />
+                  <Icon className="h-4 w-4" />
                 </span>
                 {index < steps.length - 1 ? (
                   <div className="mt-2 w-px flex-1 bg-border" style={{ minHeight: "2rem" }} />

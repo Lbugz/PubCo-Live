@@ -5,14 +5,6 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
 
 ## Recent Changes
 
-### Nov 17, 2025 - Unified Detail Drawer Design System
-- **Shared Primitives**: Created `detail-primitives.tsx` with reusable components (`DetailDrawerHeader`, `StatsGrid`, `ActionRail`, `DrawerSection`, `EnrichmentTimeline`, `SongwriterDisplay`) for consistent styling across all drawers
-- **Playlist Drawer**: Migrated to unified design with compact ActionRail (primary button with label, secondary buttons icon-only), pulsing enrichment animations (2s amber glow), and consistent stats grid
-- **Track Drawer**: Updated with shared primitives maintaining real data binding, activity history timeline, and songwriter display
-- **Contact Drawer**: Migrated while preserving Pipeline Stage selector, Identifiers collapsible section, and all tabs (Tracks/Performance/Activity/Notes)
-- **Design Consistency**: All three drawer types now use identical header styling, stats grid layout, action button patterns, and section dividers
-- **React Error Fix**: Resolved nested button warning in `app-sidebar.tsx` by replacing `<div role="button">` in DropdownMenuTrigger with proper `<Button asChild>` pattern
-
 ### Nov 16, 2025 - Sticky & Sortable Headers with Full Visual Consistency
 - **Sticky Header Container**: Created reusable `StickyHeaderContainer` component for filters and metrics sections
 - **Dashboard**: Wrapped metrics and FilterBar in sticky header - stays visible while scrolling through tracks

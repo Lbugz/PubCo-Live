@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   X, Mail, MessageCircle, RefreshCw, Edit, TrendingUp, Music, Activity, 
   FileText, ExternalLink, Instagram, Twitter, Music2, Flame, User, Clock,
-  Hash, Link as LinkIcon, Target, ChevronDown, Sparkles
+  Hash, Link as LinkIcon, Target, ChevronDown
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -22,13 +22,14 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import type { ContactWithSongwriter, PlaylistSnapshot } from "@shared/schema";
-import { DetailDrawerHeader, StatsGrid, ActionRail } from "@/components/details/detail-primitives";
 
 const STAGE_CONFIG = {
   discovery: {
@@ -162,7 +163,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-6" data-testid="sheet-contact-detail">
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto" data-testid="sheet-contact-detail">
         {loadingContact ? (
           <div className="space-y-4">
             <Skeleton className="h-8 w-3/4" />
@@ -170,73 +171,165 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
             <Skeleton className="h-32 w-full" />
           </div>
         ) : contact ? (
-          <div className="space-y-6">
-            {/* Unified Header */}
-            <DetailDrawerHeader
-              title={contact.songwriterName}
-              subtitle="Songwriter / Contact"
-              description={contact.stage ? STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG]?.label : undefined}
-              badges={[
-                ...(contact.hotLead > 0 ? [{ label: "Hot Lead", variant: "high" as const }] : []),
-                { label: STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG]?.label || contact.stage, variant: "secondary" as const },
-              ]}
-              fallback={contact.songwriterName.slice(0, 2).toUpperCase()}
-              meta={[
-                { label: "Time in stage", value: getTimeInStage(contact.stageUpdatedAt) },
-                { label: "Total tracks", value: String(contact.totalTracks || 0) },
-              ]}
-            />
+          <>
+            <SheetHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <SheetTitle className="text-2xl" data-testid="text-contact-name">
+                    {contact.songwriterName}
+                  </SheetTitle>
+                </div>
+              </div>
+            </SheetHeader>
 
-            {/* Stats Grid */}
-            <StatsGrid
-              stats={[
-                { 
-                  label: "Total Streams", 
-                  value: formatNumber(contact.totalStreams || 0),
-                },
-                { 
-                  label: "WoW Growth", 
-                  value: contact.wowGrowthPct !== null ? `${contact.wowGrowthPct > 0 ? "+" : ""}${contact.wowGrowthPct}%` : "—",
-                  helper: contact.wowGrowthPct !== null && contact.wowGrowthPct > 20 ? "High velocity" : undefined
-                },
-                { 
-                  label: "Created", 
-                  value: formatDate(contact.createdAt),
-                  helper: "First discovered"
-                },
-                { 
-                  label: "Last Updated", 
-                  value: formatDate(contact.updatedAt),
-                },
-              ]}
-            />
+            {/* Engagement Snapshot Hero */}
+            <Card className="p-5 mt-4 bg-muted/50">
+              <h3 className="text-sm font-medium mb-4 text-muted-foreground">Engagement Snapshot</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Target className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Stage</span>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-xs",
+                      STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG]?.color
+                    )}
+                    data-testid="badge-contact-stage"
+                  >
+                    {STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG]?.label || contact.stage}
+                  </Badge>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Time in Stage</span>
+                  </div>
+                  <div className="text-sm font-medium">{getTimeInStage(contact.stageUpdatedAt)}</div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Music className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Tracked Tracks</span>
+                  </div>
+                  <div className="text-sm font-medium" data-testid="text-total-tracks">{contact.totalTracks || 0}</div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Flame className="h-4 w-4 text-orange-500" />
+                    <span className="text-xs text-muted-foreground">Hot Lead</span>
+                  </div>
+                  <div className="text-sm font-medium">
+                    {contact.hotLead > 0 ? (
+                      <Badge variant="default" className="gap-1" data-testid="badge-hot-lead">
+                        <Flame className="h-3 w-3" />
+                        Yes
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">No</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Card>
 
-            {/* Action Rail */}
-            <ActionRail
-              primaryAction={{
-                label: contact.hotLead > 0 ? "Remove Hot Lead" : "Mark Hot Lead",
-                icon: Flame,
-                onClick: handleHotLeadToggle
-              }}
-              secondaryActions={[
-                {
-                  label: "Send Email",
-                  icon: Mail,
-                  onClick: () => {}
-                },
-                {
-                  label: "Send DM",
-                  icon: MessageCircle,
-                  onClick: () => {}
-                },
-                {
-                  label: "Re-Enrich",
-                  icon: RefreshCw,
-                  onClick: () => {},
-                  subtle: true
-                },
-              ]}
-            />
+            {/* Info Cards Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              {/* Performance Pulse */}
+              <Card className="p-4">
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Performance Pulse
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Total Streams</div>
+                    <div className="text-xl font-bold" data-testid="text-total-streams">
+                      {formatNumber(contact.totalStreams || 0)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Track Count</div>
+                    <div className="text-xl font-bold">{contact.totalTracks || 0}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">WoW Growth</div>
+                    <div className={cn(
+                      "text-xl font-bold",
+                      contact.wowGrowthPct !== null && contact.wowGrowthPct > 0 && "text-chart-2",
+                      contact.wowGrowthPct !== null && contact.wowGrowthPct < 0 && "text-red-400"
+                    )} data-testid="text-wow-growth">
+                      {contact.wowGrowthPct !== null ? `${contact.wowGrowthPct > 0 ? "+" : ""}${contact.wowGrowthPct}%` : "—"}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Relationship Panel */}
+              <Card className="p-4">
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Relationship
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Owner</div>
+                    <div className="text-sm font-medium">Unassigned</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Created</div>
+                    <div className="text-sm font-medium">{formatDate(contact.createdAt)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Last Updated</div>
+                    <div className="text-sm font-medium">{formatDate(contact.updatedAt)}</div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex flex-wrap gap-2 mt-4">
+              <Button
+                variant="default"
+                size="sm"
+                className="gap-2"
+                data-testid="button-send-email"
+              >
+                <Mail className="h-4 w-4" />
+                Send Email
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                className="gap-2"
+                data-testid="button-send-dm"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Send DM
+              </Button>
+              <Button
+                variant={contact.hotLead > 0 ? "secondary" : "outline"}
+                size="sm"
+                className="gap-2"
+                onClick={handleHotLeadToggle}
+                data-testid="button-toggle-hot-lead"
+              >
+                <Flame className="h-4 w-4" />
+                {contact.hotLead > 0 ? "Remove Hot Lead" : "Mark Hot Lead"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                data-testid="button-re-enrich"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Re-Enrich
+              </Button>
+            </div>
 
             {/* Stage Selector */}
             <div className="mt-4">
@@ -481,7 +574,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 </div>
               </TabsContent>
             </Tabs>
-          </div>
+          </>
         ) : (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Contact not found</p>

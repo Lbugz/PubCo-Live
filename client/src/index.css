@@ -508,22 +508,4 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-
-  /* Enrichment pulse animation for active status indicators */
-  @keyframes enrichment-pulse {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 1;
-      box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4);
-    }
-    50% {
-      transform: scale(1.08);
-      opacity: 0.85;
-      box-shadow: 0 0 12px 4px rgba(251, 191, 36, 0.3);
-    }
-  }
-
-  .animate-enrichment-pulse {
-    animation: enrichment-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
 }
