@@ -24,8 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { SortableTableHeader } from "@/components/ui/sortable-table-header";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -785,6 +784,115 @@ export default function PlaylistsView() {
     }
   };
 
+  const playlistColumns: DataTableColumn<TrackedPlaylist>[] = [
+    {
+      id: "name",
+      header: "Name",
+      sortField: "name",
+      cell: (playlist) => (
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8 rounded-md">
+            <AvatarImage src={playlist.imageUrl || undefined} alt={playlist.name} />
+            <AvatarFallback className="rounded-md bg-primary/10">
+              <Music2 className="h-4 w-4 text-primary" />
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex items-center gap-2">
+            {playlist.name}
+            {playlist.isEditorial === 1 && (
+              <Badge variant="secondary" className="ml-1">Editorial</Badge>
+            )}
+          </div>
+        </div>
+      ),
+      className: "font-medium",
+    },
+    {
+      id: "source",
+      header: "Source",
+      sortField: "source",
+      cell: (playlist) => (
+        <Badge variant="outline">
+          {normalizeSource(playlist.source).charAt(0).toUpperCase() + normalizeSource(playlist.source).slice(1)}
+        </Badge>
+      ),
+    },
+    {
+      id: "totalTracks",
+      header: "Tracks",
+      sortField: "totalTracks",
+      cell: (playlist) => formatNumber(playlist.totalTracks),
+      className: "text-right",
+      headerClassName: "text-right",
+    },
+    {
+      id: "curator",
+      header: "Curator",
+      sortField: "curator",
+      cell: (playlist) => <span className="text-muted-foreground">{playlist.curator || "—"}</span>,
+    },
+    {
+      id: "followers",
+      header: "Followers",
+      sortField: "followers",
+      cell: (playlist) => <span className="text-muted-foreground">{formatNumber(playlist.followers)}</span>,
+      className: "text-right",
+      headerClassName: "text-right",
+    },
+    {
+      id: "lastChecked",
+      header: "Last Updated",
+      sortField: "lastChecked",
+      cell: (playlist) => <span className="text-muted-foreground">{formatDate(playlist.lastChecked)}</span>,
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: (playlist) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={(e) => e.stopPropagation()}
+              data-testid={`button-playlist-actions-${playlist.id}`}
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              viewTracks(playlist.playlistId);
+            }}>
+              <Eye className="h-4 w-4 mr-2" />
+              View Tracks
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={(e) => {
+                e.stopPropagation();
+                fetchPlaylistDataMutation.mutate(playlist.playlistId);
+              }}
+              disabled={fetchPlaylistDataMutation.isPending}
+            >
+              <RefreshCw className={cn("h-4 w-4 mr-2", fetchPlaylistDataMutation.isPending && "animate-spin")} />
+              Fetch Data
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              window.open(playlist.spotifyUrl, "_blank");
+            }}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Open in Spotify
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+      className: "text-right",
+      headerClassName: "text-right",
+    },
+  ];
+
   return (
     <PageContainer className="space-y-6 fade-in">
       {/* Sticky Header: Metrics & Filters */}
@@ -1070,16 +1178,17 @@ export default function PlaylistsView() {
         countLabel={sortedPlaylists.length === 1 ? "playlist" : "playlists"}
       />
 
-      <Card className="glass-panel">
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading playlists...</div>
-          ) : sortedPlaylists.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {playlists.length === 0 ? "No playlists tracked yet" : "No playlists match your filters"}
-            </div>
-          ) : viewMode === "card" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {viewMode === "card" ? (
+        <Card className="glass-panel">
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading playlists...</div>
+            ) : sortedPlaylists.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {playlists.length === 0 ? "No playlists tracked yet" : "No playlists match your filters"}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sortedPlaylists.map(playlist => (
                 <Card 
                   key={playlist.id} 
@@ -1181,151 +1290,35 @@ export default function PlaylistsView() {
                   </CardContent>
                 </Card>
               ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <DataTable
+          data={sortedPlaylists}
+          columns={playlistColumns}
+          getRowId={(playlist) => playlist.id}
+          isLoading={isLoading}
+          emptyState={(
+            <div className="text-center py-8 text-muted-foreground">
+              {playlists.length === 0 ? "No playlists tracked yet" : "No playlists match your filters"}
             </div>
-          ) : (
-            <Table>
-              <TableHeader className="sticky top-0 z-10 glass-header">
-                <TableRow className="text-xs font-semibold uppercase tracking-wider [&>th]:text-xs [&>th]:uppercase [&>th]:tracking-wider">
-                  <TableHead className="w-[50px]">
-                    <Checkbox
-                      checked={sortedPlaylists.length > 0 && sortedPlaylists.every(p => selectedPlaylistIds.has(p.id))}
-                      onCheckedChange={toggleSelectAll}
-                      aria-label="Select all playlists"
-                      data-testid="checkbox-select-all"
-                    />
-                  </TableHead>
-                  <SortableTableHeader
-                    label="Name"
-                    field="name"
-                    currentSort={{ field: sortField, direction: sortDirection }}
-                    onSort={handleSort}
-                  />
-                  <SortableTableHeader
-                    label="Source"
-                    field="source"
-                    currentSort={{ field: sortField, direction: sortDirection }}
-                    onSort={handleSort}
-                  />
-                  <SortableTableHeader
-                    label="Tracks"
-                    field="totalTracks"
-                    currentSort={{ field: sortField, direction: sortDirection }}
-                    onSort={handleSort}
-                    className="text-right"
-                  />
-                  <SortableTableHeader
-                    label="Curator"
-                    field="curator"
-                    currentSort={{ field: sortField, direction: sortDirection }}
-                    onSort={handleSort}
-                  />
-                  <SortableTableHeader
-                    label="Followers"
-                    field="followers"
-                    currentSort={{ field: sortField, direction: sortDirection }}
-                    onSort={handleSort}
-                    className="text-right"
-                  />
-                  <SortableTableHeader
-                    label="Last Updated"
-                    field="lastChecked"
-                    currentSort={{ field: sortField, direction: sortDirection }}
-                    onSort={handleSort}
-                  />
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedPlaylists.map((playlist, index) => (
-                  <TableRow 
-                    key={playlist.id} 
-                    className={cn(
-                      "hover-elevate cursor-pointer",
-                      index % 2 === 0 && "bg-muted/30"
-                    )}
-                    onClick={() => openDrawer(playlist)}
-                    data-testid={`row-playlist-${playlist.id}`}
-                  >
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={selectedPlaylistIds.has(playlist.id)}
-                        onCheckedChange={() => togglePlaylistSelection(playlist.id)}
-                        aria-label={`Select ${playlist.name}`}
-                        data-testid={`checkbox-playlist-${playlist.id}`}
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8 rounded-md">
-                          <AvatarImage src={playlist.imageUrl || undefined} alt={playlist.name} />
-                          <AvatarFallback className="rounded-md bg-primary/10">
-                            <Music2 className="h-4 w-4 text-primary" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex items-center gap-2">
-                          {playlist.name}
-                          {playlist.isEditorial === 1 && (
-                            <Badge variant="secondary" className="ml-1">Editorial</Badge>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {normalizeSource(playlist.source).charAt(0).toUpperCase() + normalizeSource(playlist.source).slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{formatNumber(playlist.totalTracks)}</TableCell>
-                    <TableCell className="text-muted-foreground">{playlist.curator || "—"}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{formatNumber(playlist.followers)}</TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(playlist.lastChecked)}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={(e) => e.stopPropagation()}
-                            data-testid={`button-playlist-actions-${playlist.id}`}
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation();
-                            viewTracks(playlist.playlistId);
-                          }}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Tracks
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              fetchPlaylistDataMutation.mutate(playlist.playlistId);
-                            }}
-                            disabled={fetchPlaylistDataMutation.isPending}
-                          >
-                            <RefreshCw className={cn("h-4 w-4 mr-2", fetchPlaylistDataMutation.isPending && "animate-spin")} />
-                            Fetch Data
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(playlist.spotifyUrl, "_blank");
-                          }}>
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Open in Spotify
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
           )}
-        </CardContent>
-      </Card>
+          selectedIds={selectedPlaylistIds}
+          onToggleSelection={togglePlaylistSelection}
+          onToggleSelectAll={toggleSelectAll}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          onRowClick={openDrawer}
+          bordered={true}
+          striped={true}
+          hoverable={true}
+          stickyHeader={true}
+          testIdPrefix="playlist"
+        />
+      )}
 
       {/* Details Drawer */}
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>

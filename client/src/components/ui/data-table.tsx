@@ -45,6 +45,7 @@ export interface DataTableProps<T> {
   bordered?: boolean;
   striped?: boolean;
   hoverable?: boolean;
+  stickyHeader?: boolean;
   className?: string;
   
   // Test IDs
@@ -70,6 +71,7 @@ function DataTableInner<T>({
   bordered = true,
   striped = true,
   hoverable = true,
+  stickyHeader = false,
   className,
   testIdPrefix = "table",
 }: DataTableProps<T>) {
@@ -110,8 +112,8 @@ function DataTableInner<T>({
   }
 
   const renderHeader = () => (
-    <TableHeader>
-      <TableRow>
+    <TableHeader className={cn(stickyHeader && "sticky top-0 z-10 glass-header")}>
+      <TableRow className={cn(stickyHeader && "text-xs font-semibold uppercase tracking-wider [&>th]:text-xs [&>th]:uppercase [&>th]:tracking-wider")}>
         {hasSelection && (
           <TableHead className="w-12">
             <Checkbox

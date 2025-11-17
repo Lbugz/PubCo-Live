@@ -26,26 +26,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { cn } from "@/lib/utils";
 import type { ContactWithSongwriter } from "@shared/schema";
 import { ContactDetailDrawer } from "@/components/contact-detail-drawer";
 import { PageContainer } from "@/components/layout/page-container";
 import { FilterBar } from "@/components/layout/filter-bar";
 import { StickyHeaderContainer } from "@/components/layout/sticky-header-container";
-import { SortableTableHeader } from "@/components/ui/sortable-table-header";
 
 const STAGE_CONFIG = {
   discovery: {
@@ -308,6 +300,167 @@ export default function Contacts() {
       setSortDirection(field === "totalStreams" || field === "trackCount" || field === "wowGrowth" ? "desc" : "asc");
     }
   };
+
+  const contactColumns: DataTableColumn<ContactWithSongwriter>[] = [
+    {
+      id: "songwriterName",
+      header: "Songwriter",
+      sortField: "songwriterName",
+      cell: (contact) => (
+        <div 
+          className="flex flex-col cursor-pointer hover-elevate rounded-md p-1 -m-1"
+          onClick={() => handleViewContact(contact.id)}
+        >
+          <span className="text-sm text-primary" data-testid={`text-songwriter-name-${contact.id}`}>
+            {contact.songwriterName}
+          </span>
+          {contact.songwriterChartmetricId && (
+            <span className="text-xs text-muted-foreground">
+              Chartmetric ID
+            </span>
+          )}
+        </div>
+      ),
+      className: "font-medium",
+    },
+    {
+      id: "totalStreams",
+      header: "Total Streams",
+      sortField: "totalStreams",
+      cell: (contact) => formatNumber(contact.totalStreams || 0),
+      className: "text-right",
+      headerClassName: "text-right",
+    },
+    {
+      id: "trackCount",
+      header: "Tracks",
+      sortField: "trackCount",
+      cell: (contact) => contact.totalTracks || 0,
+      className: "text-right",
+      headerClassName: "text-right",
+    },
+    {
+      id: "stage",
+      header: "Stage",
+      sortField: "stage",
+      cell: (contact) => {
+        const stageConfig = STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG];
+        const Icon = stageConfig?.icon;
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "cursor-pointer gap-1",
+                  stageConfig?.color
+                )}
+                data-testid={`badge-stage-${contact.id}`}
+              >
+                {Icon && <Icon className="h-3 w-3" />}
+                {stageConfig?.label || contact.stage}
+                <ChevronDown className="h-3 w-3 ml-1" />
+              </Badge>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {Object.entries(STAGE_CONFIG).map(([key, config]) => (
+                <DropdownMenuItem
+                  key={key}
+                  onClick={() => handleStageUpdate(contact.id, key)}
+                  data-testid={`menu-item-stage-${key}-${contact.id}`}
+                >
+                  <config.icon className="h-4 w-4 mr-2" />
+                  {config.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+    {
+      id: "wowGrowth",
+      header: "WoW Growth",
+      sortField: "wowGrowth",
+      cell: (contact) => (
+        contact.wowGrowthPct !== null ? (
+          <span className={cn(
+            "font-medium",
+            contact.wowGrowthPct > 0 && "text-chart-2",
+            contact.wowGrowthPct < 0 && "text-red-400"
+          )}>
+            {contact.wowGrowthPct > 0 ? "+" : ""}{contact.wowGrowthPct}%
+          </span>
+        ) : (
+          <span className="text-muted-foreground text-xs">—</span>
+        )
+      ),
+      className: "text-right",
+      headerClassName: "text-right",
+    },
+    {
+      id: "hotLead",
+      header: "Hot Lead",
+      cell: (contact) => (
+        <Button
+          variant={contact.hotLead > 0 ? "default" : "ghost"}
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleHotLeadToggle(contact.id, contact.hotLead);
+          }}
+          data-testid={`button-hot-lead-${contact.id}`}
+        >
+          <TrendingUp className={cn(
+            "h-4 w-4",
+            contact.hotLead > 0 && "text-primary-foreground"
+          )} />
+        </Button>
+      ),
+      className: "text-center",
+      headerClassName: "text-center",
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: (contact) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => e.stopPropagation()}
+              data-testid={`button-actions-${contact.id}`}
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewContact(contact.id);
+              }}
+              data-testid={`menu-item-view-${contact.id}`}
+            >
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem data-testid={`menu-item-email-${contact.id}`}>
+              <Mail className="h-4 w-4 mr-2" />
+              Send Email
+            </DropdownMenuItem>
+            <DropdownMenuItem data-testid={`menu-item-dm-${contact.id}`}>
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Send DM
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+      className: "text-right",
+      headerClassName: "text-right",
+    },
+  ];
 
   return (
     <PageContainer className="space-y-6 fade-in">
@@ -688,12 +841,12 @@ export default function Contacts() {
       )}
 
       {/* Contacts Table */}
-      <Card className="glass-panel">
-        {isLoading ? (
-          <div className="flex items-center justify-center p-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : contacts.length === 0 ? (
+      <DataTable
+        data={sortedContacts}
+        columns={contactColumns}
+        getRowId={(contact) => contact.id}
+        isLoading={isLoading}
+        emptyState={(
           <div className="flex flex-col items-center justify-center p-12 text-center">
             <Users className="h-16 w-16 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No contacts found</h3>
@@ -701,221 +854,19 @@ export default function Contacts() {
               {hasFilters ? "Try adjusting your filters" : "Contacts will appear here as tracks are enriched"}
             </p>
           </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="sticky top-0 z-10 glass-header">
-                <TableRow className="text-xs font-semibold uppercase tracking-wider [&>th]:text-xs [&>th]:uppercase [&>th]:tracking-wider">
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={selectedIds.size === sortedContacts.length}
-                      onCheckedChange={toggleSelectAll}
-                      data-testid="checkbox-select-all"
-                    />
-                  </TableHead>
-                  <SortableTableHeader
-                    label="Songwriter"
-                    field="songwriterName"
-                    currentSort={{ field: sortField, direction: sortDirection }}
-                    onSort={handleSort}
-                  />
-                  <SortableTableHeader
-                    label="Total Streams"
-                    field="totalStreams"
-                    currentSort={{ field: sortField, direction: sortDirection }}
-                    onSort={handleSort}
-                    className="text-right"
-                  />
-                  <SortableTableHeader
-                    label="Tracks"
-                    field="trackCount"
-                    currentSort={{ field: sortField, direction: sortDirection }}
-                    onSort={handleSort}
-                    className="text-right"
-                  />
-                  <SortableTableHeader
-                    label="Stage"
-                    field="stage"
-                    currentSort={{ field: sortField, direction: sortDirection }}
-                    onSort={handleSort}
-                  />
-                  <SortableTableHeader
-                    label="WoW Growth"
-                    field="wowGrowth"
-                    currentSort={{ field: sortField, direction: sortDirection }}
-                    onSort={handleSort}
-                    className="text-right"
-                  />
-                  <TableHead className="text-center">Hot Lead</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedContacts.map((contact, index) => {
-                  const stageConfig = STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG];
-                  const Icon = stageConfig?.icon;
-
-                  return (
-                    <TableRow 
-                      key={contact.id} 
-                      className={cn(
-                        "hover-elevate",
-                        index % 2 === 0 && "bg-muted/30"
-                      )}
-                      data-testid={`row-contact-${contact.id}`}
-                    >
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedIds.has(contact.id)}
-                          onCheckedChange={() => toggleSelection(contact.id)}
-                          data-testid={`checkbox-contact-${contact.id}`}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <div 
-                          className="flex flex-col cursor-pointer hover-elevate rounded-md p-1 -m-1"
-                          onClick={() => handleViewContact(contact.id)}
-                        >
-                          <span className="text-sm text-primary" data-testid={`text-songwriter-name-${contact.id}`}>
-                            {contact.songwriterName}
-                          </span>
-                          {contact.songwriterChartmetricId && (
-                            <span className="text-xs text-muted-foreground">
-                              Chartmetric ID
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right" data-testid={`text-streams-${contact.id}`}>
-                        {formatNumber(contact.totalStreams || 0)}
-                      </TableCell>
-                      <TableCell className="text-right" data-testid={`text-tracks-${contact.id}`}>
-                        {contact.totalTracks || 0}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "cursor-pointer gap-1",
-                                stageConfig?.color
-                              )}
-                              data-testid={`badge-stage-${contact.id}`}
-                            >
-                              {Icon && <Icon className="h-3 w-3" />}
-                              {stageConfig?.label || contact.stage}
-                              <ChevronDown className="h-3 w-3 ml-1" />
-                            </Badge>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            {Object.entries(STAGE_CONFIG).map(([key, config]) => (
-                              <DropdownMenuItem
-                                key={key}
-                                onClick={() => handleStageUpdate(contact.id, key)}
-                                data-testid={`menu-item-stage-${key}-${contact.id}`}
-                              >
-                                <config.icon className="h-4 w-4 mr-2" />
-                                {config.label}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                      <TableCell className="text-right" data-testid={`text-wow-growth-${contact.id}`}>
-                        {contact.wowGrowthPct !== null ? (
-                          <span className={cn(
-                            "font-medium",
-                            contact.wowGrowthPct > 0 && "text-chart-2",
-                            contact.wowGrowthPct < 0 && "text-red-400"
-                          )}>
-                            {contact.wowGrowthPct > 0 ? "+" : ""}{contact.wowGrowthPct}%
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Button
-                          variant={contact.hotLead > 0 ? "default" : "ghost"}
-                          size="icon"
-                          onClick={() => handleHotLeadToggle(contact.id, contact.hotLead)}
-                          data-testid={`button-hot-lead-${contact.id}`}
-                        >
-                          <TrendingUp className={cn(
-                            "h-4 w-4",
-                            contact.hotLead > 0 && "text-primary-foreground"
-                          )} />
-                        </Button>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              data-testid={`button-actions-${contact.id}`}
-                            >
-                              <ChevronDown className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem 
-                              onClick={() => handleViewContact(contact.id)}
-                              data-testid={`menu-item-view-${contact.id}`}
-                            >
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem data-testid={`menu-item-email-${contact.id}`}>
-                              <Mail className="h-4 w-4 mr-2" />
-                              Send Email
-                            </DropdownMenuItem>
-                            <DropdownMenuItem data-testid={`menu-item-dm-${contact.id}`}>
-                              <MessageCircle className="h-4 w-4 mr-2" />
-                              Send DM
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-            </div>
-
-            {/* Pagination */}
-            {total > limit && (
-              <div className="flex items-center justify-between p-4 border-t">
-                <div className="text-sm text-muted-foreground">
-                  Showing {offset + 1} to {Math.min(offset + limit, total)} of {formatNumber(total)} contacts
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setOffset(Math.max(0, offset - limit))}
-                    disabled={offset === 0}
-                    data-testid="button-prev-page"
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setOffset(offset + limit)}
-                    disabled={offset + limit >= total}
-                    data-testid="button-next-page"
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
         )}
-      </Card>
+        selectedIds={selectedIds}
+        onToggleSelection={toggleSelection}
+        onToggleSelectAll={toggleSelectAll}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={handleSort}
+        bordered={true}
+        striped={true}
+        hoverable={true}
+        stickyHeader={true}
+        testIdPrefix="contact"
+      />
 
       {/* Contact Detail Drawer */}
       <ContactDetailDrawer
