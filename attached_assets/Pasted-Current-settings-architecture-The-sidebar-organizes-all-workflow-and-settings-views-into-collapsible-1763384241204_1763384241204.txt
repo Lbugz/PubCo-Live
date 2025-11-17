@@ -1,0 +1,39 @@
+Current settings architecture
+The sidebar organizes all workflow and settings views into collapsible sections. The “Settings” group currently exposes Spotify & APIs, Database & Storage, User Preferences, Automation, and a hidden Dev page, so the entry points are already compartmentalized but lack an overview state.
+
+Only three of the five pages surface actionable information. Spotify & APIs shows real-time auth health plus cookie telemetry and setup instructions, but you have to drill into that page to see the badges, alerts, and instructions.
+
+Database & Storage fetches live record counts and supports destructive actions (playlist-level deletes and global wipes) with confirmation flows and toast notifications, yet there is no history or status banner summarizing recent ops once the toast fades.
+
+User Preferences lets people reorder dashboard metrics with instant-saving selects and toasts, but again the changes are invisible unless you navigate back to the dashboard.
+
+Automation and Dev are placeholders that could host scheduled job status, release channels, or API process logs, but they currently hide only “coming soon” messages.
+
+Recommendations to surface process updates & notifications
+Add a “Settings Home” status board
+
+Create a /settings landing view that aggregates the health badges from Spotify, cookie freshness, and the record counts from Database & Storage so operators get a single glanceable dashboard before drilling down. This can reuse the hooks already powering SettingsSpotify (useQuery polling auth/cookie status) and SettingsDatabase (counts queries) to keep data in sync without duplicating logic.
+
+Extend each card with “last updated” timestamps (leveraging the getTimeAgo helper that already exists for cookie telemetry) and CTA buttons that deep-link into the detailed subpages.
+
+Persist system alerts beyond transient toasts
+
+Today, destructive operations and preference changes rely solely on useToast, meaning the feedback disappears if the user isn’t watching. Consider logging recent events (e.g., last playlist deletion, last “Delete All Data” attempt, latest metric preference change) into a lightweight activity feed that lives in a right-rail or dedicated “Activity & Alerts” card within Settings. This could append entries whenever the existing mutations in SettingsDatabase or saveMetricPreferences resolve, so no behavior is lost.
+
+Surface process guidance inline with controls
+
+The Spotify page already has detailed setup instructions and cookie-refresh steps, but they’re nested under each card. To make that guidance more “at-a-glance,” mirror the most critical steps (e.g., “Connect Spotify,” “Refresh cookies”) into expandable accordions or inline banners within the new overview page, and add copy chips or progress indicators that show which steps are complete based on the same auth/cookie queries.
+
+Leverage placeholder pages for operational insights
+
+Repurpose SettingsAutomation to list existing cron jobs, sync windows, or webhook statuses once those APIs are available, instead of a static “coming soon.” A simple table fed by a /api/automations/status endpoint could display next run, last run, and failure counts, mirroring the status-card pattern already used in Spotify settings.
+
+Use the hidden Dev page to centralize release notes, feature flags, environment info, and websocket/job logs so engineers don’t need to inspect backend consoles. Badges (like the current “Hidden” label) can highlight experimental features or internal-only warnings.
+
+Cross-link settings changes back to primary workflows
+
+After users adjust dashboard metrics in SettingsPreferences, show a “Preview” block that mirrors the three selected metrics so they see the impact immediately without navigating away. The component already has access to TRACK_METRIC_OPTIONS and PUBLISHING_METRIC_OPTIONS, so rendering miniature metric cards is mostly a presentational change.
+
+Similarly, the Database page could surface how many playlists are actively synced or when the last ingestion ran, tying that information to playlist-level delete controls. This not only surfaces hidden process info but also reinforces why a destructive action might be risky right now.
+
+Implementing these ideas turns the Settings area into a living status center rather than a collection of isolated forms, ensuring that process updates, notifications, and operational breadcrumbs remain visible and actionable.
