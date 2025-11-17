@@ -715,6 +715,11 @@ export default function Dashboard() {
     );
   }, [metricPreferences, dashboardMetrics]);
 
+  // Determine which sections to show based on the current route
+  const isTracksRoute = location === '/tracks';
+  const shouldShowPlaylists = !isTracksRoute;
+  const shouldShowContacts = !isTracksRoute;
+
   return (
     <div className="min-h-screen bg-background">
       <PageContainer>
@@ -735,9 +740,9 @@ export default function Dashboard() {
               </div>
               <Collapsible open={showMetrics}>
               <CollapsibleContent className="space-y-3">
-                {renderMetricsSection('playlists', 'PLAYLISTS', false)}
-                {renderMetricsSection('tracks', 'TRACKS', metricPreferences.playlists.some(m => m !== null))}
-                {renderMetricsSection('contacts', 'CONTACTS', (metricPreferences.playlists.some(m => m !== null) || metricPreferences.tracks.some(m => m !== null)))}
+                {shouldShowPlaylists && renderMetricsSection('playlists', 'PLAYLISTS', false)}
+                {renderMetricsSection('tracks', 'TRACKS', shouldShowPlaylists && metricPreferences.playlists.some(m => m !== null))}
+                {shouldShowContacts && renderMetricsSection('contacts', 'CONTACTS', (metricPreferences.playlists.some(m => m !== null) || metricPreferences.tracks.some(m => m !== null)))}
               </CollapsibleContent>
             </Collapsible>
           </div>
