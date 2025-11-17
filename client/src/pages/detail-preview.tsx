@@ -158,9 +158,38 @@ export default function DetailPreviewPage() {
           <DrawerSection title="Credits & collaborators">
             <PersonList
               people={[
-                { name: "Liv Rae", role: "Songwriter · Vocal", badge: "Unsigned" },
-                { name: "K. Nova", role: "Producer", badge: "Verified" },
-                { name: "Atlas & Co.", role: "Publisher", badge: "Pending" },
+                { 
+                  name: "Liv Rae", 
+                  role: "Songwriter · Vocal", 
+                  badge: "Unsigned",
+                  enrichmentSources: [
+                    { label: "MLC", matched: true, tooltip: "MLC: Unsigned confirmed" },
+                    { label: "MB", matched: true, tooltip: "MusicBrainz: Artist profile found" },
+                    { label: "CM", matched: false, tooltip: "Chartmetric: Not indexed yet" },
+                    { label: "IG", matched: true, tooltip: "Socials: @livraewrites" },
+                  ]
+                },
+                { 
+                  name: "K. Nova", 
+                  role: "Producer",
+                  enrichmentSources: [
+                    { label: "MLC", matched: true, tooltip: "MLC: Publisher found" },
+                    { label: "MB", matched: true, tooltip: "MusicBrainz: 42 credits" },
+                    { label: "CM", matched: true, tooltip: "Chartmetric: Active profile" },
+                    { label: "IG", matched: false, tooltip: "Socials: Not found" },
+                  ]
+                },
+                { 
+                  name: "Atlas & Co.", 
+                  role: "Publisher", 
+                  badge: "Pending",
+                  enrichmentSources: [
+                    { label: "MLC", matched: false, tooltip: "MLC: Search pending" },
+                    { label: "MB", matched: true, tooltip: "MusicBrainz: Label found" },
+                    { label: "CM", matched: false, tooltip: "Chartmetric: Not available" },
+                    { label: "IG", matched: false, tooltip: "Socials: N/A" },
+                  ]
+                },
               ]}
             />
           </DrawerSection>

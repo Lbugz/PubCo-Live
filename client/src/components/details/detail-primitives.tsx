@@ -213,12 +213,19 @@ export function EnrichmentTimeline({ steps }: { steps: EnrichmentTimelineStep[] 
   );
 }
 
+export interface EnrichmentSource {
+  label: string;
+  matched: boolean;
+  tooltip?: string;
+}
+
 export interface PersonListProps {
   people: Array<{
     name: string;
     role: string;
     badge?: string;
     avatarUrl?: string;
+    enrichmentSources?: EnrichmentSource[];
   }>;
 }
 
@@ -226,19 +233,40 @@ export function PersonList({ people }: PersonListProps) {
   return (
     <div className="space-y-3">
       {people.map((person, idx) => (
-        <div key={`${person.name}-${idx}`} className="flex items-center gap-3 rounded-xl border border-border/60 p-3">
-          <Avatar className="h-10 w-10">
-            {person.avatarUrl ? <AvatarImage src={person.avatarUrl} alt={person.name} /> : null}
-            <AvatarFallback>{person.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-1 flex-col">
-            <p className="font-medium text-foreground">{person.name}</p>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">{person.role}</p>
+        <div key={`${person.name}-${idx}`} className="flex flex-col gap-2 rounded-xl border border-border/60 p-3">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              {person.avatarUrl ? <AvatarImage src={person.avatarUrl} alt={person.name} /> : null}
+              <AvatarFallback>{person.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-1 flex-col">
+              <p className="font-medium text-foreground">{person.name}</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{person.role}</p>
+            </div>
+            {person.badge ? (
+              <Badge className="rounded-full bg-emerald-500/10 text-emerald-300" variant="outline">
+                {person.badge}
+              </Badge>
+            ) : null}
           </div>
-          {person.badge ? (
-            <Badge className="rounded-full bg-emerald-500/10 text-emerald-300" variant="outline">
-              {person.badge}
-            </Badge>
+          {person.enrichmentSources && person.enrichmentSources.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5 pl-[3.25rem]">
+              {person.enrichmentSources.map((source, srcIdx) => (
+                <span
+                  key={`${source.label}-${srcIdx}`}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+                    source.matched
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      : "bg-muted/50 text-muted-foreground border border-border/40"
+                  )}
+                  title={source.tooltip}
+                >
+                  {source.label}
+                  <span className="text-[9px]">{source.matched ? "✓" : "✗"}</span>
+                </span>
+              ))}
+            </div>
           ) : null}
         </div>
       ))}
