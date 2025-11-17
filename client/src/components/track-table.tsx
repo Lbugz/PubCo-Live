@@ -113,7 +113,7 @@ export const TrackTable = memo(function TrackTable({
     <div className="relative">
       {/* Sticky Header - Desktop Only */}
       <div className="hidden lg:grid lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_auto_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
-        <div className="flex items-center pt-1">
+        <div className="flex items-center h-12">
           {onToggleSelectAll && (
             <Checkbox
               checked={someSelected ? "indeterminate" : allSelected}
@@ -197,7 +197,7 @@ export const TrackTable = memo(function TrackTable({
               <div className="grid grid-cols-1 lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_auto_auto] gap-4 p-4 items-start">
                 {/* Checkbox Column - Desktop Only */}
                 <div 
-                  className="hidden lg:flex items-center pt-1" 
+                  className="hidden lg:flex items-center h-12" 
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
