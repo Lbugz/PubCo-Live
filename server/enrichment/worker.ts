@@ -186,6 +186,19 @@ export class EnrichmentWorker {
 
   private async executeJob(job: EnrichmentJob) {
     try {
+      // Fetch playlist name for broadcast
+      let playlistName = 'Unknown Playlist';
+      if (job.playlistId) {
+        try {
+          const playlist = await this.storage.getPlaylistById(job.playlistId);
+          if (playlist) {
+            playlistName = playlist.playlistName;
+          }
+        } catch (error) {
+          console.error('Failed to fetch playlist name:', error);
+        }
+      }
+
       // Broadcast job started
       if (this.wsBroadcast) {
         this.wsBroadcast('enrichment_job_started', {
@@ -193,6 +206,7 @@ export class EnrichmentWorker {
           jobId: job.id,
           trackCount: job.trackIds.length,
           playlistId: job.playlistId,
+          playlistName,
         });
       }
 

@@ -969,8 +969,8 @@ export default function Dashboard() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-80 glass-panel p-0" align="end">
-                    <ScrollArea className="max-h-[500px]">
-                      <div className="space-y-4 p-4">
+                    <ScrollArea className="max-h-[min(600px,80vh)]">
+                      <div className="space-y-4 p-4 pr-3">
                       {/* Score Range Filter */}
                       <div>
                         <h4 className="text-sm font-medium mb-3">Score Range</h4>
