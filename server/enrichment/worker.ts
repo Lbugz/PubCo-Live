@@ -266,6 +266,8 @@ export class EnrichmentWorker {
           status: 'running',
           progress: 35,
           message: `Phase 1 complete: ${persistedCount} tracks persisted, ${phase1Result.isrcRecovered} ISRCs recovered`,
+          enrichedCount: phase1Result.tracksEnriched,
+          totalCount: job.trackIds.length,
         });
 
         for (const trackId of job.trackIds) {
@@ -419,6 +421,8 @@ export class EnrichmentWorker {
         status: 'running',
         progress: 70,
         message: `Phase 2 complete: ${phase2Persisted} tracks persisted, starting MLC lookup...`,
+        enrichedCount: result.tracksEnriched,
+        totalCount: job.trackIds.length,
       });
 
       for (const enrichedTrack of result.enrichedTracks) {

@@ -57,12 +57,13 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
+    console.log('🔌 Attempting WebSocket connection to:', wsUrl);
 
     try {
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
-        console.log('🔌 WebSocket connected (single shared connection)');
+        console.log('✅ WebSocket connected successfully');
         reconnectAttemptsRef.current = 0;
         setIsConnected(true);
       };
@@ -70,31 +71,27 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       ws.onmessage = (event) => {
         try {
           const data: WebSocketMessage = JSON.parse(event.data);
-          
-          // Only log non-connected messages to reduce noise
-          if (data.type !== 'connected') {
-            console.log('📨 WebSocket event:', data.type, data);
-          }
+          console.log('📨 WebSocket message received:', data.type, data);
 
           // Notify all subscribed handlers (only once per message)
           handlersRef.current.forEach(handler => {
             try {
               handler(data);
             } catch (error) {
-              console.error('Error in WebSocket message handler:', error);
+              console.error('❌ Error in WebSocket message handler:', error);
             }
           });
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          console.error('❌ Error parsing WebSocket message:', error);
         }
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.error('❌ WebSocket error:', error);
       };
 
-      ws.onclose = () => {
-        console.log('WebSocket disconnected');
+      ws.onclose = (event) => {
+        console.log('🔌 WebSocket disconnected. Code:', event.code, 'Reason:', event.reason);
         setIsConnected(false);
         wsRef.current = null;
 
@@ -102,7 +99,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
           reconnectAttemptsRef.current++;
           const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
-          console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttemptsRef.current})`);
+          console.log(`⏳ Attempting to reconnect in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
 
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
@@ -112,7 +109,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
       wsRef.current = ws;
     } catch (error) {
-      console.error('Error creating WebSocket:', error);
+      console.error('❌ Error creating WebSocket:', error);
     }
   };
 

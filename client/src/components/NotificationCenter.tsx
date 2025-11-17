@@ -58,7 +58,7 @@ export function NotificationCenter() {
     return () => clearInterval(interval);
   }, [activeJobs]);
 
-  useWebSocket({
+  const { isConnected } = useWebSocket({
     onConnected: () => {
       console.log('NotificationCenter: WebSocket connected');
     },
@@ -80,10 +80,10 @@ export function NotificationCenter() {
     },
     onEnrichmentProgress: (data) => {
       console.log('NotificationCenter: Enrichment progress', data);
-      if (data.jobId) {
+      if (data.jobId && data.enrichedCount !== undefined) {
         setActiveJobs(prev => prev.map(job =>
           job.jobId === data.jobId
-            ? { ...job, enrichedCount: data.enrichedCount || 0 }
+            ? { ...job, enrichedCount: data.enrichedCount }
             : job
         ));
       }
@@ -194,8 +194,12 @@ export function NotificationCenter() {
           size="icon" 
           className="relative"
           data-testid="button-notifications"
+          title={isConnected ? "WebSocket connected" : "WebSocket disconnected"}
         >
-          <Bell className="h-5 w-5" />
+          <Bell className={cn("h-5 w-5", !isConnected && "text-destructive")} />
+          {!isConnected && (
+            <div className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-destructive" data-testid="ws-disconnected-indicator" />
+          )}
           {totalBadgeCount > 0 && (
             <Badge
               variant={activeJobsCount > 0 ? "info" : "destructive"}
@@ -213,9 +217,14 @@ export function NotificationCenter() {
         data-testid="popover-notifications"
       >
         <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="font-semibold" data-testid="text-notifications-title">
-            Notifications
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold" data-testid="text-notifications-title">
+              Notifications
+            </h3>
+            <Badge variant={isConnected ? "success" : "destructive"} className="text-xs">
+              {isConnected ? "🟢 Connected" : "🔴 Disconnected"}
+            </Badge>
+          </div>
           <div className="flex items-center gap-2">
             {unreadCount > 0 && (
               <Button
