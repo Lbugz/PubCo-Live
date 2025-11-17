@@ -71,63 +71,80 @@ export class DatabaseStorage implements IStorage {
   async getTracksByWeek(week: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]> {
     const { limit, offset } = options || {};
     
+    // Deduplicate tracks by ISRC (or spotify_url if ISRC is null)
+    // For each unique track, select the snapshot with highest score and count playlists
     if (week === "all") {
-      let query = db.select()
-        .from(playlistSnapshots)
-        .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore))
-        .$dynamic();
-      
-      if (limit !== undefined) {
-        query = query.limit(limit);
-      }
-      if (offset !== undefined && offset > 0) {
-        query = query.offset(offset);
-      }
-      
-      return query;
+      const result = await db.execute(sql`
+        WITH ranked_tracks AS (
+          SELECT *,
+            ROW_NUMBER() OVER (
+              PARTITION BY COALESCE(isrc, spotify_url) 
+              ORDER BY unsigned_score DESC NULLS LAST, added_at DESC
+            ) as rn,
+            COUNT(*) OVER (PARTITION BY COALESCE(isrc, spotify_url)) as playlist_count
+          FROM playlist_snapshots
+        )
+        SELECT * FROM ranked_tracks
+        WHERE rn = 1
+        ORDER BY added_at DESC, unsigned_score DESC NULLS LAST
+        ${limit !== undefined ? sql`LIMIT ${limit}` : sql``}
+        ${offset !== undefined && offset > 0 ? sql`OFFSET ${offset}` : sql``}
+      `);
+      return result.rows as PlaylistSnapshot[];
     }
     
     if (week === "latest") {
       const latestWeek = await this.getLatestWeek();
       if (!latestWeek) return [];
       
-      let query = db.select()
-        .from(playlistSnapshots)
-        .where(eq(playlistSnapshots.week, latestWeek))
-        .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore))
-        .$dynamic();
-      
-      if (limit !== undefined) {
-        query = query.limit(limit);
-      }
-      if (offset !== undefined && offset > 0) {
-        query = query.offset(offset);
-      }
-      
-      return query;
+      const result = await db.execute(sql`
+        WITH ranked_tracks AS (
+          SELECT *,
+            ROW_NUMBER() OVER (
+              PARTITION BY COALESCE(isrc, spotify_url) 
+              ORDER BY unsigned_score DESC NULLS LAST, added_at DESC
+            ) as rn,
+            COUNT(*) OVER (PARTITION BY COALESCE(isrc, spotify_url)) as playlist_count
+          FROM playlist_snapshots
+          WHERE week = ${latestWeek}
+        )
+        SELECT * FROM ranked_tracks
+        WHERE rn = 1
+        ORDER BY added_at DESC, unsigned_score DESC NULLS LAST
+        ${limit !== undefined ? sql`LIMIT ${limit}` : sql``}
+        ${offset !== undefined && offset > 0 ? sql`OFFSET ${offset}` : sql``}
+      `);
+      return result.rows as PlaylistSnapshot[];
     }
     
-    let query = db.select()
-      .from(playlistSnapshots)
-      .where(eq(playlistSnapshots.week, week))
-      .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore))
-      .$dynamic();
-    
-    if (limit !== undefined) {
-      query = query.limit(limit);
-    }
-    if (offset !== undefined && offset > 0) {
-      query = query.offset(offset);
-    }
-    
-    return query;
+    const result = await db.execute(sql`
+      WITH ranked_tracks AS (
+        SELECT *,
+          ROW_NUMBER() OVER (
+            PARTITION BY COALESCE(isrc, spotify_url) 
+            ORDER BY unsigned_score DESC NULLS LAST, added_at DESC
+          ) as rn,
+          COUNT(*) OVER (PARTITION BY COALESCE(isrc, spotify_url)) as playlist_count
+        FROM playlist_snapshots
+        WHERE week = ${week}
+      )
+      SELECT * FROM ranked_tracks
+      WHERE rn = 1
+      ORDER BY added_at DESC, unsigned_score DESC NULLS LAST
+      ${limit !== undefined ? sql`LIMIT ${limit}` : sql``}
+      ${offset !== undefined && offset > 0 ? sql`OFFSET ${offset}` : sql``}
+    `);
+    return result.rows as PlaylistSnapshot[];
   }
 
   async getTracksByWeekCount(week: string): Promise<number> {
+    // Count unique tracks by ISRC (or spotify_url if ISRC is null)
     if (week === "all") {
-      const result = await db.select({ count: count() })
-        .from(playlistSnapshots);
-      const raw = result[0]?.count ?? 0;
+      const result = await db.execute(sql`
+        SELECT COUNT(DISTINCT COALESCE(isrc, spotify_url)) as count
+        FROM playlist_snapshots
+      `);
+      const raw = result.rows[0]?.count ?? 0;
       return typeof raw === "bigint" ? Number(raw) : Number(raw);
     }
     
@@ -135,17 +152,21 @@ export class DatabaseStorage implements IStorage {
       const latestWeek = await this.getLatestWeek();
       if (!latestWeek) return 0;
       
-      const result = await db.select({ count: count() })
-        .from(playlistSnapshots)
-        .where(eq(playlistSnapshots.week, latestWeek));
-      const raw = result[0]?.count ?? 0;
+      const result = await db.execute(sql`
+        SELECT COUNT(DISTINCT COALESCE(isrc, spotify_url)) as count
+        FROM playlist_snapshots
+        WHERE week = ${latestWeek}
+      `);
+      const raw = result.rows[0]?.count ?? 0;
       return typeof raw === "bigint" ? Number(raw) : Number(raw);
     }
     
-    const result = await db.select({ count: count() })
-      .from(playlistSnapshots)
-      .where(eq(playlistSnapshots.week, week));
-    const raw = result[0]?.count ?? 0;
+    const result = await db.execute(sql`
+      SELECT COUNT(DISTINCT COALESCE(isrc, spotify_url)) as count
+      FROM playlist_snapshots
+      WHERE week = ${week}
+    `);
+    const raw = result.rows[0]?.count ?? 0;
     return typeof raw === "bigint" ? Number(raw) : Number(raw);
   }
 

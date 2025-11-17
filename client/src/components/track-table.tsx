@@ -294,9 +294,19 @@ export const TrackTable = memo(function TrackTable({
 
                 {/* Playlist Column */}
                 <div className="col-span-1 lg:col-span-1 pt-1">
-                  <div className="text-sm" data-testid={`text-playlist-${track.id}`}>
-                    {track.playlistName}
-                  </div>
+                  {(track as any).playlist_count > 1 ? (
+                    <Badge 
+                      variant="outline" 
+                      className="bg-primary/10 text-primary border-primary/20 text-xs"
+                      data-testid={`badge-playlists-${track.id}`}
+                    >
+                      {(track as any).playlist_count} playlists
+                    </Badge>
+                  ) : (
+                    <div className="text-sm text-muted-foreground" data-testid={`text-playlist-${track.id}`}>
+                      {track.playlistName}
+                    </div>
+                  )}
                 </div>
 
                 {/* Streams Column */}
