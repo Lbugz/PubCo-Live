@@ -106,31 +106,24 @@ export async function getPlaylistMetrics() {
       changeUnsigned = calculatePercentChange(unsignedSongwriters, prevUnsigned);
     }
     
-    // High-impact playlists (avg unsigned score >= 7)
+    // High-impact playlists (playlists with tracks missing publisher data)
     const highImpactResult = await db.select({
       playlistId: playlistSnapshots.playlistId,
-      avgScore: sql<number>`avg(${playlistSnapshots.unsignedScore})::float`
     })
       .from(playlistSnapshots)
-      .where(eq(playlistSnapshots.week, latestWeek))
+      .where(
+        and(
+          eq(playlistSnapshots.week, latestWeek),
+          sql`(${playlistSnapshots.creditsStatus} = 'success' OR ${playlistSnapshots.creditsStatus} IS NULL)`,
+          sql`${playlistSnapshots.publisher} IS NULL OR ${playlistSnapshots.publisher} = ''`
+        )
+      )
       .groupBy(playlistSnapshots.playlistId);
     
-    const highImpactPlaylists = highImpactResult.filter(p => (p.avgScore || 0) >= 7).length;
+    const highImpactPlaylists = highImpactResult.length;
     
-    // High-impact playlists (previous week) for trend
+    // No trend tracking for high-impact playlists for now
     let changeHighImpact = 0;
-    if (previousWeek) {
-      const prevHighImpactResult = await db.select({
-        playlistId: playlistSnapshots.playlistId,
-        avgScore: sql<number>`avg(${playlistSnapshots.unsignedScore})::float`
-      })
-        .from(playlistSnapshots)
-        .where(eq(playlistSnapshots.week, previousWeek))
-        .groupBy(playlistSnapshots.playlistId);
-      
-      const prevHighImpact = prevHighImpactResult.filter(p => (p.avgScore || 0) >= 7).length;
-      changeHighImpact = calculatePercentChange(highImpactPlaylists, prevHighImpact);
-    }
     
     return {
       totalPlaylists,
@@ -158,55 +151,26 @@ export async function getTrackMetrics() {
       };
     }
     
-    const previousWeek = await getPreviousWeek(latestWeek);
+    // NOTE: Track metrics now represent contact-level data since scores moved to contacts
+    // "dealReady" = contacts with high scores (>= 7)
+    // "avgScore" = average contact score
+    // "missingPublisher" = tracks without publisher metadata (still track-level)
     
-    // Deal-ready tracks (unsignedScore >= 7)
+    // High-scoring contacts (score >= 7) - replaces deal-ready tracks
     const dealReadyResult = await db.select({ count: sql<number>`count(*)::int` })
-      .from(playlistSnapshots)
-      .where(
-        and(
-          eq(playlistSnapshots.week, latestWeek),
-          gte(playlistSnapshots.unsignedScore, 7)
-        )
-      );
+      .from(contacts)
+      .where(gte(contacts.unsignedScore, 7));
     const dealReady = dealReadyResult[0]?.count || 0;
     
-    // Deal-ready tracks (previous week) for trend
-    let changeDealReady = 0;
-    if (previousWeek) {
-      const prevDealReadyResult = await db.select({ count: sql<number>`count(*)::int` })
-        .from(playlistSnapshots)
-        .where(
-          and(
-            eq(playlistSnapshots.week, previousWeek),
-            gte(playlistSnapshots.unsignedScore, 7)
-          )
-        );
-      const prevDealReady = prevDealReadyResult[0]?.count || 0;
-      changeDealReady = calculatePercentChange(dealReady, prevDealReady);
-    }
-    
-    // Average unsigned score
+    // Average contact score
     const avgScoreResult = await db.select({ 
-      avg: sql<number>`avg(${playlistSnapshots.unsignedScore})::float` 
+      avg: sql<number>`avg(${contacts.unsignedScore})::float` 
     })
-      .from(playlistSnapshots)
-      .where(eq(playlistSnapshots.week, latestWeek));
+      .from(contacts)
+      .where(sql`${contacts.unsignedScore} IS NOT NULL`);
     const avgScore = avgScoreResult[0]?.avg || 0;
     
-    // Average unsigned score (previous week) for trend
-    let changeAvgScore = 0;
-    if (previousWeek) {
-      const prevAvgScoreResult = await db.select({ 
-        avg: sql<number>`avg(${playlistSnapshots.unsignedScore})::float` 
-      })
-        .from(playlistSnapshots)
-        .where(eq(playlistSnapshots.week, previousWeek));
-      const prevAvgScore = prevAvgScoreResult[0]?.avg || 0;
-      changeAvgScore = calculatePercentChange(avgScore, prevAvgScore);
-    }
-    
-    // Missing publisher tracks (tracks with no publisher data, only successfully enriched)
+    // Missing publisher tracks (still track-level metric)
     const missingPublisherResult = await db.select({ count: sql<number>`count(*)::int` })
       .from(playlistSnapshots)
       .where(
@@ -218,29 +182,13 @@ export async function getTrackMetrics() {
       );
     const missingPublisher = missingPublisherResult[0]?.count || 0;
     
-    // Missing publisher tracks (previous week) for trend
-    let changeMissingPublisher = 0;
-    if (previousWeek) {
-      const prevMissingPublisherResult = await db.select({ count: sql<number>`count(*)::int` })
-        .from(playlistSnapshots)
-        .where(
-          and(
-            eq(playlistSnapshots.week, previousWeek),
-            sql`(${playlistSnapshots.creditsStatus} = 'success' OR ${playlistSnapshots.creditsStatus} IS NULL)`,
-            sql`${playlistSnapshots.publisher} IS NULL OR ${playlistSnapshots.publisher} = ''`
-          )
-        );
-      const prevMissingPublisher = prevMissingPublisherResult[0]?.count || 0;
-      changeMissingPublisher = calculatePercentChange(missingPublisher, prevMissingPublisher);
-    }
-    
     return {
       dealReady,
       avgScore: parseFloat(avgScore.toFixed(1)),
       missingPublisher,
-      changeDealReady,
-      changeAvgScore,
-      changeMissingPublisher,
+      changeDealReady: 0, // No trend tracking for now
+      changeAvgScore: 0,
+      changeMissingPublisher: 0,
     };
   });
 }
@@ -253,22 +201,20 @@ export async function getContactMetrics() {
     const totalContacts = totalContactsResult[0]?.count || 0;
 
     // High-Confidence Unsigned
-    // Criteria: mlcSearched=1 AND mlcFound=0 (verified unsigned) AND has high-scoring tracks
+    // Criteria: mlcSearched=1 AND mlcFound=0 (verified unsigned) AND has high contact score (>= 7)
     // Using mlc_found=0 as authoritative unsigned signal from MLC API
-    const highConfidenceUnsignedResult = await db.execute<{ count: number }>(sql`
-      SELECT COUNT(DISTINCT c.id)::int as count
-      FROM contacts c
-      INNER JOIN songwriter_profiles sp ON sp.id = c.songwriter_id
-      WHERE c.mlc_searched = 1
-        AND c.mlc_found = 0
-        AND EXISTS (
-          SELECT 1 FROM playlist_snapshots ps
-          WHERE ps.songwriter LIKE '%' || sp.name || '%'
-            AND ps.unsigned_score >= 7
-            AND ps.unsigned_score IS NOT NULL
+    const highConfidenceUnsignedResult = await db.select({ 
+      count: sql<number>`count(*)::int` 
+    })
+      .from(contacts)
+      .where(
+        and(
+          eq(contacts.mlcSearched, 1),
+          eq(contacts.mlcFound, 0),
+          gte(contacts.unsignedScore, 7)
         )
-    `);
-    const highConfidenceUnsigned = highConfidenceUnsignedResult.rows[0]?.count || 0;
+      );
+    const highConfidenceUnsigned = highConfidenceUnsignedResult[0]?.count || 0;
 
     // Publishing Opportunities (MLC Verified Unsigned)
     // Criteria: mlcSearched=1 AND mlcFound=0 (not found in MLC = unsigned)
