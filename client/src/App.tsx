@@ -18,6 +18,7 @@ import SettingsDatabase from "@/pages/settings-database";
 import SettingsPreferences from "@/pages/settings-preferences";
 import SettingsAutomation from "@/pages/settings-automation";
 import SettingsDev from "@/pages/settings-dev";
+import DashboardPreferences from "@/pages/dashboard-preferences";
 import DetailPreviewPage from "@/pages/detail-preview";
 import NotFound from "@/pages/not-found";
 
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/settings/spotify" component={SettingsSpotify} />
       <Route path="/settings/database" component={SettingsDatabase} />
       <Route path="/settings/preferences" component={SettingsPreferences} />
+      <Route path="/settings/dashboard" component={DashboardPreferences} />
       <Route path="/settings/automation" component={SettingsAutomation} />
       <Route path="/settings/dev" component={SettingsDev} />
       
