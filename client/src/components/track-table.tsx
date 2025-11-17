@@ -113,7 +113,7 @@ export const TrackTable = memo(function TrackTable({
     <div className="relative">
       {/* Sticky Header - Desktop Only */}
       <div className="hidden lg:grid lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_auto_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
-        <div className="flex items-center">
+        <div className="flex items-center pt-1">
           {onToggleSelectAll && (
             <Checkbox
               checked={someSelected ? "indeterminate" : allSelected}
