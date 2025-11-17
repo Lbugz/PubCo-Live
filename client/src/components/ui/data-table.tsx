@@ -194,14 +194,14 @@ function DataTableInner<T>({
   // Non-virtualized rendering
   if (!virtualized) {
     return (
-      <Card className={cn(bordered && "glass-panel overflow-hidden", className)}>
-        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-400px)]">
-          <Table>
+      <Card className={cn(bordered && "glass-panel", className)}>
+        <div className={cn("relative w-full overflow-x-auto", stickyHeader && "overflow-y-auto max-h-[calc(100vh-400px)]")}>
+          <table className="w-full caption-bottom text-sm">
             {renderHeader()}
             <TableBody>
               {data.map((row, index) => renderRow(row, index))}
             </TableBody>
-          </Table>
+          </table>
         </div>
       </Card>
     );
