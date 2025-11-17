@@ -149,10 +149,10 @@ export default function DetailPreviewPage() {
             ]}
           />
           <ActionRail
-            primaryAction={{ label: "Add to pipeline", icon: TrendingUp }}
+            primaryAction={{ label: "Enrich track", icon: Sparkles }}
             secondaryActions={[
-              { label: "Open in Spotify", icon: Play },
-              { label: "Contact writer", icon: UserPlus, subtle: true },
+              { label: "Open in Spotify", icon: ExternalLink },
+              { label: "Add note", icon: FileText, subtle: true },
             ]}
           />
           <DrawerSection title="Credits & collaborators">
