@@ -65,7 +65,6 @@ const filterOptions = [
   { id: "has-email", label: "Has Contact Email", section: "Contact Info" },
   { id: "no-email", label: "No Contact Email", section: "Contact Info" },
   { id: "has-streams", label: "Has Stream Count", section: "Stream Data" },
-  { id: "high-score", label: "High Score (7+)", section: "Scoring" },
   { id: "enriched", label: "Fully Enriched", section: "Enrichment Status" },
   { id: "failed-enrichment", label: "Failed Enrichment", section: "Enrichment Status" },
 ];
@@ -76,7 +75,6 @@ export default function Dashboard() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const [scoreRange, setScoreRange] = useState<[number, number]>([0, 10]);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<PlaylistSnapshot | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -86,7 +84,7 @@ export default function Dashboard() {
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeJobs, setActiveJobs] = useState<EnrichmentJob[]>([]);
-  const [sortField, setSortField] = useState<string>("score");
+  const [sortField, setSortField] = useState<string>("addedAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [showMetrics, setShowMetrics] = useState(() => {
     const stored = localStorage.getItem('tracksMetricsVisible');
@@ -230,7 +228,6 @@ export default function Dashboard() {
     setSelectedWeek("all");
     setSelectedPlaylist("all");
     setSearchQuery("");
-    setScoreRange([0, 10]);
     setActiveFilters([]);
   }, []);
 
@@ -380,16 +377,14 @@ export default function Dashboard() {
     },
   });
 
-  // Memoize filtered tracks and stats to avoid recomputation on every render
-  const { filteredTracks, highPotentialCount, mediumPotentialCount, avgScore } = useMemo(() => {
+  // Memoize filtered tracks to avoid recomputation on every render
+  const filteredTracks = useMemo(() => {
     const filtered = tracks?.filter((track) => {
       const matchesSearch = 
         debouncedSearchQuery === "" ||
         track.trackName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         track.artistName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         track.label?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-      // Allow null scores (pending tracks) OR scores within range
-      const matchesScore = track.unsignedScore === null || (track.unsignedScore >= scoreRange[0] && track.unsignedScore <= scoreRange[1]);
       
       // Advanced filters
       let matchesAdvancedFilters = true;
@@ -400,7 +395,6 @@ export default function Dashboard() {
         const hasSongwriter = !!track.songwriter;
         const hasEmail = !!track.email;
         const hasStreams = track.spotifyStreams !== null && track.spotifyStreams !== undefined;
-        const isHighScore = track.unsignedScore !== null && track.unsignedScore >= 7;
         const isEnriched = track.creditsStatus === 'success';
         const hasFailed = track.creditsStatus === 'failed' || track.enrichmentStatus === 'failed';
         
@@ -416,7 +410,6 @@ export default function Dashboard() {
           "has-email": hasEmail,
           "no-email": !hasEmail,
           "has-streams": hasStreams,
-          "high-score": isHighScore,
           "enriched": isEnriched,
           "failed-enrichment": hasFailed,
         };
@@ -424,23 +417,11 @@ export default function Dashboard() {
         matchesAdvancedFilters = activeFilters.every(filter => filterMatches[filter]);
       }
       
-      return matchesSearch && matchesScore && matchesAdvancedFilters;
+      return matchesSearch && matchesAdvancedFilters;
     }) || [];
 
-    // Calculate stats based on filtered tracks in a single pass
-    const highPotential = filtered.filter(t => t.unsignedScore !== null && t.unsignedScore >= 7).length;
-    const mediumPotential = filtered.filter(t => t.unsignedScore !== null && t.unsignedScore >= 4 && t.unsignedScore < 7).length;
-    const average = filtered.length 
-      ? (filtered.reduce((sum, t) => sum + (t.unsignedScore ?? 0), 0) / filtered.length)
-      : 0;
-
-    return {
-      filteredTracks: filtered,
-      highPotentialCount: highPotential,
-      mediumPotentialCount: mediumPotential,
-      avgScore: average,
-    };
-  }, [tracks, debouncedSearchQuery, scoreRange, activeFilters]);
+    return filtered;
+  }, [tracks, debouncedSearchQuery, activeFilters]);
 
   // Sort filtered tracks
   const sortedTracks = useMemo(() => {
@@ -471,10 +452,6 @@ export default function Dashboard() {
           aValue = a.songwriter?.toLowerCase() || "";
           bValue = b.songwriter?.toLowerCase() || "";
           break;
-        case "score":
-          aValue = a.unsignedScore || 0;
-          bValue = b.unsignedScore || 0;
-          break;
         case "spotifyStreams":
           aValue = a.spotifyStreams || 0;
           bValue = b.spotifyStreams || 0;
@@ -497,9 +474,9 @@ export default function Dashboard() {
       // Toggle direction if same field
       setSortDirection(prev => prev === "asc" ? "desc" : "asc");
     } else {
-      // New field - start with descending for scores/streams, ascending for text
+      // New field - start with descending for streams, ascending for text
       setSortField(field);
-      setSortDirection(field === "score" || field === "spotifyStreams" ? "desc" : "asc");
+      setSortDirection(field === "spotifyStreams" ? "desc" : "asc");
     }
   }, [sortField]);
 
@@ -525,8 +502,7 @@ export default function Dashboard() {
     selectedWeek !== "all" || 
     selectedPlaylist !== "all" || 
     searchQuery !== "" || 
-    activeFilters.length > 0 ||
-    (scoreRange[0] !== 0 || scoreRange[1] !== 10);
+    activeFilters.length > 0;
 
   const filterSections = filterOptions.reduce((acc, filter) => {
     if (!acc[filter.section]) acc[filter.section] = [];
@@ -972,27 +948,6 @@ export default function Dashboard() {
                   <PopoverContent className="w-80 glass-panel p-0" align="end">
                     <ScrollArea className="max-h-[min(600px,80vh)]">
                       <div className="space-y-4 p-4 pr-3">
-                      {/* Score Range Filter */}
-                      <div>
-                        <h4 className="text-sm font-medium mb-3">Score Range</h4>
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm font-medium whitespace-nowrap">
-                            {scoreRange[0]} - {scoreRange[1]}
-                          </span>
-                          <Slider
-                            min={0}
-                            max={10}
-                            step={1}
-                            value={scoreRange}
-                            onValueChange={(value) => setScoreRange(value as [number, number])}
-                            className="flex-1"
-                            data-testid="slider-score-range"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="border-t pt-3" />
-
                       {/* Data Completeness Filters */}
                       {Object.entries(filterSections).map(([section, filters]) => (
                         <div key={section}>
