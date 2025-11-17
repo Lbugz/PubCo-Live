@@ -18,6 +18,7 @@ import SettingsDatabase from "@/pages/settings-database";
 import SettingsPreferences from "@/pages/settings-preferences";
 import SettingsAutomation from "@/pages/settings-automation";
 import SettingsDev from "@/pages/settings-dev";
+import DetailPreviewPage from "@/pages/detail-preview";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -44,6 +45,9 @@ function Router() {
       <Route path="/settings/preferences" component={SettingsPreferences} />
       <Route path="/settings/automation" component={SettingsAutomation} />
       <Route path="/settings/dev" component={SettingsDev} />
+
+      {/* Preview */}
+      <Route path="/previews/details" component={DetailPreviewPage} />
       
       {/* 404 */}
       <Route component={NotFound} />
