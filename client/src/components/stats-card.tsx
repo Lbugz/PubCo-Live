@@ -47,7 +47,7 @@ export function StatsCard({
   const cardContent = (
     <Card 
       className={cn(
-        "hover-elevate transition-all",
+        "hover-elevate transition-all h-full min-h-[140px]",
         onClick && "cursor-pointer active-elevate-2"
       )} 
       data-testid={testId}

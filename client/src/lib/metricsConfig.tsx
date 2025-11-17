@@ -368,5 +368,6 @@ export const METRIC_CARD_CONFIG = {
 } as const;
 
 export function getMetricConfig(section: 'playlists' | 'tracks' | 'contacts', metricId: string): MetricCardConfig | null {
-  return METRIC_CARD_CONFIG[section]?.[metricId] || null;
+  const sectionConfig = METRIC_CARD_CONFIG[section];
+  return (sectionConfig as any)[metricId] || null;
 }

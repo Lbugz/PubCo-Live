@@ -28,9 +28,9 @@ export function getMetricPreferences(): DashboardMetricPreferences {
         console.log('Migrating legacy metric preferences to new format');
         
         const migrated: DashboardMetricPreferences = {
-          playlists: [],
-          tracks: [],
-          contacts: [],
+          playlists: ['', '', ''] as [string, string, string],
+          tracks: ['', '', ''] as [string, string, string],
+          contacts: ['', '', ''] as [string, string, string],
         };
         
         // Migrate trackMetrics array

@@ -699,7 +699,7 @@ export default function Dashboard() {
           {selectedMetrics.map((metricId, index) => {
             if (!metricId) return null;
             
-            const config = sectionConfig[metricId];
+            const config = (sectionConfig as any)[metricId];
             if (!config || !metricsData) return null;
 
             try {
