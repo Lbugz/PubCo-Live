@@ -72,11 +72,10 @@ export class DatabaseStorage implements IStorage {
     const { limit, offset } = options || {};
     
     // Deduplicate tracks by ISRC (or spotify_url if ISRC is null)
-    // For each unique track, select the snapshot with highest score and count playlists
     if (week === "all") {
       let query = db.select()
         .from(playlistSnapshots)
-        .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore))
+        .orderBy(desc(playlistSnapshots.addedAt))
         .$dynamic();
       
       if (limit !== undefined) {
@@ -96,7 +95,7 @@ export class DatabaseStorage implements IStorage {
       let query = db.select()
         .from(playlistSnapshots)
         .where(eq(playlistSnapshots.week, latestWeek))
-        .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore))
+        .orderBy(desc(playlistSnapshots.addedAt))
         .$dynamic();
       
       if (limit !== undefined) {
@@ -112,7 +111,7 @@ export class DatabaseStorage implements IStorage {
     let query = db.select()
       .from(playlistSnapshots)
       .where(eq(playlistSnapshots.week, week))
-      .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore))
+      .orderBy(desc(playlistSnapshots.addedAt))
       .$dynamic();
     
     if (limit !== undefined) {
@@ -191,7 +190,7 @@ export class DatabaseStorage implements IStorage {
     let query = db.select()
       .from(playlistSnapshots)
       .where(and(...conditions))
-      .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore))
+      .orderBy(desc(playlistSnapshots.addedAt))
       .$dynamic();
     
     if (limit !== undefined) {
@@ -422,7 +421,7 @@ export class DatabaseStorage implements IStorage {
       .from(trackTags)
       .innerJoin(playlistSnapshots, eq(trackTags.trackId, playlistSnapshots.id))
       .where(eq(trackTags.tagId, tagId))
-      .orderBy(desc(playlistSnapshots.addedAt), desc(playlistSnapshots.unsignedScore))
+      .orderBy(desc(playlistSnapshots.addedAt))
       .$dynamic();
     
     if (limit !== undefined) {
@@ -581,7 +580,6 @@ export class DatabaseStorage implements IStorage {
       totalTracks: sql<number>`CAST(COUNT(*) AS INTEGER)`,
       enrichedCount: sql<number>`CAST(SUM(CASE WHEN ${playlistSnapshots.enrichedAt} IS NOT NULL THEN 1 ELSE 0 END) AS INTEGER)`,
       isrcCount: sql<number>`CAST(SUM(CASE WHEN ${playlistSnapshots.isrc} IS NOT NULL THEN 1 ELSE 0 END) AS INTEGER)`,
-      avgUnsignedScore: sql<number>`CAST(COALESCE(AVG(${playlistSnapshots.unsignedScore}), 0) AS FLOAT)`,
     })
       .from(playlistSnapshots)
       .where(eq(playlistSnapshots.playlistId, playlistId));
@@ -590,14 +588,13 @@ export class DatabaseStorage implements IStorage {
       totalTracks: result?.totalTracks || 0,
       enrichedCount: result?.enrichedCount || 0,
       isrcCount: result?.isrcCount || 0,
-      avgUnsignedScore: result?.avgUnsignedScore || 0,
     });
 
     return {
       totalTracks: result?.totalTracks || 0,
       enrichedCount: result?.enrichedCount || 0,
       isrcCount: result?.isrcCount || 0,
-      avgUnsignedScore: Math.round((result?.avgUnsignedScore || 0) * 10) / 10, // Round to 1 decimal
+      avgUnsignedScore: 0, // Removed - scores now at contact level, not track level
     };
   }
 
@@ -908,6 +905,12 @@ export class DatabaseStorage implements IStorage {
       assignedUserId: contacts.assignedUserId,
       totalStreams: contacts.totalStreams,
       totalTracks: contacts.totalTracks,
+      collaborationCount: contacts.collaborationCount,
+      unsignedScore: contacts.unsignedScore,
+      mlcSearched: contacts.mlcSearched,
+      mlcFound: contacts.mlcFound,
+      musicbrainzSearched: contacts.musicbrainzSearched,
+      musicbrainzFound: contacts.musicbrainzFound,
       createdAt: contacts.createdAt,
       updatedAt: contacts.updatedAt,
     })
@@ -966,14 +969,8 @@ export class DatabaseStorage implements IStorage {
     if (minScore !== undefined || maxScore !== undefined) {
       const min = minScore !== undefined ? minScore : 0;
       const max = maxScore !== undefined ? maxScore : 10;
-      // Filter by unsigned score range
-      conditions.push(sql`EXISTS (
-        SELECT 1 FROM ${contactTracks}
-        INNER JOIN ${playlistSnapshots} ON ${contactTracks.trackId} = ${playlistSnapshots.id}
-        WHERE ${contactTracks.contactId} = ${contacts.id}
-        AND ${playlistSnapshots.unsignedScore} >= ${min}
-        AND ${playlistSnapshots.unsignedScore} <= ${max}
-      )`);
+      // Filter by contact unsigned score range
+      conditions.push(sql`${contacts.unsignedScore} >= ${min} AND ${contacts.unsignedScore} <= ${max}`);
     }
     
     if (hasSocialLinks !== undefined) {
@@ -1151,13 +1148,8 @@ export class DatabaseStorage implements IStorage {
     if (minScore !== undefined || maxScore !== undefined) {
       const min = minScore !== undefined ? minScore : 0;
       const max = maxScore !== undefined ? maxScore : 10;
-      conditions.push(sql`EXISTS (
-        SELECT 1 FROM ${contactTracks}
-        INNER JOIN ${playlistSnapshots} ON ${contactTracks.trackId} = ${playlistSnapshots.id}
-        WHERE ${contactTracks.contactId} = ${contacts.id}
-        AND ${playlistSnapshots.unsignedScore} >= ${min}
-        AND ${playlistSnapshots.unsignedScore} <= ${max}
-      )`);
+      // Filter by contact unsigned score range
+      conditions.push(sql`${contacts.unsignedScore} >= ${min} AND ${contacts.unsignedScore} <= ${max}`);
     }
     
     if (hasSocialLinks !== undefined) {

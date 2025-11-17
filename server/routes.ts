@@ -4,7 +4,6 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import { getUncachableSpotifyClient, searchTrackByNameAndArtist, getAuthUrl, exchangeCodeForToken, isAuthenticated } from "./spotify";
-import { calculateUnsignedScore } from "./scoring";
 import { searchByISRC, searchRecordingByName, searchArtistByName, getArtistExternalLinks } from "./musicbrainz";
 import { generateAIInsights } from "./ai-insights";
 import { playlists, playlistSnapshots, type InsertPlaylistSnapshot, type PlaylistSnapshot, insertTagSchema, insertTrackedPlaylistSchema } from "@shared/schema";
@@ -691,7 +690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tracks = await storage.getTracksByWeek(week);
 
       if (format === "csv") {
-        const headers = ["Track Name", "Artist", "Playlist", "Label", "Publisher", "Songwriter", "ISRC", "Unsigned Score", "Instagram", "Twitter", "TikTok", "Email", "Contact Notes", "Spotify URL"];
+        const headers = ["Track Name", "Artist", "Playlist", "Label", "Publisher", "Songwriter", "ISRC", "Instagram", "Twitter", "TikTok", "Email", "Contact Notes", "Spotify URL"];
         const rows = tracks.map(t => [
           t.trackName,
           t.artistName,
@@ -700,7 +699,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           t.publisher || "",
           t.songwriter || "",
           t.isrc || "",
-          t.unsignedScore.toString(),
           t.instagram || "",
           t.twitter || "",
           t.tiktok || "",
@@ -3144,13 +3142,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const finalPlaylistName = playlistName || result.playlistName || "Unknown Playlist";
 
       const scrapedTracks: InsertPlaylistSnapshot[] = result.tracks.map(track => {
-        const score = calculateUnsignedScore({
-          playlistName: finalPlaylistName,
-          label: null,
-          publisher: null,
-          writer: null,
-        });
-
         return {
           week: today,
           playlistName: finalPlaylistName,
@@ -3160,7 +3151,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           spotifyUrl: track.spotifyUrl,
           isrc: null,
           label: null,
-          unsignedScore: score,
           addedAt: new Date(),
           dataSource: "scraped",
         };
