@@ -195,11 +195,14 @@ export function EnrichmentTimeline({ steps }: { steps: EnrichmentTimelineStep[] 
                   className={cn(
                     "flex h-8 w-8 items-center justify-center rounded-full border",
                     step.status === "done" && "border-emerald-400 bg-emerald-500/10 text-emerald-300",
-                    step.status === "active" && "border-amber-400 bg-amber-500/10 text-amber-300",
+                    step.status === "active" && "border-amber-400 bg-amber-500/10 text-amber-300 animate-enrichment-pulse",
                     step.status === "pending" && "border-border text-muted-foreground",
                   )}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className={cn(
+                    "h-4 w-4",
+                    step.status === "active" && "animate-enrichment-pulse"
+                  )} />
                 </span>
                 {index < steps.length - 1 ? (
                   <div className="mt-2 w-px flex-1 bg-border" style={{ minHeight: "2rem" }} />

@@ -1471,7 +1471,7 @@ export default function PlaylistsView() {
                           <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-1">
                             <div className={cn(
                               "h-2 w-2 rounded-full transition-all duration-300",
-                              qualityMetrics.isrcCount > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                              qualityMetrics.isrcCount > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-amber-400 animate-enrichment-pulse"
                             )} />
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
@@ -1494,7 +1494,7 @@ export default function PlaylistsView() {
                           <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-2">
                             <div className={cn(
                               "h-2 w-2 rounded-full transition-all duration-300",
-                              qualityMetrics.enrichedCount > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                              qualityMetrics.enrichedCount > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-amber-400 animate-enrichment-pulse"
                             )} />
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
@@ -1517,7 +1517,7 @@ export default function PlaylistsView() {
                           <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-3">
                             <div className={cn(
                               "h-2 w-2 rounded-full transition-all duration-300",
-                              "bg-muted animate-pulse"
+                              "bg-muted/50"
                             )} />
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
@@ -1533,7 +1533,7 @@ export default function PlaylistsView() {
                           <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-4">
                             <div className={cn(
                               "h-2 w-2 rounded-full transition-all duration-300",
-                              "bg-muted animate-pulse"
+                              "bg-muted/50"
                             )} />
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
@@ -1549,7 +1549,7 @@ export default function PlaylistsView() {
                           <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-5">
                             <div className={cn(
                               "h-2 w-2 rounded-full transition-all duration-300",
-                              (qualityMetrics.publishedCount || 0) > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                              (qualityMetrics.publishedCount || 0) > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-amber-400 animate-enrichment-pulse"
                             )} />
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
