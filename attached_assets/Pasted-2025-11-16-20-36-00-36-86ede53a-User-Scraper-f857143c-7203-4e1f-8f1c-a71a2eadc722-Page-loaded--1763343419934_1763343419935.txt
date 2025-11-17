@@ -1,0 +1,180 @@
+2025-11-16 20:36:00.36
+86ede53a
+User
+[Scraper] f857143c-7203-4e1f-8f1c-a71a2eadc722: ✓ Page loaded (1502ms)
+2025-11-16 20:36:02.88
+86ede53a
+User
+WebSocket client connected
+2025-11-16 20:36:11.47
+86ede53a
+User
+[Scraper] c62011ba-3ce6-40ac-ac8c-d093e47c3650: ✓ Cookies handled (13649ms)
+2025-11-16 20:36:11.48
+86ede53a
+User
+[Scraper] c62011ba-3ce6-40ac-ac8c-d093e47c3650: ✓ Critical selectors loaded (13656ms)
+2025-11-16 20:36:12.07
+86ede53a
+User
+1:36:12 AM [express] POST /api/enrich-artists 200 in 43385ms :: {"success":true,"artistsCreated":0,"…
+2025-11-16 20:36:12.37
+86ede53a
+User
+[Scraper] f857143c-7203-4e1f-8f1c-a71a2eadc722: ✓ Cookies handled (13509ms)
+2025-11-16 20:36:12.39
+86ede53a
+User
+[Scraper] f857143c-7203-4e1f-8f1c-a71a2eadc722: ✓ Critical selectors loaded (13531ms)
+2025-11-16 20:36:12.49
+86ede53a
+User
+1:36:12 AM [express] GET /api/tracks 304 in 301ms :: [{"id":"f9f0c31c-7e07-405a-8c8d-20bd10a6bb61","…
+2025-11-16 20:36:12.49
+86ede53a
+User
+[Scraper] c62011ba-3ce6-40ac-ac8c-d093e47c3650: ✓ Streams found: 90,425 (14670ms)
+2025-11-16 20:36:12.50
+86ede53a
+User
+[Scraper] c62011ba-3ce6-40ac-ac8c-d093e47c3650: Searching for credits menu...
+2025-11-16 20:36:13.39
+86ede53a
+User
+[Scraper] f857143c-7203-4e1f-8f1c-a71a2eadc722: ✓ Streams found: 2,959 (14533ms)
+2025-11-16 20:36:13.40
+86ede53a
+User
+[Scraper] f857143c-7203-4e1f-8f1c-a71a2eadc722: Searching for credits menu...
+2025-11-16 20:36:14.59
+86ede53a
+User
+[Scraper] f857143c-7203-4e1f-8f1c-a71a2eadc722: Credits menu opened, waiting for modal...
+2025-11-16 20:36:14.72
+86ede53a
+User
+[Scraper] f857143c-7203-4e1f-8f1c-a71a2eadc722: ✓ Credits modal loaded
+2025-11-16 20:36:15.73
+86ede53a
+User
+[Scraper] f857143c-7203-4e1f-8f1c-a71a2eadc722: ✓ Found 3 credits (16867ms)
+2025-11-16 20:36:15.82
+86ede53a
+User
+[Scraper] f857143c-7203-4e1f-8f1c-a71a2eadc722: ✅ Complete in 16867ms
+2025-11-16 20:36:17.11
+86ede53a
+User
+[Scraper] c62011ba-3ce6-40ac-ac8c-d093e47c3650: Credits menu opened, waiting for modal...
+2025-11-16 20:36:17.14
+86ede53a
+User
+[Scraper] c62011ba-3ce6-40ac-ac8c-d093e47c3650: ✓ Credits modal loaded
+2025-11-16 20:36:18.14
+86ede53a
+User
+[Scraper] c62011ba-3ce6-40ac-ac8c-d093e47c3650: ✓ Found 5 credits (20320ms)
+2025-11-16 20:36:18.23
+86ede53a
+User
+[Scraper] c62011ba-3ce6-40ac-ac8c-d093e47c3650: ✅ Complete in 20320ms
+2025-11-16 20:36:18.23
+86ede53a
+User
+[Phase 2] Processing chunk 3/25 (2 tracks)
+2025-11-16 20:36:18.34
+86ede53a
+User
+[Scraper] f7894ea4-50fd-4e63-b20e-d6e1ba13fff6: Navigating to https://open.spotify.com/track/06ctaytGDUM1piASlJKz7C
+2025-11-16 20:36:19.34
+86ede53a
+User
+[Scraper] c8a0fe2d-c1ce-4e31-80e9-f33b7e8f072f: Navigating to https://open.spotify.com/track/108HXrZvKUAlXaWrozGj3L
+2025-11-16 20:36:19.59
+86ede53a
+User
+[Scraper] f7894ea4-50fd-4e63-b20e-d6e1ba13fff6: ✓ Page loaded (1253ms)
+2025-11-16 20:36:20.52
+86ede53a
+User
+[Scraper] c8a0fe2d-c1ce-4e31-80e9-f33b7e8f072f: ✓ Page loaded (1184ms)
+2025-11-16 20:36:24.14
+86ede53a
+User
+1:36:24 AM [express] GET /api/notifications/count 304 in 33ms :: {"count":0}
+2025-11-16 20:36:31.60
+86ede53a
+User
+[Scraper] f7894ea4-50fd-4e63-b20e-d6e1ba13fff6: ✓ Cookies handled (13260ms)
+2025-11-16 20:36:31.61
+86ede53a
+User
+[Scraper] f7894ea4-50fd-4e63-b20e-d6e1ba13fff6: ✓ Critical selectors loaded (13265ms)
+2025-11-16 20:36:32.53
+86ede53a
+User
+[Scraper] c8a0fe2d-c1ce-4e31-80e9-f33b7e8f072f: ✓ Cookies handled (13191ms)
+2025-11-16 20:36:32.54
+86ede53a
+User
+[Scraper] c8a0fe2d-c1ce-4e31-80e9-f33b7e8f072f: ✓ Critical selectors loaded (13196ms)
+2025-11-16 20:36:32.61
+86ede53a
+User
+[Scraper] f7894ea4-50fd-4e63-b20e-d6e1ba13fff6: ✓ Streams found: 20,443 (14268ms)
+2025-11-16 20:36:32.61
+86ede53a
+User
+[Scraper] f7894ea4-50fd-4e63-b20e-d6e1ba13fff6: Searching for credits menu...
+2025-11-16 20:36:33.54
+86ede53a
+User
+[Scraper] c8a0fe2d-c1ce-4e31-80e9-f33b7e8f072f: ✓ Streams found: 19,168 (14197ms)
+2025-11-16 20:36:33.54
+86ede53a
+User
+[Scraper] c8a0fe2d-c1ce-4e31-80e9-f33b7e8f072f: Searching for credits menu...
+2025-11-16 20:36:34.72
+86ede53a
+User
+[Scraper] c8a0fe2d-c1ce-4e31-80e9-f33b7e8f072f: Credits menu opened, waiting for modal...
+2025-11-16 20:36:34.76
+86ede53a
+User
+[Scraper] c8a0fe2d-c1ce-4e31-80e9-f33b7e8f072f: ✓ Credits modal loaded
+2025-11-16 20:36:35.76
+86ede53a
+User
+[Scraper] c8a0fe2d-c1ce-4e31-80e9-f33b7e8f072f: ✓ Found 5 credits (16422ms)
+2025-11-16 20:36:35.85
+86ede53a
+User
+[Scraper] c8a0fe2d-c1ce-4e31-80e9-f33b7e8f072f: ✅ Complete in 16422ms
+2025-11-16 20:36:37.17
+86ede53a
+User
+[Scraper] f7894ea4-50fd-4e63-b20e-d6e1ba13fff6: Credits menu opened, waiting for modal...
+2025-11-16 20:36:37.21
+86ede53a
+User
+[Scraper] f7894ea4-50fd-4e63-b20e-d6e1ba13fff6: ✓ Credits modal loaded
+2025-11-16 20:36:38.21
+86ede53a
+User
+[Scraper] f7894ea4-50fd-4e63-b20e-d6e1ba13fff6: ✓ Found 3 credits (19872ms)
+2025-11-16 20:36:38.30
+86ede53a
+User
+[Phase 2] Processing chunk 4/25 (2 tracks)
+2025-11-16 20:36:38.30
+86ede53a
+User
+[Scraper] f7894ea4-50fd-4e63-b20e-d6e1ba13fff6: ✅ Complete in 19872ms
+2025-11-16 20:36:38.38
+86ede53a
+User
+[Scraper] a2668201-1575-4e2a-aece-83c1040a3025: Navigating to https://open.spotify.com/track/3as5N2iBqzVwslgYQfb0d4
+2025-11-16 20:36:39.38
+86ede53a
+User
+[Scraper] 848654f8-00a5-4591-8c0e-1696f8240c39: Navigating to http
