@@ -255,15 +255,8 @@ export async function getContactMetrics() {
       .where(gte(contacts.collaborationCount, 3));
     const activeCollaborators = activeCollaboratorsResult[0]?.count || 0;
 
-    // Writers with Top Publisher (has topPublisher field populated)
-    const withTopPublisherResult = await db.execute<{ count: number }>(sql`
-      SELECT COUNT(DISTINCT c.id)::int as count
-      FROM contacts c
-      INNER JOIN songwriter_profiles sp ON sp.id = c.songwriter_id
-      WHERE sp.top_publisher IS NOT NULL 
-        AND sp.top_publisher != ''
-    `);
-    const withTopPublisher = withTopPublisherResult.rows[0]?.count || 0;
+    // Writers with Top Publisher (placeholder - requires songwriter_profiles table)
+    const withTopPublisher = 0;
 
     return {
       totalContacts,
@@ -273,6 +266,244 @@ export async function getContactMetrics() {
       soloWriters,
       activeCollaborators,
       withTopPublisher,
+    };
+  });
+}
+
+// Unified Dashboard Metrics - returns all metrics for playlists, tracks, and contacts
+export async function getDashboardMetrics() {
+  return getCachedOrCompute('dashboard-metrics', async () => {
+    const latestWeek = await getLatestWeek();
+    
+    // Playlist Metrics
+    const totalPlaylistsResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(trackedPlaylists);
+    const totalPlaylists = totalPlaylistsResult[0]?.count || 0;
+
+    const editorialPlaylistsResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(trackedPlaylists)
+      .where(eq(trackedPlaylists.isEditorial, 1));
+    const editorialPlaylists = editorialPlaylistsResult[0]?.count || 0;
+
+    const totalFollowersResult = await db.select({ 
+      sum: sql<number>`sum(${trackedPlaylists.followers})::bigint` 
+    })
+      .from(trackedPlaylists);
+    const totalPlaylistFollowers = Number(totalFollowersResult[0]?.sum || 0);
+
+    const avgTracksResult = await db.select({ 
+      avg: sql<number>`avg(${trackedPlaylists.totalTracks})::float` 
+    })
+      .from(trackedPlaylists);
+    const avgTracksPerPlaylist = avgTracksResult[0]?.avg || 0;
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentlyUpdatedResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(trackedPlaylists)
+      .where(gte(trackedPlaylists.lastChecked, sevenDaysAgo));
+    const recentlyUpdatedPlaylists = recentlyUpdatedResult[0]?.count || 0;
+
+    const highValueResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(trackedPlaylists)
+      .where(gte(trackedPlaylists.followers, 50000));
+    const highValuePlaylists = highValueResult[0]?.count || 0;
+
+    const largePlaylistsResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(trackedPlaylists)
+      .where(gte(trackedPlaylists.totalTracks, 50));
+    const largePlaylists = largePlaylistsResult[0]?.count || 0;
+
+    const incompleteResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(trackedPlaylists)
+      .where(
+        and(
+          eq(trackedPlaylists.isComplete, 0)
+        )
+      );
+    const incompletePlaylists = incompleteResult[0]?.count || 0;
+
+    const chartmetricLinkedResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(trackedPlaylists)
+      .where(sql`${trackedPlaylists.chartmetricUrl} IS NOT NULL AND ${trackedPlaylists.chartmetricUrl} != ''`);
+    const chartmetricLinkedPlaylists = chartmetricLinkedResult[0]?.count || 0;
+
+    const avgFollowersResult = await db.select({ 
+      avg: sql<number>`avg(${trackedPlaylists.followers})::float` 
+    })
+      .from(trackedPlaylists);
+    const avgFollowersPerPlaylist = avgFollowersResult[0]?.avg || 0;
+
+    // Track Metrics
+    const dealReadyTracksResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(contacts)
+      .where(gte(contacts.unsignedScore, 7));
+    const dealReadyTracks = dealReadyTracksResult[0]?.count || 0;
+
+    const avgUnsignedScoreResult = await db.select({ 
+      avg: sql<number>`avg(${contacts.unsignedScore})::float` 
+    })
+      .from(contacts)
+      .where(sql`${contacts.unsignedScore} IS NOT NULL`);
+    const avgUnsignedScore = avgUnsignedScoreResult[0]?.avg || 0;
+
+    const missingPublisherTracksResult = latestWeek ? await db.select({ count: sql<number>`count(*)::int` })
+      .from(playlistSnapshots)
+      .where(
+        and(
+          eq(playlistSnapshots.week, latestWeek),
+          sql`(${playlistSnapshots.creditsStatus} = 'success' OR ${playlistSnapshots.creditsStatus} IS NULL)`,
+          sql`${playlistSnapshots.publisher} IS NULL OR ${playlistSnapshots.publisher} = ''`
+        )
+      ) : [{ count: 0 }];
+    const missingPublisherTracks = missingPublisherTracksResult[0]?.count || 0;
+
+    // Self-written tracks (placeholder - requires calculation logic)
+    const selfWrittenTracks = 0;
+
+    // Placeholder for high velocity tracks (requires WoW stream calc)
+    const highVelocityTracks = 0;
+
+    const enrichedTracksResult = latestWeek ? await db.select({ count: sql<number>`count(*)::int` })
+      .from(playlistSnapshots)
+      .where(
+        and(
+          eq(playlistSnapshots.week, latestWeek),
+          sql`${playlistSnapshots.creditsStatus} = 'success'`
+        )
+      ) : [{ count: 0 }];
+    const enrichedTracks = enrichedTracksResult[0]?.count || 0;
+
+    // Fresh Finds tracks (from playlists containing "Fresh Finds")
+    const freshFindsTracksResult = latestWeek ? await db.execute<{ count: number }>(sql`
+      SELECT COUNT(DISTINCT ps.id)::int as count
+      FROM playlist_snapshots ps
+      INNER JOIN tracked_playlists tp ON ps.playlist_id = tp.playlist_id
+      WHERE ps.week = ${latestWeek}
+        AND tp.name ILIKE '%Fresh Finds%'
+    `) : { rows: [{ count: 0 }] };
+    const freshFindsTracks = freshFindsTracksResult.rows[0]?.count || 0;
+
+    // Indie label tracks
+    const indieLabelTracksResult = latestWeek ? await db.select({ count: sql<number>`count(*)::int` })
+      .from(playlistSnapshots)
+      .where(
+        and(
+          eq(playlistSnapshots.week, latestWeek),
+          sql`${playlistSnapshots.label} ~* '(indie|DIY|independent|DK)'`
+        )
+      ) : [{ count: 0 }];
+    const indieLabelTracks = indieLabelTracksResult[0]?.count || 0;
+
+    const totalStreamsResult = latestWeek ? await db.select({ 
+      sum: sql<number>`sum(${playlistSnapshots.spotifyStreams})::bigint` 
+    })
+      .from(playlistSnapshots)
+      .where(eq(playlistSnapshots.week, latestWeek)) : [{ sum: 0 }];
+    const totalStreams = Number(totalStreamsResult[0]?.sum || 0);
+
+    const enrichmentPendingTracksResult = latestWeek ? await db.select({ count: sql<number>`count(*)::int` })
+      .from(playlistSnapshots)
+      .where(
+        and(
+          eq(playlistSnapshots.week, latestWeek),
+          sql`${playlistSnapshots.creditsStatus} IS NULL OR ${playlistSnapshots.creditsStatus} = 'pending'`
+        )
+      ) : [{ count: 0 }];
+    const enrichmentPendingTracks = enrichmentPendingTracksResult[0]?.count || 0;
+
+    // Contact Metrics
+    const totalSongwritersResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(contacts);
+    const totalSongwriters = totalSongwritersResult[0]?.count || 0;
+
+    const highConfidenceUnsignedResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(contacts)
+      .where(
+        and(
+          eq(contacts.mlcSearched, 1),
+          eq(contacts.mlcFound, 0),
+          gte(contacts.unsignedScore, 7)
+        )
+      );
+    const highConfidenceUnsigned = highConfidenceUnsignedResult[0]?.count || 0;
+
+    // Active Search contacts (placeholder - requires pipelineStage column)
+    const activeSearchContacts = 0;
+
+    const avgContactScoreResult = await db.select({ 
+      avg: sql<number>`avg(${contacts.unsignedScore})::float` 
+    })
+      .from(contacts)
+      .where(sql`${contacts.unsignedScore} IS NOT NULL`);
+    const avgContactScore = avgContactScoreResult[0]?.avg || 0;
+
+    const mlcVerifiedUnsignedResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(contacts)
+      .where(
+        and(
+          eq(contacts.mlcSearched, 1),
+          eq(contacts.mlcFound, 0)
+        )
+      );
+    const mlcVerifiedUnsigned = mlcVerifiedUnsignedResult[0]?.count || 0;
+
+    // Watch List contacts (placeholder - requires pipelineStage column)
+    const watchListContacts = 0;
+
+    // Discovery Pool contacts (placeholder - requires pipelineStage column)
+    const discoveryPoolContacts = 0;
+
+    // High stream velocity contacts (placeholder - requires join with tracks)
+    const highStreamVelocityContacts = 0;
+
+    const soloWritersResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(contacts)
+      .where(eq(contacts.collaborationCount, 0));
+    const soloWriters = soloWritersResult[0]?.count || 0;
+
+    const enrichmentBacklogContactsResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(contacts)
+      .where(eq(contacts.mlcSearched, 0));
+    const enrichmentBacklogContacts = enrichmentBacklogContactsResult[0]?.count || 0;
+
+    return {
+      playlists: {
+        totalPlaylists,
+        editorialPlaylists,
+        totalPlaylistFollowers,
+        avgTracksPerPlaylist: parseFloat(avgTracksPerPlaylist.toFixed(1)),
+        recentlyUpdatedPlaylists,
+        highValuePlaylists,
+        largePlaylists,
+        incompletePlaylists,
+        chartmetricLinkedPlaylists,
+        avgFollowersPerPlaylist: parseFloat(avgFollowersPerPlaylist.toFixed(0)),
+      },
+      tracks: {
+        dealReadyTracks,
+        avgUnsignedScore: parseFloat(avgUnsignedScore.toFixed(1)),
+        missingPublisherTracks,
+        selfWrittenTracks,
+        highVelocityTracks,
+        enrichedTracks,
+        freshFindsTracks,
+        indieLabelTracks,
+        totalStreams,
+        enrichmentPendingTracks,
+      },
+      contacts: {
+        highConfidenceUnsigned,
+        totalSongwriters,
+        activeSearchContacts,
+        avgContactScore: parseFloat(avgContactScore.toFixed(1)),
+        mlcVerifiedUnsigned,
+        watchListContacts,
+        discoveryPoolContacts,
+        highStreamVelocityContacts,
+        soloWriters,
+        enrichmentBacklogContacts,
+      },
     };
   });
 }
