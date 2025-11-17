@@ -685,7 +685,7 @@ export default function Dashboard() {
           {/* Sticky Header: Metrics & Filters */}
           <StickyHeaderContainer className="pb-4 border-b">
             {/* Enhanced Stats Cards with Trends and Toggle */}
-            <div className="space-y-3">
+            <div className="space-y-3 mb-4">
               <div className="flex items-center justify-end">
                 <Button
                   variant="ghost"

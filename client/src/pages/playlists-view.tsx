@@ -898,7 +898,7 @@ export default function PlaylistsView() {
       {/* Sticky Header: Metrics & Filters */}
       <StickyHeaderContainer className="pb-4 border-b">
         {/* Stats Cards with Toggle */}
-        <div className="space-y-3">
+        <div className="space-y-3 mb-4">
         <div className="flex items-center justify-end">
           <Button
             variant="ghost"
