@@ -92,13 +92,6 @@ const AVAILABLE_QUICK_FILTERS: QuickFilterDefinition[] = [
     variant: "default",
     defaultVisible: true,
   },
-  {
-    id: "failed",
-    label: "Failed",
-    icon: XCircle,
-    variant: "default",
-    defaultVisible: true,
-  },
 ];
 
 export default function PlaylistsView() {
@@ -126,7 +119,6 @@ export default function PlaylistsView() {
   const [showIncomplete, setShowIncomplete] = useState(false);
   const [showLargePlaylists, setShowLargePlaylists] = useState(false);
   const [showHasTracks, setShowHasTracks] = useState(false);
-  const [showFailed, setShowFailed] = useState(false);
 
   // Sorting state
   const [sortField, setSortField] = useState<string>("name");
@@ -547,7 +539,7 @@ export default function PlaylistsView() {
     try {
       const headers = [
         "Name", "Curator", "Followers", "Total Tracks", "Source", "Genre",
-        "Last Checked", "Status", "Playlist ID", "Playlist URL"
+        "Last Checked", "Playlist ID", "Playlist URL"
       ];
 
       const rows = targetPlaylists.map(playlist => [
@@ -558,7 +550,6 @@ export default function PlaylistsView() {
         playlist.source || "",
         playlist.genre || "",
         playlist.lastChecked ? new Date(playlist.lastChecked).toLocaleDateString() : "",
-        playlist.status || "",
         playlist.playlistId,
         `https://open.spotify.com/playlist/${playlist.playlistId}`
       ]);
@@ -647,12 +638,8 @@ export default function PlaylistsView() {
       filtered = filtered.filter(p => (p.totalTracks || 0) > 0);
     }
 
-    if (showFailed) {
-      filtered = filtered.filter(p => p.status === 'failed' || p.status === 'error');
-    }
-
     return filtered;
-  }, [playlists, searchQuery, sourceFilter, showEditorialOnly, showChartmetric, showHighFollowers, showRecentlyUpdated, showIncomplete, showLargePlaylists, showHasTracks, showFailed]);
+  }, [playlists, searchQuery, sourceFilter, showEditorialOnly, showChartmetric, showHighFollowers, showRecentlyUpdated, showIncomplete, showLargePlaylists, showHasTracks]);
 
   // Sort playlists
   const sortedPlaylists = useMemo(() => {
@@ -769,20 +756,6 @@ export default function PlaylistsView() {
     return num.toLocaleString();
   };
 
-  const getStatusBadge = (status: string | null) => {
-    if (!status) return <span className="text-muted-foreground">—</span>;
-
-    switch (status) {
-      case "active":
-        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Active</Badge>;
-      case "paused":
-        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Paused</Badge>;
-      case "error":
-        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Error</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
 
   const playlistColumns: DataTableColumn<TrackedPlaylist>[] = [
     {
@@ -1006,10 +979,6 @@ export default function PlaylistsView() {
                 active = showHasTracks;
                 onClick = () => setShowHasTracks(!showHasTracks);
                 testId = "badge-filter-has-tracks";
-              } else if (filter.id === "failed") {
-                active = showFailed;
-                onClick = () => setShowFailed(!showFailed);
-                testId = "badge-filter-failed";
               }
 
               return {
@@ -1032,7 +1001,6 @@ export default function PlaylistsView() {
               setShowIncomplete(false);
               setShowLargePlaylists(false);
               setShowHasTracks(false);
-              setShowFailed(false);
             }}
           />
 
@@ -1290,7 +1258,6 @@ export default function PlaylistsView() {
                       <span className="text-xs text-muted-foreground">
                         {formatDate(playlist.lastChecked)}
                       </span>
-                      {getStatusBadge(playlist.status)}
                     </div>
                   </CardContent>
                 </Card>
@@ -1356,10 +1323,11 @@ export default function PlaylistsView() {
                         {selectedPlaylist.isEditorial === 1 && (
                           <Badge variant="secondary" data-testid="badge-editorial">Editorial</Badge>
                         )}
-                        {getStatusBadge(selectedPlaylist.status)}
-                        <Badge variant="outline" data-testid="badge-source">
-                          {normalizeSource(selectedPlaylist.source).charAt(0).toUpperCase() + normalizeSource(selectedPlaylist.source).slice(1)}
-                        </Badge>
+                        {selectedPlaylist.source && (
+                          <Badge variant="outline" data-testid="badge-source">
+                            {selectedPlaylist.source.charAt(0).toUpperCase() + selectedPlaylist.source.slice(1)}
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
