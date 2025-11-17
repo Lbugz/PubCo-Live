@@ -112,7 +112,7 @@ export function AppSidebar() {
             <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 h-4 w-4" />
           </SidebarMenuButton>
         </CollapsibleTrigger>
-        <CollapsibleContent>
+        <CollapsibleContent className="transition-all duration-300 ease-in-out overflow-hidden data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
           <SidebarMenuSub>
             {section.items.map((subItem) => {
               if (subItem.hidden) return null;
@@ -120,17 +120,20 @@ export function AppSidebar() {
               const isActive = location === subItem.url;
               
               return (
-                <SidebarMenuSubItem key={subItem.title}>
+                <SidebarMenuSubItem key={subItem.title} className="relative">
                   <SidebarMenuSubButton 
                     asChild
                     isActive={isActive}
                     className={cn(
-                      "hover-elevate",
+                      "hover-elevate transition-all duration-200",
                       isActive && "bg-primary/20 text-primary font-medium"
                     )}
                     data-testid={`sidebar-link-${subItem.title.toLowerCase().replace(/\s+/g, '-')}`}
                   >
                     <Link href={subItem.url}>
+                      {isActive && (
+                        <div className="absolute left-0 top-0 h-full w-1 rounded-r bg-primary transition-all duration-300" />
+                      )}
                       <subItem.icon className="h-4 w-4" />
                       <span>{subItem.title}</span>
                     </Link>
