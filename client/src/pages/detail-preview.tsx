@@ -342,6 +342,26 @@ export default function DetailPreviewPage() {
               { label: "Update stage", icon: TrendingUp, subtle: true },
             ]}
           />
+          <DrawerSection title="Contact info">
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Email</span>
+                <a href="mailto:serena@midnightridge.com" className="text-sm font-medium text-primary hover:underline">
+                  serena@midnightridge.com
+                </a>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Instagram</span>
+                <a href="https://instagram.com/serenawrites" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
+                  @serenawrites
+                </a>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Location</span>
+                <p className="font-medium text-foreground">LA · Often in Nashville</p>
+              </div>
+            </div>
+          </DrawerSection>
           <DrawerSection title="Performance">
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3 text-sm">
@@ -413,26 +433,6 @@ export default function DetailPreviewPage() {
                 <Badge className="rounded-full bg-emerald-500/10 text-emerald-400" variant="outline">
                   Score 9
                 </Badge>
-              </div>
-            </div>
-          </DrawerSection>
-          <DrawerSection title="Contact info">
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Email</span>
-                <a href="mailto:serena@midnightridge.com" className="text-sm font-medium text-primary hover:underline">
-                  serena@midnightridge.com
-                </a>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Instagram</span>
-                <a href="https://instagram.com/serenawrites" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
-                  @serenawrites
-                </a>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Location</span>
-                <p className="font-medium text-foreground">LA · Often in Nashville</p>
               </div>
             </div>
           </DrawerSection>
