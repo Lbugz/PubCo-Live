@@ -1484,7 +1484,9 @@ export default function PlaylistsView() {
                               </div>
                               <p className="text-xs text-muted-foreground">
                                 {qualityMetrics.isrcCount > 0 
-                                  ? `✓ ${qualityMetrics.isrcCount} tracks with ISRC codes` 
+                                  ? qualityMetrics.totalTracks > 0
+                                    ? `✓ ${qualityMetrics.isrcCount}/${qualityMetrics.totalTracks} tracks with ISRC codes`
+                                    : `✓ ${qualityMetrics.isrcCount} tracks with ISRC codes`
                                   : "Pending ISRC recovery"}
                               </p>
                             </div>
@@ -1507,7 +1509,9 @@ export default function PlaylistsView() {
                               </div>
                               <p className="text-xs text-muted-foreground">
                                 {qualityMetrics.enrichedCount > 0 
-                                  ? `✓ ${qualityMetrics.enrichedCount} tracks enriched` 
+                                  ? qualityMetrics.totalTracks > 0
+                                    ? `✓ ${qualityMetrics.enrichedCount}/${qualityMetrics.totalTracks} tracks enriched`
+                                    : `✓ ${qualityMetrics.enrichedCount} tracks enriched`
                                   : "Pending credit scraping"}
                               </p>
                             </div>
@@ -1562,7 +1566,9 @@ export default function PlaylistsView() {
                               </div>
                               <p className="text-xs text-muted-foreground">
                                 {(qualityMetrics.publishedCount || 0) > 0 
-                                  ? `✓ ${qualityMetrics.publishedCount} tracks verified` 
+                                  ? qualityMetrics.totalTracks > 0
+                                    ? `✓ ${qualityMetrics.publishedCount}/${qualityMetrics.totalTracks} tracks verified`
+                                    : `✓ ${qualityMetrics.publishedCount} tracks verified`
                                   : "Pending publisher verification"}
                               </p>
                             </div>
