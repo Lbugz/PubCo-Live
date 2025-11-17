@@ -119,7 +119,7 @@ export const TrackTable = memo(function TrackTable({
   return (
     <div className="relative">
       {/* Sticky Header - Desktop Only */}
-      <div className="hidden lg:grid lg:grid-cols-[auto_3fr_2fr_1fr_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
+      <div className="hidden lg:grid lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_1fr_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
         <div className="flex items-center">
           {onToggleSelectAll && (
             <Checkbox
@@ -134,6 +134,18 @@ export const TrackTable = memo(function TrackTable({
         <SortableHeaderForGrid
           label="Track Info"
           field="trackName"
+          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
+          onSort={onSort}
+        />
+        <SortableHeaderForGrid
+          label="Playlist"
+          field="playlistName"
+          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
+          onSort={onSort}
+        />
+        <SortableHeaderForGrid
+          label="Streams"
+          field="spotifyStreams"
           currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
           onSort={onSort}
         />
@@ -194,7 +206,7 @@ export const TrackTable = memo(function TrackTable({
                   data-testid={`card-track-${track.id}`}
                   onClick={() => onRowClick?.(track)}
                 >
-              <div className="grid grid-cols-1 lg:grid-cols-[auto_3fr_2fr_1fr_auto] gap-4 p-4 items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_1fr_auto] gap-4 p-4 items-start">
                 {/* Checkbox Column - Desktop Only */}
                 <div 
                   className="hidden lg:flex items-center pt-1" 
@@ -211,7 +223,7 @@ export const TrackTable = memo(function TrackTable({
                   )}
                 </div>
 
-                {/* Stacked Track Info Column */}
+                {/* Track Info Column */}
                 <div className="col-span-1 lg:col-span-1 flex items-start gap-3">
                   {/* Album Art */}
                   {track.albumArt ? (
@@ -240,13 +252,6 @@ export const TrackTable = memo(function TrackTable({
                     {/* Artist Name - Secondary */}
                     <div className="text-sm text-muted-foreground leading-tight" data-testid={`text-artist-${track.id}`}>
                       {track.artistName}
-                    </div>
-                    
-                    {/* Playlist Badge - Tertiary */}
-                    <div>
-                      <Badge variant="outline" className="text-xs font-normal" data-testid={`badge-playlist-${track.id}`}>
-                        {track.playlistName}
-                      </Badge>
                     </div>
 
                     {/* Metadata Badges */}
@@ -284,6 +289,20 @@ export const TrackTable = memo(function TrackTable({
                     
                     {/* Tags */}
                     <TrackTags trackId={track.id} tags={tagsMap[track.id]} />
+                  </div>
+                </div>
+
+                {/* Playlist Column */}
+                <div className="col-span-1 lg:col-span-1 pt-1">
+                  <div className="text-sm" data-testid={`text-playlist-${track.id}`}>
+                    {track.playlistName}
+                  </div>
+                </div>
+
+                {/* Streams Column */}
+                <div className="col-span-1 lg:col-span-1 pt-1">
+                  <div className="text-sm font-medium" data-testid={`text-streams-${track.id}`}>
+                    {track.spotifyStreams ? track.spotifyStreams.toLocaleString() : '—'}
                   </div>
                 </div>
               
