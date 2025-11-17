@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { MagicPatternsHeader } from "@/components/MagicPatternsHeader";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import Dashboard from "@/pages/dashboard";
+import Tracks from "@/pages/tracks";
 import PlaylistsView from "@/pages/playlists-view";
 import Contacts from "@/pages/contacts";
 import OutreachPipeline from "@/pages/outreach";
@@ -26,7 +27,7 @@ function Router() {
     <Switch>
       {/* Discovery */}
       <Route path="/" component={Dashboard} />
-      <Route path="/tracks" component={Dashboard} />
+      <Route path="/tracks" component={Tracks} />
       <Route path="/playlists" component={PlaylistsView} />
       
       {/* Relationships/CRM */}

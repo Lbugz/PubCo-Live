@@ -735,9 +735,7 @@ export default function Dashboard() {
               </div>
               <Collapsible open={showMetrics}>
               <CollapsibleContent className="space-y-3">
-                {renderMetricsSection('playlists', 'PLAYLISTS', false)}
-                {renderMetricsSection('tracks', 'TRACKS', metricPreferences.playlists.some(m => m !== null))}
-                {renderMetricsSection('contacts', 'CONTACTS', (metricPreferences.playlists.some(m => m !== null) || metricPreferences.tracks.some(m => m !== null)))}
+                {renderMetricsSection('tracks', 'TRACKS', false)}
               </CollapsibleContent>
             </Collapsible>
           </div>
