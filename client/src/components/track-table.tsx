@@ -28,13 +28,6 @@ interface TrackTableProps {
   onSort?: (field: string) => void;
 }
 
-function getScoreBadgeVariant(score: number | null): "high" | "medium" | "low" | "outline" {
-  if (score === null) return "outline";
-  if (score >= 7) return "high";
-  if (score >= 4) return "medium";
-  return "low";
-}
-
 function TrackTags({ trackId, tags }: { trackId: string; tags?: Tag[] }) {
   if (!tags || tags.length === 0) return null;
 
@@ -119,7 +112,7 @@ export const TrackTable = memo(function TrackTable({
   return (
     <div className="relative">
       {/* Sticky Header - Desktop Only */}
-      <div className="hidden lg:grid lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_1fr_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
+      <div className="hidden lg:grid lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
         <div className="flex items-center">
           {onToggleSelectAll && (
             <Checkbox
@@ -152,12 +145,6 @@ export const TrackTable = memo(function TrackTable({
         <SortableHeaderForGrid
           label="Songwriter"
           field="songwriter"
-          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
-          onSort={onSort}
-        />
-        <SortableHeaderForGrid
-          label="Score"
-          field="score"
           currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
           onSort={onSort}
         />
@@ -206,7 +193,7 @@ export const TrackTable = memo(function TrackTable({
                   data-testid={`card-track-${track.id}`}
                   onClick={() => onRowClick?.(track)}
                 >
-              <div className="grid grid-cols-1 lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_1fr_auto] gap-4 p-4 items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_auto] gap-4 p-4 items-start">
                 {/* Checkbox Column - Desktop Only */}
                 <div 
                   className="hidden lg:flex items-center pt-1" 
@@ -323,19 +310,6 @@ export const TrackTable = memo(function TrackTable({
                       songwriters={track.songwriter}
                       testId={`text-songwriter-${track.id}`}
                     />
-                  </div>
-                </div>
-              
-                {/* Score Column */}
-                <div className="col-span-1 lg:col-span-1 pt-1">
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant={getScoreBadgeVariant(track.unsignedScore)}
-                      className="font-semibold min-w-[3rem] justify-center"
-                      data-testid={`badge-score-${track.id}`}
-                    >
-                      {track.unsignedScore !== null ? track.unsignedScore : 'Pending'}
-                    </Badge>
                   </div>
                 </div>
               

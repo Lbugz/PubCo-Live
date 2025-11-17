@@ -28,20 +28,6 @@ export const CardView = memo(function CardView({
   onTrackClick,
   onEnrich,
 }: CardViewProps) {
-  const getScoreBadgeVariant = (score: number | null) => {
-    if (score === null) return "outline";
-    if (score >= 7) return "high";
-    if (score >= 4) return "medium";
-    return "low";
-  };
-
-  const getScoreLabel = (score: number | null) => {
-    if (score === null) return "Pending";
-    if (score >= 7) return "High";
-    if (score >= 4) return "Medium";
-    return "Low";
-  };
-
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -97,8 +83,8 @@ export const CardView = memo(function CardView({
                 </div>
               )}
             
-              {/* Checkbox + Header with Score Badge */}
-              <div className="flex items-start justify-between gap-2">
+              {/* Checkbox + Header */}
+              <div className="flex items-start gap-2">
                 {/* Checkbox */}
                 {onToggleSelection && (
                   <div onClick={(e) => e.stopPropagation()}>
@@ -123,13 +109,6 @@ export const CardView = memo(function CardView({
                   {track.artistName}
                 </p>
               </div>
-              <Badge
-                variant={getScoreBadgeVariant(track.unsignedScore)}
-                className="shrink-0"
-                data-testid={`badge-score-${track.id}`}
-              >
-                {track.unsignedScore !== null ? `${getScoreLabel(track.unsignedScore)} ${track.unsignedScore}` : 'Pending'}
-              </Badge>
             </div>
 
             {/* Metadata Badges */}
