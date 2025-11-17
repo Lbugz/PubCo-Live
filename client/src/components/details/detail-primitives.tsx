@@ -5,8 +5,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
-import { CheckCircle2, Circle, Clock3 } from "lucide-react";
+import { CheckCircle2, Circle, Clock3, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 export interface HeaderBadge {
   label: string;
@@ -219,6 +220,13 @@ export interface EnrichmentSource {
   tooltip?: string;
 }
 
+export interface EnrichmentDetail {
+  source: string;
+  matched: boolean;
+  details: Array<{ label: string; value: string; link?: string }>;
+  searchedAt?: string;
+}
+
 export interface PersonListProps {
   people: Array<{
     name: string;
@@ -226,50 +234,125 @@ export interface PersonListProps {
     badge?: string;
     avatarUrl?: string;
     enrichmentSources?: EnrichmentSource[];
+    enrichmentDetails?: EnrichmentDetail[];
   }>;
 }
 
 export function PersonList({ people }: PersonListProps) {
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+
   return (
     <div className="space-y-3">
-      {people.map((person, idx) => (
-        <div key={`${person.name}-${idx}`} className="flex flex-col gap-2 rounded-xl border border-border/60 p-3">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              {person.avatarUrl ? <AvatarImage src={person.avatarUrl} alt={person.name} /> : null}
-              <AvatarFallback>{person.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-1 flex-col">
-              <p className="font-medium text-foreground">{person.name}</p>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">{person.role}</p>
+      {people.map((person, idx) => {
+        const isExpanded = expandedIdx === idx;
+        const hasDetails = person.enrichmentDetails && person.enrichmentDetails.length > 0;
+
+        return (
+          <div
+            key={`${person.name}-${idx}`}
+            className={cn(
+              "flex flex-col gap-2 rounded-xl border border-border/60 p-3 transition-colors",
+              hasDetails && "cursor-pointer hover-elevate"
+            )}
+          >
+            <div
+              className="flex items-center gap-3"
+              onClick={() => hasDetails && setExpandedIdx(isExpanded ? null : idx)}
+              data-testid={`person-${idx}`}
+            >
+              <Avatar className="h-10 w-10">
+                {person.avatarUrl ? <AvatarImage src={person.avatarUrl} alt={person.name} /> : null}
+                <AvatarFallback>{person.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-1 flex-col">
+                <p className="font-medium text-foreground">{person.name}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{person.role}</p>
+              </div>
+              {hasDetails ? (
+                isExpanded ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                )
+              ) : null}
+              {person.badge ? (
+                <Badge className="rounded-full bg-emerald-500/10 text-emerald-300" variant="outline">
+                  {person.badge}
+                </Badge>
+              ) : null}
             </div>
-            {person.badge ? (
-              <Badge className="rounded-full bg-emerald-500/10 text-emerald-300" variant="outline">
-                {person.badge}
-              </Badge>
+
+            {person.enrichmentSources && person.enrichmentSources.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5 pl-[3.25rem]">
+                {person.enrichmentSources.map((source, srcIdx) => (
+                  <span
+                    key={`${source.label}-${srcIdx}`}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+                      source.matched
+                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                        : "bg-muted/50 text-muted-foreground border border-border/40"
+                    )}
+                    title={source.tooltip}
+                  >
+                    {source.label}
+                    <span className="text-[9px]">{source.matched ? "✓" : "✗"}</span>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            {isExpanded && person.enrichmentDetails ? (
+              <div className="mt-2 space-y-3 border-t border-border/40 pt-3">
+                {person.enrichmentDetails.map((detail, detailIdx) => (
+                  <div key={`detail-${detailIdx}`} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={cn(
+                          "flex h-6 w-6 items-center justify-center rounded-md text-xs font-bold",
+                          detail.matched
+                            ? "bg-emerald-500/10 text-emerald-400"
+                            : "bg-muted/50 text-muted-foreground"
+                        )}
+                      >
+                        {detail.matched ? "✓" : "✗"}
+                      </div>
+                      <p className="text-sm font-semibold text-foreground">{detail.source}</p>
+                      {detail.searchedAt ? (
+                        <span className="text-xs text-muted-foreground">· {detail.searchedAt}</span>
+                      ) : null}
+                    </div>
+                    <div className="space-y-1 pl-8">
+                      {detail.details.map((item, itemIdx) => (
+                        <div
+                          key={`item-${itemIdx}`}
+                          className="flex items-center justify-between text-sm"
+                        >
+                          <span className="text-muted-foreground">{item.label}</span>
+                          <span className="flex items-center gap-1 font-medium text-foreground">
+                            {item.value}
+                            {item.link ? (
+                              <a
+                                href={item.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:text-primary/80"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            ) : null}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : null}
           </div>
-          {person.enrichmentSources && person.enrichmentSources.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5 pl-[3.25rem]">
-              {person.enrichmentSources.map((source, srcIdx) => (
-                <span
-                  key={`${source.label}-${srcIdx}`}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
-                    source.matched
-                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                      : "bg-muted/50 text-muted-foreground border border-border/40"
-                  )}
-                  title={source.tooltip}
-                >
-                  {source.label}
-                  <span className="text-[9px]">{source.matched ? "✓" : "✗"}</span>
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -167,6 +167,47 @@ export default function DetailPreviewPage() {
                     { label: "MB", matched: true, tooltip: "MusicBrainz: Artist profile found" },
                     { label: "CM", matched: false, tooltip: "Chartmetric: Not indexed yet" },
                     { label: "IG", matched: true, tooltip: "Socials: @livraewrites" },
+                  ],
+                  enrichmentDetails: [
+                    {
+                      source: "MLC Publisher Search",
+                      matched: true,
+                      searchedAt: "Nov 15, 2024",
+                      details: [
+                        { label: "Status", value: "Unsigned confirmed" },
+                        { label: "Search method", value: "Automated API" },
+                        { label: "Publisher", value: "None found" },
+                      ]
+                    },
+                    {
+                      source: "MusicBrainz",
+                      matched: true,
+                      searchedAt: "Nov 15, 2024",
+                      details: [
+                        { label: "Artist ID", value: "abc-123-def", link: "https://musicbrainz.org/artist/abc-123" },
+                        { label: "Songwriting credits", value: "8 tracks" },
+                        { label: "First release", value: "2022" },
+                      ]
+                    },
+                    {
+                      source: "Chartmetric",
+                      matched: false,
+                      searchedAt: "Nov 15, 2024",
+                      details: [
+                        { label: "Status", value: "Not indexed" },
+                        { label: "Reason", value: "Artist below threshold" },
+                      ]
+                    },
+                    {
+                      source: "Social Links",
+                      matched: true,
+                      searchedAt: "Nov 15, 2024",
+                      details: [
+                        { label: "Instagram", value: "@livraewrites", link: "https://instagram.com/livraewrites" },
+                        { label: "Followers", value: "12.4K" },
+                        { label: "TikTok", value: "Not found" },
+                      ]
+                    }
                   ]
                 },
                 { 
@@ -177,6 +218,46 @@ export default function DetailPreviewPage() {
                     { label: "MB", matched: true, tooltip: "MusicBrainz: 42 credits" },
                     { label: "CM", matched: true, tooltip: "Chartmetric: Active profile" },
                     { label: "IG", matched: false, tooltip: "Socials: Not found" },
+                  ],
+                  enrichmentDetails: [
+                    {
+                      source: "MLC Publisher Search",
+                      matched: true,
+                      searchedAt: "Nov 15, 2024",
+                      details: [
+                        { label: "Status", value: "Publisher found" },
+                        { label: "Publisher", value: "Sony/ATV Music" },
+                        { label: "Territory", value: "Worldwide" },
+                      ]
+                    },
+                    {
+                      source: "MusicBrainz",
+                      matched: true,
+                      searchedAt: "Nov 15, 2024",
+                      details: [
+                        { label: "Artist ID", value: "xyz-789-abc", link: "https://musicbrainz.org/artist/xyz-789" },
+                        { label: "Production credits", value: "42 tracks" },
+                        { label: "Active since", value: "2018" },
+                      ]
+                    },
+                    {
+                      source: "Chartmetric",
+                      matched: true,
+                      searchedAt: "Nov 15, 2024",
+                      details: [
+                        { label: "CM ID", value: "cm-12345", link: "https://app.chartmetric.com/artist/12345" },
+                        { label: "Spotify followers", value: "45.2K" },
+                        { label: "Monthly listeners", value: "128K" },
+                      ]
+                    },
+                    {
+                      source: "Social Links",
+                      matched: false,
+                      searchedAt: "Nov 15, 2024",
+                      details: [
+                        { label: "Status", value: "Private account" },
+                      ]
+                    }
                   ]
                 },
                 { 
