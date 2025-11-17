@@ -70,8 +70,8 @@ export default function DetailPreviewPage() {
             stats={[
               { label: "Total tracks", value: "125", helper: "+12 this week" },
               { label: "Unsigned writers", value: "42", helper: "-5 vs last pull" },
-              { label: "Enrichment score", value: "92", helper: "Top tier" },
-              { label: "Chartmetric linked", value: "88%", helper: "+8 pts" },
+              { label: "Enriched", value: "75/75", helper: "100%" },
+              { label: "ISRC", value: "75/75", helper: "100%" },
             ]}
           />
           <ActionRail

@@ -1419,7 +1419,7 @@ export default function PlaylistsView() {
                           {/* ISRC Coverage */}
                           <Card className="bg-background/40" data-testid="quality-card-isrc">
                             <CardContent className="p-3 text-center">
-                              <p className="text-xs text-muted-foreground mb-1">ISRCs</p>
+                              <p className="text-xs text-muted-foreground mb-1">ISRC</p>
                               <p className="text-lg font-semibold" data-testid="text-isrc-count">
                                 {qualityMetrics.isrcCount} / {qualityMetrics.totalTracks}
                               </p>
