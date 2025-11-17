@@ -5,6 +5,27 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
 
 ## Recent Changes
 
+### Nov 17, 2025 - Contact-Level Scoring Migration
+- **Scoring Architecture Refactor**: Migrated from track-level to contact/songwriter-level scoring system
+- **Schema Changes**: Removed `unsignedScore` column from `playlist_snapshots` table, added to `contacts` table
+- **Contact Scoring Service**: Created `server/contactScoring.ts` with rubric-based algorithm that calculates scores (0-10) based on:
+  - MLC status (mlcFound=0 = verified unsigned = highest signal)
+  - Aggregate track metadata quality across all songwriter's tracks
+  - Streaming velocity (WoW growth percentage)
+  - Collaboration count (solo writers vs. active collaborators)
+  - Track quality indicators (missing publisher, missing writer, self-written)
+- **Automatic Score Updates**: Enrichment pipeline now triggers contact scoring via `contactEnrichmentSync` after track enrichment completes
+- **UI Updates**: 
+  - Removed score displays from track table, track cards, and track detail drawers
+  - Added score column to Contacts page table with sortable header
+  - Added score badge to Contact detail drawer with color-coded tiers (9-10 hot, 7-8 strong, 5-6 moderate, 3-4 low, 0-2 minimal)
+- **Backend Updates**:
+  - Dashboard metrics now query `contacts.unsignedScore` instead of removed track scores
+  - Contact filtering supports minScore/maxScore parameters using contact-level scores
+  - CSV export no longer includes track scores (removed from export headers)
+  - All database queries updated to use `contacts.unsignedScore` for score-based filtering
+- **Production Ready**: Architect reviewed - all track score references removed, SQL errors resolved, contact queries return all required fields
+
 ### Nov 16, 2025 - Sticky & Sortable Headers with Full Visual Consistency
 - **Sticky Header Container**: Created reusable `StickyHeaderContainer` component for filters and metrics sections
 - **Dashboard**: Wrapped metrics and FilterBar in sticky header - stays visible while scrolling through tracks
