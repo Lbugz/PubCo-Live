@@ -1,0 +1,45 @@
+Overall polish priorities
+The three detail drawers were built independently and now use different visual hierarchies, padding, and status patterns (compare the playlist hero/timeline inside playlists-view.tsx, the dense track drawer inside details-drawer.tsx, and the contact drawer in contact-detail-drawer.tsx).
+
+To make them feel like one system, introduce shared primitives: a DetailDrawerHeader (cover art, title, curator/artist badges), a StatsGrid (up to four KPI cards), an ActionRail (primary CTA + secondary actions), and an EnrichmentTimeline component. Each drawer can pass its own data, but spacing, typography, and badge styles stay identical.
+
+Playlist drawer
+Hero & stats alignment – The playlist drawer uses a hero art block with an overlapping Card, but the content depends on absolute positioning and mixes mx-4, -mt-16, and p-4, which gives it a different rhythm than the other drawers.
+Replace the bespoke layout with the shared header component so all drawers share the same padding, badge styles, and title typography.
+
+Accordion sprawl – Metadata, analytics, actions, and history all sit inside a large accordion with inconsistent default states, making it harder to scan quickly.
+Break the accordion into two consistently ordered sections (“Metadata & Ownership”, “Activity & Enrichment”) and use secondary headings with dividers instead of nested accordions to reduce visual noise.
+
+Timeline duplication – The enrichment timeline logic mirrors what the track drawer already renders, but with slightly different copy and badge thresholds.
+Extract a PipelineStatus component so playlist and track drawers show identical step visuals, colors, and completion logic.
+
+Track drawer
+Hero block density – The track drawer hero mixes album art, metadata badges, and action buttons in one Card, so users have to parse multiple groups at once.
+Adopt the shared header to separate identity (art/title/badges) from actions, and add a subdued surface for the CTA row so it mirrors playlist/contact actions.
+
+Tabs + accordions overload – Songwriters/producers are shown via tabs that reveal accordion lists, which then hold publisher, stage, social, notes, and tags—all inside the same component tree.
+Move publisher/stage/tags out into a dedicated “Credits” section so the songwriters accordion only handles person records; flatten producers into the same component to avoid two different tab experiences.
+
+Redundant badges & inconsistent states – Score/status badges repeat with different colors in multiple locations (header, accordion rows, enrichment timeline), and empty states vary (“Enrich to discover socials” vs. skeleton vs. cards).
+Centralize badge variants (e.g., score, verification) and adopt one empty-state component with icon + label copy to standardize the feel.
+
+Contact drawer
+Header hierarchy – Contacts only render a title, stage badge, and hot-lead badge inside SheetHeader, so there’s no cover/identity element or curator imagery to match the playlist/track drawers.
+Use the shared header component with either initials-based avatar or songwriter photo, plus stage/hot lead badges, so it visually matches the others.
+
+Quick actions lacking wiring + icons – Email/DM/Re-Enrich buttons don’t carry any metadata (no tooltips, disabled states, or contact info), so they feel placeholder-y.
+Populate each action with actual data (mailto links, messenger handles, enrichment status) and reuse the same ActionRail styling as the track drawer.
+
+Placeholder social + activity blocks – Social links are static buttons that ignore whatever the contact actually stores, and the timeline tab only shows two dummy cards and a “coming soon” state.
+Bind the social section to contact fields, display icons only when data exists, and leverage the shared timeline component (same pill, timestamp, copy) to keep the experience consistent.
+
+Standardization checklist
+Shared layout tokens – Apply p-6/gap-4 spacing, rounded-xl surfaces, and consistent border opacity so all drawers reflect the same design system.
+
+Typography & metadata – Use text-xs uppercase section labels, text-lg font-semibold sub-headings, and keep metadata chips at the same size/weight.
+
+Interaction patterns – Adopt the same hover/focus/disabled states on all action buttons; align tab styles (equal-width triggers with progress indicators) and empty states (icon + heading + helper text).
+
+Component extraction – Promote the duplicated patterns (timeline, stats cards, person list rows) into shared components under client/src/components/details/ to remove divergence and make future refinements (like dark mode adjustments) a single change.
+
+Following these adjustments will unify the Playlist, Track, and Contact drawers without rewriting their data logic, giving the product a cohesive, production-ready feel.
