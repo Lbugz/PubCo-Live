@@ -905,8 +905,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Contact management methods
-  async getContacts(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]> {
-    const { stage, search, hotLeads, chartmetricLinked, positiveWow, limit, offset } = options || {};
+  async getContacts(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; hasEmail?: boolean; minScore?: number; maxScore?: number; hasSocialLinks?: boolean; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]> {
+    const { stage, search, hotLeads, chartmetricLinked, positiveWow, hasEmail, minScore, maxScore, hasSocialLinks, limit, offset } = options || {};
     
     let query = db.select({
       id: contacts.id,
@@ -950,6 +950,74 @@ export class DatabaseStorage implements IStorage {
     
     if (positiveWow) {
       conditions.push(sql`${contacts.wowGrowthPct} > 0`);
+    }
+    
+    // Advanced filters
+    if (hasEmail !== undefined) {
+      if (hasEmail) {
+        // Has email - check if any track has email
+        conditions.push(sql`EXISTS (
+          SELECT 1 FROM ${contactTracks}
+          INNER JOIN ${playlistSnapshots} ON ${contactTracks.trackId} = ${playlistSnapshots.id}
+          WHERE ${contactTracks.contactId} = ${contacts.id}
+          AND ${playlistSnapshots.email} IS NOT NULL
+          AND ${playlistSnapshots.email} != ''
+        )`);
+      } else {
+        // No email - all tracks have no email
+        conditions.push(sql`NOT EXISTS (
+          SELECT 1 FROM ${contactTracks}
+          INNER JOIN ${playlistSnapshots} ON ${contactTracks.trackId} = ${playlistSnapshots.id}
+          WHERE ${contactTracks.contactId} = ${contacts.id}
+          AND ${playlistSnapshots.email} IS NOT NULL
+          AND ${playlistSnapshots.email} != ''
+        )`);
+      }
+    }
+    
+    if (minScore !== undefined || maxScore !== undefined) {
+      const min = minScore !== undefined ? minScore : 0;
+      const max = maxScore !== undefined ? maxScore : 10;
+      // Filter by unsigned score range
+      conditions.push(sql`EXISTS (
+        SELECT 1 FROM ${contactTracks}
+        INNER JOIN ${playlistSnapshots} ON ${contactTracks.trackId} = ${playlistSnapshots.id}
+        WHERE ${contactTracks.contactId} = ${contacts.id}
+        AND ${playlistSnapshots.unsignedScore} >= ${min}
+        AND ${playlistSnapshots.unsignedScore} <= ${max}
+      )`);
+    }
+    
+    if (hasSocialLinks !== undefined) {
+      if (hasSocialLinks) {
+        // Has social links - check if any artist has social media
+        conditions.push(sql`EXISTS (
+          SELECT 1 FROM ${contactTracks}
+          INNER JOIN ${artistSongwriters} ON ${contactTracks.trackId} = ${artistSongwriters.trackId}
+          INNER JOIN ${artists} ON ${artistSongwriters.artistId} = ${artists.id}
+          WHERE ${contactTracks.contactId} = ${contacts.id}
+          AND (
+            ${artists.instagram} IS NOT NULL OR
+            ${artists.twitter} IS NOT NULL OR
+            ${artists.facebook} IS NOT NULL OR
+            ${artists.youtube} IS NOT NULL
+          )
+        )`);
+      } else {
+        // No social links
+        conditions.push(sql`NOT EXISTS (
+          SELECT 1 FROM ${contactTracks}
+          INNER JOIN ${artistSongwriters} ON ${contactTracks.trackId} = ${artistSongwriters.trackId}
+          INNER JOIN ${artists} ON ${artistSongwriters.artistId} = ${artists.id}
+          WHERE ${contactTracks.contactId} = ${contacts.id}
+          AND (
+            ${artists.instagram} IS NOT NULL OR
+            ${artists.twitter} IS NOT NULL OR
+            ${artists.facebook} IS NOT NULL OR
+            ${artists.youtube} IS NOT NULL
+          )
+        )`);
+      }
     }
     
     if (conditions.length > 0) {
@@ -1043,8 +1111,8 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getContactsCount(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean }): Promise<number> {
-    const { stage, search, hotLeads, chartmetricLinked, positiveWow } = options || {};
+  async getContactsCount(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; hasEmail?: boolean; minScore?: number; maxScore?: number; hasSocialLinks?: boolean }): Promise<number> {
+    const { stage, search, hotLeads, chartmetricLinked, positiveWow, hasEmail, minScore, maxScore, hasSocialLinks } = options || {};
     
     const conditions = [];
     if (stage) {
@@ -1069,6 +1137,69 @@ export class DatabaseStorage implements IStorage {
     
     if (positiveWow) {
       conditions.push(sql`${contacts.wowGrowthPct} > 0`);
+    }
+    
+    // Advanced filters (same as getContacts)
+    if (hasEmail !== undefined) {
+      if (hasEmail) {
+        conditions.push(sql`EXISTS (
+          SELECT 1 FROM ${contactTracks}
+          INNER JOIN ${playlistSnapshots} ON ${contactTracks.trackId} = ${playlistSnapshots.id}
+          WHERE ${contactTracks.contactId} = ${contacts.id}
+          AND ${playlistSnapshots.email} IS NOT NULL
+          AND ${playlistSnapshots.email} != ''
+        )`);
+      } else {
+        conditions.push(sql`NOT EXISTS (
+          SELECT 1 FROM ${contactTracks}
+          INNER JOIN ${playlistSnapshots} ON ${contactTracks.trackId} = ${playlistSnapshots.id}
+          WHERE ${contactTracks.contactId} = ${contacts.id}
+          AND ${playlistSnapshots.email} IS NOT NULL
+          AND ${playlistSnapshots.email} != ''
+        )`);
+      }
+    }
+    
+    if (minScore !== undefined || maxScore !== undefined) {
+      const min = minScore !== undefined ? minScore : 0;
+      const max = maxScore !== undefined ? maxScore : 10;
+      conditions.push(sql`EXISTS (
+        SELECT 1 FROM ${contactTracks}
+        INNER JOIN ${playlistSnapshots} ON ${contactTracks.trackId} = ${playlistSnapshots.id}
+        WHERE ${contactTracks.contactId} = ${contacts.id}
+        AND ${playlistSnapshots.unsignedScore} >= ${min}
+        AND ${playlistSnapshots.unsignedScore} <= ${max}
+      )`);
+    }
+    
+    if (hasSocialLinks !== undefined) {
+      if (hasSocialLinks) {
+        conditions.push(sql`EXISTS (
+          SELECT 1 FROM ${contactTracks}
+          INNER JOIN ${artistSongwriters} ON ${contactTracks.trackId} = ${artistSongwriters.trackId}
+          INNER JOIN ${artists} ON ${artistSongwriters.artistId} = ${artists.id}
+          WHERE ${contactTracks.contactId} = ${contacts.id}
+          AND (
+            ${artists.instagram} IS NOT NULL OR
+            ${artists.twitter} IS NOT NULL OR
+            ${artists.facebook} IS NOT NULL OR
+            ${artists.youtube} IS NOT NULL
+          )
+        )`);
+      } else {
+        conditions.push(sql`NOT EXISTS (
+          SELECT 1 FROM ${contactTracks}
+          INNER JOIN ${artistSongwriters} ON ${contactTracks.trackId} = ${artistSongwriters.trackId}
+          INNER JOIN ${artists} ON ${artistSongwriters.artistId} = ${artists.id}
+          WHERE ${contactTracks.contactId} = ${contacts.id}
+          AND (
+            ${artists.instagram} IS NOT NULL OR
+            ${artists.twitter} IS NOT NULL OR
+            ${artists.facebook} IS NOT NULL OR
+            ${artists.youtube} IS NOT NULL
+          )
+        )`);
+      }
     }
     
     let query = db.select({ count: count() })

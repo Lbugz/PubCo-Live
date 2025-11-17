@@ -539,7 +539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/contacts", async (req, res) => {
     try {
-      const { stage, search, hotLeads, chartmetricLinked, positiveWow, limit, offset } = req.query;
+      const { stage, search, hotLeads, chartmetricLinked, positiveWow, hasEmail, minScore, maxScore, hasSocialLinks, limit, offset } = req.query;
       
       const parsedLimit = limit ? parseInt(limit as string, 10) : 50;
       const parsedOffset = offset ? parseInt(offset as string, 10) : 0;
@@ -550,6 +550,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hotLeads: hotLeads === 'true',
         chartmetricLinked: chartmetricLinked === 'true',
         positiveWow: positiveWow === 'true',
+        hasEmail: hasEmail === 'true' ? true : hasEmail === 'false' ? false : undefined,
+        minScore: minScore ? parseInt(minScore as string, 10) : undefined,
+        maxScore: maxScore ? parseInt(maxScore as string, 10) : undefined,
+        hasSocialLinks: hasSocialLinks === 'true' ? true : hasSocialLinks === 'false' ? false : undefined,
         limit: parsedLimit,
         offset: parsedOffset,
       };

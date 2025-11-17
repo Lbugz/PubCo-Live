@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { StatsCard } from "@/components/stats-card";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -99,6 +100,11 @@ export default function Contacts() {
   const [showChartmetricLinked, setShowChartmetricLinked] = useState(false);
   const [showPositiveWow, setShowPositiveWow] = useState(false);
   
+  // Advanced filters
+  const [hasEmail, setHasEmail] = useState<boolean | undefined>(undefined);
+  const [scoreRange, setScoreRange] = useState<[number, number]>([0, 10]);
+  const [hasSocialLinks, setHasSocialLinks] = useState<boolean | undefined>(undefined);
+  
   // Quick filter preferences
   const {
     visibleFilters,
@@ -145,6 +151,10 @@ export default function Contacts() {
       hotLeads: showHotLeads,
       chartmetricLinked: showChartmetricLinked,
       positiveWow: showPositiveWow,
+      hasEmail,
+      minScore: scoreRange[0],
+      maxScore: scoreRange[1],
+      hasSocialLinks,
       limit,
       offset 
     }],
@@ -155,6 +165,12 @@ export default function Contacts() {
       if (showHotLeads) params.append("hotLeads", "true");
       if (showChartmetricLinked) params.append("chartmetricLinked", "true");
       if (showPositiveWow) params.append("positiveWow", "true");
+      if (hasEmail !== undefined) params.append("hasEmail", hasEmail.toString());
+      if (scoreRange[0] > 0 || scoreRange[1] < 10) {
+        params.append("minScore", scoreRange[0].toString());
+        params.append("maxScore", scoreRange[1].toString());
+      }
+      if (hasSocialLinks !== undefined) params.append("hasSocialLinks", hasSocialLinks.toString());
       params.append("limit", limit.toString());
       params.append("offset", offset.toString());
       
@@ -568,8 +584,77 @@ export default function Contacts() {
                     Refine your contact search with additional criteria
                   </p>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Coming soon: Has Email, Score Range, Social Links filters
+                {/* Score Range Filter */}
+                <div>
+                  <h4 className="text-sm font-medium mb-3">Score Range</h4>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium whitespace-nowrap">
+                      {scoreRange[0]} - {scoreRange[1]}
+                    </span>
+                    <Slider
+                      min={0}
+                      max={10}
+                      step={1}
+                      value={scoreRange}
+                      onValueChange={(value) => setScoreRange(value as [number, number])}
+                      className="flex-1"
+                      data-testid="slider-contact-score-range"
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Contact Info Filters */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Contact Info</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={hasEmail === true ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setHasEmail(hasEmail === true ? undefined : true)}
+                      className="text-xs"
+                      data-testid="filter-has-email"
+                    >
+                      Has Email
+                    </Button>
+                    <Button
+                      variant={hasEmail === false ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setHasEmail(hasEmail === false ? undefined : false)}
+                      className="text-xs"
+                      data-testid="filter-no-email"
+                    >
+                      No Email
+                    </Button>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Social Links Filters */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Social Links</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={hasSocialLinks === true ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setHasSocialLinks(hasSocialLinks === true ? undefined : true)}
+                      className="text-xs"
+                      data-testid="filter-has-social"
+                    >
+                      Has Social Links
+                    </Button>
+                    <Button
+                      variant={hasSocialLinks === false ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setHasSocialLinks(hasSocialLinks === false ? undefined : false)}
+                      className="text-xs"
+                      data-testid="filter-no-social"
+                    >
+                      No Social Links
+                    </Button>
+                  </div>
                 </div>
 
                 <Separator />
