@@ -32,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { ContactWithSongwriter } from "@shared/schema";
 import { ContactDetailDrawer } from "@/components/contact-detail-drawer";
@@ -646,104 +647,39 @@ export default function Contacts() {
       </div>
       </StickyHeaderContainer>
 
-      {/* Stage Selector Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card
-          className={cn(
-            "p-4 cursor-pointer hover-elevate active-elevate-2 transition-all",
-            selectedStage === "all" && "border-primary"
-          )}
-          onClick={() => {
-            setSelectedStage("all");
-            setOffset(0);
-          }}
-          data-testid="card-stage-all"
-        >
-          <div className="flex items-start justify-between mb-2">
-            <Users className="h-5 w-5 text-muted-foreground" />
-            {selectedStage === "all" && (
-              <div className="w-2 h-2 rounded-full bg-primary" />
-            )}
-          </div>
-          <div className="text-2xl font-bold mb-1">{formatNumber(stats.total)}</div>
-          <div className="text-sm font-medium mb-1">All Contacts</div>
-          <p className="text-xs text-muted-foreground">
-            Complete pipeline view
-          </p>
-        </Card>
-
-        <Card
-          className={cn(
-            "p-4 cursor-pointer hover-elevate active-elevate-2 transition-all",
-            selectedStage === "discovery" && "border-primary"
-          )}
-          onClick={() => {
-            setSelectedStage("discovery");
-            setOffset(0);
-          }}
-          data-testid="card-stage-discovery"
-        >
-          <div className="flex items-start justify-between mb-2">
-            <User className="h-5 w-5 text-blue-400" />
-            {selectedStage === "discovery" && (
-              <div className="w-2 h-2 rounded-full bg-primary" />
-            )}
-          </div>
-          <div className="text-2xl font-bold mb-1">{formatNumber(stats.discovery)}</div>
-          <div className="text-sm font-medium mb-1">Discovery Pool</div>
-          <p className="text-xs text-muted-foreground">
-            New unsigned talent
-          </p>
-        </Card>
-
-        <Card
-          className={cn(
-            "p-4 cursor-pointer hover-elevate active-elevate-2 transition-all",
-            selectedStage === "watch" && "border-primary"
-          )}
-          onClick={() => {
-            setSelectedStage("watch");
-            setOffset(0);
-          }}
-          data-testid="card-stage-watch"
-        >
-          <div className="flex items-start justify-between mb-2">
-            <Activity className="h-5 w-5 text-yellow-400" />
-            {selectedStage === "watch" && (
-              <div className="w-2 h-2 rounded-full bg-primary" />
-            )}
-          </div>
-          <div className="text-2xl font-bold mb-1">{formatNumber(stats.watch)}</div>
-          <div className="text-sm font-medium mb-1">Watch List</div>
-          <p className="text-xs text-muted-foreground">
-            Tracking momentum
-          </p>
-        </Card>
-
-        <Card
-          className={cn(
-            "p-4 cursor-pointer hover-elevate active-elevate-2 transition-all",
-            selectedStage === "search" && "border-primary"
-          )}
-          onClick={() => {
-            setSelectedStage("search");
-            setOffset(0);
-          }}
-          data-testid="card-stage-search"
-        >
-          <div className="flex items-start justify-between mb-2">
-            <Target className="h-5 w-5 text-emerald-400" />
-            {selectedStage === "search" && (
-              <div className="w-2 h-2 rounded-full bg-primary" />
-            )}
-          </div>
-          <div className="text-2xl font-bold mb-1">{formatNumber(stats.search)}</div>
-          <div className="text-sm font-medium mb-1">Active Search</div>
-          <p className="text-xs text-muted-foreground">
-            Ready for outreach
-          </p>
-        </Card>
-      </div>
+      {/* Stage Selector Tabs */}
+      <Tabs value={selectedStage} onValueChange={(value: string) => { setSelectedStage(value as any); setOffset(0); }}>
+        <TabsList className="w-full grid grid-cols-4 h-auto p-1">
+          <TabsTrigger value="all" className="flex-col gap-1 py-3" data-testid="tab-stage-all">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span className="font-semibold text-lg">{formatNumber(stats.total)}</span>
+            </div>
+            <div className="text-xs font-medium">All Contacts</div>
+          </TabsTrigger>
+          <TabsTrigger value="discovery" className="flex-col gap-1 py-3" data-testid="tab-stage-discovery">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-blue-400" />
+              <span className="font-semibold text-lg">{formatNumber(stats.discovery)}</span>
+            </div>
+            <div className="text-xs font-medium">Discovery Pool</div>
+          </TabsTrigger>
+          <TabsTrigger value="watch" className="flex-col gap-1 py-3" data-testid="tab-stage-watch">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-yellow-400" />
+              <span className="font-semibold text-lg">{formatNumber(stats.watch)}</span>
+            </div>
+            <div className="text-xs font-medium">Watch List</div>
+          </TabsTrigger>
+          <TabsTrigger value="search" className="flex-col gap-1 py-3" data-testid="tab-stage-search">
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-emerald-400" />
+              <span className="font-semibold text-lg">{formatNumber(stats.search)}</span>
+            </div>
+            <div className="text-xs font-medium">Active Search</div>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Bulk Selection Banner */}
       {selectedIds.size > 0 && (
