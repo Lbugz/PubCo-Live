@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, EyeOff, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Clock, Settings2, Flame, Link as LinkIcon, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, EyeOff, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Clock, Settings2, Flame, Link as LinkIcon, AlertTriangle, CheckCircle, XCircle, Database } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -10,6 +10,7 @@ import { useFetchPlaylistsMutation } from "@/hooks/use-fetch-playlists-mutation"
 import { useMobile } from "@/hooks/use-mobile";
 import { useForm } from "react-hook-form";
 import { useQuickFilterPreferences, type QuickFilterDefinition } from "@/hooks/use-quick-filter-preferences";
+import { DetailDrawerHeader, StatsGrid, ActionRail, EnrichmentTimeline } from "@/components/details/detail-primitives";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1325,260 +1326,147 @@ export default function PlaylistsView() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto glass-panel backdrop-blur-xl border-l border-primary/20">
           {selectedPlaylist && (
             <div className="space-y-6">
-              {/* Consolidated Top Banner */}
-              <div className="relative">
-                {/* Large Artwork Hero */}
-                <div className="relative h-48 bg-gradient-to-b from-primary/20 to-background rounded-lg overflow-hidden">
-                  <Avatar className="h-full w-full rounded-lg">
-                    <AvatarImage src={selectedPlaylist.imageUrl || undefined} alt={selectedPlaylist.name} className="object-cover" />
-                    <AvatarFallback className="rounded-lg bg-primary/10">
-                      <Music2 className="h-16 w-16 text-primary" />
-                    </AvatarFallback>
-                  </Avatar>
-                  {/* Dark overlay for text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-                </div>
+              {/* New Unified Header */}
+              <DetailDrawerHeader
+                title={selectedPlaylist.name}
+                subtitle="Playlist"
+                description={selectedPlaylist.curator ? `Curated by ${selectedPlaylist.curator}` : undefined}
+                badges={[
+                  ...(selectedPlaylist.isEditorial === 1 ? [{ label: "Editorial", variant: "secondary" as const }] : []),
+                  ...(selectedPlaylist.status === "active" ? [{ label: "Active", variant: "high" as const }] : []),
+                  ...(selectedPlaylist.status === "pending" ? [{ label: "Pending", variant: "medium" as const }] : []),
+                ]}
+                imageUrl={selectedPlaylist.imageUrl || undefined}
+                fallback={selectedPlaylist.name.slice(0, 2).toUpperCase()}
+                meta={[
+                  { label: "Last updated", value: formatDate(selectedPlaylist.lastChecked) },
+                  { label: "Followers", value: formatNumber(selectedPlaylist.followers) },
+                ]}
+              />
 
-                {/* Overlapping Info Card */}
-                <Card className="bg-background/95 backdrop-blur-lg border-primary/20 -mt-16 mx-4 relative z-10">
-                  <CardContent className="p-4 space-y-4">
-                    {/* Title and Badges */}
-                    <div>
-                      <h2 className="font-bold text-xl mb-2 truncate" data-testid="text-drawer-playlist-name">
-                        {selectedPlaylist.name}
-                      </h2>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {selectedPlaylist.isEditorial === 1 && (
-                          <Badge variant="secondary" data-testid="badge-editorial">Editorial</Badge>
-                        )}
-                        {getStatusBadge(selectedPlaylist.status)}
-                        <Badge variant="outline" data-testid="badge-source">
-                          {normalizeSource(selectedPlaylist.source).charAt(0).toUpperCase() + normalizeSource(selectedPlaylist.source).slice(1)}
-                        </Badge>
-                      </div>
-                    </div>
+              {/* Stats Grid */}
+              {qualityMetrics && (
+                <StatsGrid
+                  stats={[
+                    { 
+                      label: "Total tracks", 
+                      value: formatNumber(selectedPlaylist.totalTracks || 0),
+                      helper: selectedPlaylist.genre || undefined
+                    },
+                    { 
+                      label: "Enriched", 
+                      value: `${qualityMetrics.enrichedCount}/${qualityMetrics.totalTracks}`,
+                      helper: qualityMetrics.totalTracks > 0 
+                        ? `${Math.round((qualityMetrics.enrichedCount / qualityMetrics.totalTracks) * 100)}%`
+                        : undefined
+                    },
+                    { 
+                      label: "ISRC Coverage", 
+                      value: `${qualityMetrics.isrcCount}/${qualityMetrics.totalTracks}`,
+                      helper: qualityMetrics.totalTracks > 0
+                        ? `${Math.round((qualityMetrics.isrcCount / qualityMetrics.totalTracks) * 100)}%`
+                        : undefined
+                    },
+                    { 
+                      label: "Avg Score", 
+                      value: qualityMetrics.avgUnsignedScore.toFixed(1),
+                      helper: qualityMetrics.avgUnsignedScore >= 7 ? 'High' : 
+                              qualityMetrics.avgUnsignedScore >= 4 ? 'Medium' : 'Low'
+                    },
+                  ]}
+                />
+              )}
 
-                    {/* Key Stats Row */}
-                    <div className="grid grid-cols-2 gap-4 pt-2 border-t">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Curator</p>
-                        <p className="font-semibold truncate" data-testid="text-curator">{selectedPlaylist.curator || "—"}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Followers</p>
-                        <p className="font-semibold" data-testid="text-followers">{formatNumber(selectedPlaylist.followers)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Total Tracks</p>
-                        <p className="font-semibold" data-testid="text-total-tracks">{formatNumber(selectedPlaylist.totalTracks)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
-                        <p className="text-sm font-medium" data-testid="text-last-updated">{formatDate(selectedPlaylist.lastChecked)}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Action Rail */}
+              <ActionRail
+                primaryAction={{
+                  label: "View Tracks",
+                  icon: Eye,
+                  onClick: () => viewTracks(selectedPlaylist.playlistId)
+                }}
+                secondaryActions={[
+                  {
+                    label: "Fetch Data",
+                    icon: RefreshCw,
+                    onClick: () => fetchPlaylistDataMutation.mutate(selectedPlaylist.playlistId)
+                  },
+                  {
+                    label: "Refresh Metadata",
+                    icon: Database,
+                    onClick: () => refreshMetadataMutation.mutate(selectedPlaylist.id)
+                  },
+                  {
+                    label: "Open in Spotify",
+                    icon: ExternalLink,
+                    onClick: () => window.open(selectedPlaylist.spotifyUrl, "_blank"),
+                    subtle: true
+                  },
+                ]}
+              />
+
+              {/* Enrichment Timeline */}
+              {qualityMetrics && qualityMetrics.totalTracks > 0 && (
+                <EnrichmentTimeline
+                  steps={[
+                    {
+                      label: "Phase 1: Spotify API",
+                      description: qualityMetrics.isrcCount > 0 
+                        ? qualityMetrics.totalTracks > 0
+                          ? `✓ ${qualityMetrics.isrcCount}/${qualityMetrics.totalTracks} tracks with ISRC codes`
+                          : `✓ ${qualityMetrics.isrcCount} tracks with ISRC codes`
+                        : "Pending ISRC recovery",
+                      status: qualityMetrics.isrcCount > 0 ? "done" : "active",
+                      timestamp: qualityMetrics.isrcCount > 0 && qualityMetrics.totalTracks > 0
+                        ? `${Math.round((qualityMetrics.isrcCount / qualityMetrics.totalTracks) * 100)}% complete`
+                        : undefined
+                    },
+                    {
+                      label: "Phase 2: Credits Scraping",
+                      description: qualityMetrics.enrichedCount > 0 
+                        ? qualityMetrics.totalTracks > 0
+                          ? `✓ ${qualityMetrics.enrichedCount}/${qualityMetrics.totalTracks} tracks enriched`
+                          : `✓ ${qualityMetrics.enrichedCount} tracks enriched`
+                        : "Pending credit scraping",
+                      status: qualityMetrics.enrichedCount > 0 ? "done" : (qualityMetrics.isrcCount > 0 ? "active" : "pending"),
+                      timestamp: qualityMetrics.enrichedCount > 0 && qualityMetrics.totalTracks > 0
+                        ? `${Math.round((qualityMetrics.enrichedCount / qualityMetrics.totalTracks) * 100)}% complete`
+                        : undefined
+                    },
+                    {
+                      label: "Phase 3: MusicBrainz",
+                      description: "Pending artist social links",
+                      status: "pending",
+                    },
+                    {
+                      label: "Phase 4: Chartmetric",
+                      description: "Pending analytics data",
+                      status: "pending",
+                    },
+                    {
+                      label: "Phase 5: MLC Lookup",
+                      description: (qualityMetrics.publishedCount || 0) > 0 
+                        ? qualityMetrics.totalTracks > 0
+                          ? `✓ ${qualityMetrics.publishedCount}/${qualityMetrics.totalTracks} tracks verified`
+                          : `✓ ${qualityMetrics.publishedCount} tracks verified`
+                        : "Pending publisher verification",
+                      status: (qualityMetrics.publishedCount || 0) > 0 ? "done" : "active",
+                      timestamp: (qualityMetrics.publishedCount || 0) > 0 && qualityMetrics.totalTracks > 0
+                        ? `${Math.round(((qualityMetrics.publishedCount || 0) / qualityMetrics.totalTracks) * 100)}% complete`
+                        : undefined
+                    },
+                  ]}
+                />
+              )}
 
               {/* Accordion Sections */}
-              <Accordion type="multiple" defaultValue={["metadata", "actions"]} className="space-y-3">
+              <Accordion type="multiple" defaultValue={["metadata"]} className="space-y-3">
                 {/* Metadata & Quality Section */}
                 <AccordionItem value="metadata" className="border rounded-lg overflow-hidden bg-background/60 backdrop-blur">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate" data-testid="accordion-metadata">
-                    <span className="font-medium">Metadata & Quality</span>
+                    <span className="font-medium">Additional Metadata</span>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4 space-y-6">
-
-                    {/* 1. Track Quality Summary */}
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-3">Track Quality Summary</p>
-                      {qualityLoading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {[1, 2, 3].map((i) => (
-                            <Skeleton key={i} className="h-20" />
-                          ))}
-                        </div>
-                      ) : qualityMetrics ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {/* Enriched Count */}
-                          <Card className="bg-background/40" data-testid="quality-card-enriched">
-                            <CardContent className="p-3 text-center">
-                              <p className="text-xs text-muted-foreground mb-1">Enriched</p>
-                              <p className="text-lg font-semibold" data-testid="text-enriched-count">
-                                {qualityMetrics.enrichedCount} / {qualityMetrics.totalTracks}
-                              </p>
-                              {qualityMetrics.totalTracks > 0 && (
-                                <Badge variant="secondary" className="mt-1 text-xs" data-testid="badge-enriched-percent">
-                                  {Math.round((qualityMetrics.enrichedCount / Math.max(qualityMetrics.totalTracks, 1)) * 100)}%
-                                </Badge>
-                              )}
-                            </CardContent>
-                          </Card>
-
-                          {/* ISRC Coverage */}
-                          <Card className="bg-background/40" data-testid="quality-card-isrc">
-                            <CardContent className="p-3 text-center">
-                              <p className="text-xs text-muted-foreground mb-1">ISRC</p>
-                              <p className="text-lg font-semibold" data-testid="text-isrc-count">
-                                {qualityMetrics.isrcCount} / {qualityMetrics.totalTracks}
-                              </p>
-                              {qualityMetrics.totalTracks > 0 && (
-                                <Badge variant="secondary" className="mt-1 text-xs" data-testid="badge-isrc-percent">
-                                  {Math.round((qualityMetrics.isrcCount / Math.max(qualityMetrics.totalTracks, 1)) * 100)}%
-                                </Badge>
-                              )}
-                            </CardContent>
-                          </Card>
-
-                          {/* Average Unsigned Score */}
-                          <Card className="bg-background/40" data-testid="quality-card-score">
-                            <CardContent className="p-3 text-center">
-                              <p className="text-xs text-muted-foreground mb-1">Avg Score</p>
-                              <p className="text-lg font-semibold" data-testid="text-avg-score">
-                                {qualityMetrics.avgUnsignedScore.toFixed(1)} / 10
-                              </p>
-                              <Badge 
-                                variant={
-                                  qualityMetrics.avgUnsignedScore >= 7 ? 'default' : 
-                                  qualityMetrics.avgUnsignedScore >= 4 ? 'secondary' : 'outline'
-                                } 
-                                className="mt-1 text-xs"
-                                data-testid="badge-score-level"
-                              >
-                                {qualityMetrics.avgUnsignedScore >= 7 ? 'High' : 
-                                 qualityMetrics.avgUnsignedScore >= 4 ? 'Medium' : 'Low'}
-                              </Badge>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">Quality metrics unavailable. Fetch playlist data to calculate.</p>
-                      )}
-                    </div>
-
-                    {/* Enrichment Timeline */}
-                    {qualityMetrics && (
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-3">Enrichment Pipeline Status</p>
-                        {qualityMetrics.totalTracks === 0 ? (
-                          <div className="p-4 text-center text-sm text-muted-foreground bg-background/40 rounded-lg">
-                            Click "Fetch Data" to import tracks and begin enrichment
-                          </div>
-                        ) : (
-                        <div className="space-y-2">
-                          {/* Phase 1: Spotify API */}
-                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-1">
-                            <div className={cn(
-                              "h-2 w-2 rounded-full transition-all duration-300",
-                              qualityMetrics.isrcCount > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-amber-400 animate-enrichment-pulse"
-                            )} />
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium">Phase 1: Spotify API</p>
-                                {qualityMetrics.isrcCount > 0 && qualityMetrics.totalTracks > 0 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {Math.round((qualityMetrics.isrcCount / qualityMetrics.totalTracks) * 100)}%
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {qualityMetrics.isrcCount > 0 
-                                  ? qualityMetrics.totalTracks > 0
-                                    ? `✓ ${qualityMetrics.isrcCount}/${qualityMetrics.totalTracks} tracks with ISRC codes`
-                                    : `✓ ${qualityMetrics.isrcCount} tracks with ISRC codes`
-                                  : "Pending ISRC recovery"}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Phase 2: Credits Scraping */}
-                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-2">
-                            <div className={cn(
-                              "h-2 w-2 rounded-full transition-all duration-300",
-                              qualityMetrics.enrichedCount > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-amber-400 animate-enrichment-pulse"
-                            )} />
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium">Phase 2: Credits Scraping</p>
-                                {qualityMetrics.enrichedCount > 0 && qualityMetrics.totalTracks > 0 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {Math.round((qualityMetrics.enrichedCount / qualityMetrics.totalTracks) * 100)}%
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {qualityMetrics.enrichedCount > 0 
-                                  ? qualityMetrics.totalTracks > 0
-                                    ? `✓ ${qualityMetrics.enrichedCount}/${qualityMetrics.totalTracks} tracks enriched`
-                                    : `✓ ${qualityMetrics.enrichedCount} tracks enriched`
-                                  : "Pending credit scraping"}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Phase 3: MusicBrainz Artist Links */}
-                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-3">
-                            <div className={cn(
-                              "h-2 w-2 rounded-full transition-all duration-300",
-                              "bg-muted/50"
-                            )} />
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium">Phase 3: MusicBrainz</p>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                Pending artist social links
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Phase 4: Chartmetric Analytics */}
-                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-4">
-                            <div className={cn(
-                              "h-2 w-2 rounded-full transition-all duration-300",
-                              "bg-muted/50"
-                            )} />
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium">Phase 4: Chartmetric</p>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                Pending analytics data
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Phase 5: MLC Publisher Lookup */}
-                          <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-5">
-                            <div className={cn(
-                              "h-2 w-2 rounded-full transition-all duration-300",
-                              (qualityMetrics.publishedCount || 0) > 0 ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-amber-400 animate-enrichment-pulse"
-                            )} />
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium">Phase 5: MLC Lookup</p>
-                                {(qualityMetrics.publishedCount || 0) > 0 && qualityMetrics.totalTracks > 0 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {Math.round(((qualityMetrics.publishedCount || 0) / qualityMetrics.totalTracks) * 100)}%
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {(qualityMetrics.publishedCount || 0) > 0 
-                                  ? qualityMetrics.totalTracks > 0
-                                    ? `✓ ${qualityMetrics.publishedCount}/${qualityMetrics.totalTracks} tracks verified`
-                                    : `✓ ${qualityMetrics.publishedCount} tracks verified`
-                                  : "Pending publisher verification"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* 2. Chartmetric Insights */}
+                    {/* Chartmetric Insights */}
                     {selectedPlaylist.chartmetricUrl && (
                       <div>
                         <p className="text-xs font-medium text-muted-foreground mb-3">Chartmetric Insights</p>
@@ -1705,47 +1593,6 @@ export default function PlaylistsView() {
                 </AccordionItem>
 
               </Accordion>
-
-              {/* Actions Section */}
-              <div className="border rounded-lg overflow-hidden bg-background/60 backdrop-blur p-4">
-                <p className="font-medium mb-4">Actions</p>
-                <div className="flex flex-col gap-2">
-                  <Button
-                    className="w-full justify-start bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                    onClick={() => viewTracks(selectedPlaylist.playlistId)}
-                    data-testid="button-drawer-view-tracks"
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Tracks
-                  </Button>
-                  <Button
-                    className="w-full justify-start bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                    onClick={() => fetchPlaylistDataMutation.mutate(selectedPlaylist.playlistId)}
-                    disabled={fetchPlaylistDataMutation.isPending}
-                    data-testid="button-drawer-fetch-data"
-                  >
-                    <RefreshCw className={cn("h-4 w-4 mr-2", fetchPlaylistDataMutation.isPending && "animate-spin")} />
-                    {fetchPlaylistDataMutation.isPending ? "Fetching..." : "Fetch Data"}
-                  </Button>
-                  <Button
-                    className="w-full justify-start bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                    onClick={() => refreshMetadataMutation.mutate(selectedPlaylist.id)}
-                    disabled={refreshMetadataMutation.isPending}
-                    data-testid="button-drawer-refresh-metadata"
-                  >
-                    <RefreshCw className={cn("h-4 w-4 mr-2", refreshMetadataMutation.isPending && "animate-spin")} />
-                    {refreshMetadataMutation.isPending ? "Refreshing..." : "Refresh Metadata"}
-                  </Button>
-                  <Button
-                    className="w-full justify-start bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                    onClick={() => window.open(selectedPlaylist.spotifyUrl, "_blank")}
-                    data-testid="button-drawer-open-spotify"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Open in Spotify
-                  </Button>
-                </div>
-              </div>
             </div>
           )}
         </SheetContent>
