@@ -370,6 +370,17 @@ export class EnrichmentWorker {
 
       const { persistedCount: phase2Persisted, failedTrackIds: phase2Failed } = await this.persistPhaseUpdates(ctx, job.id, 'Phase 2');
 
+      // Broadcast track_enriched events for ALL tracks (success + no_data + failed) immediately after Phase 2 persistence
+      for (const trackId of job.trackIds) {
+        if (this.wsBroadcast) {
+          this.wsBroadcast('track_enriched', {
+            type: 'track_enriched',
+            trackId,
+            phase: 2,
+          });
+        }
+      }
+
       // SCORING STEP: Recalculate unsigned scores after Phase 2 enrichment
       console.log('[Scoring] Recalculating unsigned scores with enriched metadata...');
       let scoresUpdated = 0;

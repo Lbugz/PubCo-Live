@@ -142,8 +142,9 @@ export default function Dashboard() {
   useWebSocket({
     onTrackEnriched: (data) => {
       console.log('Track enriched via WebSocket:', data);
-      // Invalidate tracks query to trigger refetch
+      // Aggressively refetch tracks to update filter counts in real-time
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
+      queryClient.refetchQueries({ queryKey: ["/api/tracks"] });
     },
     onEnrichmentProgress: (data) => {
       console.log('Enrichment progress:', data);
@@ -184,6 +185,7 @@ export default function Dashboard() {
           : job
       ));
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
+      queryClient.refetchQueries({ queryKey: ["/api/tracks"] });
     },
     onJobFailed: (data) => {
       console.log('Job failed:', data);
