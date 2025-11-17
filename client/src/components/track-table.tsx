@@ -1,19 +1,13 @@
-import { memo, useRef, useMemo } from "react";
-import { ExternalLink, Music, CheckCircle2, XCircle, Cloud, Database, Sparkles, FileText, MoreVertical, Tag as TagIcon, MessageCircle } from "lucide-react";
+import { useMemo } from "react";
+import { Music, CheckCircle2, Cloud } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Checkbox } from "@/components/ui/checkbox";
 import { type PlaylistSnapshot, type Tag } from "@shared/schema";
-import { cn } from "@/lib/utils";
 import { TrackActionsDropdown } from "./track-actions-dropdown";
 import { SongwriterDisplay } from "./songwriter-display";
-import { SortableHeaderForGrid } from "@/components/ui/sortable-table-header";
 import { useQuery } from "@tanstack/react-query";
 import { getTagColorClass } from "./tag-manager";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { apiRequest } from "@/lib/queryClient";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 
 interface TrackTableProps {
   tracks: PlaylistSnapshot[];
@@ -47,7 +41,7 @@ function TrackTags({ trackId, tags }: { trackId: string; tags?: Tag[] }) {
   );
 }
 
-export const TrackTable = memo(function TrackTable({ 
+export function TrackTable({ 
   tracks, 
   isLoading, 
   selectedTrackIds = new Set(), 
@@ -59,18 +53,6 @@ export const TrackTable = memo(function TrackTable({
   sortDirection,
   onSort
 }: TrackTableProps) {
-  const allSelected = tracks.length > 0 && tracks.every(track => selectedTrackIds.has(track.id));
-  const someSelected = !allSelected && tracks.some(track => selectedTrackIds.has(track.id));
-  
-  const parentRef = useRef<HTMLDivElement>(null);
-  
-  const virtualizer = useVirtualizer({
-    count: tracks.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 96,
-    overscan: 5,
-  });
-
   // Batch fetch tags for all tracks
   const trackIds = useMemo(() => tracks.map(t => t.id), [tracks]);
   
@@ -79,258 +61,195 @@ export const TrackTable = memo(function TrackTable({
     queryFn: async () => {
       if (trackIds.length === 0) return {};
       const response = await apiRequest("POST", "/api/tracks/tags/batch", { trackIds });
-      return response; // apiRequest already parses JSON
+      return response;
     },
     enabled: trackIds.length > 0,
-    staleTime: 60000, // Cache for 1 minute
+    staleTime: 60000,
   });
 
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Skeleton key={i} className="h-20 w-full" />
-        ))}
-      </div>
-    );
-  }
-
-  if (tracks.length === 0) {
-    return (
-      <Card className="glass-panel p-12">
-        <div className="flex flex-col items-center justify-center text-center">
-          <Music className="h-16 w-16 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold font-heading mb-2" data-testid="text-empty-state-title">No tracks found</h3>
-          <p className="text-sm text-muted-foreground max-w-md">
-            Try adjusting your filters or select a different week to view publishing leads.
-          </p>
-        </div>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="relative">
-      {/* Sticky Header - Desktop Only */}
-      <div className="hidden lg:grid lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_auto_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
-        <div className="flex items-center h-12">
-          {onToggleSelectAll && (
-            <Checkbox
-              checked={someSelected ? "indeterminate" : allSelected}
-              onCheckedChange={onToggleSelectAll}
-              onClick={(e) => e.stopPropagation()}
-              data-testid="checkbox-select-all"
-              aria-label="Select all tracks"
+  const columns: DataTableColumn<PlaylistSnapshot>[] = [
+    {
+      id: "trackInfo",
+      header: "Track Info",
+      sortField: "trackName",
+      cell: (track) => (
+        <div className="flex items-start gap-3">
+          {/* Album Art */}
+          {track.albumArt ? (
+            <img 
+              src={track.albumArt} 
+              alt={`${track.trackName} album art`}
+              className="w-12 h-12 rounded object-cover flex-shrink-0"
+              loading="lazy"
+              decoding="async"
+              width="48"
+              height="48"
             />
+          ) : (
+            <div className="w-12 h-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
+              <Music className="w-5 h-5 text-muted-foreground" />
+            </div>
+          )}
+          
+          {/* Stacked Info */}
+          <div className="flex-1 min-w-0 space-y-1">
+            {/* Track Name - Primary */}
+            <div className="font-medium text-sm leading-tight" data-testid={`text-track-name-${track.id}`}>
+              {track.trackName}
+            </div>
+            
+            {/* Artist Name - Secondary */}
+            <div className="text-sm text-muted-foreground leading-tight" data-testid={`text-artist-${track.id}`}>
+              {track.artistName}
+            </div>
+
+            {/* Metadata Badges */}
+            <div className="flex flex-wrap gap-1">
+              {track.dataSource === "scraped" && (
+                <Badge 
+                  variant="outline" 
+                  className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-xs"
+                  data-testid={`badge-source-scraped-${track.id}`}
+                >
+                  <Cloud className="w-3 h-3 mr-1" />
+                  Scraped
+                </Badge>
+              )}
+            </div>
+            
+            {/* Tags */}
+            <TrackTags trackId={track.id} tags={tagsMap[track.id]} />
+          </div>
+        </div>
+      ),
+      className: "min-w-[300px]",
+    },
+    {
+      id: "playlist",
+      header: "Playlist",
+      sortField: "playlistName",
+      cell: (track) => (
+        <>
+          {(track as any).playlist_count > 1 ? (
+            <Badge 
+              variant="outline" 
+              className="bg-primary/10 text-primary border-primary/20 text-xs"
+              data-testid={`badge-playlists-${track.id}`}
+            >
+              {(track as any).playlist_count} playlists
+            </Badge>
+          ) : (
+            <div className="text-sm" data-testid={`text-playlist-${track.id}`}>
+              {track.playlistName}
+            </div>
+          )}
+        </>
+      ),
+      className: "min-w-[150px]",
+    },
+    {
+      id: "streams",
+      header: "Streams",
+      sortField: "spotifyStreams",
+      cell: (track) => (
+        <div className="text-sm font-medium" data-testid={`text-streams-${track.id}`}>
+          {track.spotifyStreams ? track.spotifyStreams.toLocaleString() : '—'}
+        </div>
+      ),
+      className: "min-w-[100px]",
+    },
+    {
+      id: "songwriter",
+      header: "Songwriter",
+      sortField: "songwriter",
+      cell: (track) => (
+        <div className="text-sm">
+          <SongwriterDisplay
+            songwriters={track.songwriter}
+            testId={`text-songwriter-${track.id}`}
+          />
+        </div>
+      ),
+      className: "min-w-[200px]",
+    },
+    {
+      id: "isrc",
+      header: "ISRC",
+      cell: (track) => (
+        <div className="flex justify-center">
+          {track.isrc ? (
+            <Badge 
+              variant="outline" 
+              className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 text-xs"
+              data-testid={`badge-has-isrc-${track.id}`}
+            >
+              <CheckCircle2 className="w-3 h-3 mr-1" />
+              ISRC
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground text-xs" data-testid={`text-no-isrc-${track.id}`}>—</span>
           )}
         </div>
-        <SortableHeaderForGrid
-          label="Track Info"
-          field="trackName"
-          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
-          onSort={onSort}
-        />
-        <SortableHeaderForGrid
-          label="Playlist"
-          field="playlistName"
-          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
-          onSort={onSort}
-        />
-        <SortableHeaderForGrid
-          label="Streams"
-          field="spotifyStreams"
-          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
-          onSort={onSort}
-        />
-        <SortableHeaderForGrid
-          label="Songwriter"
-          field="songwriter"
-          currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
-          onSort={onSort}
-        />
-        <div className="text-center">ISRC</div>
-        <div className="text-right">Actions</div>
-      </div>
-
-      {/* Virtualized Track Rows */}
-      <div
-        ref={parentRef}
-        className="overflow-auto"
-        style={{
-          height: 'calc(100vh - 300px)',
-          minHeight: '400px',
-        }}
-      >
-        <div
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: '100%',
-            position: 'relative',
-          }}
-        >
-          {virtualizer.getVirtualItems().map((virtualRow) => {
-            const track = tracks[virtualRow.index];
-            const index = virtualRow.index;
-            const isSelected = selectedTrackIds.has(track.id);
-            return (
-              <div
-                key={virtualRow.key}
-                data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-              >
-                <Card
-                  className={cn(
-                    "hover-gradient cursor-pointer rounded-none border-x-0 border-t-0",
-                    index % 2 === 0 ? "bg-card/50" : "bg-card/30",
-                    isSelected && "ring-2 ring-primary bg-primary/5"
-                  )}
-                  data-testid={`card-track-${track.id}`}
-                  onClick={() => onRowClick?.(track)}
-                >
-              <div className="grid grid-cols-1 lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_auto_auto] gap-4 p-4 items-start">
-                {/* Checkbox Column - Desktop Only */}
-                <div 
-                  className="hidden lg:flex items-center h-12" 
-                  onClick={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  {onToggleSelection && (
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => onToggleSelection(track.id)}
-                      data-testid={`checkbox-track-${track.id}`}
-                      aria-label={`Select ${track.trackName}`}
-                    />
-                  )}
-                </div>
-
-                {/* Track Info Column */}
-                <div className="col-span-1 lg:col-span-1 flex items-start gap-3">
-                  {/* Album Art */}
-                  {track.albumArt ? (
-                    <img 
-                      src={track.albumArt} 
-                      alt={`${track.trackName} album art`}
-                      className="w-12 h-12 rounded object-cover flex-shrink-0"
-                      loading="lazy"
-                      decoding="async"
-                      width="48"
-                      height="48"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                      <Music className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                  )}
-                  
-                  {/* Stacked Info */}
-                  <div className="flex-1 min-w-0 space-y-1">
-                    {/* Track Name - Primary */}
-                    <div className="font-medium text-base leading-tight" data-testid={`text-track-name-${track.id}`}>
-                      {track.trackName}
-                    </div>
-                    
-                    {/* Artist Name - Secondary */}
-                    <div className="text-sm text-muted-foreground leading-tight" data-testid={`text-artist-${track.id}`}>
-                      {track.artistName}
-                    </div>
-
-                    {/* Metadata Badges */}
-                    <div className="flex flex-wrap gap-1">
-                      {track.dataSource === "scraped" && (
-                        <Badge 
-                          variant="outline" 
-                          className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-xs"
-                          data-testid={`badge-source-scraped-${track.id}`}
-                        >
-                          <Cloud className="w-3 h-3 mr-1" />
-                          Scraped
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {/* Tags */}
-                    <TrackTags trackId={track.id} tags={tagsMap[track.id]} />
-                  </div>
-                </div>
-
-                {/* Playlist Column */}
-                <div className="col-span-1 lg:col-span-1 pt-1">
-                  {(track as any).playlist_count > 1 ? (
-                    <Badge 
-                      variant="outline" 
-                      className="bg-primary/10 text-primary border-primary/20 text-xs"
-                      data-testid={`badge-playlists-${track.id}`}
-                    >
-                      {(track as any).playlist_count} playlists
-                    </Badge>
-                  ) : (
-                    <div className="text-sm text-muted-foreground" data-testid={`text-playlist-${track.id}`}>
-                      {track.playlistName}
-                    </div>
-                  )}
-                </div>
-
-                {/* Streams Column */}
-                <div className="col-span-1 lg:col-span-1 pt-1">
-                  <div className="text-sm font-medium" data-testid={`text-streams-${track.id}`}>
-                    {track.spotifyStreams ? track.spotifyStreams.toLocaleString() : '—'}
-                  </div>
-                </div>
-              
-                {/* Songwriter Column */}
-                <div className="col-span-1 lg:col-span-1 pt-1">
-                  <div className="text-sm">
-                    <SongwriterDisplay
-                      songwriters={track.songwriter}
-                      testId={`text-songwriter-${track.id}`}
-                    />
-                  </div>
-                </div>
-
-                {/* ISRC Column */}
-                <div className="col-span-1 lg:col-span-1 pt-1 flex justify-center">
-                  {track.isrc ? (
-                    <Badge 
-                      variant="outline" 
-                      className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 text-xs"
-                      data-testid={`badge-has-isrc-${track.id}`}
-                    >
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                      ISRC
-                    </Badge>
-                  ) : (
-                    <span className="text-muted-foreground text-xs" data-testid={`text-no-isrc-${track.id}`}>—</span>
-                  )}
-                </div>
-              
-                {/* Actions Column */}
-                <div className="col-span-1 lg:col-span-1 flex justify-start lg:justify-end gap-2 flex-wrap pt-1" onClick={(e) => e.stopPropagation()}>
-                  <TrackActionsDropdown
-                    track={track}
-                    onEnrich={onEnrich}
-                  />
-                </div>
-              </div>
-          </Card>
+      ),
+      className: "w-24",
+      headerClassName: "text-center",
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: (track) => (
+        <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+          <TrackActionsDropdown
+            track={track}
+            onEnrich={onEnrich}
+          />
         </div>
-            );
-          })}
-        </div>
-      </div>
+      ),
+      className: "w-20",
+      headerClassName: "text-right",
+    },
+  ];
 
-      <div className="flex items-center justify-between pt-4 px-4 text-sm text-muted-foreground">
+  const emptyState = (
+    <div className="flex flex-col items-center justify-center text-center p-12">
+      <Music className="h-16 w-16 text-muted-foreground mb-4" />
+      <h3 className="text-lg font-semibold font-heading mb-2" data-testid="text-empty-state-title">No tracks found</h3>
+      <p className="text-sm text-muted-foreground max-w-md">
+        Try adjusting your filters or select a different week to view publishing leads.
+      </p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <DataTable
+        data={tracks}
+        columns={columns}
+        getRowId={(track) => track.id}
+        isLoading={isLoading}
+        emptyState={emptyState}
+        selectedIds={selectedTrackIds}
+        onToggleSelection={onToggleSelection}
+        onToggleSelectAll={onToggleSelectAll}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={onSort}
+        onRowClick={onRowClick}
+        virtualized={true}
+        estimateRowSize={96}
+        containerHeight="calc(100vh - 300px)"
+        bordered={true}
+        striped={true}
+        hoverable={true}
+        stickyHeader={true}
+        testIdPrefix="track"
+      />
+      
+      <div className="flex items-center justify-between px-4 text-sm text-muted-foreground">
         <div data-testid="text-results-count">
           Showing {tracks.length} {tracks.length === 1 ? "track" : "tracks"}
         </div>
       </div>
     </div>
   );
-});
+}
