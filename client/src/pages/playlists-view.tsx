@@ -555,10 +555,10 @@ export default function PlaylistsView() {
         playlist.curator || "",
         (playlist.followers || 0).toString(),
         (playlist.totalTracks || 0).toString(),
-        playlist.source || "unknown",
+        playlist.source || "",
         playlist.genre || "",
         playlist.lastChecked ? new Date(playlist.lastChecked).toLocaleDateString() : "",
-        playlist.status || "unknown",
+        playlist.status || "",
         playlist.playlistId,
         `https://open.spotify.com/playlist/${playlist.playlistId}`
       ]);
@@ -594,7 +594,7 @@ export default function PlaylistsView() {
 
   // Normalize source value for consistent filtering
   const normalizeSource = (source: string | null) => {
-    return source || "unknown";
+    return source || "";
   };
 
   // Filter playlists
@@ -770,7 +770,7 @@ export default function PlaylistsView() {
   };
 
   const getStatusBadge = (status: string | null) => {
-    if (!status) return <Badge variant="secondary">Unknown</Badge>;
+    if (!status) return <span className="text-muted-foreground">—</span>;
 
     switch (status) {
       case "active":
@@ -811,11 +811,16 @@ export default function PlaylistsView() {
       id: "source",
       header: "Source",
       sortField: "source",
-      cell: (playlist) => (
-        <Badge variant="outline">
-          {normalizeSource(playlist.source).charAt(0).toUpperCase() + normalizeSource(playlist.source).slice(1)}
-        </Badge>
-      ),
+      cell: (playlist) => {
+        const source = normalizeSource(playlist.source);
+        return source ? (
+          <Badge variant="outline">
+            {source.charAt(0).toUpperCase() + source.slice(1)}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
+      },
     },
     {
       id: "totalTracks",
