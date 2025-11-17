@@ -274,20 +274,6 @@ export default function DetailPreviewPage() {
               ]}
             />
           </DrawerSection>
-          <DrawerSection title="Status">
-            <div className="space-y-2 rounded-2xl border border-border/80 bg-muted/40 p-4 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Deal readiness</span>
-                <Badge className="rounded-full bg-emerald-500/10 text-emerald-300" variant="outline">
-                  Greenlight
-                </Badge>
-              </div>
-              <div className="my-2 h-px bg-border" />
-              <p className="text-muted-foreground">
-                Strong TikTok momentum and playlist velocity. Prioritized for Q1 scouting trip.
-              </p>
-            </div>
-          </DrawerSection>
           <EnrichmentTimeline
             steps={[
               {
