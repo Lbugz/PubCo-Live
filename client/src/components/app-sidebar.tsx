@@ -60,16 +60,16 @@ const workflowSections = [
     title: "Discovery",
     icon: Search,
     items: [
-      { title: "Playlists View", url: "/playlists", icon: List },
-      { title: "Tracks View", url: "/", icon: Sparkles },
+      { title: "Playlists", url: "/playlists", icon: List },
+      { title: "Tracks", url: "/", icon: Sparkles },
     ],
   },
   {
-    title: "Relationships/CRM",
+    title: "Outreach",
     icon: Users,
     items: [
       { title: "Contacts", url: "/contacts", icon: Users },
-      { title: "Outreach Pipeline", url: "/outreach", icon: Target },
+      { title: "Pipeline", url: "/outreach", icon: Target },
     ],
   },
 ];
