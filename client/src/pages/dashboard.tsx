@@ -559,7 +559,7 @@ export default function Dashboard() {
       
       const headers = [
         "Track Name", "Artist", "Album", "ISRC", "Playlist", "Label", 
-        "Publisher", "Songwriter", "Composer", "Producer", "Score",
+        "Publisher", "Songwriter", "Composer", "Producer",
         "Instagram", "Twitter", "TikTok", "Email", "Notes"
       ];
       
@@ -574,7 +574,6 @@ export default function Dashboard() {
         track.songwriter || "",
         "",
         "",
-        track.unsignedScore?.toString() ?? "",
         track.instagram || "",
         track.twitter || "",
         track.tiktok || "",
@@ -786,15 +785,8 @@ export default function Dashboard() {
                                 value={trackMetrics?.dealReady?.toLocaleString() || "0"}
                                 icon={Target}
                                 variant="green"
-                                tooltip="Tracks with unsigned score 7-10 - strong publishing signals. Click to filter."
+                                tooltip="Tracks with unsigned score 7-10 - strong publishing signals"
                                 change={trackMetrics?.changeDealReady}
-                                onClick={() => {
-                                  setScoreRange([7, 10]);
-                                  toast({
-                                    title: "Filtered to deal-ready tracks",
-                                    description: "Showing tracks with unsigned score 7-10",
-                                  });
-                                }}
                                 testId="stats-deal-ready"
                               />
                             );
