@@ -49,6 +49,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { getMetricPreferences } from "@/lib/metricPreferences";
 
 
@@ -473,6 +474,10 @@ export default function Dashboard() {
           aValue = a.unsignedScore || 0;
           bValue = b.unsignedScore || 0;
           break;
+        case "spotifyStreams":
+          aValue = a.spotifyStreams || 0;
+          bValue = b.spotifyStreams || 0;
+          break;
         default:
           return 0;
       }
@@ -491,9 +496,9 @@ export default function Dashboard() {
       // Toggle direction if same field
       setSortDirection(prev => prev === "asc" ? "desc" : "asc");
     } else {
-      // New field - start with descending for scores, ascending for text
+      // New field - start with descending for scores/streams, ascending for text
       setSortField(field);
-      setSortDirection(field === "score" ? "desc" : "asc");
+      setSortDirection(field === "score" || field === "spotifyStreams" ? "desc" : "asc");
     }
   }, [sortField]);
 
@@ -963,8 +968,9 @@ export default function Dashboard() {
                       <ChevronDown className={`h-3 w-3 ${filtersOpen ? "rotate-180" : ""}`} />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80 glass-panel" align="end">
-                    <div className="space-y-4">
+                  <PopoverContent className="w-80 glass-panel p-0" align="end">
+                    <ScrollArea className="max-h-[500px]">
+                      <div className="space-y-4 p-4">
                       {/* Score Range Filter */}
                       <div>
                         <h4 className="text-sm font-medium mb-3">Score Range</h4>
@@ -1016,6 +1022,7 @@ export default function Dashboard() {
                         </Button>
                       </div>
                     </div>
+                    </ScrollArea>
                   </PopoverContent>
                 </Popover>
             </div>
