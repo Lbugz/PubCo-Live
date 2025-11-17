@@ -59,7 +59,11 @@ export function NotificationCenter() {
   }, [activeJobs]);
 
   useWebSocket({
+    onConnected: () => {
+      console.log('NotificationCenter: WebSocket connected');
+    },
     onJobStarted: (data) => {
+      console.log('NotificationCenter: Job started', data);
       setActiveJobs(prev => {
         const exists = prev.some(job => job.jobId === data.jobId);
         if (exists) return prev;
@@ -75,6 +79,7 @@ export function NotificationCenter() {
       });
     },
     onEnrichmentProgress: (data) => {
+      console.log('NotificationCenter: Enrichment progress', data);
       if (data.jobId) {
         setActiveJobs(prev => prev.map(job =>
           job.jobId === data.jobId
@@ -84,6 +89,7 @@ export function NotificationCenter() {
       }
     },
     onPhaseStarted: (data) => {
+      console.log('NotificationCenter: Phase started', data);
       if (data.jobId) {
         setActiveJobs(prev => prev.map(job =>
           job.jobId === data.jobId
@@ -93,6 +99,7 @@ export function NotificationCenter() {
       }
     },
     onJobCompleted: (data) => {
+      console.log('NotificationCenter: Job completed', data);
       setActiveJobs(prev => prev.map(job =>
         job.jobId === data.jobId
           ? { ...job, status: data.success ? 'success' : 'error', enrichedCount: data.tracksEnriched || job.trackCount, completedAt: Date.now() }
@@ -102,6 +109,7 @@ export function NotificationCenter() {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/count"] });
     },
     onJobFailed: (data) => {
+      console.log('NotificationCenter: Job failed', data);
       setActiveJobs(prev => prev.map(job =>
         job.jobId === data.jobId
           ? { ...job, status: 'error', errorMessage: data.error, completedAt: Date.now() }
