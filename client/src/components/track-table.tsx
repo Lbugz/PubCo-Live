@@ -112,7 +112,7 @@ export const TrackTable = memo(function TrackTable({
   return (
     <div className="relative">
       {/* Sticky Header - Desktop Only */}
-      <div className="hidden lg:grid lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
+      <div className="hidden lg:grid lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_auto_auto] gap-4 px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider glass-header sticky top-0 z-10 rounded-t-lg">
         <div className="flex items-center">
           {onToggleSelectAll && (
             <Checkbox
@@ -148,6 +148,7 @@ export const TrackTable = memo(function TrackTable({
           currentSort={sortField && sortDirection ? { field: sortField, direction: sortDirection } : undefined}
           onSort={onSort}
         />
+        <div className="text-center">ISRC</div>
         <div className="text-right">Actions</div>
       </div>
 
@@ -193,7 +194,7 @@ export const TrackTable = memo(function TrackTable({
                   data-testid={`card-track-${track.id}`}
                   onClick={() => onRowClick?.(track)}
                 >
-              <div className="grid grid-cols-1 lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_auto] gap-4 p-4 items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-[auto_2fr_1.5fr_1fr_2fr_auto_auto] gap-4 p-4 items-start">
                 {/* Checkbox Column - Desktop Only */}
                 <div 
                   className="hidden lg:flex items-center pt-1" 
@@ -243,25 +244,6 @@ export const TrackTable = memo(function TrackTable({
 
                     {/* Metadata Badges */}
                     <div className="flex flex-wrap gap-1">
-                      {track.isrc ? (
-                        <Badge 
-                          variant="outline" 
-                          className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 text-xs"
-                          data-testid={`badge-has-isrc-${track.id}`}
-                        >
-                          <CheckCircle2 className="w-3 h-3 mr-1" />
-                          ISRC
-                        </Badge>
-                      ) : (
-                        <Badge 
-                          variant="outline" 
-                          className="bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20 text-xs"
-                          data-testid={`badge-no-isrc-${track.id}`}
-                        >
-                          <XCircle className="w-3 h-3 mr-1" />
-                          No ISRC
-                        </Badge>
-                      )}
                       {track.dataSource === "scraped" && (
                         <Badge 
                           variant="outline" 
@@ -311,6 +293,22 @@ export const TrackTable = memo(function TrackTable({
                       testId={`text-songwriter-${track.id}`}
                     />
                   </div>
+                </div>
+
+                {/* ISRC Column */}
+                <div className="col-span-1 lg:col-span-1 pt-1 flex justify-center">
+                  {track.isrc ? (
+                    <Badge 
+                      variant="outline" 
+                      className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 text-xs"
+                      data-testid={`badge-has-isrc-${track.id}`}
+                    >
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      ISRC
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-xs" data-testid={`text-no-isrc-${track.id}`}>—</span>
+                  )}
                 </div>
               
                 {/* Actions Column */}
