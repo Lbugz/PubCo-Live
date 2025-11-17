@@ -388,7 +388,8 @@ export default function Dashboard() {
         track.trackName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         track.artistName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         track.label?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-      const matchesScore = track.unsignedScore !== null && track.unsignedScore >= scoreRange[0] && track.unsignedScore <= scoreRange[1];
+      // Allow null scores (pending tracks) OR scores within range
+      const matchesScore = track.unsignedScore === null || (track.unsignedScore >= scoreRange[0] && track.unsignedScore <= scoreRange[1]);
       
       // Advanced filters
       let matchesAdvancedFilters = true;
