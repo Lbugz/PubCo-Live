@@ -15,7 +15,6 @@ import OutreachPipeline from "@/pages/outreach";
 import Pipeline from "@/pages/pipeline";
 import SettingsSpotify from "@/pages/settings-spotify";
 import SettingsDatabase from "@/pages/settings-database";
-import SettingsPreferences from "@/pages/settings-preferences";
 import SettingsAutomation from "@/pages/settings-automation";
 import SettingsDev from "@/pages/settings-dev";
 import DashboardPreferences from "@/pages/dashboard-preferences";
@@ -43,7 +42,7 @@ function Router() {
       <Route path="/settings" component={SettingsSpotify} />
       <Route path="/settings/spotify" component={SettingsSpotify} />
       <Route path="/settings/database" component={SettingsDatabase} />
-      <Route path="/settings/preferences" component={SettingsPreferences} />
+      <Route path="/settings/preferences" component={DashboardPreferences} />
       <Route path="/settings/dashboard" component={DashboardPreferences} />
       <Route path="/settings/automation" component={SettingsAutomation} />
       <Route path="/settings/dev" component={SettingsDev} />

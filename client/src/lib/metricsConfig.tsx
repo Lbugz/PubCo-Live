@@ -46,264 +46,327 @@ export interface ContactMetricsData {
   enrichmentBacklogContacts: number;
 }
 
-export interface MetricCardConfig {
-  label: string;
-  icon: LucideIcon;
-  variant: "default" | "green" | "blue" | "purple" | "yellow";
-  tooltip: string;
-  valueExtractor: (data: DashboardMetricsData) => string | number;
-  testId: string;
-  onClick?: () => void;
+export interface MetricCardConfig<T = any> {
+  getProps: (data: T) => {
+    title: string;
+    value: string | number;
+    icon: LucideIcon;
+    variant: "default" | "green" | "blue" | "purple" | "yellow";
+    tooltip: string;
+    testId: string;
+    onClick?: () => void;
+  };
 }
 
-export const METRIC_CARD_CONFIG: Record<string, MetricCardConfig> = {
-  // Playlist Metrics
-  total_playlists: {
-    label: "Total Playlists",
-    icon: List,
-    variant: "default",
-    tooltip: "Total number of tracked playlists across all sources",
-    valueExtractor: (data) => data.playlists.totalPlaylists.toLocaleString(),
-    testId: "stats-total-playlists",
+export const METRIC_CARD_CONFIG = {
+  playlists: {
+    total_playlists: {
+      getProps: (data: PlaylistMetricsData) => ({
+        title: "Total Playlists",
+        value: data.totalPlaylists.toLocaleString(),
+        icon: List,
+        variant: "default" as const,
+        tooltip: "Total number of tracked playlists across all sources",
+        testId: "stats-total-playlists",
+      }),
+    },
+    editorial_playlists: {
+      getProps: (data: PlaylistMetricsData) => ({
+        title: "Editorial Playlists",
+        value: data.editorialPlaylists.toLocaleString(),
+        icon: Sparkles,
+        variant: "blue" as const,
+        tooltip: "Spotify editorial playlists (highest quality curation)",
+        testId: "stats-editorial-playlists",
+      }),
+    },
+    total_playlist_followers: {
+      getProps: (data: PlaylistMetricsData) => ({
+        title: "Total Playlist Followers",
+        value: data.totalPlaylistFollowers.toLocaleString(),
+        icon: Users,
+        variant: "green" as const,
+        tooltip: "Sum of all followers across tracked playlists",
+        testId: "stats-total-playlist-followers",
+      }),
+    },
+    avg_tracks_per_playlist: {
+      getProps: (data: PlaylistMetricsData) => ({
+        title: "Avg Tracks per Playlist",
+        value: data.avgTracksPerPlaylist.toFixed(1),
+        icon: Music,
+        variant: "default" as const,
+        tooltip: "Average number of tracks per playlist",
+        testId: "stats-avg-tracks-per-playlist",
+      }),
+    },
+    recently_updated_playlists: {
+      getProps: (data: PlaylistMetricsData) => ({
+        title: "Recently Updated",
+        value: data.recentlyUpdatedPlaylists.toLocaleString(),
+        icon: Clock,
+        variant: "blue" as const,
+        tooltip: "Playlists refreshed in last 7 days",
+        testId: "stats-recently-updated-playlists",
+      }),
+    },
+    high_value_playlists: {
+      getProps: (data: PlaylistMetricsData) => ({
+        title: "High-Value Playlists",
+        value: data.highValuePlaylists.toLocaleString(),
+        icon: Flame,
+        variant: "yellow" as const,
+        tooltip: "Playlists with >50,000 followers",
+        testId: "stats-high-value-playlists",
+      }),
+    },
+    large_playlists: {
+      getProps: (data: PlaylistMetricsData) => ({
+        title: "Large Playlists",
+        value: data.largePlaylists.toLocaleString(),
+        icon: BarChart3,
+        variant: "default" as const,
+        tooltip: "Playlists with >50 tracks (deep catalog)",
+        testId: "stats-large-playlists",
+      }),
+    },
+    incomplete_playlists: {
+      getProps: (data: PlaylistMetricsData) => ({
+        title: "Incomplete Playlists",
+        value: data.incompletePlaylists.toLocaleString(),
+        icon: Activity,
+        variant: "default" as const,
+        tooltip: "Playlists missing curator or genre metadata",
+        testId: "stats-incomplete-playlists",
+      }),
+    },
+    chartmetric_linked_playlists: {
+      getProps: (data: PlaylistMetricsData) => ({
+        title: "Chartmetric Linked",
+        value: data.chartmetricLinkedPlaylists.toLocaleString(),
+        icon: CheckCircle,
+        variant: "green" as const,
+        tooltip: "Playlists connected to Chartmetric for analytics",
+        testId: "stats-chartmetric-linked-playlists",
+      }),
+    },
+    avg_followers_per_playlist: {
+      getProps: (data: PlaylistMetricsData) => ({
+        title: "Avg Followers",
+        value: data.avgFollowersPerPlaylist.toLocaleString(),
+        icon: TrendingUp,
+        variant: "default" as const,
+        tooltip: "Average followers per playlist (quality indicator)",
+        testId: "stats-avg-followers-per-playlist",
+      }),
+    },
   },
-  editorial_playlists: {
-    label: "Editorial Playlists",
-    icon: Sparkles,
-    variant: "blue",
-    tooltip: "Spotify editorial playlists (highest quality curation)",
-    valueExtractor: (data) => data.playlists.editorialPlaylists.toLocaleString(),
-    testId: "stats-editorial-playlists",
+  tracks: {
+    deal_ready_tracks: {
+      getProps: (data: TrackMetricsData) => ({
+        title: "Deal-Ready Tracks",
+        value: data.dealReadyTracks.toLocaleString(),
+        icon: Target,
+        variant: "green" as const,
+        tooltip: "Tracks with unsigned score 7-10 (strong publishing signals)",
+        testId: "stats-deal-ready-tracks",
+      }),
+    },
+    avg_unsigned_score: {
+      getProps: (data: TrackMetricsData) => ({
+        title: "Avg Unsigned Score",
+        value: data.avgUnsignedScore.toFixed(1),
+        icon: Activity,
+        variant: "default" as const,
+        tooltip: "Average unsigned score (0-10) across all tracks",
+        testId: "stats-avg-unsigned-score",
+      }),
+    },
+    missing_publisher_tracks: {
+      getProps: (data: TrackMetricsData) => ({
+        title: "Missing Publisher",
+        value: data.missingPublisherTracks.toLocaleString(),
+        icon: Sparkles,
+        variant: "blue" as const,
+        tooltip: "Tracks with no publisher data (highest unsigned indicator)",
+        testId: "stats-missing-publisher-tracks",
+      }),
+    },
+    self_written_tracks: {
+      getProps: (data: TrackMetricsData) => ({
+        title: "Self-Written Tracks",
+        value: data.selfWrittenTracks.toLocaleString(),
+        icon: Music2,
+        variant: "default" as const,
+        tooltip: "Tracks where artist wrote their own song",
+        testId: "stats-self-written-tracks",
+      }),
+    },
+    high_velocity_tracks: {
+      getProps: (data: TrackMetricsData) => ({
+        title: "High Velocity",
+        value: data.highVelocityTracks.toLocaleString(),
+        icon: TrendingUp,
+        variant: "green" as const,
+        tooltip: "Tracks with >50% week-over-week growth",
+        testId: "stats-high-velocity-tracks",
+      }),
+    },
+    enriched_tracks: {
+      getProps: (data: TrackMetricsData) => ({
+        title: "Enriched Tracks",
+        value: data.enrichedTracks.toLocaleString(),
+        icon: CheckCircle,
+        variant: "green" as const,
+        tooltip: "Tracks with complete metadata enrichment",
+        testId: "stats-enriched-tracks",
+      }),
+    },
+    fresh_finds_tracks: {
+      getProps: (data: TrackMetricsData) => ({
+        title: "Fresh Finds",
+        value: data.freshFindsTracks.toLocaleString(),
+        icon: Sparkles,
+        variant: "blue" as const,
+        tooltip: "Tracks from Spotify Fresh Finds playlists",
+        testId: "stats-fresh-finds-tracks",
+      }),
+    },
+    indie_label_tracks: {
+      getProps: (data: TrackMetricsData) => ({
+        title: "Indie Label",
+        value: data.indieLabelTracks.toLocaleString(),
+        icon: Music,
+        variant: "default" as const,
+        tooltip: "Tracks on indie/DIY labels (unsigned signal)",
+        testId: "stats-indie-label-tracks",
+      }),
+    },
+    total_streams: {
+      getProps: (data: TrackMetricsData) => ({
+        title: "Total Streams",
+        value: data.totalStreams.toLocaleString(),
+        icon: BarChart3,
+        variant: "purple" as const,
+        tooltip: "Sum of all stream counts across tracks",
+        testId: "stats-total-streams",
+      }),
+    },
+    enrichment_pending_tracks: {
+      getProps: (data: TrackMetricsData) => ({
+        title: "Enrichment Pending",
+        value: data.enrichmentPendingTracks.toLocaleString(),
+        icon: Activity,
+        variant: "default" as const,
+        tooltip: "Tracks awaiting metadata enrichment",
+        testId: "stats-enrichment-pending-tracks",
+      }),
+    },
   },
-  total_playlist_followers: {
-    label: "Total Playlist Followers",
-    icon: Users,
-    variant: "green",
-    tooltip: "Sum of all followers across tracked playlists",
-    valueExtractor: (data) => data.playlists.totalPlaylistFollowers.toLocaleString(),
-    testId: "stats-total-playlist-followers",
+  contacts: {
+    high_confidence_unsigned: {
+      getProps: (data: ContactMetricsData) => ({
+        title: "High-Confidence Unsigned",
+        value: data.highConfidenceUnsigned.toLocaleString(),
+        icon: Target,
+        variant: "green" as const,
+        tooltip: "MLC-verified unsigned songwriters with scores 7-10 (hottest leads)",
+        testId: "stats-high-confidence-unsigned",
+      }),
+    },
+    total_songwriters: {
+      getProps: (data: ContactMetricsData) => ({
+        title: "Total Songwriters",
+        value: data.totalSongwriters.toLocaleString(),
+        icon: Users,
+        variant: "default" as const,
+        tooltip: "Total unique songwriters tracked",
+        testId: "stats-total-songwriters",
+      }),
+    },
+    active_search_contacts: {
+      getProps: (data: ContactMetricsData) => ({
+        title: "Active Search",
+        value: data.activeSearchContacts.toLocaleString(),
+        icon: Target,
+        variant: "blue" as const,
+        tooltip: "Contacts in Active Search pipeline stage",
+        testId: "stats-active-search-contacts",
+      }),
+    },
+    avg_contact_score: {
+      getProps: (data: ContactMetricsData) => ({
+        title: "Avg Contact Score",
+        value: data.avgContactScore.toFixed(1),
+        icon: Activity,
+        variant: "default" as const,
+        tooltip: "Average unsigned score across all contacts",
+        testId: "stats-avg-contact-score",
+      }),
+    },
+    mlc_verified_unsigned: {
+      getProps: (data: ContactMetricsData) => ({
+        title: "MLC-Verified Unsigned",
+        value: data.mlcVerifiedUnsigned.toLocaleString(),
+        icon: Sparkles,
+        variant: "blue" as const,
+        tooltip: "Contacts confirmed unsigned via MLC search",
+        testId: "stats-mlc-verified-unsigned",
+      }),
+    },
+    watch_list_contacts: {
+      getProps: (data: ContactMetricsData) => ({
+        title: "Watch List",
+        value: data.watchListContacts.toLocaleString(),
+        icon: Clock,
+        variant: "yellow" as const,
+        tooltip: "Contacts in Watch List stage (warm leads)",
+        testId: "stats-watch-list-contacts",
+      }),
+    },
+    discovery_pool_contacts: {
+      getProps: (data: ContactMetricsData) => ({
+        title: "Discovery Pool",
+        value: data.discoveryPoolContacts.toLocaleString(),
+        icon: List,
+        variant: "default" as const,
+        tooltip: "Contacts in Discovery Pool stage (cold leads)",
+        testId: "stats-discovery-pool-contacts",
+      }),
+    },
+    high_stream_velocity_contacts: {
+      getProps: (data: ContactMetricsData) => ({
+        title: "High Stream Velocity",
+        value: data.highStreamVelocityContacts.toLocaleString(),
+        icon: TrendingUp,
+        variant: "green" as const,
+        tooltip: "Contacts with tracks >50% WoW growth",
+        testId: "stats-high-stream-velocity-contacts",
+      }),
+    },
+    solo_writers: {
+      getProps: (data: ContactMetricsData) => ({
+        title: "Solo Writers",
+        value: data.soloWriters.toLocaleString(),
+        icon: Music2,
+        variant: "default" as const,
+        tooltip: "Contacts writing alone (no collaborators)",
+        testId: "stats-solo-writers",
+      }),
+    },
+    enrichment_backlog_contacts: {
+      getProps: (data: ContactMetricsData) => ({
+        title: "Enrichment Backlog",
+        value: data.enrichmentBacklogContacts.toLocaleString(),
+        icon: Activity,
+        variant: "default" as const,
+        tooltip: "Contacts never searched in MLC (need attention)",
+        testId: "stats-enrichment-backlog-contacts",
+      }),
+    },
   },
-  avg_tracks_per_playlist: {
-    label: "Avg Tracks per Playlist",
-    icon: Music,
-    variant: "default",
-    tooltip: "Average number of tracks per playlist",
-    valueExtractor: (data) => data.playlists.avgTracksPerPlaylist.toFixed(1),
-    testId: "stats-avg-tracks-per-playlist",
-  },
-  recently_updated_playlists: {
-    label: "Recently Updated",
-    icon: Clock,
-    variant: "blue",
-    tooltip: "Playlists refreshed in last 7 days",
-    valueExtractor: (data) => data.playlists.recentlyUpdatedPlaylists.toLocaleString(),
-    testId: "stats-recently-updated-playlists",
-  },
-  high_value_playlists: {
-    label: "High-Value Playlists",
-    icon: Flame,
-    variant: "yellow",
-    tooltip: "Playlists with >50,000 followers",
-    valueExtractor: (data) => data.playlists.highValuePlaylists.toLocaleString(),
-    testId: "stats-high-value-playlists",
-  },
-  large_playlists: {
-    label: "Large Playlists",
-    icon: BarChart3,
-    variant: "default",
-    tooltip: "Playlists with >50 tracks (deep catalog)",
-    valueExtractor: (data) => data.playlists.largePlaylists.toLocaleString(),
-    testId: "stats-large-playlists",
-  },
-  incomplete_playlists: {
-    label: "Incomplete Playlists",
-    icon: Activity,
-    variant: "default",
-    tooltip: "Playlists missing curator or genre metadata",
-    valueExtractor: (data) => data.playlists.incompletePlaylists.toLocaleString(),
-    testId: "stats-incomplete-playlists",
-  },
-  chartmetric_linked_playlists: {
-    label: "Chartmetric Linked",
-    icon: CheckCircle,
-    variant: "green",
-    tooltip: "Playlists connected to Chartmetric for analytics",
-    valueExtractor: (data) => data.playlists.chartmetricLinkedPlaylists.toLocaleString(),
-    testId: "stats-chartmetric-linked-playlists",
-  },
-  avg_followers_per_playlist: {
-    label: "Avg Followers",
-    icon: TrendingUp,
-    variant: "default",
-    tooltip: "Average followers per playlist (quality indicator)",
-    valueExtractor: (data) => data.playlists.avgFollowersPerPlaylist.toLocaleString(),
-    testId: "stats-avg-followers-per-playlist",
-  },
+} as const;
 
-  // Track Metrics
-  deal_ready_tracks: {
-    label: "Deal-Ready Tracks",
-    icon: Target,
-    variant: "green",
-    tooltip: "Tracks with unsigned score 7-10 (strong publishing signals)",
-    valueExtractor: (data) => data.tracks.dealReadyTracks.toLocaleString(),
-    testId: "stats-deal-ready-tracks",
-  },
-  avg_unsigned_score: {
-    label: "Avg Unsigned Score",
-    icon: Activity,
-    variant: "default",
-    tooltip: "Average unsigned score (0-10) across all tracks",
-    valueExtractor: (data) => data.tracks.avgUnsignedScore.toFixed(1),
-    testId: "stats-avg-unsigned-score",
-  },
-  missing_publisher_tracks: {
-    label: "Missing Publisher",
-    icon: Sparkles,
-    variant: "blue",
-    tooltip: "Tracks with no publisher data (highest unsigned indicator)",
-    valueExtractor: (data) => data.tracks.missingPublisherTracks.toLocaleString(),
-    testId: "stats-missing-publisher-tracks",
-  },
-  self_written_tracks: {
-    label: "Self-Written Tracks",
-    icon: Music2,
-    variant: "default",
-    tooltip: "Tracks where artist wrote their own song",
-    valueExtractor: (data) => data.tracks.selfWrittenTracks.toLocaleString(),
-    testId: "stats-self-written-tracks",
-  },
-  high_velocity_tracks: {
-    label: "High Velocity",
-    icon: TrendingUp,
-    variant: "green",
-    tooltip: "Tracks with >50% week-over-week growth",
-    valueExtractor: (data) => data.tracks.highVelocityTracks.toLocaleString(),
-    testId: "stats-high-velocity-tracks",
-  },
-  enriched_tracks: {
-    label: "Enriched Tracks",
-    icon: CheckCircle,
-    variant: "green",
-    tooltip: "Tracks with complete metadata enrichment",
-    valueExtractor: (data) => data.tracks.enrichedTracks.toLocaleString(),
-    testId: "stats-enriched-tracks",
-  },
-  fresh_finds_tracks: {
-    label: "Fresh Finds",
-    icon: Sparkles,
-    variant: "blue",
-    tooltip: "Tracks from Spotify Fresh Finds playlists",
-    valueExtractor: (data) => data.tracks.freshFindsTracks.toLocaleString(),
-    testId: "stats-fresh-finds-tracks",
-  },
-  indie_label_tracks: {
-    label: "Indie Label",
-    icon: Music,
-    variant: "default",
-    tooltip: "Tracks on indie/DIY labels (unsigned signal)",
-    valueExtractor: (data) => data.tracks.indieLabelTracks.toLocaleString(),
-    testId: "stats-indie-label-tracks",
-  },
-  total_streams: {
-    label: "Total Streams",
-    icon: BarChart3,
-    variant: "purple",
-    tooltip: "Sum of all stream counts across tracks",
-    valueExtractor: (data) => data.tracks.totalStreams.toLocaleString(),
-    testId: "stats-total-streams",
-  },
-  enrichment_pending_tracks: {
-    label: "Enrichment Pending",
-    icon: Activity,
-    variant: "default",
-    tooltip: "Tracks awaiting metadata enrichment",
-    valueExtractor: (data) => data.tracks.enrichmentPendingTracks.toLocaleString(),
-    testId: "stats-enrichment-pending-tracks",
-  },
-
-  // Contact Metrics
-  high_confidence_unsigned: {
-    label: "High-Confidence Unsigned",
-    icon: Target,
-    variant: "green",
-    tooltip: "MLC-verified unsigned songwriters with scores 7-10 (hottest leads)",
-    valueExtractor: (data) => data.contacts.highConfidenceUnsigned.toLocaleString(),
-    testId: "stats-high-confidence-unsigned",
-  },
-  total_songwriters: {
-    label: "Total Songwriters",
-    icon: Users,
-    variant: "default",
-    tooltip: "Total unique songwriters tracked",
-    valueExtractor: (data) => data.contacts.totalSongwriters.toLocaleString(),
-    testId: "stats-total-songwriters",
-  },
-  active_search_contacts: {
-    label: "Active Search",
-    icon: Target,
-    variant: "blue",
-    tooltip: "Contacts in Active Search pipeline stage",
-    valueExtractor: (data) => data.contacts.activeSearchContacts.toLocaleString(),
-    testId: "stats-active-search-contacts",
-  },
-  avg_contact_score: {
-    label: "Avg Contact Score",
-    icon: Activity,
-    variant: "default",
-    tooltip: "Average unsigned score across all contacts",
-    valueExtractor: (data) => data.contacts.avgContactScore.toFixed(1),
-    testId: "stats-avg-contact-score",
-  },
-  mlc_verified_unsigned: {
-    label: "MLC-Verified Unsigned",
-    icon: Sparkles,
-    variant: "blue",
-    tooltip: "Contacts confirmed unsigned via MLC search",
-    valueExtractor: (data) => data.contacts.mlcVerifiedUnsigned.toLocaleString(),
-    testId: "stats-mlc-verified-unsigned",
-  },
-  watch_list_contacts: {
-    label: "Watch List",
-    icon: Clock,
-    variant: "yellow",
-    tooltip: "Contacts in Watch List stage (warm leads)",
-    valueExtractor: (data) => data.contacts.watchListContacts.toLocaleString(),
-    testId: "stats-watch-list-contacts",
-  },
-  discovery_pool_contacts: {
-    label: "Discovery Pool",
-    icon: List,
-    variant: "default",
-    tooltip: "Contacts in Discovery Pool stage (cold leads)",
-    valueExtractor: (data) => data.contacts.discoveryPoolContacts.toLocaleString(),
-    testId: "stats-discovery-pool-contacts",
-  },
-  high_stream_velocity_contacts: {
-    label: "High Stream Velocity",
-    icon: TrendingUp,
-    variant: "green",
-    tooltip: "Contacts with tracks >50% WoW growth",
-    valueExtractor: (data) => data.contacts.highStreamVelocityContacts.toLocaleString(),
-    testId: "stats-high-stream-velocity-contacts",
-  },
-  solo_writers: {
-    label: "Solo Writers",
-    icon: Music2,
-    variant: "default",
-    tooltip: "Contacts writing alone (no collaborators)",
-    valueExtractor: (data) => data.contacts.soloWriters.toLocaleString(),
-    testId: "stats-solo-writers",
-  },
-  enrichment_backlog_contacts: {
-    label: "Enrichment Backlog",
-    icon: Activity,
-    variant: "default",
-    tooltip: "Contacts never searched in MLC (need attention)",
-    valueExtractor: (data) => data.contacts.enrichmentBacklogContacts.toLocaleString(),
-    testId: "stats-enrichment-backlog-contacts",
-  },
-};
-
-export function getMetricConfig(metricId: string): MetricCardConfig | null {
-  return METRIC_CARD_CONFIG[metricId] || null;
+export function getMetricConfig(section: 'playlists' | 'tracks' | 'contacts', metricId: string): MetricCardConfig | null {
+  return METRIC_CARD_CONFIG[section]?.[metricId] || null;
 }
