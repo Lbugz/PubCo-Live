@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Check, Download, Mail, MessageCircle, Share2, Sparkles, Star, Users } from "lucide-react";
+import { Check, Download, Mail, MessageCircle, Share2, Sparkles, Star, Users, Play, ExternalLink, FileText, UserPlus, TrendingUp, ListMusic } from "lucide-react";
 import type { ReactNode } from "react";
 
 interface DrawerPreviewProps {
@@ -75,9 +75,9 @@ export default function DetailPreviewPage() {
             ]}
           />
           <ActionRail
-            primaryAction={{ label: "Enrich now", icon: Sparkles }}
+            primaryAction={{ label: "Fetch fresh tracks", icon: Sparkles }}
             secondaryActions={[
-              { label: "Share summary", icon: Share2 },
+              { label: "View track list", icon: ListMusic },
               { label: "Export CSV", icon: Download, subtle: true },
             ]}
           />
@@ -149,10 +149,10 @@ export default function DetailPreviewPage() {
             ]}
           />
           <ActionRail
-            primaryAction={{ label: "Log outreach", icon: Check }}
+            primaryAction={{ label: "Add to pipeline", icon: TrendingUp }}
             secondaryActions={[
-              { label: "Assign rep", icon: Users },
-              { label: "Share notes", icon: Share2, subtle: true },
+              { label: "Open in Spotify", icon: Play },
+              { label: "Contact writer", icon: UserPlus, subtle: true },
             ]}
           />
           <DrawerSection title="Credits & collaborators">
@@ -226,10 +226,10 @@ export default function DetailPreviewPage() {
             ]}
           />
           <ActionRail
-            primaryAction={{ label: "Send recap", icon: Mail }}
+            primaryAction={{ label: "Send outreach", icon: Mail }}
             secondaryActions={[
-              { label: "DM on IG", icon: MessageCircle },
-              { label: "Mark wow", icon: Star, subtle: true },
+              { label: "Add note", icon: FileText },
+              { label: "Update stage", icon: TrendingUp, subtle: true },
             ]}
           />
           <DrawerSection title="Contact info">
