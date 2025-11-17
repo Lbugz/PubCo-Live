@@ -158,7 +158,7 @@ export function TrackSidePanel({ track, open, onClose, onEnrich }: TrackSidePane
 
           {/* Songwriter Display */}
           {track.songwriter && (
-            <SongwriterDisplay songwriter={track.songwriter} />
+            <SongwriterDisplay songwriters={track.songwriter} />
           )}
         </div>
       </SheetContent>
