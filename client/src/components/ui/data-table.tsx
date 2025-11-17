@@ -194,8 +194,8 @@ function DataTableInner<T>({
   // Non-virtualized rendering
   if (!virtualized) {
     return (
-      <Card className={cn(bordered && "glass-panel", className)}>
-        <div className="overflow-x-auto">
+      <Card className={cn(bordered && "glass-panel overflow-hidden", className)}>
+        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-400px)]">
           <Table>
             {renderHeader()}
             <TableBody>

@@ -512,18 +512,8 @@ export default function Contacts() {
         </Collapsible>
       </div>
 
-      {/* Saved View Banner / Filter Toolbar */}
-      <div className="space-y-3">
-        {/* View info */}
-        <div>
-          <h3 className="text-sm font-medium mb-1">All Contacts View</h3>
-          <p className="text-xs text-muted-foreground">
-            Default workspace showing all contacts across pipeline stages
-          </p>
-        </div>
-
-        {/* Search and filters */}
-        <FilterBar>
+      {/* Filters */}
+      <FilterBar>
           <FilterBar.FiltersGroup>
             <FilterBar.Search
               placeholder="Search by songwriter name..."
@@ -644,7 +634,6 @@ export default function Contacts() {
             </Button>
           </FilterBar.Actions>
         </FilterBar>
-      </div>
       </StickyHeaderContainer>
 
       {/* Stage Selector Tabs */}
