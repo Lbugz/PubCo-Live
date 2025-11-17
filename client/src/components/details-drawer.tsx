@@ -372,16 +372,10 @@ export function DetailsDrawer({
                               </AccordionTrigger>
                               <AccordionContent className="px-4 pb-4 pt-2">
                                 <div className="space-y-4">
-                                  {/* Publisher & Stage Row */}
-                                  <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                      <span className="text-muted-foreground block mb-1">Publisher</span>
-                                      <span className="font-medium">{displayTrack.publisher || "—"}</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-muted-foreground block mb-1">Stage</span>
-                                      <span className="font-medium">{displayTrack.trackStage || "Emerging"}</span>
-                                    </div>
+                                  {/* Publisher Row */}
+                                  <div className="text-sm">
+                                    <span className="text-muted-foreground block mb-1">Publisher</span>
+                                    <span className="font-medium">{displayTrack.publisher || "—"}</span>
                                   </div>
 
                                   {/* Social Links */}
@@ -536,16 +530,10 @@ export function DetailsDrawer({
                                 </AccordionTrigger>
                                 <AccordionContent className="px-4 pb-4 pt-2">
                                   <div className="space-y-4">
-                                    {/* Publisher & Stage Row */}
-                                    <div className="grid grid-cols-2 gap-4 text-sm">
-                                      <div>
-                                        <span className="text-muted-foreground block mb-1">Publisher</span>
-                                        <span className="font-medium">{displayTrack.publisher || "—"}</span>
-                                      </div>
-                                      <div>
-                                        <span className="text-muted-foreground block mb-1">Stage</span>
-                                        <span className="font-medium">{displayTrack.trackStage || "Emerging"}</span>
-                                      </div>
+                                    {/* Publisher Row */}
+                                    <div className="text-sm">
+                                      <span className="text-muted-foreground block mb-1">Publisher</span>
+                                      <span className="font-medium">{displayTrack.publisher || "—"}</span>
                                     </div>
 
                                     {/* Social Links */}
