@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { CheckCircle2, Circle, Clock3, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
@@ -138,28 +138,31 @@ export function ActionRail({ primaryAction, secondaryActions = [] }: ActionRailP
   const PrimaryIcon = primaryAction.icon;
   return (
     <div className="flex items-center gap-2 rounded-2xl border border-border/80 bg-muted/40 p-4">
-      <Button className="flex-1 justify-center gap-2" size="default" onClick={primaryAction.onClick}>
+      <Button className="flex-1 justify-center gap-2" size="default" onClick={primaryAction.onClick} data-testid="action-rail-primary">
         {PrimaryIcon ? <PrimaryIcon className="h-4 w-4" /> : null}
         {primaryAction.label}
       </Button>
-      {secondaryActions.map((action) => {
+      {secondaryActions.map((action, index) => {
         const Icon = action.icon;
         return (
-          <Tooltip key={action.label}>
-            <TooltipTrigger asChild>
-              <Button
-                variant={action.subtle ? "ghost" : "outline"}
-                size="icon"
-                onClick={action.onClick}
-                aria-label={action.label}
-              >
-                {Icon ? <Icon className="h-4 w-4" /> : null}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{action.label}</p>
-            </TooltipContent>
-          </Tooltip>
+          <TooltipProvider key={`${action.label}-${index}`}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={action.subtle ? "ghost" : "outline"}
+                  size="icon"
+                  onClick={action.onClick}
+                  aria-label={action.label}
+                  data-testid={`action-rail-secondary-${index}`}
+                >
+                  {Icon ? <Icon className="h-4 w-4" /> : null}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{action.label}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         );
       })}
     </div>

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   Database,
   Sparkles,
@@ -14,8 +15,6 @@ import {
   Clock,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { TrackTagPopover } from "@/components/track-tag-popover";
-import { TrackContactDialog } from "@/components/track-contact-dialog";
 import { SongwriterDisplay } from "./songwriter-display";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { queryClient } from "@/lib/queryClient";
@@ -162,16 +161,6 @@ export function DetailsDrawer({
               onClick: isEnriching ? undefined : handleEnrich
             }}
             secondaryActions={[
-              {
-                label: "Add Tags",
-                icon: TagIcon,
-                onClick: () => {} // Handled by TrackTagPopover
-              },
-              {
-                label: "Contact Artist",
-                icon: UserPlus,
-                onClick: () => {} // Handled by TrackContactDialog
-              },
               {
                 label: "Open in Spotify",
                 icon: ExternalLink,
