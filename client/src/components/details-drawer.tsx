@@ -260,18 +260,6 @@ export function DetailsDrawer({
                   )}
                 </Button>
 
-                <TrackTagPopover trackId={displayTrack.id} asChild={false}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2 flex-shrink-0"
-                    data-testid="action-add-tags"
-                  >
-                    <TagIcon className="h-3.5 w-3.5" />
-                    Tag
-                  </Button>
-                </TrackTagPopover>
-
                 <Button
                   variant="outline"
                   size="sm"
@@ -372,25 +360,13 @@ export function DetailsDrawer({
                                   <Badge 
                                     variant="outline"
                                     className={cn(
-                                      "text-xs ml-auto mr-2",
+                                      "text-xs ml-auto",
                                       isVerified 
                                         ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
                                         : "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20"
                                     )}
                                   >
                                     {isVerified ? "Verified" : "Unverified"}
-                                  </Badge>
-                                  <Badge 
-                                    variant="outline"
-                                    className={cn(
-                                      "text-xs",
-                                      displayTrack.unsignedScore === null ? "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20" :
-                                      displayTrack.unsignedScore >= 7 ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20" :
-                                      displayTrack.unsignedScore >= 4 ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20" :
-                                      "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
-                                    )}
-                                  >
-                                    {displayTrack.unsignedScore !== null ? `Score ${displayTrack.unsignedScore}/10` : 'Pending'}
                                   </Badge>
                                 </div>
                               </AccordionTrigger>
@@ -548,25 +524,13 @@ export function DetailsDrawer({
                                     <Badge 
                                       variant="outline"
                                       className={cn(
-                                        "text-xs ml-auto mr-2",
+                                        "text-xs ml-auto",
                                         isVerified 
                                           ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
                                           : "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20"
                                       )}
                                     >
                                       {isVerified ? "Verified" : "Unverified"}
-                                    </Badge>
-                                    <Badge 
-                                      variant="outline"
-                                      className={cn(
-                                        "text-xs",
-                                        displayTrack.unsignedScore === null ? "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20" :
-                                        displayTrack.unsignedScore >= 7 ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20" :
-                                        displayTrack.unsignedScore >= 4 ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20" :
-                                        "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
-                                      )}
-                                    >
-                                      {displayTrack.unsignedScore !== null ? `Score ${displayTrack.unsignedScore}/10` : 'Pending'}
                                     </Badge>
                                   </div>
                                 </AccordionTrigger>
