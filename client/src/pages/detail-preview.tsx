@@ -342,6 +342,80 @@ export default function DetailPreviewPage() {
               { label: "Update stage", icon: TrendingUp, subtle: true },
             ]}
           />
+          <DrawerSection title="Performance">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Total streams</p>
+                  <p className="text-lg font-semibold text-foreground">3.8M</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">WoW growth</p>
+                  <p className="text-lg font-semibold text-emerald-400">+24%</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Peak velocity</p>
+                  <p className="text-sm font-medium text-foreground">+42% (Nov 10)</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Avg per track</p>
+                  <p className="text-sm font-medium text-foreground">760K streams</p>
+                </div>
+              </div>
+            </div>
+          </DrawerSection>
+          <DrawerSection title="Tracks">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 rounded-xl border border-border/60 p-3 hover-elevate">
+                <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+                  <img
+                    src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=100&q=80"
+                    alt="Neon Confessions"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col">
+                  <p className="font-medium text-foreground">Neon Confessions</p>
+                  <p className="text-xs text-muted-foreground">SLY ft. Liv Rae · 1.2M streams</p>
+                </div>
+                <Badge className="rounded-full bg-emerald-500/10 text-emerald-400" variant="outline">
+                  Score 8
+                </Badge>
+              </div>
+              <div className="flex items-center gap-3 rounded-xl border border-border/60 p-3 hover-elevate">
+                <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+                  <img
+                    src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=100&q=80"
+                    alt="Midnight Drive"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col">
+                  <p className="font-medium text-foreground">Midnight Drive</p>
+                  <p className="text-xs text-muted-foreground">Serena Holt · 890K streams</p>
+                </div>
+                <Badge className="rounded-full bg-amber-500/10 text-amber-400" variant="outline">
+                  Score 7
+                </Badge>
+              </div>
+              <div className="flex items-center gap-3 rounded-xl border border-border/60 p-3 hover-elevate">
+                <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+                  <img
+                    src="https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=100&q=80"
+                    alt="Golden Hour"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col">
+                  <p className="font-medium text-foreground">Golden Hour</p>
+                  <p className="text-xs text-muted-foreground">Nova Collective · 1.7M streams</p>
+                </div>
+                <Badge className="rounded-full bg-emerald-500/10 text-emerald-400" variant="outline">
+                  Score 9
+                </Badge>
+              </div>
+            </div>
+          </DrawerSection>
           <DrawerSection title="Contact info">
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between">
