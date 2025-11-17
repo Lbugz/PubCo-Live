@@ -4,9 +4,7 @@ import {
   Users, 
   MessageCircle, 
   Target, 
-  Briefcase, 
   FileText, 
-  Layout,
   Settings,
   Sparkles,
   Database,
@@ -72,13 +70,6 @@ const workflowSections = [
     items: [
       { title: "Contacts", url: "/contacts", icon: Users },
       { title: "Outreach Pipeline", url: "/outreach", icon: Target },
-    ],
-  },
-  {
-    title: "Deals",
-    icon: Briefcase,
-    items: [
-      { title: "Pipeline", url: "/pipeline", icon: Layout },
     ],
   },
 ];
