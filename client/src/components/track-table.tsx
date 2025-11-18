@@ -79,15 +79,15 @@ export function TrackTable({
             <img 
               src={track.albumArt} 
               alt={`${track.trackName} album art`}
-              className="w-12 h-12 rounded object-cover flex-shrink-0"
+              className="h-8 w-8 rounded object-cover flex-shrink-0"
               loading="lazy"
               decoding="async"
-              width="48"
-              height="48"
+              width="32"
+              height="32"
             />
           ) : (
-            <div className="w-12 h-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
-              <Music className="w-5 h-5 text-muted-foreground" />
+            <div className="h-8 w-8 rounded bg-muted flex items-center justify-center flex-shrink-0">
+              <Music className="w-4 h-4 text-muted-foreground" />
             </div>
           )}
           

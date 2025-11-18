@@ -5,6 +5,15 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
 
 ## Recent Changes
 
+### Nov 18, 2025 - UI Cleanup & Playlist Name Sync
+- **Metrics Removed from Tracks Page**: Removed metrics section from `/tracks` page to simplify UI (only Dashboard shows all 9 metrics)
+- **Artwork Size Consistency**: Standardized track table artwork to match playlist table size (`h-8 w-8` / 32px)
+- **Playlist Name Sync Fix**: Fixed "Untitled Playlist" issue where tracks showed placeholder name even after metadata was fetched
+  - Added `syncPlaylistSnapshotsName()` method in storage layer to update all track records when playlist name changes
+  - Integrated sync into `updateTrackedPlaylistMetadata()` for automatic updates on all metadata fetches
+  - Backfilled 40 existing "We Back 2025" tracks with correct playlist name
+- **Storage Method Fix**: Added missing enrichment fields to `getContactById()` (collaborationCount, unsignedScore, mlcSearched, mlcFound, musicbrainzSearched, musicbrainzFound)
+
 ### Nov 17, 2025 - Contact-Level Scoring Migration
 - **Scoring Architecture Refactor**: Migrated from track-level to contact/songwriter-level scoring system
 - **Schema Changes**: Removed `unsignedScore` column from `playlist_snapshots` table, added to `contacts` table

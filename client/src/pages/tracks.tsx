@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown, Music2, Users, Music, Target, TrendingUp, Activity, Search, Filter, Loader2, X, Eye, EyeOff } from "lucide-react";
+import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown, Music2, Users, Music, Target, TrendingUp, Activity, Search, Filter, Loader2, X } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -48,7 +48,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getMetricPreferences } from "@/lib/metricPreferences";
 import { METRIC_CARD_CONFIG } from "@/lib/metricsConfig";
@@ -87,10 +86,6 @@ export default function Tracks() {
   const [activeJobs, setActiveJobs] = useState<EnrichmentJob[]>([]);
   const [sortField, setSortField] = useState<string>("addedAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [showMetrics, setShowMetrics] = useState(() => {
-    const stored = localStorage.getItem('tracksMetricsVisible');
-    return stored !== null ? stored === 'true' : true;
-  });
   const [metricPreferences, setMetricPreferences] = useState(() => getMetricPreferences());
   const { toast} = useToast();
   const isMobile = useMobile(768);
@@ -106,11 +101,6 @@ export default function Tracks() {
     
     return () => clearTimeout(timeout);
   }, [activeJobs]);
-  
-  // Persist metrics visibility to localStorage
-  useEffect(() => {
-    localStorage.setItem('tracksMetricsVisible', showMetrics.toString());
-  }, [showMetrics]);
   
   // Listen for localStorage changes to metric preferences (from Settings page)
   useEffect(() => {
@@ -719,28 +709,8 @@ export default function Tracks() {
     <div className="min-h-screen bg-background">
       <PageContainer>
         <div className="space-y-6 fade-in">
-          {/* Sticky Header: Metrics & Filters */}
+          {/* Sticky Header: Filters */}
           <StickyHeaderContainer className="pb-4 border-b">
-            {/* Enhanced Stats Cards with Trends and Toggle */}
-            <div className="space-y-3 mb-4">
-              <div className="flex items-center justify-end">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowMetrics(!showMetrics)}
-                  data-testid="button-toggle-track-metrics"
-                >
-                  {showMetrics ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-              <Collapsible open={showMetrics}>
-              <CollapsibleContent className="space-y-3">
-                {/* TRACKS PAGE - ONLY SHOW TRACKS METRICS */}
-                {renderMetricsSection('tracks', 'TRACKS', false)}
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-
           {/* Filters Row */}
           <FilterBar>
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
