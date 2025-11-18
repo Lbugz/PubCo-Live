@@ -22,7 +22,7 @@ export function Toaster() {
   const { toasts } = useToast()
 
   return (
-    <ToastProvider>
+    <ToastProvider duration={5000}>
       {toasts.map(function ({ id, title, description, action, ...props }) {
         const variant = props.variant || 'default'
         const IconComponent = toastIconMap[variant as keyof typeof toastIconMap]
