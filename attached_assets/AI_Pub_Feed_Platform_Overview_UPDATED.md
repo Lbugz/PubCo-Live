@@ -2,7 +2,7 @@
 
 ## **Internal A&R Team Guide**
 
-**Last Updated:** November 15, 2025  
+**Last Updated:** November 18, 2025  
 **Platform Link:** [https://pubco.replit.app](https://pubco.replit.app/playlists)
 
 ---
@@ -14,7 +14,7 @@ AI Pub Feed automatically discovers unsigned artists and unpublished songwriters
 ---
 
 ## **Current Platform Statistics**
-*(As of November 15, 2025)*
+*(As of November 18, 2025)*
 
 - **22 Tracked Playlists** — Mix of Fresh Finds, editorial, and custom playlists
 - **1,506 Total Tracks** — Ingested and tracked across all playlists
@@ -24,6 +24,22 @@ AI Pub Feed automatically discovers unsigned artists and unpublished songwriters
   - Active Search: 1 contact (>1M streams)
 
 *To refresh these statistics, query the database tables: `tracked_playlists`, `playlist_snapshots`, and `contacts`.*
+
+---
+
+## **Known API Issues**
+
+### **Chartmetric API**
+- **Status:** ⚠️ Limited Functionality (Enterprise tier restrictions)
+- **Impact:** Playlist metadata and track endpoints require Enterprise access
+- **Mitigation:** Intelligent fallback to Spotify API with automatic retry logic
+- **Support Ticket:** Opened November 14, 2025
+
+### **MLC API**
+- **Status:** ✅ Operational with graceful degradation
+- **Impact:** OAuth authentication working, credentials required for full functionality
+- **Mitigation:** System continues without MLC data if credentials not configured
+- **Support Ticket:** Opened November 14, 2025 (proactive monitoring)
 
 ---
 
@@ -489,46 +505,7 @@ Track writer discovery, growth, and outreach in a structured publishing pipeline
 
 ---
 
-# **7️⃣ Known Issues & Support Status**
 
-### **Chartmetric API**
-
-**Current Status:** ⚠️ Limited Functionality
-
-**Known Technical Limitations:**
-- **Enterprise Tier Requirement:** Playlist metadata endpoint (`/playlist/:id`) requires Enterprise-level access, limiting playlist-level analytics availability
-- **Rate Limiting:** API implements 429 rate limit errors; system has automatic retry logic with 3-5 second delays
-- **5xx Server Errors:** Occasional server errors handled with automatic retry mechanism
-- **Token Expiration:** 401 Unauthorized errors trigger automatic token refresh and retry
-
-**Mitigation Strategies:**
-- Intelligent fallback to Spotify API for public playlist data
-- Tiered rate limiting (2-second throttle) to prevent blocks
-- Automatic retry logic for transient failures
-- Graceful degradation when Chartmetric unavailable
-
-**Support Ticket:** Opened November 14, 2025 (pending resolution)
-
----
-
-### **MLC API (Mechanical Licensing Collective)**
-
-**Current Status:** ✅ Operational
-
-**Implementation Details:**
-- OAuth 2.0 authentication with token caching
-- Graceful degradation when credentials not configured
-- Automatic retry on 401 errors with cached token refresh
-- Skips MLC enrichment if `MLC_USERNAME`/`MLC_PASSWORD` not set
-
-**Known Behaviors:**
-- Enrichment continues without MLC data if API unavailable
-- Detailed error logging for troubleshooting
-- No current functional issues reported
-
-**Support Ticket:** Opened November 14, 2025 (proactive monitoring)
-
----
 
 # **8️⃣ Key Differentiators**
 
