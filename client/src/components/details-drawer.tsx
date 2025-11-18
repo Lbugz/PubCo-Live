@@ -38,6 +38,7 @@ import { TrackContactDialog } from "@/components/track-contact-dialog";
 import { PublisherStatusBadge } from "./publisher-status-badge";
 import { SongwriterDisplay } from "./songwriter-display";
 import { SongwriterPanel } from "./songwriter-panel";
+import { EnrichmentSourceIndicator } from "./enrichment-source-indicator";
 import { cn } from "@/lib/utils";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { queryClient } from "@/lib/queryClient";
@@ -320,7 +321,6 @@ export function DetailsDrawer({
                         {songwriterEntries.map((entry) => {
                           const socialLinks = getSocialLinks(entry);
                           const isEnriched = 'musicbrainzId' in entry;
-                          const isVerified = isEnriched;
                           
                           return (
                             <AccordionItem 
@@ -330,24 +330,13 @@ export function DetailsDrawer({
                               data-testid={`accordion-songwriter-${entry.id}`}
                             >
                               <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate">
-                                <div className="flex items-center gap-2 flex-1 text-left">
+                                <div className="flex flex-col gap-1 flex-1 text-left">
                                   <span className="font-semibold">{entry.name}</span>
-                                  {isVerified ? (
-                                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-                                  ) : (
-                                    <XCircle className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                                  )}
-                                  <Badge 
-                                    variant="outline"
-                                    className={cn(
-                                      "text-xs ml-auto",
-                                      isVerified 
-                                        ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
-                                        : "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20"
-                                    )}
-                                  >
-                                    {isVerified ? "Verified" : "Unverified"}
-                                  </Badge>
+                                  <EnrichmentSourceIndicator
+                                    mlc={{ searched: false, found: false }}
+                                    musicbrainz={{ searched: isEnriched, found: isEnriched }}
+                                    chartmetric={{ searched: false, found: false }}
+                                  />
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent className="px-4 pb-4 pt-2">
@@ -499,7 +488,6 @@ export function DetailsDrawer({
                           {producerEntries.map((entry) => {
                             const socialLinks = getSocialLinks(entry);
                             const isEnriched = 'musicbrainzId' in entry;
-                            const isVerified = isEnriched;
                             
                             return (
                               <AccordionItem 
@@ -509,24 +497,13 @@ export function DetailsDrawer({
                                 data-testid={`accordion-producer-${entry.id}`}
                               >
                                 <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate">
-                                  <div className="flex items-center gap-2 flex-1 text-left">
+                                  <div className="flex flex-col gap-1 flex-1 text-left">
                                     <span className="font-semibold">{entry.name}</span>
-                                    {isVerified ? (
-                                      <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-                                    ) : (
-                                      <XCircle className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                                    )}
-                                    <Badge 
-                                      variant="outline"
-                                      className={cn(
-                                        "text-xs ml-auto",
-                                        isVerified 
-                                          ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
-                                          : "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20"
-                                      )}
-                                    >
-                                      {isVerified ? "Verified" : "Unverified"}
-                                    </Badge>
+                                    <EnrichmentSourceIndicator
+                                      mlc={{ searched: false, found: false }}
+                                      musicbrainz={{ searched: isEnriched, found: isEnriched }}
+                                      chartmetric={{ searched: false, found: false }}
+                                    />
                                   </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="px-4 pb-4 pt-2">

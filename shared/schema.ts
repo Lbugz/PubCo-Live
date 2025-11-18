@@ -370,6 +370,8 @@ export const contacts = pgTable("contacts", {
   mlcFound: integer("mlc_found").notNull().default(0),
   musicbrainzSearched: integer("musicbrainz_searched").notNull().default(0),
   musicbrainzFound: integer("musicbrainz_found").notNull().default(0),
+  chartmetricSearched: integer("chartmetric_searched").notNull().default(0),
+  chartmetricFound: integer("chartmetric_found").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

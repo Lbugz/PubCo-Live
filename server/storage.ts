@@ -9,12 +9,13 @@ export interface IStorage {
   getTracksByPlaylistCount(playlistId: string, week?: string): Promise<number>;
   getTrackById(id: string): Promise<PlaylistSnapshot | null>;
   getTracksByIds(ids: string[]): Promise<PlaylistSnapshot[]>;
+  getTracksBySpotifyUrl(spotifyUrl: string): Promise<PlaylistSnapshot[]>;
   getLatestWeek(): Promise<string | null>;
   getAllWeeks(): Promise<string[]>;
   getAllPlaylists(): Promise<string[]>;
   insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<string[]>;
   deleteTracksByWeek(week: string): Promise<void>;
-  updateTrackMetadata(id: string, metadata: { isrc?: string | null; label?: string | null; spotifyUrl?: string; publisher?: string | null; publisherStatus?: string | null; mlcSongCode?: string | null; songwriter?: string | null; producer?: string | null; spotifyStreams?: number | null; enrichedAt?: Date | null; enrichmentStatus?: string | null; enrichmentTier?: string | null; creditsStatus?: string | null; lastEnrichmentAttempt?: Date | null }): Promise<void>;
+  updateTrackMetadata(id: string, metadata: { isrc?: string | null; label?: string | null; spotifyUrl?: string; publisher?: string | null; publisherStatus?: string | null; mlcSongCode?: string | null; songwriter?: string | null; producer?: string | null; spotifyStreams?: number | null; enrichedAt?: Date | null; enrichmentStatus?: string | null; enrichmentTier?: string | null; creditsStatus?: string | null; lastEnrichmentAttempt?: Date | null; unsignedScore?: number | null }): Promise<void>;
   updateBatchLastEnrichmentAttempt(trackIds: string[]): Promise<void>;
   getUnenrichedTracks(limit?: number): Promise<PlaylistSnapshot[]>;
   getTracksNeedingRetry(beforeDate: Date): Promise<PlaylistSnapshot[]>;
@@ -256,6 +257,12 @@ export class DatabaseStorage implements IStorage {
       .where(inArray(playlistSnapshots.id, ids));
   }
 
+  async getTracksBySpotifyUrl(spotifyUrl: string): Promise<PlaylistSnapshot[]> {
+    return db.select()
+      .from(playlistSnapshots)
+      .where(eq(playlistSnapshots.spotifyUrl, spotifyUrl));
+  }
+
   async getLatestWeek(): Promise<string | null> {
     const result = await db.select({ week: playlistSnapshots.week })
       .from(playlistSnapshots)
@@ -332,7 +339,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(playlistSnapshots).where(eq(playlistSnapshots.week, week));
   }
 
-  async updateTrackMetadata(id: string, metadata: { isrc?: string | null; label?: string | null; spotifyUrl?: string; publisher?: string | null; publisherStatus?: string | null; mlcSongCode?: string | null; songwriter?: string | null; producer?: string | null; spotifyStreams?: number | null; enrichedAt?: Date | null; enrichmentStatus?: string | null; enrichmentTier?: string | null; creditsStatus?: string | null; lastEnrichmentAttempt?: Date | null }): Promise<void> {
+  async updateTrackMetadata(id: string, metadata: { isrc?: string | null; label?: string | null; spotifyUrl?: string; publisher?: string | null; publisherStatus?: string | null; mlcSongCode?: string | null; songwriter?: string | null; producer?: string | null; spotifyStreams?: number | null; enrichedAt?: Date | null; enrichmentStatus?: string | null; enrichmentTier?: string | null; creditsStatus?: string | null; lastEnrichmentAttempt?: Date | null; unsignedScore?: number | null }): Promise<void> {
     await db.update(playlistSnapshots)
       .set(metadata)
       .where(eq(playlistSnapshots.id, id));
@@ -925,6 +932,8 @@ export class DatabaseStorage implements IStorage {
       mlcFound: contacts.mlcFound,
       musicbrainzSearched: contacts.musicbrainzSearched,
       musicbrainzFound: contacts.musicbrainzFound,
+      chartmetricSearched: contacts.chartmetricSearched,
+      chartmetricFound: contacts.chartmetricFound,
       createdAt: contacts.createdAt,
       updatedAt: contacts.updatedAt,
     })
@@ -1229,6 +1238,8 @@ export class DatabaseStorage implements IStorage {
       mlcFound: contacts.mlcFound,
       musicbrainzSearched: contacts.musicbrainzSearched,
       musicbrainzFound: contacts.musicbrainzFound,
+      chartmetricSearched: contacts.chartmetricSearched,
+      chartmetricFound: contacts.chartmetricFound,
       createdAt: contacts.createdAt,
       updatedAt: contacts.updatedAt,
     })

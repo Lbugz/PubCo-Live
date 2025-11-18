@@ -173,11 +173,53 @@ export class EnrichmentWorker {
     let persistedCount = 0;
     const failedTrackIds: string[] = [];
 
+    // Track which Spotify URLs we've already processed to avoid duplicate syncs
+    const processedSpotifyUrls = new Set<string>();
+
     for (const [trackId, update] of updates) {
       try {
+        const track = ctx.getTrack(trackId);
+        if (!track) {
+          console.warn(`[Worker] Track ${trackId} not found in context, skipping sync`);
+          await this.storage.updateTrackMetadata(trackId, update);
+          persistedCount++;
+          continue;
+        }
+
+        const spotifyUrl = track.spotifyUrl;
+
+        // If we've already synced this Spotify URL, skip to avoid redundant DB queries
+        if (processedSpotifyUrls.has(spotifyUrl)) {
+          ctx.clearUpdate(trackId);
+          continue;
+        }
+
+        // CRITICAL: Sync to ALL tracks with the same Spotify URL across entire database
+        // Step 1: Persist FULL update (including playlist-specific fields) to the original track
         await this.storage.updateTrackMetadata(trackId, update);
-        ctx.clearUpdate(trackId);
         persistedCount++;
+        
+        // Step 2: Sync only GLOBAL fields (exclude playlist-specific like unsignedScore) to other duplicates
+        const allDuplicates = await this.storage.getTracksBySpotifyUrl(spotifyUrl);
+        const otherDuplicates = allDuplicates.filter(d => d.id !== trackId);
+        
+        if (otherDuplicates.length > 0) {
+          const globalUpdate = { ...update };
+          delete (globalUpdate as any).unsignedScore; // Score is playlist-specific, don't sync it
+          
+          // Only sync if there are global fields to update (avoid empty patches)
+          if (Object.keys(globalUpdate).length > 0) {
+            console.log(`[${phaseName} Sync] Syncing global fields to ${otherDuplicates.length} other instances of "${track.trackName}"`);
+            
+            for (const duplicate of otherDuplicates) {
+              await this.storage.updateTrackMetadata(duplicate.id, globalUpdate);
+              persistedCount++;
+            }
+          }
+        }
+
+        processedSpotifyUrls.add(spotifyUrl);
+        ctx.clearUpdate(trackId);
       } catch (error) {
         console.error(`[Worker] Failed to persist ${phaseName} update for track ${trackId}:`, error);
         failedTrackIds.push(trackId);
@@ -203,7 +245,7 @@ export class EnrichmentWorker {
         try {
           const playlist = await this.storage.getPlaylistById(job.playlistId);
           if (playlist) {
-            playlistName = playlist.playlistName;
+            playlistName = playlist.name;
           }
         } catch (error) {
           console.error('Failed to fetch playlist name:', error);
@@ -400,23 +442,31 @@ export class EnrichmentWorker {
       }
 
       // Mark tracks that were processed but found no data
+      // CRITICAL: Also sync these status updates across all duplicates
       for (const track of tracksForEnrichment) {
         if (!enrichedTrackIds.has(track.id) && !failedTrackIds.has(track.id)) {
-          ctx.applyPatch(track.id, {
-            enrichmentStatus: 'partial',
-            creditsStatus: 'no_data',
-            lastEnrichmentAttempt: new Date(),
-          });
+          const fullTrack = ctx.getTrack(track.id);
+          if (fullTrack) {
+            ctx.applyPatchToAllBySpotifyUrl(fullTrack.spotifyUrl, {
+              enrichmentStatus: 'partial',
+              creditsStatus: 'no_data',
+              lastEnrichmentAttempt: new Date(),
+            });
+          }
         }
       }
 
       // Mark tracks that failed
+      // CRITICAL: Also sync these status updates across all duplicates
       for (const errorDetail of result.errorDetails) {
-        ctx.applyPatch(errorDetail.trackId, {
-          enrichmentStatus: 'partial',
-          creditsStatus: 'failed',
-          lastEnrichmentAttempt: new Date(),
-        });
+        const fullTrack = ctx.getTrack(errorDetail.trackId);
+        if (fullTrack) {
+          ctx.applyPatchToAllBySpotifyUrl(fullTrack.spotifyUrl, {
+            enrichmentStatus: 'partial',
+            creditsStatus: 'failed',
+            lastEnrichmentAttempt: new Date(),
+          });
+        }
       }
 
       const { persistedCount: phase2Persisted, failedTrackIds: phase2Failed } = await this.persistPhaseUpdates(ctx, job.id, 'Phase 2');
@@ -433,6 +483,7 @@ export class EnrichmentWorker {
       }
 
       // SCORING STEP: Recalculate unsigned scores after Phase 2 enrichment
+      // Note: Scores are updated directly via storage, not through the patch system
       console.log('[Scoring] Recalculating unsigned scores with enriched metadata...');
       let scoresUpdated = 0;
       for (const track of ctx.getAllTracks()) {
@@ -446,15 +497,15 @@ export class EnrichmentWorker {
           wowGrowthPct: undefined, // Will be calculated in performance tracking
         });
 
-        ctx.applyPatch(track.id, {
-          unsignedScore: score,
-        });
-        scoresUpdated++;
+        try {
+          await this.storage.updateTrackMetadata(track.id, { unsignedScore: score });
+          scoresUpdated++;
+        } catch (error) {
+          console.error(`[Scoring] Failed to update score for track ${track.id}:`, error);
+        }
       }
 
-      // Persist score updates
-      const { persistedCount: scoresPersisted } = await this.persistPhaseUpdates(ctx, job.id, 'Scoring');
-      console.log(`[Scoring] ✅ Updated ${scoresUpdated} tracks, ${scoresPersisted} persisted`);
+      console.log(`[Scoring] ✅ Updated ${scoresUpdated} tracks`);
 
       await this.jobQueue.updateJobProgress(job.id, {
         progress: 70,
@@ -462,7 +513,7 @@ export class EnrichmentWorker {
         errorCount: result.errors,
         logs: [
           `[${new Date().toISOString()}] Phase 2 complete: ${result.tracksEnriched}/${result.tracksProcessed} tracks enriched, ${phase2Persisted} persisted`,
-          `[${new Date().toISOString()}] Scoring complete: ${scoresPersisted} tracks scored`,
+          `[${new Date().toISOString()}] Scoring complete: ${scoresUpdated} tracks scored`,
         ],
       });
 
@@ -949,7 +1000,7 @@ export class EnrichmentWorker {
           if (playlist) {
             await notificationService.notifyEnrichmentComplete(
               job.playlistId,
-              playlist.playlistName,
+              playlist.name,
               result.tracksEnriched
             );
           }
@@ -969,7 +1020,7 @@ export class EnrichmentWorker {
         }
 
         console.log(`[ContactEnrichmentSync] Syncing flags for ${uniqueSongwriters.size} songwriters...`);
-        for (const songwriterName of uniqueSongwriters) {
+        for (const songwriterName of Array.from(uniqueSongwriters)) {
           await syncContactEnrichmentFlags(songwriterName);
         }
         console.log(`[ContactEnrichmentSync] ✅ Flags synced for ${uniqueSongwriters.size} songwriters`);
@@ -1009,7 +1060,7 @@ export class EnrichmentWorker {
           if (playlist) {
             await notificationService.notifyEnrichmentFailed(
               job.playlistId,
-              playlist.playlistName,
+              playlist.name,
               error instanceof Error ? error.message : String(error)
             );
           }
