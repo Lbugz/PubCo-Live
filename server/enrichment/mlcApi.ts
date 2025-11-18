@@ -78,6 +78,7 @@ export interface MLCEnrichmentResult {
   hasPublisher: boolean;
   publisherNames: string[];
   writerNames: string[];
+  administrators?: string;
   mlcSongCode?: string;
   iswc?: string;
   error?: string;
@@ -276,13 +277,28 @@ async function enrichSingleTrack(
         .map(w => `${w.writerFirstName || ''} ${w.writerLastName || ''}`.trim())
         .filter(name => !!name);
 
-      console.log(`[MLC] ${track.id}: ✓ Found ${publishers.length} publishers, ${writers.length} writers`);
+      // Extract administrators from all publishers
+      const administratorNames: string[] = [];
+      for (const publisher of publishers) {
+        if (publisher.administrators && publisher.administrators.length > 0) {
+          const adminNames = publisher.administrators
+            .map(admin => admin.publisherName)
+            .filter((name): name is string => !!name);
+          administratorNames.push(...adminNames);
+        }
+      }
+      const administrators = administratorNames.length > 0 
+        ? administratorNames.join(", ") 
+        : undefined;
+
+      console.log(`[MLC] ${track.id}: ✓ Found ${publishers.length} publishers, ${writers.length} writers, ${administratorNames.length} administrators`);
 
       return {
         trackId: track.id,
         hasPublisher: publishers.length > 0,
         publisherNames,
         writerNames,
+        administrators,
         mlcSongCode: mlcWork.mlcSongCode,
         iswc: mlcWork.iswc,
       };

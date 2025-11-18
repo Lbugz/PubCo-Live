@@ -305,6 +305,7 @@ export async function enrichTrackWithMLC(isrc: string): Promise<{
   collectionShare: string | null;
   ipiNumber: string | null;
   iswc: string | null;
+  administrators: string | null;
   mlcSongCode: string | null;
   writers: string[];
 } | null> {
@@ -331,6 +332,7 @@ export async function enrichTrackWithMLC(isrc: string): Promise<{
         collectionShare: null,
         ipiNumber: null,
         iswc: null,
+        administrators: null,
         mlcSongCode: recording.mlcsongCode,
         writers: [],
       };
@@ -353,12 +355,27 @@ export async function enrichTrackWithMLC(isrc: string): Promise<{
       .map(w => `${w.writerFirstName || ''} ${w.writerLastName || ''}`.trim())
       .filter(Boolean);
 
+    // Extract administrators from all publishers
+    const administratorNames: string[] = [];
+    for (const publisher of publishers) {
+      if (publisher.administrators && publisher.administrators.length > 0) {
+        const adminNames = publisher.administrators
+          .map(admin => admin.publisherName)
+          .filter((name): name is string => !!name);
+        administratorNames.push(...adminNames);
+      }
+    }
+    const administrators = administratorNames.length > 0 
+      ? administratorNames.join(", ") 
+      : null;
+
     return {
       publisherName: primaryPublisher?.publisherName || null,
       publisherStatus,
       collectionShare,
       ipiNumber: writerIPI,
       iswc: work.iswc || null,
+      administrators,
       mlcSongCode: work.mlcSongCode || recording.mlcsongCode || null,
       writers,
     };

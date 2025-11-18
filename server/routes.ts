@@ -2200,6 +2200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             updates.collectionShare = mlcEnrichment.collectionShare;
             updates.ipiNumber = mlcEnrichment.ipiNumber;
             updates.iswc = mlcEnrichment.iswc;
+            updates.administrators = mlcEnrichment.administrators;
             updates.mlcSongCode = mlcEnrichment.mlcSongCode;
 
             tierResults.push({
