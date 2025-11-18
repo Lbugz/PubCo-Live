@@ -526,6 +526,20 @@ export class DatabaseStorage implements IStorage {
       .where(eq(trackedPlaylists.id, id))
       .returning();
     console.log(`[updateTrackedPlaylistMetadata] Update result:`, result.length > 0 ? 'Success' : 'No rows updated');
+    
+    // If playlist name was updated, sync it to all playlist_snapshots records
+    if (metadata.name && result.length > 0) {
+      await this.syncPlaylistSnapshotsName(id, metadata.name);
+    }
+  }
+
+  async syncPlaylistSnapshotsName(playlistId: string, newName: string): Promise<void> {
+    console.log(`[syncPlaylistSnapshotsName] Syncing playlist_name to "${newName}" for all tracks in playlist ${playlistId}`);
+    const result = await db.update(playlistSnapshots)
+      .set({ playlistName: newName })
+      .where(eq(playlistSnapshots.playlistId, playlistId))
+      .returning({ id: playlistSnapshots.id });
+    console.log(`[syncPlaylistSnapshotsName] Updated ${result.length} track records with new playlist name`);
   }
 
   async deleteTrackedPlaylist(id: string): Promise<void> {
