@@ -58,6 +58,17 @@ class TrackStateContext {
   hasUpdates(): boolean {
     return this.updates.size > 0;
   }
+
+  applyPatchToAllBySpotifyUrl(spotifyUrl: string, patch: TrackMetadataUpdate): number {
+    let updateCount = 0;
+    for (const [trackId, track] of Array.from(this.tracks.entries())) {
+      if (track.spotifyUrl === spotifyUrl) {
+        this.applyPatch(trackId, patch);
+        updateCount++;
+      }
+    }
+    return updateCount;
+  }
 }
 
 export class EnrichmentWorker {
@@ -364,8 +375,15 @@ export class EnrichmentWorker {
       const failedTrackIds = new Set(result.errorDetails.map(e => e.trackId));
 
       // Update tracks with credits data AND set creditsStatus
+      // CRITICAL: Update ALL tracks with the same Spotify URL, not just the one enriched
       for (const enrichedTrack of result.enrichedTracks) {
-        ctx.applyPatch(enrichedTrack.trackId, {
+        const track = ctx.getTrack(enrichedTrack.trackId);
+        if (!track) continue;
+
+        // Determine if we actually found credits
+        const hasCredits = !!(enrichedTrack.songwriter || enrichedTrack.producer || enrichedTrack.publisher);
+        
+        const patch = {
           songwriter: enrichedTrack.songwriter || undefined,
           producer: enrichedTrack.producer || undefined,
           publisher: enrichedTrack.publisher || undefined,
@@ -373,9 +391,12 @@ export class EnrichmentWorker {
           spotifyStreams: enrichedTrack.spotifyStreams || undefined,
           enrichedAt: new Date(),
           enrichmentStatus: 'enriched',
-          creditsStatus: 'success',
+          creditsStatus: hasCredits ? 'success' : 'no_data',
           lastEnrichmentAttempt: new Date(),
-        });
+        };
+
+        const updateCount = ctx.applyPatchToAllBySpotifyUrl(track.spotifyUrl, patch);
+        console.log(`[Phase 2] Updated ${updateCount} instances of track "${track.trackName}" with ${hasCredits ? 'credits' : 'no credits found'}`);
       }
 
       // Mark tracks that were processed but found no data
