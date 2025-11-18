@@ -27,6 +27,7 @@ export const playlistSnapshots = pgTable("playlist_snapshots", {
   collectionShare: text("collection_share"),
   ipiNumber: text("ipi_number"),
   iswc: text("iswc"),
+  administrators: text("administrators"),
   mlcSongCode: text("mlc_song_code"),
   songwriter: text("songwriter"),
   producer: text("producer"),
