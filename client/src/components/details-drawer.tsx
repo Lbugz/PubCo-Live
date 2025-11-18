@@ -41,7 +41,7 @@ import { SongwriterPanel } from "./songwriter-panel";
 import { cn } from "@/lib/utils";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { queryClient } from "@/lib/queryClient";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface DetailsDrawerProps {
   track: PlaylistSnapshot | null;
@@ -97,16 +97,20 @@ export function DetailsDrawer({
     }
   };
 
-  // Reset enriching state when drawer closes or track changes
+  // Reset enriching state when drawer closes
   useEffect(() => {
     if (!open) {
       setIsEnriching(false);
     }
   }, [open]);
 
-  // Reset enriching state when track changes
+  // Reset enriching state only when switching to a different track
+  const previousTrackId = useRef<string | undefined>();
   useEffect(() => {
-    setIsEnriching(false);
+    if (track?.id && track.id !== previousTrackId.current) {
+      setIsEnriching(false);
+      previousTrackId.current = track.id;
+    }
   }, [track?.id]);
 
   // Auto-reset enriching state if track is already enriched
