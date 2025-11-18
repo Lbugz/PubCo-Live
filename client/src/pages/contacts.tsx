@@ -117,17 +117,6 @@ export default function Contacts() {
   // Sorting
   const [sortField, setSortField] = useState<string>("totalStreams");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  
-  // Metrics visibility toggle
-  const [showMetrics, setShowMetrics] = useState(() => {
-    const stored = localStorage.getItem('contactsMetricsVisible');
-    return stored !== null ? stored === 'true' : true;
-  });
-
-  // Persist metrics visibility to localStorage
-  useEffect(() => {
-    localStorage.setItem('contactsMetricsVisible', showMetrics.toString());
-  }, [showMetrics]);
 
   // Fetch contacts with filters
   const { data: contactsData, isLoading } = useQuery<{
@@ -511,50 +500,6 @@ export default function Contacts() {
     <PageContainer className="space-y-6 fade-in">
       {/* Sticky Header: Metrics & Filters */}
       <StickyHeaderContainer className="pb-4 border-b">
-        {/* Stats Cards with Toggle */}
-        <div className="space-y-3 mb-4">
-        <div className="flex items-center justify-end">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowMetrics(!showMetrics)}
-            data-testid="button-toggle-contact-metrics"
-          >
-            {showMetrics ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
-        </div>
-        <Collapsible open={showMetrics}>
-          <CollapsibleContent className="space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground">TOP METRICS</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              <StatsCard
-                title="Total Pipeline"
-                value={formatNumber(stats.total)}
-                icon={Users}
-                variant="blue"
-                tooltip="Total active songwriter contacts tracked across all pipeline stages (Discovery Pool, Watch List, Active Search) for publishing outreach and relationship management"
-                testId="stats-total-pipeline"
-              />
-              <StatsCard
-                title="Hot Leads"
-                value={formatNumber(stats.hotLeads)}
-                icon={Flame}
-                variant="warning"
-                tooltip="Priority outreach candidates with unsigned score 7-10 indicating immediate publishing opportunities - ready for direct contact and deal discussions"
-                testId="stats-hot-leads"
-              />
-              <StatsCard
-                title="Unsigned in Pipeline"
-                value={`${stats.unsignedPct.toFixed(1)}%`}
-                icon={TrendingUp}
-                variant={stats.unsignedPct >= 50 ? "green" : stats.unsignedPct >= 25 ? "warning" : "default"}
-                tooltip="Percentage of contacts with tracks missing publisher data after enrichment - pipeline quality indicator showing unsigned publishing opportunity concentration"
-                testId="stats-unsigned-pct"
-              />
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      </div>
 
       {/* Filters */}
       <FilterBar>

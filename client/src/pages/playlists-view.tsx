@@ -103,10 +103,6 @@ export default function PlaylistsView() {
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [selectedPlaylistIds, setSelectedPlaylistIds] = useState<Set<string>>(new Set());
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
-  const [showMetrics, setShowMetrics] = useState(() => {
-    const stored = localStorage.getItem('playlistsMetricsVisible');
-    return stored !== null ? stored === 'true' : true;
-  });
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const isMobile = useMobile(768);
@@ -139,11 +135,6 @@ export default function PlaylistsView() {
       setViewMode("card");
     }
   }, [isMobile, viewMode]);
-
-  // Persist metrics visibility to localStorage
-  useEffect(() => {
-    localStorage.setItem('playlistsMetricsVisible', showMetrics.toString());
-  }, [showMetrics]);
 
   // Fetch playlists mutation
   const fetchPlaylistsMutation = useFetchPlaylistsMutation();
@@ -875,52 +866,6 @@ export default function PlaylistsView() {
     <PageContainer className="space-y-6 fade-in">
       {/* Sticky Header: Metrics & Filters */}
       <StickyHeaderContainer className="pb-4 border-b">
-        {/* Stats Cards with Toggle */}
-        <div className="space-y-3 mb-4">
-        <div className="flex items-center justify-end">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowMetrics(!showMetrics)}
-            data-testid="button-toggle-playlist-metrics"
-          >
-            {showMetrics ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
-        </div>
-        <Collapsible open={showMetrics}>
-          <CollapsibleContent className="space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground">TOP METRICS</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              <StatsCard
-                title="Total Tracked"
-                value={playlistMetrics?.totalPlaylists ?? 0}
-                icon={Music2}
-                variant="blue"
-                tooltip="Total Spotify playlists monitored across Fresh Finds, editorial, and custom sources for unsigned talent discovery and publishing leads"
-                testId="stats-total-playlists"
-              />
-              <StatsCard
-                title="Unsigned Songwriters"
-                value={playlistMetrics?.unsignedSongwriters ?? 0}
-                icon={UserCheck}
-                variant="green"
-                tooltip="Distinct songwriters with no publisher data after successful enrichment across all tracked playlists - your primary discovery pool for outreach"
-                change={playlistMetrics?.changeUnsigned}
-                testId="stats-unsigned-songwriters"
-              />
-              <StatsCard
-                title="High-Impact Playlists"
-                value={playlistMetrics?.highImpactPlaylists ?? 0}
-                icon={Trophy}
-                variant="gold"
-                tooltip="Playlists averaging 7+ unsigned score indicating concentrated publishing opportunities - prioritize these for deeper research and outreach"
-                change={playlistMetrics?.changeHighImpact}
-                testId="stats-high-impact-playlists"
-              />
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      </div>
 
       {/* Filters */}
       <FilterBar>

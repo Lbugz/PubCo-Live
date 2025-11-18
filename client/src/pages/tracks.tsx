@@ -70,7 +70,7 @@ const filterOptions = [
   { id: "failed-enrichment", label: "Failed Enrichment", section: "Enrichment Status" },
 ];
 
-export default function Dashboard() {
+export default function Tracks() {
   const [location] = useLocation();
   const [selectedWeek, setSelectedWeek] = useState<string>("all");
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("all");
@@ -735,6 +735,7 @@ export default function Dashboard() {
               </div>
               <Collapsible open={showMetrics}>
               <CollapsibleContent className="space-y-3">
+                {/* TRACKS PAGE - ONLY SHOW TRACKS METRICS */}
                 {renderMetricsSection('tracks', 'TRACKS', false)}
               </CollapsibleContent>
             </Collapsible>
