@@ -12,7 +12,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
-import { StatsCard } from "@/components/stats-card";
 import {
   Select,
   SelectContent,
@@ -49,8 +48,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getMetricPreferences } from "@/lib/metricPreferences";
-import { METRIC_CARD_CONFIG } from "@/lib/metricsConfig";
 
 
 const filterOptions = [
@@ -86,7 +83,6 @@ export default function Tracks() {
   const [activeJobs, setActiveJobs] = useState<EnrichmentJob[]>([]);
   const [sortField, setSortField] = useState<string>("addedAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [metricPreferences, setMetricPreferences] = useState(() => getMetricPreferences());
   const { toast} = useToast();
   const isMobile = useMobile(768);
   
@@ -101,25 +97,6 @@ export default function Tracks() {
     
     return () => clearTimeout(timeout);
   }, [activeJobs]);
-  
-  // Listen for localStorage changes to metric preferences (from Settings page)
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setMetricPreferences(getMetricPreferences());
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also poll for changes every 500ms to catch same-tab updates
-    const interval = setInterval(() => {
-      setMetricPreferences(getMetricPreferences());
-    }, 500);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, []);
   
   // Auto-switch to card view on mobile (from table or kanban)
   useEffect(() => {
@@ -190,14 +167,6 @@ export default function Tracks() {
       setActiveJobs(prev => prev.map(job => 
         job.jobId === data.jobId ? { ...job, phase: data.phase || 1 } : job
       ));
-    },
-    onMessage: (message) => {
-      // Handle metric_update events from WebSocket
-      if (message.type === 'metric_update') {
-        console.log('Metrics updated via WebSocket');
-        // Invalidate metrics queries to trigger refetch
-        queryClient.invalidateQueries({ queryKey: ["/api/dashboard-metrics"] });
-      }
     },
   });
 
@@ -282,49 +251,6 @@ export default function Tracks() {
 
   const { data: tags = [] } = useQuery<Tag[]>({
     queryKey: ["/api/tags"],
-  });
-
-  // Fetch unified dashboard metrics (playlists, tracks, contacts)
-  const { data: dashboardMetrics } = useQuery<{
-    playlists: {
-      totalPlaylists: number;
-      editorialPlaylists: number;
-      totalPlaylistFollowers: number;
-      avgTracksPerPlaylist: number;
-      recentlyUpdatedPlaylists: number;
-      highValuePlaylists: number;
-      largePlaylists: number;
-      incompletePlaylists: number;
-      chartmetricLinkedPlaylists: number;
-      avgFollowersPerPlaylist: number;
-    };
-    tracks: {
-      dealReadyTracks: number;
-      avgUnsignedScore: number;
-      missingPublisherTracks: number;
-      selfWrittenTracks: number;
-      highVelocityTracks: number;
-      enrichedTracks: number;
-      freshFindsTracks: number;
-      indieLabelTracks: number;
-      totalStreams: number;
-      enrichmentPendingTracks: number;
-    };
-    contacts: {
-      highConfidenceUnsigned: number;
-      totalSongwriters: number;
-      activeSearchContacts: number;
-      avgContactScore: number;
-      mlcVerifiedUnsigned: number;
-      watchListContacts: number;
-      discoveryPoolContacts: number;
-      highStreamVelocityContacts: number;
-      soloWriters: number;
-      enrichmentBacklogContacts: number;
-    };
-  }>({
-    queryKey: ["/api/dashboard-metrics"],
-    staleTime: 60000, // 60 seconds - aligned with backend cache TTL
   });
 
   const enrichMutation = useMutation({
@@ -667,43 +593,6 @@ export default function Tracks() {
       </Link>
     </Button>
   ), []);
-
-  // Helper function to render a metrics section using config-driven approach
-  const renderMetricsSection = useCallback((
-    sectionKey: 'playlists' | 'tracks' | 'contacts',
-    sectionTitle: string,
-    addTopMargin: boolean = false
-  ) => {
-    const selectedMetrics = metricPreferences[sectionKey];
-    if (!selectedMetrics || selectedMetrics.every(m => m === null)) return null;
-
-    const metricsData = dashboardMetrics?.[sectionKey];
-    const sectionConfig = METRIC_CARD_CONFIG[sectionKey];
-
-    return (
-      <>
-        <h2 className={cn("text-sm font-semibold text-muted-foreground", addTopMargin && "mt-6")}>
-          {sectionTitle}
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {selectedMetrics.map((metricId, index) => {
-            if (!metricId) return null;
-            
-            const config = (sectionConfig as any)[metricId];
-            if (!config || !metricsData) return null;
-
-            try {
-              const props = config.getProps(metricsData);
-              return <StatsCard key={`${sectionKey}-${index}`} {...props} />;
-            } catch (error) {
-              console.error(`Error rendering metric ${metricId}:`, error);
-              return null;
-            }
-          })}
-        </div>
-      </>
-    );
-  }, [metricPreferences, dashboardMetrics]);
 
   return (
     <div className="min-h-screen bg-background">
