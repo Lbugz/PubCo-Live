@@ -611,11 +611,19 @@ export function DetailsDrawer({
                       ) : (
                         <div className="space-y-3 text-sm">
                           {/* Streaming Metrics */}
-                          <div>
-                            <span className="text-muted-foreground block mb-1">Spotify Streams</span>
-                            <span className="font-semibold text-lg">
-                              {displayTrack.spotifyStreams ? displayTrack.spotifyStreams.toLocaleString() : '—'}
-                            </span>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <span className="text-muted-foreground block mb-1">Spotify Streams</span>
+                              <span className="font-semibold text-lg">
+                                {displayTrack.spotifyStreams ? displayTrack.spotifyStreams.toLocaleString() : '—'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block mb-1">YouTube Views</span>
+                              <span className="font-semibold text-lg">
+                                {displayTrack.youtubeViews ? displayTrack.youtubeViews.toLocaleString() : '—'}
+                              </span>
+                            </div>
                           </div>
 
                           {/* Moods */}
