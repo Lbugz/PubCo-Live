@@ -9,7 +9,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useMobile } from "@/hooks/use-mobile";
-import { useQuickFilterPreferences, type QuickFilterDefinition } from "@/hooks/use-quick-filter-preferences";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -59,29 +58,6 @@ const STAGE_CONFIG = {
   },
 };
 
-const AVAILABLE_QUICK_FILTERS: QuickFilterDefinition[] = [
-  {
-    id: "hotLeads",
-    label: "Hot leads",
-    icon: Flame,
-    variant: "hot",
-    defaultVisible: true,
-  },
-  {
-    id: "chartmetricLinked",
-    label: "Chartmetric linked",
-    icon: LinkIcon,
-    variant: "default",
-    defaultVisible: true,
-  },
-  {
-    id: "positiveWow",
-    label: "Positive WoW",
-    icon: TrendingUp,
-    variant: "success",
-    defaultVisible: true,
-  },
-];
 
 export default function Contacts() {
   const { toast } = useToast();
@@ -95,24 +71,10 @@ export default function Contacts() {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   
-  // Quick filters
-  const [showHotLeads, setShowHotLeads] = useState(false);
-  const [showChartmetricLinked, setShowChartmetricLinked] = useState(false);
-  const [showPositiveWow, setShowPositiveWow] = useState(false);
-  
   // Advanced filters
   const [hasEmail, setHasEmail] = useState<boolean | undefined>(undefined);
   const [scoreRange, setScoreRange] = useState<[number, number]>([0, 10]);
   const [hasSocialLinks, setHasSocialLinks] = useState<boolean | undefined>(undefined);
-  
-  // Quick filter preferences
-  const {
-    visibleFilters,
-    visibleFilterIds,
-    toggleFilterVisibility,
-    resetToDefaults,
-    allFilters,
-  } = useQuickFilterPreferences("contacts", AVAILABLE_QUICK_FILTERS);
   
   // Sorting
   const [sortField, setSortField] = useState<string>("totalStreams");
@@ -137,9 +99,6 @@ export default function Contacts() {
     queryKey: ["/api/contacts", { 
       stage: selectedStage === "all" ? undefined : selectedStage,
       search: debouncedSearchQuery || undefined,
-      hotLeads: showHotLeads,
-      chartmetricLinked: showChartmetricLinked,
-      positiveWow: showPositiveWow,
       hasEmail,
       minScore: scoreRange[0],
       maxScore: scoreRange[1],
@@ -151,9 +110,6 @@ export default function Contacts() {
       const params = new URLSearchParams();
       if (selectedStage !== "all") params.append("stage", selectedStage);
       if (debouncedSearchQuery) params.append("search", debouncedSearchQuery);
-      if (showHotLeads) params.append("hotLeads", "true");
-      if (showChartmetricLinked) params.append("chartmetricLinked", "true");
-      if (showPositiveWow) params.append("positiveWow", "true");
       if (hasEmail !== undefined) params.append("hasEmail", hasEmail.toString());
       if (scoreRange[0] > 0 || scoreRange[1] < 10) {
         params.append("minScore", scoreRange[0].toString());
@@ -506,44 +462,6 @@ export default function Contacts() {
               testId="input-search-contacts"
             />
 
-            <FilterBar.Pills
-              pills={visibleFilters.map((filter) => {
-                let active = false;
-                let onClick = () => {};
-                let testId = "";
-
-                if (filter.id === "hotLeads") {
-                  active = showHotLeads;
-                  onClick = () => setShowHotLeads(!showHotLeads);
-                  testId = "badge-filter-hot-leads";
-                } else if (filter.id === "chartmetricLinked") {
-                  active = showChartmetricLinked;
-                  onClick = () => setShowChartmetricLinked(!showChartmetricLinked);
-                  testId = "badge-filter-chartmetric";
-                } else if (filter.id === "positiveWow") {
-                  active = showPositiveWow;
-                  onClick = () => setShowPositiveWow(!showPositiveWow);
-                  testId = "badge-filter-positive-wow";
-                }
-
-                return {
-                  label: filter.label,
-                  active,
-                  onClick,
-                  icon: filter.icon,
-                  variant: filter.variant,
-                  testId,
-                };
-              })}
-              showClear={true}
-              onClearAll={() => {
-                setShowHotLeads(false);
-                setShowChartmetricLinked(false);
-                setShowPositiveWow(false);
-                setSearchQuery("");
-              }}
-            />
-
             <FilterBar.AdvancedFilters testId="button-advanced-filters">
               <div className="space-y-4">
                 <div>
@@ -625,53 +543,6 @@ export default function Contacts() {
                   </div>
                 </div>
 
-                <Separator />
-
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Settings2 className="h-4 w-4 text-muted-foreground" />
-                      <h4 className="font-medium">Customize Quick Filters</h4>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={resetToDefaults}
-                      className="h-7 text-xs"
-                      data-testid="button-reset-filters"
-                    >
-                      Reset
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Choose which quick filters appear in the filter bar
-                  </p>
-                  <div className="space-y-2">
-                    {allFilters.map((filter) => {
-                      const Icon = filter.icon;
-                      return (
-                        <div
-                          key={filter.id}
-                          className="flex items-center gap-2"
-                        >
-                          <Checkbox
-                            id={`filter-${filter.id}`}
-                            checked={visibleFilterIds.has(filter.id)}
-                            onCheckedChange={() => toggleFilterVisibility(filter.id)}
-                            data-testid={`checkbox-filter-${filter.id}`}
-                          />
-                          <label
-                            htmlFor={`filter-${filter.id}`}
-                            className="flex items-center gap-2 text-sm cursor-pointer flex-1"
-                          >
-                            {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
-                            <span>{filter.label}</span>
-                          </label>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
               </div>
             </FilterBar.AdvancedFilters>
           </FilterBar.FiltersGroup>
