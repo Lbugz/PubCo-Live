@@ -5,6 +5,12 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
 
 ## Recent Changes
 
+### Nov 18, 2025 - Homepage Routing Update
+- **Homepage now redirects to Playlists**: Root URL (`/`) automatically redirects to `/playlists` page
+  - Every visit to pubco.replit.app loads the Playlists view
+  - Dashboard still accessible at `/dashboard` via sidebar navigation
+  - Implemented clean redirect pattern using Wouter's `useLocation` hook
+
 ### Nov 18, 2025 - UI Cleanup & Playlist Name Sync
 - **Metrics Removed from Tracks Page**: Removed metrics section from `/tracks` page to simplify UI (only Dashboard shows all 9 metrics)
 - **Artwork Size Consistency**: Standardized track table artwork to match playlist table size (`h-8 w-8` / 32px)

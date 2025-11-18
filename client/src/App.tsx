@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
+import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -21,11 +22,19 @@ import SettingsDev from "@/pages/settings-dev";
 import DetailPreviewPage from "@/pages/detail-preview";
 import NotFound from "@/pages/not-found";
 
+function RedirectToPlaylists() {
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    setLocation("/playlists");
+  }, [setLocation]);
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
       {/* Discovery */}
-      <Route path="/" component={Dashboard} />
+      <Route path="/" component={RedirectToPlaylists} />
       <Route path="/tracks" component={Tracks} />
       <Route path="/playlists" component={PlaylistsView} />
       
