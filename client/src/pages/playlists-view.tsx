@@ -136,15 +136,9 @@ export default function PlaylistsView() {
       }
     },
     onTrackEnriched: (data) => {
-      const enrichedCount = data.tracksEnriched || 0;
-      const totalCount = data.trackCount || 0;
-      const phaseLabel = data.phase === 1 ? 'Spotify API' : data.phase === 2 ? 'Credits' : 'MLC';
-
-      toast({
-        title: `Enrichment ${data.phase === 3 ? 'complete' : 'in progress'}`,
-        description: `${phaseLabel} · ${enrichedCount}/${totalCount} tracks`,
-        variant: data.phase === 3 ? "success" : "info",
-      });
+      // Tier 3: WebSocket updates only refresh data, no toasts
+      // Progress is shown in Activity Panel and Notification Center
+      // System notifications are created server-side on completion only
       queryClient.invalidateQueries({ queryKey: ["/api/playlist-snapshot"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
     },

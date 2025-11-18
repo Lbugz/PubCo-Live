@@ -83,7 +83,7 @@ export function NotificationCenter() {
       if (data.jobId && data.enrichedCount !== undefined) {
         setActiveJobs(prev => prev.map(job =>
           job.jobId === data.jobId
-            ? { ...job, enrichedCount: data.enrichedCount }
+            ? { ...job, enrichedCount: data.enrichedCount || 0 }
             : job
         ));
       }
@@ -256,7 +256,13 @@ export function NotificationCenter() {
         <ScrollArea className="h-[400px]">
           {/* Active Jobs Section */}
           {activeJobs.length > 0 && (
-            <div className="divide-y border-b">
+            <div className="border-b">
+              <div className="px-4 py-2 bg-muted/30 border-b">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Active Jobs
+                </h4>
+              </div>
+              <div className="divide-y">
               {activeJobs.map((job) => {
                 const progress = job.trackCount > 0 
                   ? Math.round((job.enrichedCount / job.trackCount) * 100)
@@ -334,10 +340,18 @@ export function NotificationCenter() {
                   </div>
                 );
               })}
+              </div>
             </div>
           )}
 
-          {/* Notifications Section */}
+          {/* Completed Notifications Section */}
+          {!isLoading && notifications.length > 0 && (
+            <div className="px-4 py-2 bg-muted/30 border-b">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Notifications
+              </h4>
+            </div>
+          )}
           {isLoading && (
             <div 
               className="flex items-center justify-center h-32 text-muted-foreground"

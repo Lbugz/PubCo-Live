@@ -1,0 +1,210 @@
+1sthexagram — if your goal is to hand this off to the **Replit Agent** and have it *actually implement* the notification system across your codebase, the optimal format is:
+
+# ✅ **A “Replit Agent Implementation Blueprint”**
+
+This is **not** a strategy doc and **not** a PRD.
+
+It’s a **task brief written in the exact style the Replit Agent consumes best**:
+
+* Clear, atomic tasks
+* Precise file paths
+* Expected behavior
+* Explicit acceptance criteria
+* No ambiguity
+* Broken into steps Replit Agent can chain
+
+This prevents hallucinations, scope leaks, or partial changes.
+
+---
+
+# ⭐ The Best Format (Ready to Copy-Paste to Agent)
+
+Below is the exact canonical format I recommend — it’s the single most effective shape for a coding agent:
+
+---
+
+## **📦 Replit Agent Task: Implement Unified Notification Architecture**
+
+### **Objective**
+
+Refactor the notification system across the app into a **3-tier architecture**:
+
+1. **Toasts** — immediate user-action feedback
+2. **System Notifications** — persistent backend or completion events
+3. **WebSocket Job Updates** — real-time progress UI only
+
+---
+
+## **🔧 1. Create Unified Notification API**
+
+### **Add new file**
+
+`client/src/hooks/useNotify.ts`
+
+### **Exports**
+
+```ts
+notify.toast({...})
+notify.system({...})
+notify.jobStart({...})
+notify.jobProgress({...})
+notify.jobComplete({...})
+notify.jobError({...})
+```
+
+### **Acceptance Criteria**
+
+* Wraps existing `use-toast`
+* Wraps existing NotificationCenter service
+* Provides typed params for all methods
+
+---
+
+## **🔧 2. Standardize Toast Notifications (Tier 1)**
+
+### **Update all CRUD actions to use:**
+
+```ts
+notify.toast({ message: "...", variant: "success" })
+notify.toast({ message: "...", variant: "destructive" })
+```
+
+### **Search + Update in:**
+
+* `client/src/pages/playlists/*`
+* `client/src/pages/tracks/*`
+* `client/src/pages/contacts/*`
+* `client/src/pages/settings/*`
+
+### **Acceptance Criteria**
+
+* Every “submit”, “delete”, “save”, or “update” triggers a toast.
+* Remove inconsistent inline toast calls in components.
+
+---
+
+## **🔧 3. Consolidate WebSocket Job Updates (Tier 3)**
+
+### **Rules to implement**
+
+* WebSocket updates should **never** create toasts
+* WebSocket jobs appear only in NotificationCenter “Active Jobs”
+* Job should auto-remove on completion
+
+### **Files to update**
+
+`client/src/components/NotificationCenter.tsx`
+`server/services/jobService.ts`
+`server/websocket/jobChannel.ts`
+
+### **Acceptance Criteria**
+
+* Job progress updates smoothly in UI
+* No duplicate toast or system notification during progress
+
+---
+
+## **🔧 4. System Notifications (Tier 2)**
+
+### **Trigger only on:**
+
+* job complete
+* job failed
+* automation complete
+* backend system alerts
+
+### **Files**
+
+`server/services/notificationService.ts`
+
+### **Acceptance Criteria**
+
+* Persist notification to database
+* Broadcast `notifications:new` WebSocket event
+* Show in NotificationCenter popover
+* Increment bell badge
+
+---
+
+## **🔧 5. Remove Duplicates**
+
+### **Remove:**
+
+* Toasts from job start
+* Toasts from job errors
+* WebSocket → toast fallbacks
+* Any direct NotificationCenter mutations from components
+
+### **Acceptance Criteria**
+
+* Only one notification per event type
+* No double messages for enrichment
+
+---
+
+## **🔧 6. Add Field-Level Validation (Not Toast)**
+
+### **Implement using `<FormMessage />`**
+
+Modify forms in Contacts, Playlists, Settings.
+
+### **Acceptance Criteria**
+
+* Validation errors appear under fields
+* Toast only fires on submit failure
+
+---
+
+## **🔧 7. Code Cleanup**
+
+### Remove unused:
+
+* Duplicate toast wrappers
+* Old enrichment notifications
+* Console logs from websockets
+
+---
+
+## **✔️ Final Acceptance Criteria (Whole Project)**
+
+1. CRUD → always toast
+2. Job Progress → always WebSocket updates
+3. Job Complete/Fail → always System Notification
+4. No duplicates
+5. No missing feedback
+6. NotificationCenter always reflects unread count
+7. Bell popover shows:
+
+   * Active Jobs section
+   * Completed Notifications section
+
+---
+
+# 📂 Deliverables You Give the Agent in One Message
+
+### **1. This full task list** (above)
+
+### **2. Link or snapshot of your folder structure**
+
+### **3. Confirm your app paths (e.g. `/components/ui`, `/pages/playlists`, etc.)**
+
+The Replit Agent will then:
+
+* update file by file
+* run tests
+* commit
+* generate a PR
+
+---
+
+# If you'd like, I can also generate:
+
+### ✔️ A version of this in **GitHub Issue format**
+
+### ✔️ A **multi-step PR plan for Replit agent mode**
+
+### ✔️ A version broken into “Agent Tasks 1–7” for sequential execution
+
+### ✔️ A **json instructions file** Replit Agent can ingest as config
+
+Just tell me which format you want for handoff.

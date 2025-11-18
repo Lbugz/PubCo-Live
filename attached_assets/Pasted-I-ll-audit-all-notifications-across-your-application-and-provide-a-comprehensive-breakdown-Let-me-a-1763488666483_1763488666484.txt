@@ -1,0 +1,64 @@
+I'll audit all notifications across your application and provide a comprehensive breakdown. Let me analyze the codebase to identify all notification patterns.
+
+Based on my analysis, here's a comprehensive audit of all notifications in your application:
+
+Notification Audit - CSV Format
+Page/Section,Feature/Process,Notification Type,UI Component,Location,Trigger,Message Pattern,Variant
+Playlists,Add Playlist,Toast,Toaster (shadcn),Top-right overlay,"Click ""Add Playlist"" → Submit form","""Playlist added successfully"" or error message",success/destructive
+Playlists,Delete Playlist,Toast,Toaster (shadcn),Top-right overlay,Click delete action in table,"Success or error message",success/destructive
+Playlists,Enrich Playlist,Toast + WebSocket,Toaster + NotificationCenter,Top-right overlay + Header bell icon,Click enrich button,"Job started confirmation, then real-time progress",info/success/destructive
+Playlists,Enrich Playlist (Progress),WebSocket Live Update,NotificationCenter Popover,Header bell icon dropdown,Enrichment job running,"Real-time progress bar, phase updates, track count",info (blue badge)
+Playlists,Enrich Playlist (Complete),WebSocket + System Notification,NotificationCenter Popover,Header bell icon dropdown,Enrichment job completes,""{playlistName} · {trackCount} tracks enriched""",success (persistent)
+Playlists,Enrich Playlist (Failed),WebSocket + System Notification,NotificationCenter Popover,Header bell icon dropdown,Enrichment job fails,""{playlistName} · {error}""",destructive (persistent)
+Playlists,Fetch Fresh Data,Toast,Toaster (shadcn),Top-right overlay,Click fetch button,"Success or error message",success/destructive
+Playlists,Bulk Actions (Archive/Delete),Toast,Toaster (shadcn),Top-right overlay,Select items → Click bulk action,"Confirmation of action completion",success/destructive
+Tracks,Bulk Tag Update,Toast,Toaster (shadcn),Top-right overlay,Select tracks → Apply tags,"Tags updated confirmation",success/destructive
+Tracks,Individual Tag Update,Toast,Toaster (shadcn),Top-right overlay,Click tag in track row → Add/remove tag,"Tag applied/removed",success
+Tracks,Contact Assignment,Toast,Toaster (shadcn),Top-right overlay,Open contact dialog → Assign contact,"Contact assigned successfully",success/destructive
+Tracks,Publisher Status Update,Toast,Toaster (shadcn),Top-right overlay,Change publisher status in table,"Status updated",success/destructive
+Contacts,Add Contact,Toast,Toaster (shadcn),Top-right overlay,Submit new contact form,"Contact created successfully",success/destructive
+Contacts,Update Contact,Toast,Toaster (shadcn),Top-right overlay,Edit contact details → Save,"Contact updated",success/destructive
+Contacts,Delete Contact,Toast,Toaster (shadcn),Top-right overlay,Click delete → Confirm,"Contact deleted",success/destructive
+Contacts,Log Activity,Toast,Toaster (shadcn),Top-right overlay,Add activity entry,"Activity logged",success
+Contacts,Bulk Stage Update,Toast,Toaster (shadcn),Top-right overlay,Select contacts → Change stage,"Stage updated for X contacts",success/destructive
+Settings - Spotify,Save Spotify Credentials,Toast,Toaster (shadcn),Top-right overlay,Update credentials → Save,"Credentials saved",success/destructive
+Settings - Automation,Toggle Automation,Toast,Toaster (shadcn),Top-right overlay,Enable/disable scheduled jobs,"Automation enabled/disabled",info
+Settings - Database,Clear Database,Toast,Toaster (shadcn),Top-right overlay,Confirm database clear action,"Database cleared",warning/destructive
+Global,WebSocket Connection,Visual Indicator,NotificationCenter Badge,Header bell icon,WebSocket connects/disconnects,"Green/Red badge with connected/disconnected status",success/destructive
+Global,WebSocket Reconnection,Console Log,Browser Console,Developer tools only,WebSocket disconnects,"Reconnection attempt messages",N/A
+Global,System Alerts,System Notification,NotificationCenter Popover,Header bell icon dropdown,Backend triggers system alert,"Custom title and message",default
+Global,Automation Complete,System Notification,NotificationCenter Popover,Header bell icon dropdown,Scheduled job completes,"{automationName} · {details}",info
+Global,Playlist Error,System Notification,NotificationCenter Popover,Header bell icon dropdown,Backend encounters playlist error,"{playlistName} · {error}",destructive
+Analysis & Optimization Recommendations
+Current Notification Patterns:
+Toast (Immediate Actions) - Used for instant feedback on user actions
+
+Component: client/src/components/ui/toaster.tsx
+Hook: client/src/hooks/use-toast.ts
+Variants: success, info, warning, destructive
+Auto-dismisses after 5 seconds
+System Notifications (Persistent) - Used for background jobs and important events
+
+Component: client/src/components/NotificationCenter.tsx
+Backend: server/services/notificationService.ts
+Stored in database, user can dismiss
+Shows unread count badge
+WebSocket Live Updates - Used for real-time job progress
+
+Shows active jobs with progress bars
+Updates every second during enrichment
+Transitions to system notification on completion
+Issues Found:
+No toast notifications are actually shown in the current codebase - only the infrastructure exists
+Duplicate notification systems - WebSocket active jobs AND system notifications for the same events
+Missing validation feedback - Forms don't show field-level validation toasts
+Inconsistent error handling - Some API errors show toasts (if implemented), others fail silently
+No loading states with notifications for long operations
+Recommendations:
+Would you like me to propose:
+
+Standardize toast implementation across all pages
+Add missing notification triggers for user actions
+Consolidate WebSocket notifications to reduce duplication
+Add loading toasts for async operations
+Create a notification style guide for consistent UX

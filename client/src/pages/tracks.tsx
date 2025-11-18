@@ -67,14 +67,14 @@ export default function Tracks() {
   const { toast} = useToast();
   const isMobile = useMobile(768);
   
-  // Auto-dismiss completed jobs after 10 seconds
+  // Auto-dismiss completed jobs after 5 seconds
   useEffect(() => {
     const completedJobs = activeJobs.filter(job => job.status === 'success' || job.status === 'error');
     if (completedJobs.length === 0) return;
     
     const timeout = setTimeout(() => {
       setActiveJobs(prev => prev.filter(job => job.status === 'running'));
-    }, 10000);
+    }, 5000);
     
     return () => clearTimeout(timeout);
   }, [activeJobs]);
