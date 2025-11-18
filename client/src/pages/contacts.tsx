@@ -321,14 +321,9 @@ export default function Contacts() {
           className="flex flex-col cursor-pointer hover-elevate rounded-md p-1 -m-1"
           onClick={() => handleViewContact(contact.id)}
         >
-          <span className="text-sm text-primary" data-testid={`text-songwriter-name-${contact.id}`}>
+          <span className="text-sm" data-testid={`text-songwriter-name-${contact.id}`}>
             {contact.songwriterName}
           </span>
-          {contact.songwriterChartmetricId && (
-            <span className="text-xs text-muted-foreground">
-              Chartmetric ID
-            </span>
-          )}
         </div>
       ),
       className: "font-medium",
