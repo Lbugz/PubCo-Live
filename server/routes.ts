@@ -210,6 +210,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // DEBUG ENDPOINT: Test MLC credentials
+  app.get("/api/debug/mlc-env", (req, res) => {
+    const mlcUsername = process.env.MLC_USERNAME;
+    const mlcPassword = process.env.MLC_PASSWORD;
+    
+    res.json({
+      hasUsername: !!mlcUsername,
+      hasPassword: !!mlcPassword,
+      usernameLength: mlcUsername?.length || 0,
+      passwordLength: mlcPassword?.length || 0,
+    });
+  });
+
   app.get("/api/spotify/search-playlists", async (req, res) => {
     try {
       // Validate query parameter

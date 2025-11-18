@@ -326,11 +326,16 @@ async function enrichSingleTrack(
 export async function enrichTracksWithMLC(
   tracks: Pick<PlaylistSnapshot, "id" | "isrc" | "trackName" | "artistName" | "songwriter">[]
 ): Promise<MLCEnrichmentResult[]> {
+  console.log(`[MLC DEBUG] enrichTracksWithMLC called with ${tracks.length} tracks`);
   const username = process.env.MLC_USERNAME;
   const password = process.env.MLC_PASSWORD;
+  
+  console.log(`[MLC DEBUG] Username exists: ${!!username}, Password exists: ${!!password}`);
+  console.log(`[MLC DEBUG] Username length: ${username?.length || 0}, Password length: ${password?.length || 0}`);
 
   if (!username || !password) {
     console.warn("[MLC] No credentials found, skipping MLC enrichment");
+    console.warn(`[MLC] process.env keys: ${Object.keys(process.env).filter(k => k.includes('MLC')).join(', ')}`);
     return tracks.map(t => ({
       trackId: t.id,
       hasPublisher: false,
