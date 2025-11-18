@@ -1223,6 +1223,12 @@ export class DatabaseStorage implements IStorage {
       assignedUserId: contacts.assignedUserId,
       totalStreams: contacts.totalStreams,
       totalTracks: contacts.totalTracks,
+      collaborationCount: contacts.collaborationCount,
+      unsignedScore: contacts.unsignedScore,
+      mlcSearched: contacts.mlcSearched,
+      mlcFound: contacts.mlcFound,
+      musicbrainzSearched: contacts.musicbrainzSearched,
+      musicbrainzFound: contacts.musicbrainzFound,
       createdAt: contacts.createdAt,
       updatedAt: contacts.updatedAt,
     })
