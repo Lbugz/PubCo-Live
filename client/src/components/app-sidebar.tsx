@@ -81,8 +81,6 @@ const settingsSection = {
   items: [
     { title: "Spotify & APIs", url: "/settings/spotify", icon: Sparkles },
     { title: "Database & Storage", url: "/settings/database", icon: Database },
-    { title: "Dashboard Preferences", url: "/settings/dashboard", icon: FileText },
-    { title: "User Preferences", url: "/settings/preferences", icon: UserCog },
     { title: "Automation", url: "/settings/automation", icon: Zap },
     { title: "Dev", url: "/settings/dev", icon: Code2, hidden: true },
   ],
