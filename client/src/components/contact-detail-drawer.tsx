@@ -30,6 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import type { ContactWithSongwriter, PlaylistSnapshot } from "@shared/schema";
+import { EnrichmentSourceIndicator } from "./enrichment-source-indicator";
 
 const STAGE_CONFIG = {
   discovery: {
@@ -173,11 +174,27 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
         ) : contact ? (
           <>
             <SheetHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
                   <SheetTitle className="text-2xl" data-testid="text-contact-name">
                     {contact.songwriterName}
                   </SheetTitle>
+                </div>
+                <div className="flex-shrink-0 mt-1">
+                  <EnrichmentSourceIndicator
+                    mlc={{
+                      searched: contact.mlcSearched === 1,
+                      found: contact.mlcFound === 1
+                    }}
+                    musicbrainz={{
+                      searched: contact.musicbrainzSearched === 1,
+                      found: contact.musicbrainzFound === 1
+                    }}
+                    chartmetric={{
+                      searched: contact.chartmetricSearched === 1,
+                      found: contact.chartmetricFound === 1
+                    }}
+                  />
                 </div>
               </div>
             </SheetHeader>
