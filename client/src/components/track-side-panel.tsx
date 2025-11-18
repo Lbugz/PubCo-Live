@@ -81,9 +81,6 @@ export function TrackSidePanel({ track, open, onClose, onEnrich }: TrackSidePane
                 <SheetDescription className="text-sm mt-1">{track.artistName}</SheetDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={getScoreBadgeVariant(track.unsignedScore)} className="whitespace-nowrap">
-                  {getScoreLabel(track.unsignedScore)} {track.unsignedScore}
-                </Badge>
                 {track.publisherStatus && (
                   <PublisherStatusBadge status={track.publisherStatus} />
                 )}
@@ -139,13 +136,13 @@ export function TrackSidePanel({ track, open, onClose, onEnrich }: TrackSidePane
                 <h3 className="text-sm font-medium mb-3">Quick Actions</h3>
                 <div className="grid grid-cols-1 gap-2">
                   <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2"
+                    variant="default"
+                    className="w-full justify-start gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                     onClick={() => onEnrich(track.id)}
                     data-testid="action-enrich"
                   >
                     <Sparkles className="h-4 w-4" />
-                    Enrich Data
+                    Enrich
                   </Button>
                   
                   <Button
