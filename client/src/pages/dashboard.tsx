@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Download, LayoutGrid, LayoutList, Kanban, BarChart3, RefreshCw, Sparkles, FileText, ChevronDown, Music2, Users, Music, Target, TrendingUp, Activity, Search, Filter, Loader2, X, Eye, EyeOff } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { useNotify } from "@/hooks/useNotify";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useMobile } from "@/hooks/use-mobile";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -73,7 +73,7 @@ export default function Dashboard() {
     return stored !== null ? stored === 'true' : true;
   });
   const [metricPreferences, setMetricPreferences] = useState(() => getMetricPreferences());
-  const { toast} = useToast();
+  const notify = useNotify();
   const isMobile = useMobile(768);
   
   // Auto-dismiss completed jobs after 5 seconds
@@ -323,19 +323,18 @@ export default function Dashboard() {
       const enrichedCount = data.tracksEnriched || 0;
       const processedCount = data.tracksProcessed || 0;
       
-      toast({
-        title: "Credits Enrichment Complete!",
-        description: `Enriched ${enrichedCount}/${processedCount} tracks with Spotify credits data`,
-      });
+      notify.success(
+        `Enriched ${enrichedCount}/${processedCount} tracks with Spotify credits data`,
+        "Credits Enrichment Complete!"
+      );
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
     },
     onError: (error: any) => {
       console.error("Phase 2 enrichment error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to enrich track credits",
-        variant: "destructive",
-      });
+      notify.error(
+        error.message || "Failed to enrich track credits",
+        "Error"
+      );
     },
   });
 
@@ -345,18 +344,17 @@ export default function Dashboard() {
       return await response.json();
     },
     onSuccess: (data: any) => {
-      toast({
-        title: "Artist Enrichment Complete!",
-        description: data.message,
-      });
+      notify.success(
+        data.message,
+        "Artist Enrichment Complete!"
+      );
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to enrich artists",
-        variant: "destructive",
-      });
+      notify.error(
+        error.message || "Failed to enrich artists",
+        "Error"
+      );
     },
   });
 
@@ -485,11 +483,11 @@ export default function Dashboard() {
     // Call Phase 2 enrichment with all track IDs at once
     enrichMutation.mutate({ trackIds });
     
-    toast({
-      title: "Enriching tracks",
-      description: `Started Phase 2 credits enrichment for ${trackIds.length} ${mode === "selected" ? "selected" : "filtered"} tracks`,
-    });
-  }, [selectedTrackIds, filteredTracks, enrichMutation, toast]);
+    notify.info(
+      `Started Phase 2 credits enrichment for ${trackIds.length} ${mode === "selected" ? "selected" : "filtered"} tracks`,
+      "Enriching tracks"
+    );
+  }, [selectedTrackIds, filteredTracks, enrichMutation, notify]);
 
   const handleBulkExport = useCallback(async (mode: "selected" | "filtered") => {
     try {
@@ -536,27 +534,26 @@ export default function Dashboard() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
-      toast({
-        title: "Export successful",
-        description: `Exported ${exportTracks.length} ${mode === "selected" ? "selected" : "filtered"} tracks`,
-      });
+      notify.success(
+        `Exported ${exportTracks.length} ${mode === "selected" ? "selected" : "filtered"} tracks`,
+        "Export successful"
+      );
     } catch (error) {
       console.error("Export failed:", error);
-      toast({
-        title: "Export failed",
-        description: "Failed to export tracks",
-        variant: "destructive",
-      });
+      notify.error(
+        "Failed to export tracks",
+        "Export failed"
+      );
     }
-  }, [tracks, selectedTrackIds, filteredTracks, selectedWeek, toast]);
+  }, [tracks, selectedTrackIds, filteredTracks, selectedWeek, notify]);
 
   const handleBulkTag = useCallback((mode: "selected" | "filtered") => {
     const count = mode === "selected" ? selectedTrackIds.size : filteredTracks.length;
-    toast({
-      title: "Bulk tagging",
-      description: `Bulk tagging ${count} ${mode === "selected" ? "selected" : "filtered"} tracks coming soon`,
-    });
-  }, [selectedTrackIds, filteredTracks, toast]);
+    notify.info(
+      `Bulk tagging ${count} ${mode === "selected" ? "selected" : "filtered"} tracks coming soon`,
+      "Bulk tagging"
+    );
+  }, [selectedTrackIds, filteredTracks, notify]);
 
   const handleEnrichTrack = useCallback((trackId: string) => {
     enrichMutation.mutate({ trackId });

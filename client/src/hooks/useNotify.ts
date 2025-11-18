@@ -26,12 +26,14 @@ export function useNotify() {
   /**
    * Tier 1: Show a toast notification for immediate user feedback
    * Use for: CRUD operations, form submissions, button clicks
+   * Auto-dismisses after 5 seconds
    */
   const showToast = ({ title, message, variant = "default" }: ToastOptions) => {
     toast({
       title,
       description: message,
       variant,
+      duration: 5000, // Auto-dismiss after 5 seconds
     });
   };
 
