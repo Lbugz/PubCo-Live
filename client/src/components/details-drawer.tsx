@@ -286,7 +286,10 @@ export function DetailsDrawer({
                       </TabsTrigger>
                       <TabsTrigger value="producers" data-testid="tab-producers">
                         Producers ({(() => {
-                          const producerNames = displayTrack.producer?.split(",").map((name) => name.trim()).filter(Boolean) ?? [];
+                          const producerNames = displayTrack.producer
+                            ?.split(",")
+                            .map((name) => name.trim().toLowerCase())
+                            .filter((name) => name && name !== "-" && name !== "—" && name !== "unknown") ?? [];
                           return producerNames.length;
                         })()})
                       </TabsTrigger>
