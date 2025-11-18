@@ -254,13 +254,13 @@ export function DetailsDrawer({
               // Merge songwriter string with artists array
               const songwriterNames = displayTrack.songwriter
                 ?.split(",")
-                .map((name) => name.trim().toLowerCase())
+                .map((name) => name.trim())
                 .filter((name) => name && name !== "-" && name !== "—" && name !== "unknown")
                 ?? [];
               const songwriterRefs = new Map(artists.map((artist) => [artist.name.trim().toLowerCase(), artist]));
               const songwriterEntries = songwriterNames.length 
                 ? songwriterNames.map((name) => {
-                    const artist = songwriterRefs.get(name);
+                    const artist = songwriterRefs.get(name.toLowerCase());
                     return artist ?? { id: `unmatched-${name}`, name, role: "Songwriter" as const };
                   })
                 : artists;
