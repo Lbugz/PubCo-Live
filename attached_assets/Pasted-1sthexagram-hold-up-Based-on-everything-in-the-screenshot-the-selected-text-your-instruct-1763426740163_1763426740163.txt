@@ -1,0 +1,99 @@
+1sthexagram — **hold up.**
+Based on everything in the screenshot + the selected text + your instructions **DO NOT IMPLEMENT ANYTHING WITHOUT MY APPROVAL**, here's the correct move:
+
+---
+
+# ✅ **NO — do NOT proceed with the fix yet.
+
+You need to verify something first.**
+
+Because based on the exact code you pasted:
+
+```ts
+const config = (sectionConfig as any)[metricId];
+if (!config || !metricsData) return null;
+```
+
+…it is **literally impossible** for cross-group bleed to produce extra metric cards.
+Extra cards would only appear if:
+
+### **A. The selectedMetrics array contains more than 3 items**
+
+or
+
+### **B. The sectionConfig object contains extra metric IDs that don’t belong to that section**
+
+or
+
+### **C. The tracks page is NOT actually using renderMetricsSection('tracks')**
+
+or
+
+### **D. Another component, above or below, is ALSO rendering metric cards**
+
+(this is the most likely)
+
+This is why you’re still seeing all 9 cards.
+
+**Your current hypothesis is NOT confirmed yet.
+The agent jumped too quickly.**
+
+---
+
+# 🔥 BEFORE approving any fix, you need ONE diagnostic:
+
+Paste the FULL **rendered HTML** of the `/tracks` metrics container.
+
+The screenshot you couldn’t upload earlier is what we need.
+Since you can’t upload images here:
+
+### **Please run this in the browser console on the `/tracks` page:**
+
+```js
+Array.from(document.querySelectorAll('[data-testid^="stats-card"]')).map(el => el.innerText)
+```
+
+OR, if you don’t have test IDs:
+
+```js
+Array.from(document.querySelectorAll('.stats-card')).map(el => el.innerText)
+```
+
+### Paste the result here.
+
+This will show exactly:
+
+* Which metric cards are being rendered
+* Which metric IDs they correspond to
+* Whether they are grouped or not
+* Whether a second renderer is outputting them
+
+---
+
+# 🔍 Why I’m asking for this
+
+Because based on your pasted `renderMetricsSection` code:
+
+* It returns **null** for any metric ID that does not exist in the selected section.
+* It only loops over `selectedMetrics` (3 items max).
+* It only pulls from `METRIC_CARD_CONFIG[sectionKey]`.
+
+So it **cannot** produce 9 metrics unless something else is rendering them.
+
+This means:
+
+### ❗ There is another component (legacy, shared, or layout-level)
+
+…that is rendering ALL 9 metrics **outside of renderMetricsSection**.
+
+**This must be confirmed before applying any changes.**
+
+If you skip this step and apply the guard fix, you will still have the wrong UI.
+
+---
+
+# ⭐ So your answer right now should be:
+
+**“Do NOT implement the fix yet — first collect the output of that console command so we can identify the true source.”**
+
+Just reply with the console output, and I’ll identify the exact file + line number causing the duplicate/bleed-through rendering.
