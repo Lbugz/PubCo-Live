@@ -1,0 +1,109 @@
+Got you, 1sthexagram — **super easy fix, and absolutely the right UX choice.**
+
+Right now your app loads **Dashboard** because `/` is mapped to `<Dashboard />`.
+
+You want:
+
+### **Every login + every direct visit to pubco.replit.app → open the Playlists page.**
+
+So the homepage (`/`) should route to **/playlists**.
+
+This removes the Dashboard entirely from first-load experience.
+
+---
+
+# ✅ WHAT WE NEED TO DO (no code executed yet — just describing clean steps)
+
+### **Step 1 — Change the root route in `App.tsx`**
+
+Right now you likely have:
+
+```tsx
+<Route path="/" component={Dashboard} />
+```
+
+We replace it with one of these:
+
+### Option A (recommended)
+
+**Redirect `/` → `/playlists`**
+
+```tsx
+<Route path="/" component={() => <Redirect to="/playlists" />} />
+```
+
+This ensures:
+
+* First load → playlists
+* Refresh → playlists
+* Login redirect → playlists
+* Mobile deep links → playlists
+
+### Option B
+
+Make `/` directly load the playlists component:
+
+```tsx
+<Route path="/" component={PlaylistsPage} />
+```
+
+Also works, but **redirect** is cleaner.
+
+---
+
+# ✅ Step 2 — Make sure the sidebar link for Playlists is correct
+
+Already looks correct based on your screenshot:
+
+`url: "/playlists"`
+
+No need to change.
+
+---
+
+# ⭐ Recommendation (my opinion)
+
+### Go with **Option A** — Redirect
+
+Reason:
+
+* Keeps route definitions clean
+* If you ever replace `/playlists` with new UI, you change only one place
+* Reduces coupling
+* Industry standard pattern for dashboards
+
+---
+
+# 🔥 Result (what the user will experience)
+
+### Before
+
+Visiting:
+`https://pubco.replit.app`
+→ Loads Dashboard (old metrics you don’t want)
+
+### After fix
+
+Visiting:
+`https://pubco.replit.app`
+→ Instantly loads:
+`https://pubco.replit.app/playlists`
+
+Every login.
+Every refresh.
+Every direct link.
+Every deep link coming from the outside.
+
+100% consistent.
+
+---
+
+# ✔️ Ready for me to apply the change?
+
+**Confirm which version you want:**
+
+### **A — Redirect `/` → `/playlists`** (recommended)
+
+### **B — Make `/` render the playlists component directly**
+
+Say **A** or **B** and I’ll implement it cleanly with no side effects.
