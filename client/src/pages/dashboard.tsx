@@ -53,37 +53,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { getMetricPreferences } from "@/lib/metricPreferences";
 import { METRIC_CARD_CONFIG } from "@/lib/metricsConfig";
 
-
-const filterOptions = [
-  { id: "has-isrc", label: "Has ISRC", section: "ISRC Code" },
-  { id: "no-isrc", label: "No ISRC", section: "ISRC Code" },
-  { id: "has-credits", label: "Has Credits", section: "Credits Data" },
-  { id: "no-credits", label: "No Credits", section: "Credits Data" },
-  { id: "has-publisher", label: "Has Publisher", section: "Publisher Info" },
-  { id: "no-publisher", label: "No Publisher", section: "Publisher Info" },
-  { id: "has-songwriter", label: "Has Songwriter", section: "Songwriter Info" },
-  { id: "no-songwriter", label: "No Songwriter", section: "Songwriter Info" },
-  { id: "has-email", label: "Has Contact Email", section: "Contact Info" },
-  { id: "no-email", label: "No Contact Email", section: "Contact Info" },
-  { id: "has-streams", label: "Has Stream Count", section: "Stream Data" },
-  { id: "enriched", label: "Fully Enriched", section: "Enrichment Status" },
-  { id: "failed-enrichment", label: "Failed Enrichment", section: "Enrichment Status" },
-];
-
 export default function Dashboard() {
   const [location] = useLocation();
   const [selectedWeek, setSelectedWeek] = useState<string>("all");
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<PlaylistSnapshot | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set());
   const [playlistManagerOpen, setPlaylistManagerOpen] = useState(false);
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeJobs, setActiveJobs] = useState<EnrichmentJob[]>([]);
   const [sortField, setSortField] = useState<string>("addedAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -211,25 +192,10 @@ export default function Dashboard() {
     },
   });
 
-  const toggleFilter = useCallback((filter: string) => {
-    setActiveFilters(prev => {
-      if (prev.includes(filter)) {
-        return prev.filter(f => f !== filter);
-      } else {
-        return [...prev, filter];
-      }
-    });
-  }, []);
-
-  const clearFilters = useCallback(() => {
-    setActiveFilters([]);
-  }, []);
-
   const clearAllFilters = useCallback(() => {
     setSelectedWeek("all");
     setSelectedPlaylist("all");
     setSearchQuery("");
-    setActiveFilters([]);
   }, []);
 
   const toggleTrackSelection = useCallback((trackId: string) => {
@@ -403,42 +369,11 @@ export default function Dashboard() {
         track.artistName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         track.label?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
       
-      // Advanced filters
-      let matchesAdvancedFilters = true;
-      if (activeFilters.length > 0) {
-        const hasIsrc = !!track.isrc;
-        const hasCredits = !!track.publisher || !!track.songwriter;
-        const hasPublisher = !!track.publisher;
-        const hasSongwriter = !!track.songwriter;
-        const hasEmail = !!track.email;
-        const hasStreams = track.spotifyStreams !== null && track.spotifyStreams !== undefined;
-        const isEnriched = track.creditsStatus === 'success';
-        const hasFailed = track.creditsStatus === 'failed' || track.enrichmentStatus === 'failed';
-        
-        const filterMatches: Record<string, boolean> = {
-          "has-isrc": hasIsrc,
-          "no-isrc": !hasIsrc,
-          "has-credits": hasCredits,
-          "no-credits": !hasCredits,
-          "has-publisher": hasPublisher,
-          "no-publisher": !hasPublisher,
-          "has-songwriter": hasSongwriter,
-          "no-songwriter": !hasSongwriter,
-          "has-email": hasEmail,
-          "no-email": !hasEmail,
-          "has-streams": hasStreams,
-          "enriched": isEnriched,
-          "failed-enrichment": hasFailed,
-        };
-        
-        matchesAdvancedFilters = activeFilters.every(filter => filterMatches[filter]);
-      }
-      
-      return matchesSearch && matchesAdvancedFilters;
+      return matchesSearch;
     }) || [];
 
     return filtered;
-  }, [tracks, debouncedSearchQuery, activeFilters]);
+  }, [tracks, debouncedSearchQuery]);
 
   // Sort filtered tracks
   const sortedTracks = useMemo(() => {
@@ -514,18 +449,6 @@ export default function Dashboard() {
     });
   }, [sortedTracks]);
 
-  // Check if any filter is active
-  const hasActiveFilters = 
-    selectedWeek !== "all" || 
-    selectedPlaylist !== "all" || 
-    searchQuery !== "" || 
-    activeFilters.length > 0;
-
-  const filterSections = filterOptions.reduce((acc, filter) => {
-    if (!acc[filter.section]) acc[filter.section] = [];
-    acc[filter.section].push(filter);
-    return acc;
-  }, {} as Record<string, typeof filterOptions>);
 
   const handleExport = useCallback(async () => {
     try {
@@ -787,63 +710,6 @@ export default function Dashboard() {
                     data-testid="input-search"
                   />
                 </div>
-
-                {/* Completeness Filters Popover */}
-                <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="default"
-                      className="gap-2 w-full sm:w-auto"
-                      data-testid="button-completeness-filters"
-                    >
-                      <Filter className="h-4 w-4" />
-                      <span className="hidden sm:inline">Completeness Filters</span>
-                      <span className="sm:hidden">Filters</span>
-                      {activeFilters.length > 0 && (
-                        <Badge variant="default" className="ml-1 px-1.5 py-0">
-                          {activeFilters.length}
-                        </Badge>
-                      )}
-                      <ChevronDown className={`h-3 w-3 ${filtersOpen ? "rotate-180" : ""}`} />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 glass-panel p-0" align="end">
-                    <ScrollArea className="max-h-[min(600px,80vh)]">
-                      <div className="space-y-4 p-4 pr-3">
-                      {/* Data Completeness Filters */}
-                      {Object.entries(filterSections).map(([section, filters]) => (
-                        <div key={section}>
-                          <h4 className="text-sm font-medium mb-2">{section}</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {filters.map((filter) => (
-                              <Button
-                                key={filter.id}
-                                variant={activeFilters.includes(filter.id) ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => toggleFilter(filter.id)}
-                                className="text-xs"
-                                data-testid={`filter-${filter.id}`}
-                              >
-                                {filter.label}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-
-                      <div className="border-t pt-3 flex justify-between">
-                        <Button variant="outline" size="sm" onClick={clearFilters}>
-                          Clear Selected
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={clearAllFilters} data-testid="button-clear-all-filters">
-                          Clear All Filters
-                        </Button>
-                      </div>
-                    </div>
-                    </ScrollArea>
-                  </PopoverContent>
-                </Popover>
             </div>
 
             <FilterBar.Actions>
