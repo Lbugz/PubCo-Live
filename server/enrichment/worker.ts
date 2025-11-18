@@ -173,8 +173,11 @@ export class EnrichmentWorker {
     let persistedCount = 0;
     const failedTrackIds: string[] = [];
 
-    // Track which Spotify URLs we've already processed to avoid duplicate syncs
+    // Track which Spotify URLs we've synced to avoid redundant duplicate updates
     const processedSpotifyUrls = new Set<string>();
+    
+    // Collect all trackIds in this job for filtering
+    const jobTrackIds = new Set(Array.from(updates.keys()));
 
     for (const [trackId, update] of updates) {
       try {
@@ -188,38 +191,35 @@ export class EnrichmentWorker {
 
         const spotifyUrl = track.spotifyUrl;
 
-        // If we've already synced this Spotify URL, skip to avoid redundant DB queries
-        if (processedSpotifyUrls.has(spotifyUrl)) {
-          ctx.clearUpdate(trackId);
-          continue;
-        }
-
-        // CRITICAL: Sync to ALL tracks with the same Spotify URL across entire database
-        // Step 1: Persist FULL update (including playlist-specific fields) to the original track
+        // CRITICAL: Each track in the job gets its FULL update (including playlist-specific unsignedScore)
+        // This is because each track is being enriched for its OWN playlist
         await this.storage.updateTrackMetadata(trackId, update);
         persistedCount++;
-        
-        // Step 2: Sync only GLOBAL fields (exclude playlist-specific like unsignedScore) to other duplicates
-        const allDuplicates = await this.storage.getTracksBySpotifyUrl(spotifyUrl);
-        const otherDuplicates = allDuplicates.filter(d => d.id !== trackId);
-        
-        if (otherDuplicates.length > 0) {
-          const globalUpdate = { ...update };
-          delete (globalUpdate as any).unsignedScore; // Score is playlist-specific, don't sync it
+        ctx.clearUpdate(trackId);
+
+        // Step 2: Sync global fields to duplicates OUTSIDE this job (not in the updates Map)
+        if (!processedSpotifyUrls.has(spotifyUrl)) {
+          const allDuplicates = await this.storage.getTracksBySpotifyUrl(spotifyUrl);
+          // Filter to duplicates NOT in this job (external duplicates only)
+          const externalDuplicates = allDuplicates.filter(d => !jobTrackIds.has(d.id));
           
-          // Only sync if there are global fields to update (avoid empty patches)
-          if (Object.keys(globalUpdate).length > 0) {
-            console.log(`[${phaseName} Sync] Syncing global fields to ${otherDuplicates.length} other instances of "${track.trackName}"`);
+          if (externalDuplicates.length > 0) {
+            const globalUpdate = { ...update };
+            delete (globalUpdate as any).unsignedScore; // Score is playlist-specific, don't sync it
             
-            for (const duplicate of otherDuplicates) {
-              await this.storage.updateTrackMetadata(duplicate.id, globalUpdate);
-              persistedCount++;
+            // Only sync if there are global fields to update (avoid empty patches)
+            if (Object.keys(globalUpdate).length > 0) {
+              console.log(`[${phaseName} Sync] Syncing global fields to ${externalDuplicates.length} external instances of "${track.trackName}"`);
+              
+              for (const duplicate of externalDuplicates) {
+                await this.storage.updateTrackMetadata(duplicate.id, globalUpdate);
+                persistedCount++;
+              }
             }
           }
+          
+          processedSpotifyUrls.add(spotifyUrl);
         }
-
-        processedSpotifyUrls.add(spotifyUrl);
-        ctx.clearUpdate(trackId);
       } catch (error) {
         console.error(`[Worker] Failed to persist ${phaseName} update for track ${trackId}:`, error);
         failedTrackIds.push(trackId);

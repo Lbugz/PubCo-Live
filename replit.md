@@ -1,85 +1,9 @@
 # AI Pub Feed — Discovery Platform
 
-## Overview
-The AI Pub Feed is an automated platform designed to discover unsigned artists and unpublished songwriters from Spotify playlists. It collects trending Spotify playlist data, enriches track metadata with essential details like ISRCs, labels, and writers, and ranks contributors based on their likelihood of being unsigned or unpublished. The system provides actionable publishing leads for A&R professionals, streamlining new talent discovery with real-time progress tracking and comprehensive relationship management.
+### Overview
+The AI Pub Feed is an automated platform designed to discover unsigned artists and unpublished songwriters from Spotify playlists. It collects trending Spotify playlist data, enriches track metadata, and ranks contributors based on their likelihood of being unsigned or unpublished. The system provides actionable publishing leads for A&R professionals, streamlining new talent discovery with real-time progress tracking and comprehensive relationship management. The project aims to revolutionize talent scouting by leveraging AI and automation to identify promising artists early in their careers.
 
-## Recent Changes
-
-### Nov 18, 2025 - Homepage Routing Update
-- **Homepage now redirects to Playlists**: Root URL (`/`) automatically redirects to `/playlists` page
-  - Every visit to pubco.replit.app loads the Playlists view
-  - Dashboard still accessible at `/dashboard` via sidebar navigation
-  - Implemented clean redirect pattern using Wouter's `useLocation` hook
-
-### Nov 18, 2025 - UI Cleanup & Playlist Name Sync
-- **Metrics Removed from Tracks Page**: Removed metrics section from `/tracks` page to simplify UI (only Dashboard shows all 9 metrics)
-- **Artwork Size Consistency**: Standardized track table artwork to match playlist table size (`h-8 w-8` / 32px)
-- **Playlist Name Sync Fix**: Fixed "Untitled Playlist" issue where tracks showed placeholder name even after metadata was fetched
-  - Added `syncPlaylistSnapshotsName()` method in storage layer to update all track records when playlist name changes
-  - Integrated sync into `updateTrackedPlaylistMetadata()` for automatic updates on all metadata fetches
-  - Backfilled 40 existing "We Back 2025" tracks with correct playlist name
-- **Storage Method Fix**: Added missing enrichment fields to `getContactById()` (collaborationCount, unsignedScore, mlcSearched, mlcFound, musicbrainzSearched, musicbrainzFound)
-
-### Nov 17, 2025 - Contact-Level Scoring Migration
-- **Scoring Architecture Refactor**: Migrated from track-level to contact/songwriter-level scoring system
-- **Schema Changes**: Removed `unsignedScore` column from `playlist_snapshots` table, added to `contacts` table
-- **Contact Scoring Service**: Created `server/contactScoring.ts` with rubric-based algorithm that calculates scores (0-10) based on:
-  - MLC status (mlcFound=0 = verified unsigned = highest signal)
-  - Aggregate track metadata quality across all songwriter's tracks
-  - Streaming velocity (WoW growth percentage)
-  - Collaboration count (solo writers vs. active collaborators)
-  - Track quality indicators (missing publisher, missing writer, self-written)
-- **Automatic Score Updates**: Enrichment pipeline now triggers contact scoring via `contactEnrichmentSync` after track enrichment completes
-- **UI Updates**: 
-  - Removed score displays from track table, track cards, and track detail drawers
-  - Added score column to Contacts page table with sortable header
-  - Added score badge to Contact detail drawer with color-coded tiers (9-10 hot, 7-8 strong, 5-6 moderate, 3-4 low, 0-2 minimal)
-- **Backend Updates**:
-  - Dashboard metrics now query `contacts.unsignedScore` instead of removed track scores
-  - Contact filtering supports minScore/maxScore parameters using contact-level scores
-  - CSV export no longer includes track scores (removed from export headers)
-  - All database queries updated to use `contacts.unsignedScore` for score-based filtering
-- **Production Ready**: Architect reviewed - all track score references removed, SQL errors resolved, contact queries return all required fields
-
-### Nov 16, 2025 - Sticky & Sortable Headers with Full Visual Consistency
-- **Sticky Header Container**: Created reusable `StickyHeaderContainer` component for filters and metrics sections
-- **Dashboard**: Wrapped metrics and FilterBar in sticky header - stays visible while scrolling through tracks
-- **Playlists**: Wrapped metrics and FilterBar in sticky header - stays visible while scrolling through playlist table
-- **Contacts**: Wrapped metrics and FilterBar in sticky header - stays visible while scrolling through contact table
-- **Consistent Table Containers**: All tables wrapped in Card with `glass-panel` class for unified backdrop blur, background, and border styling
-- **Sticky Table Headers**: Added sticky headers to all tables (Dashboard TrackTable, Playlists Table, Contacts Table) - column headers freeze at top when scrolling
-- **Sortable Headers**: All tables now have full sorting functionality via `SortableTableHeader` and `SortableHeaderForGrid` components
-  - Dashboard: Sort by Track Name, Artist, Score, Streams (already implemented)
-  - Playlists: Sort by Name, Source, Tracks, Curator, Followers, Last Updated (newly added)
-  - Contacts: Sort by Songwriter, Total Streams, Tracks, Stage, WoW Growth (already implemented)
-- **Unified Header Styling**: Applied consistent typography to all table headers across Dashboard, Playlists, and Contacts:
-  - `text-xs uppercase tracking-wider font-semibold` on all headers
-  - `glass-header` class for frosted glass background effect
-  - Same sort icon colors: `text-muted-foreground` (unsorted), `text-primary` (sorted)
-- **Consistent Row Styling**: Added alternating row striping (`bg-muted/30`) and hover effects (`hover-elevate`) to all tables for visual consistency
-
-### Nov 16, 2025 - Publishing Intelligence System
-- **Contact-Level Enrichment Tracking**: Added 4 boolean flags to contacts table (`mlcSearched`, `mlcFound`, `musicbrainzSearched`, `musicbrainzFound`) to track verified unsigned status at songwriter level
-- **Automated Contact Sync**: Created `contactEnrichmentSync` service to aggregate track-level enrichment data to contact flags after each enrichment job completes
-- **New Publishing Intelligence Metrics**:
-  - **High-Confidence Unsigned**: Songwriters verified as unsigned through MLC search (mlcFound=0) with high-quality tracks (score ≥7)
-  - **Publishing Opportunities**: All MLC-verified unsigned songwriters (mlcSearched=1 AND mlcFound=0)
-  - **Enrichment Backlog**: Songwriters never searched in MLC (mlcSearched=0)
-- **Dashboard UI Updates**: Added dedicated "Publishing Intelligence" section with contact-level metrics, separate from track metrics
-- **Real-Time Cache Invalidation**: Metrics cache automatically invalidated after enrichment sync for immediate dashboard updates
-- **Authoritative MLC Signals**: Metrics use contact-level MLC flags as source of truth for unsigned status, with EXISTS checks for score validation
-
-### Nov 16, 2025 - Scoring Pipeline Fix & UX Improvements
-- **Fixed premature scoring bug**: Removed incorrect score calculations during playlist fetch that assigned "High 8" scores to unenriched tracks
-- **Post-enrichment scoring**: Scores now calculated only after Phase 2 (credits scraping) completes, ensuring accuracy based on real enriched metadata
-- **Nullable score schema**: Updated `unsignedScore` column to allow null values, enabling "Pending" state for tracks awaiting enrichment
-- **UI updates**: All components (track-table, card-view, details-drawer) show "Pending" badge for null scores instead of inflated values
-- **Removed email requirement**: Deal-Ready Tracks filter no longer requires contact email (which enrichment never collects), now filters only by unsigned score 7-10
-- **Fixed toast stacking**: Activity Panel job notifications no longer duplicate when WebSocket events are received multiple times
-- **Mobile responsiveness**: All touch targets WCAG-compliant (48px), responsive layouts across all pages using pseudo-element technique
-
-## User Preferences
-
+### User Preferences
 - Professional, data-focused UI inspired by Linear/Notion
 - Clean information hierarchy with collapsible sections
 - Fast data scanning with sortable/filterable tables
@@ -88,74 +12,41 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
 - Blue gradient buttons for primary actions
 - Dark/light theme toggle with persistent preference
 
-## System Architecture
+### System Architecture
 
-### Frontend
-- **React + TypeScript:** Component-based UI with type safety
-- **TanStack Query:** Data fetching, caching, real-time updates
-- **Wouter:** Lightweight client-side routing
-- **Shadcn UI + Tailwind CSS:** Professional design system inspired by Linear/Notion
-- **WebSocket Client:** Real-time job progress updates
+**Frontend**
+- **React + TypeScript:** Component-based UI with type safety.
+- **TanStack Query:** Data fetching, caching, real-time updates.
+- **Wouter:** Lightweight client-side routing.
+- **Shadcn UI + Tailwind CSS:** Professional design system inspired by Linear/Notion.
+- **WebSocket Client:** Real-time job progress updates.
 
-### Backend
-- **Express.js + Node.js:** RESTful API server
-- **PostgreSQL (Neon):** Managed database with foreign key integrity
-- **Drizzle ORM:** Type-safe database queries
-- **WebSocket Server:** Real-time event broadcasting on `/ws`
+**Backend**
+- **Express.js + Node.js:** RESTful API server.
+- **PostgreSQL (Neon):** Managed database with foreign key integrity.
+- **Drizzle ORM:** Type-safe database queries.
+- **WebSocket Server:** Real-time event broadcasting on `/ws`.
 
-### Worker Process
-- **Standalone Enrichment Worker:** Separate from API server
-- **Job Queue:** PostgreSQL-backed with atomic claiming
-- **Crash Recovery:** Automatic job reclamation
-- **Graceful Shutdown:** Clean job cleanup on SIGTERM/SIGINT
+**Worker Process**
+- **Standalone Enrichment Worker:** Separate from API server.
+- **Job Queue:** PostgreSQL-backed with atomic claiming.
+- **Crash Recovery:** Automatic job reclamation.
+- **Graceful Shutdown:** Clean job cleanup on SIGTERM/SIGINT.
 
-### Key Features and Design Patterns
-- **Playlist Tracking:** Ingests Spotify playlists (public, editorial, custom) with intelligent fallback systems (Chartmetric-first, Spotify API fallback, Puppeteer for editorial). Automatically pulls and stores track metadata and creates weekly snapshots.
-- **Multi-Phase Enrichment Pipeline:** Converts raw playlist tracks into rights-relevant metadata through four phases:
-    1.  **Spotify API Batch Enrichment:** Extracts ISRCs, label info, release metadata, audio features, and artist data.
-    2.  **Web Scraping (Puppeteer):** Extracts songwriter/producer credits and real-time stream counts from Spotify track pages.
-    3.  **MusicBrainz Lookup:** Queries for songwriter/publisher details and global creator identifiers.
-    4.  **MLC Publisher Search:** Confirms unsigned/unpublished status via U.S. mechanical rights, with OAuth 2.0 authentication and graceful degradation.
-- **Real-Time UX:** Features an Activity Panel for persistent job tracking and a 4-tier toast notification system. WebSocket broadcasts provide live updates for `track_enriched` events and job progress.
-- **Proprietary Scoring Algorithm:** Point-based rubric system (0-10 score) prioritizing publishing metadata gaps as strongest unsigned signal:
-    - **Missing Publisher (+5):** Highest priority - direct unsigned publishing indicator
-    - **Missing Writer (+3):** Metadata gap suggesting self-written/DIY artist
-    - **Self-Written + Fresh Finds (+3):** Artist wrote own song + editorial validation
-    - **Self-Written + Indie Label (+2):** Self-released + self-written = strong unsigned signal
-    - **High Stream Velocity (+2):** >50% WoW growth = urgent opportunity
-    - **Medium Stream Velocity (+1):** >20% WoW growth = building momentum
-    - **Self-Written Detection:** Intelligent artist-songwriter name matching (normalized, handles variations)
-    - **Label Classification:** Regex pattern for indie/DIY/DK keywords
-    - **No Major Label Penalty:** Hired songwriters for majors can still be unsigned publishers
-    - **Score Distribution:** 9-10 (hot lead), 7-8 (strong lead), 5-6 (moderate), 3-4 (low), 0-2 (minimal)
-    - **Implementation:** `server/scoring.ts`, calculated in Phase 1, persisted in `playlist_snapshots.unsigned_score`
-- **Contacts CRM & Funnel Management:** Tracks writer discovery, growth, and outreach through pipeline stages (Discovery Pool, Watch List, Active Search). Includes a global dashboard, filterable tables, and detailed contact drawers with performance metrics, activity logs, notes, and alerts. Supports bulk actions for stage updates and tag assignments.
-- **Technical Optimizations:** Includes database-level pagination, search query debouncing, component memoization, native image lazy loading, foreign key constraints, duplicate prevention, atomic job claiming, batch Spotify API calls, and tiered rate limiting for external APIs. Editorial playlist handling uses browser-sharing architecture with GraphQL network interception and cookie persistence.
-- **Automation:** Utilizes `node-cron` for scheduled jobs:
-    - **Fresh Finds Weekly Update** (Fridays 9AM): Auto-scrapes Fresh Finds playlists
-    - **Failed Enrichment Retry** (Daily 2AM): Re-queues failed enrichments
-    - **Weekly Performance Snapshots** (Mondays 1AM): Captures stream counts for WoW % calculations
-    - Auto-enrichment triggers immediately after playlist fetch
-    - Stream velocity data sources: Chartmetric API → Puppeteer scraping → stored in `playlist_snapshots.spotifyStreams`
-    - WoW % formula: `(Current Week Streams - Previous Week Streams) / Previous Week Streams × 100`
+**Key Features and Design Patterns**
+- **Playlist Tracking:** Ingests Spotify playlists with intelligent fallback systems (Chartmetric-first, Spotify API fallback, Puppeteer for editorial). Automatically pulls and stores track metadata and creates weekly snapshots.
+- **Multi-Phase Enrichment Pipeline:** Converts raw playlist tracks into rights-relevant metadata through four phases: Spotify API Batch Enrichment, Web Scraping (Puppeteer), MusicBrainz Lookup, and MLC Publisher Search.
+- **Real-Time UX:** Features an Activity Panel for persistent job tracking and a 4-tier toast notification system, with WebSocket broadcasts for live updates.
+- **Proprietary Scoring Algorithm:** A point-based rubric system (0-10 score) calculated at the contact level, prioritizing publishing metadata gaps as the strongest unsigned signal. Scores are updated post-enrichment.
+- **Contacts CRM & Funnel Management:** Tracks writer discovery, growth, and outreach through pipeline stages (Discovery Pool, Watch List, Active Search). Includes a global dashboard, filterable tables, and detailed contact drawers.
+- **Technical Optimizations:** Includes database-level pagination, search query debouncing, component memoization, native image lazy loading, foreign key constraints, duplicate prevention, atomic job claiming, batch Spotify API calls, and tiered rate limiting.
+- **Automation:** Utilizes `node-cron` for scheduled jobs including Fresh Finds weekly updates, failed enrichment retries, and weekly performance snapshots to calculate WoW growth.
 
-### Database Schema
-- `tracked_playlists`
-- `playlist_snapshots`
-- `contacts`
-- `artists`
-- `artist_songwriters`
-- `tags` / `track_tags`
-- `activities`
-- `notes`
-- `alerts`
-
-## External Dependencies
-
-- **Spotify API:** OAuth 2.0 for playlist/track data
-- **Chartmetric API:** Cross-platform analytics, ISRC lookup
-- **MusicBrainz API:** Songwriter/publisher metadata
-- **The MLC API:** OAuth-based publisher ownership
-- **Neon PostgreSQL:** Managed database
-- **GPT-4o-mini:** AI-powered insights via Replit integration
-- **Puppeteer + Chromium:** Web scraping for editorial playlists and credits
+### External Dependencies
+- **Spotify API:** OAuth 2.0 for playlist/track data.
+- **Chartmetric API:** Cross-platform analytics, ISRC lookup.
+- **MusicBrainz API:** Songwriter/publisher metadata.
+- **The MLC API:** OAuth-based publisher ownership.
+- **Neon PostgreSQL:** Managed database.
+- **GPT-4o-mini:** AI-powered insights via Replit integration.
+- **Puppeteer + Chromium:** Web scraping for editorial playlists and credits.
