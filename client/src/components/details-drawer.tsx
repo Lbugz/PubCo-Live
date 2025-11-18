@@ -345,10 +345,31 @@ export function DetailsDrawer({
                               </AccordionTrigger>
                               <AccordionContent className="px-4 pb-4 pt-2">
                                 <div className="space-y-4">
-                                  {/* Publisher Row */}
-                                  <div className="text-sm">
-                                    <span className="text-muted-foreground block mb-1">Publisher</span>
-                                    <span className="font-medium">{displayTrack.publisher || "—"}</span>
+                                  {/* Publishing Info - 2 Column Grid */}
+                                  <div className="grid grid-cols-2 gap-4">
+                                    {/* Publisher */}
+                                    <div className="text-sm">
+                                      <span className="text-muted-foreground block mb-1">Publisher</span>
+                                      <span className="font-medium">{displayTrack.publisher || "—"}</span>
+                                    </div>
+                                    
+                                    {/* ISWC */}
+                                    <div className="text-sm">
+                                      <span className="text-muted-foreground block mb-1">ISWC</span>
+                                      <span className="font-medium font-mono text-xs">{displayTrack.iswc || "—"}</span>
+                                    </div>
+                                    
+                                    {/* Administrators */}
+                                    <div className="text-sm">
+                                      <span className="text-muted-foreground block mb-1">Administrators</span>
+                                      <span className="font-medium">{displayTrack.administrators || "—"}</span>
+                                    </div>
+                                    
+                                    {/* IPI Number */}
+                                    <div className="text-sm">
+                                      <span className="text-muted-foreground block mb-1">IPI</span>
+                                      <span className="font-medium font-mono text-xs">{displayTrack.ipiNumber || "—"}</span>
+                                    </div>
                                   </div>
 
                                   {/* Social Links */}
@@ -503,10 +524,31 @@ export function DetailsDrawer({
                                 </AccordionTrigger>
                                 <AccordionContent className="px-4 pb-4 pt-2">
                                   <div className="space-y-4">
-                                    {/* Publisher Row */}
-                                    <div className="text-sm">
-                                      <span className="text-muted-foreground block mb-1">Publisher</span>
-                                      <span className="font-medium">{displayTrack.publisher || "—"}</span>
+                                    {/* Publishing Info - 2 Column Grid */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                      {/* Publisher */}
+                                      <div className="text-sm">
+                                        <span className="text-muted-foreground block mb-1">Publisher</span>
+                                        <span className="font-medium">{displayTrack.publisher || "—"}</span>
+                                      </div>
+                                      
+                                      {/* ISWC */}
+                                      <div className="text-sm">
+                                        <span className="text-muted-foreground block mb-1">ISWC</span>
+                                        <span className="font-medium font-mono text-xs">{displayTrack.iswc || "—"}</span>
+                                      </div>
+                                      
+                                      {/* Administrators */}
+                                      <div className="text-sm">
+                                        <span className="text-muted-foreground block mb-1">Administrators</span>
+                                        <span className="font-medium">{displayTrack.administrators || "—"}</span>
+                                      </div>
+                                      
+                                      {/* IPI Number */}
+                                      <div className="text-sm">
+                                        <span className="text-muted-foreground block mb-1">IPI</span>
+                                        <span className="font-medium font-mono text-xs">{displayTrack.ipiNumber || "—"}</span>
+                                      </div>
                                     </div>
 
                                     {/* Social Links */}
