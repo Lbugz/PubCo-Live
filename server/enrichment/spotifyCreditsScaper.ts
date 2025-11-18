@@ -375,7 +375,7 @@ async function extractCredits(
   
   await page.evaluate(nameSplitScript);
 
-  // Extract credits
+  // Extract credits with enhanced debugging
   const credits = await page.evaluate(() => {
     const writers: string[] = [];
     const composers: string[] = [];
@@ -386,12 +386,16 @@ async function extractCredits(
     const allText = document.body.innerText;
     const lines = allText.split('\n').map(l => l.trim()).filter(Boolean);
     
+    // DEBUG: Log first 50 lines to see what we're working with
+    console.log('[DEBUG] First 50 lines of page text:', lines.slice(0, 50));
+    
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const nextLine = lines[i + 1] || '';
       
       // Written by / Songwriter
       if (line.toLowerCase().includes('written by') || line.toLowerCase().includes('songwriter')) {
+        console.log('[DEBUG] Found writer label:', line, '-> next line:', nextLine);
         if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
           const segments = nextLine.split(',').map(n => n.trim()).filter(Boolean);
           const finalNames: string[] = [];
@@ -401,12 +405,14 @@ async function extractCredits(
             finalNames.push(...splitResult);
           }
           
+          console.log('[DEBUG] Extracted writers:', finalNames);
           writers.push(...finalNames);
         }
       }
       
       // Produced by / Producer
       if (line.toLowerCase().includes('produced by') || line.toLowerCase().includes('producer')) {
+        console.log('[DEBUG] Found producer label:', line, '-> next line:', nextLine);
         if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
           const segments = nextLine.split(',').map(n => n.trim()).filter(Boolean);
           const finalNames: string[] = [];
@@ -416,12 +422,14 @@ async function extractCredits(
             finalNames.push(...splitResult);
           }
           
+          console.log('[DEBUG] Extracted producers:', finalNames);
           producers.push(...finalNames);
         }
       }
       
       // Composer
       if (line.toLowerCase().includes('composer')) {
+        console.log('[DEBUG] Found composer label:', line, '-> next line:', nextLine);
         if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
           const segments = nextLine.split(',').map(n => n.trim()).filter(Boolean);
           const finalNames: string[] = [];
@@ -431,6 +439,7 @@ async function extractCredits(
             finalNames.push(...splitResult);
           }
           
+          console.log('[DEBUG] Extracted composers:', finalNames);
           composers.push(...finalNames);
         }
       }
@@ -438,17 +447,22 @@ async function extractCredits(
       // Source (Label)
       if (line.toLowerCase().startsWith('source:')) {
         const labelName = line.replace(/source:/i, '').trim();
+        console.log('[DEBUG] Found label source:', labelName);
         if (labelName) labels.push(labelName);
       }
       
       // Publisher
       if (line.toLowerCase().includes('publisher') && !line.toLowerCase().startsWith('source:')) {
+        console.log('[DEBUG] Found publisher label:', line, '-> next line:', nextLine);
         if (nextLine && !nextLine.includes(':') && !nextLine.toLowerCase().includes(' by')) {
           const names = nextLine.split(',').map(n => n.trim()).filter(Boolean);
+          console.log('[DEBUG] Extracted publishers:', names);
           publishers.push(...names);
         }
       }
     }
+    
+    console.log('[DEBUG] Final credits:', { writers, composers, producers, labels, publishers });
     
     return {
       writers: Array.from(new Set(writers)),
