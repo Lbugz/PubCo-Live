@@ -626,7 +626,7 @@ export default function PlaylistsView() {
   };
 
   const viewTracks = (playlistId: string) => {
-    navigate(`/?playlist=${playlistId}`);
+    navigate(`/tracks?playlist=${playlistId}`);
   };
 
   const formatDate = (date: Date | string | null) => {
