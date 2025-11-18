@@ -61,7 +61,7 @@ const workflowSections = [
     icon: Search,
     items: [
       { title: "Playlists", url: "/playlists", icon: List },
-      { title: "Tracks", url: "/", icon: Sparkles },
+      { title: "Tracks", url: "/tracks", icon: Sparkles },
     ],
   },
   {
