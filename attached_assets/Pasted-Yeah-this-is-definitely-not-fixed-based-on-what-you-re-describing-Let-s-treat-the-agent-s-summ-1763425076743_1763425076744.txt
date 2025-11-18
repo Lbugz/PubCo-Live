@@ -1,0 +1,292 @@
+Yeah, this is definitely **not fixed** based on what you’re describing. Let’s treat the agent’s summary as “probably wrong” and walk through what’s *actually* likely going on, plus give you multiple concrete fix paths.
+
+---
+
+## 1. What’s probably still wrong
+
+From the log + your comment (“Image 2 and Image 3 still have the old top metric cards here”):
+
+* There are **two different metric UI layers**:
+
+  1. The **config-driven sections** using `METRIC_CARD_CONFIG` + `renderMetricsSection(...)`.
+  2. The **older “TOP METRICS” card row(s)** that seem to be hardcoded somewhere else (maybe above the main sections, in a detail view, or shared layout).
+
+* The agent only partially touched (1) and *some* of (2), but:
+
+  * There are still **components rendering cards that do not go through the filtered “tracks only” logic**.
+  * Those old components are probably used in multiple places (detail preview, dashboard header, etc.) and were not removed/guarded for `/tracks`.
+
+So: the route can be `/tracks` and `renderMetricsSection('tracks')` can be correct, **but if another component above/below is still rendering legacy “top metrics” cards**, you’ll still see playlist + contact metrics.
+
+Caching is a red herring here. If you see the wrong *layout*, it’s almost always stale code still being rendered, not just a cache issue.
+
+---
+
+## 2. Quick triage: where the zombie cards are coming from
+
+Here’s what I’d do **right now**, no code changes yet:
+
+1. **In the browser DevTools → Elements tab**
+
+   * Inspect one of the wrong “TOP METRICS” cards (e.g., Playlist/Contacts card on `/tracks`).
+   * Look at the **component stack trace** (React DevTools) or data attributes:
+
+     * You may see something like `DashboardTopMetrics`, `TopMetricsRow`, `DealTopMetrics`, `SummaryMetricsGrid`, etc.
+   * Note the **component name and file path**.
+
+2. **In Replit, search the repo for the component / text:**
+
+   * Search for the exact heading text that appears above those old cards:
+
+     * e.g. `"Top Metrics"`, `"TOP METRICS"`, `"Deal-Ready Tracks"`, `"Missing Publisher"`, `"High Velocity"` together in one file.
+   * Or search for any of:
+
+     * `TopMetrics`
+     * `TOP_METRICS`
+     * `Deal-Ready Tracks`
+     * `Missing Publisher`
+     * `High Velocity`
+
+3. When you find the file, check:
+
+   * Does it live in something like `dashboard.tsx`, `detail-preview.tsx`, `playlist-detail.tsx`, etc.?
+   * Is this component used:
+
+     * On `/tracks` directly?
+     * Inside a shared layout that all three pages use?
+
+This will tell you **exactly which “layer” is still rendering the old cards.**
+
+---
+
+## 3. Plan A – Surgical “shut it off on Tracks” (fastest)
+
+Goal: **/tracks only ever shows the tracks metric section**. No playlist or contact top cards anywhere on that route.
+
+### A1. Route guard in the legacy metrics component
+
+Wherever the old “top metrics” row lives (call it `TopMetricsRow` for now), wrap its render in a route check:
+
+```tsx
+// pseudo-code in TopMetricsRow.tsx or dashboard header component
+import { useLocation } from "wouter";
+
+export function TopMetricsRow(props) {
+  const [location] = useLocation();
+
+  // Do NOT show on /tracks at all
+  if (location === "/tracks") {
+    return null;
+  }
+
+  return (
+    <div className="grid ...">
+      {/* existing TOP METRICS cards */}
+    </div>
+  );
+}
+```
+
+If it’s imported into `tracks.tsx` directly, just **remove the import and JSX usage** on that page.
+
+### A2. Hard-remove playlist/contact metric cards from that row
+
+If you *do* still want a small metric row on `/tracks` but only for tracks:
+
+* In that `TopMetricsRow` component, **comment out or delete** all cards that read from `METRIC_CARD_CONFIG.playlists` or `METRIC_CARD_CONFIG.contacts`.
+
+Example pattern:
+
+```tsx
+// Before
+return (
+  <div className="grid ...">
+    <MetricCard config={METRIC_CARD_CONFIG.playlists.topX} />
+    <MetricCard config={METRIC_CARD_CONFIG.tracks.dealReady} />
+    <MetricCard config={METRIC_CARD_CONFIG.contacts.hotLeads} />
+  </div>
+);
+
+// After (tracks-only)
+return (
+  <div className="grid ...">
+    <MetricCard config={METRIC_CARD_CONFIG.tracks.dealReady} />
+    <MetricCard config={METRIC_CARD_CONFIG.tracks.missingPublisher} />
+    <MetricCard config={METRIC_CARD_CONFIG.tracks.highVelocity} />
+  </div>
+);
+```
+
+### A3. Verify the route really uses `Tracks` everywhere
+
+In `client/src/App.tsx`:
+
+* Make sure there is a **single** route for `/tracks` and it uses `Tracks`:
+
+```tsx
+import Tracks from "./pages/tracks";
+
+<Route path="/tracks">
+  <Tracks />
+</Route>
+```
+
+* Confirm there is **no other route** that might be rendering a `Dashboard` or `Overview` component for `/tracks` or for a layout wrapping `/tracks`.
+
+---
+
+## 4. Plan B – Proper metrics component with `allowedGroups` prop (cleaner)
+
+If you want to do this “the right way” and avoid hard-coding per page:
+
+### B1. Centralize the metrics into one component
+
+Create something like `MetricsSection.tsx`:
+
+```tsx
+// client/src/components/metrics/MetricsSection.tsx
+import { METRIC_CARD_CONFIG } from "@/config/metrics";
+
+type MetricsSectionProps = {
+  allowedGroups: Array<"tracks" | "playlists" | "contacts">;
+};
+
+export function MetricsSection({ allowedGroups }: MetricsSectionProps) {
+  return (
+    <>
+      {allowedGroups.map((groupKey) => (
+        <section key={groupKey}>
+          <h2 className="text-sm font-semibold uppercase tracking-wide">
+            {groupKey}
+          </h2>
+          <div className="grid gap-3 md:grid-cols-3">
+            {Object.values(METRIC_CARD_CONFIG[groupKey]).map((metric) => (
+              <MetricCard key={metric.id} config={metric} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </>
+  );
+}
+```
+
+### B2. Use it per page
+
+* `tracks.tsx`:
+
+```tsx
+<MetricsSection allowedGroups={["tracks"]} />
+```
+
+* `playlists-view.tsx` (if you still want playlist metrics there):
+
+```tsx
+<MetricsSection allowedGroups={["playlists"]} />
+```
+
+* `contacts.tsx`:
+
+```tsx
+<MetricsSection allowedGroups={["contacts"]} />
+```
+
+* Dashboard `/`:
+
+```tsx
+<MetricsSection allowedGroups={["playlists", "tracks", "contacts"]} />
+```
+
+This ensures **no page can accidentally render all groups unless you explicitly pass them in**.
+
+### B3. Delete / retire old “TOP METRICS” components
+
+Once `MetricsSection` is wired in:
+
+* Delete / comment out the old `TopMetricsRow` or any legacy metric block which isn’t using `MetricsSection`.
+* `rg -n "TOP METRICS" client` and remove all of them.
+
+---
+
+## 5. Plan C – Config-driven per-route visibility (future-proofed)
+
+If you want something that scales when you add more sections later (e.g., Deals, Campaigns):
+
+### C1. Create a `ROUTE_METRIC_CONFIG`
+
+```ts
+// client/src/config/routeMetrics.ts
+export const ROUTE_METRIC_GROUPS: Record<string, Array<"tracks" | "playlists" | "contacts">> = {
+  "/": ["playlists", "tracks", "contacts"],
+  "/tracks": ["tracks"],
+  "/playlists": ["playlists"],
+  "/contacts": ["contacts"],
+};
+```
+
+### C2. Route-aware metrics wrapper
+
+```tsx
+// client/src/components/metrics/RouteAwareMetrics.tsx
+import { useLocation } from "wouter";
+import { ROUTE_METRIC_GROUPS } from "@/config/routeMetrics";
+import { MetricsSection } from "./MetricsSection";
+
+export function RouteAwareMetrics() {
+  const [location] = useLocation();
+  const groups = ROUTE_METRIC_GROUPS[location] ?? [];
+
+  if (!groups.length) return null;
+
+  return <MetricsSection allowedGroups={groups} />;
+}
+```
+
+Then, anywhere you want metrics:
+
+```tsx
+<RouteAwareMetrics />
+```
+
+Now **all control lives in config**, not scattered conditionals.
+
+---
+
+## 6. Sanity checks so you don’t get gaslit again
+
+Before believing “✅ Metrics Display Issue – Fixed!” from any agent:
+
+1. **Add explicit `data-testid`s** to the real tracks metrics and remove them from old cards.
+
+   * E.g. `data-testid="tracks-metric-deal-ready"`.
+   * Then you can inspect the DOM and see if unexpected cards are still there.
+
+2. **Temporarily make the legacy component scream in the UI.**
+
+   * Add a big `console.warn("Rendering LEGACY TOP METRICS COMPONENT")`.
+   * If you still see that in console on `/tracks`, you know it’s not gone.
+
+3. **Comment out the suspected component entirely** and redeploy.
+
+   * If the old cards are *still* showing, they’re coming from another file.
+
+---
+
+## 7. What I’d personally do (opinion)
+
+If you want my take:
+
+* **Short term (today):**
+  Use **Plan A**: find the legacy “TOP METRICS” component(s) and either:
+
+  * completely remove them from `/tracks`, and/or
+  * hard-code them to show only tracks metrics.
+* **Medium term (this week):**
+  Move to **Plan B** with a single `MetricsSection` + `allowedGroups` prop, then
+
+  * delete the old duplicated metric rows,
+  * keep everything config-driven.
+
+---
+
+If you paste the contents of `client/src/pages/tracks.tsx` and whichever file renders those top cards, I can call out *exact* lines to change and give you the smallest diff to apply.
