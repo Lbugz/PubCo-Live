@@ -9,7 +9,6 @@ import { formatDistanceToNow } from "date-fns";
 import { useFetchPlaylistsMutation } from "@/hooks/use-fetch-playlists-mutation";
 import { useMobile } from "@/hooks/use-mobile";
 import { useForm } from "react-hook-form";
-import { useQuickFilterPreferences, type QuickFilterDefinition } from "@/hooks/use-quick-filter-preferences";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,57 +41,6 @@ import { AddPlaylistDialog } from "@/components/add-playlist-dialog";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
-const AVAILABLE_QUICK_FILTERS: QuickFilterDefinition[] = [
-  {
-    id: "editorial",
-    label: "Editorial only",
-    icon: Trophy,
-    variant: "default",
-    defaultVisible: true,
-  },
-  {
-    id: "chartmetric",
-    label: "Chartmetric linked",
-    icon: LinkIcon,
-    variant: "default",
-    defaultVisible: true,
-  },
-  {
-    id: "highFollowers",
-    label: "High followers",
-    icon: Flame,
-    variant: "hot",
-    defaultVisible: false,
-  },
-  {
-    id: "recentlyUpdated",
-    label: "Recently updated",
-    icon: Clock,
-    variant: "default",
-    defaultVisible: false,
-  },
-  {
-    id: "incomplete",
-    label: "Incomplete",
-    icon: AlertTriangle,
-    variant: "default",
-    defaultVisible: false,
-  },
-  {
-    id: "largePlaylists",
-    label: "Large playlists",
-    icon: Users,
-    variant: "default",
-    defaultVisible: false,
-  },
-  {
-    id: "hasTracks",
-    label: "Has tracks",
-    icon: CheckCircle,
-    variant: "default",
-    defaultVisible: true,
-  },
-];
 
 export default function PlaylistsView() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -107,27 +55,9 @@ export default function PlaylistsView() {
   const { toast } = useToast();
   const isMobile = useMobile(768);
 
-  // Quick filters
-  const [showEditorialOnly, setShowEditorialOnly] = useState(false);
-  const [showChartmetric, setShowChartmetric] = useState(false);
-  const [showHighFollowers, setShowHighFollowers] = useState(false);
-  const [showRecentlyUpdated, setShowRecentlyUpdated] = useState(false);
-  const [showIncomplete, setShowIncomplete] = useState(false);
-  const [showLargePlaylists, setShowLargePlaylists] = useState(false);
-  const [showHasTracks, setShowHasTracks] = useState(false);
-
   // Sorting state
   const [sortField, setSortField] = useState<string>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-
-  // Quick filter preferences
-  const {
-    visibleFilters,
-    visibleFilterIds,
-    toggleFilterVisibility,
-    resetToDefaults,
-    allFilters,
-  } = useQuickFilterPreferences("playlists", AVAILABLE_QUICK_FILTERS);
 
   // Auto-switch to card view on mobile
   useEffect(() => {
@@ -598,39 +528,8 @@ export default function PlaylistsView() {
       filtered = filtered.filter(p => normalizeSource(p.source) === sourceFilter);
     }
 
-    // Quick filters
-    if (showEditorialOnly) {
-      filtered = filtered.filter(p => p.isEditorial === 1);
-    }
-
-    if (showChartmetric) {
-      filtered = filtered.filter(p => !!p.chartmetricUrl);
-    }
-
-    if (showHighFollowers) {
-      filtered = filtered.filter(p => (p.followers || 0) >= 10000);
-    }
-
-    if (showRecentlyUpdated) {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      filtered = filtered.filter(p => p.lastChecked && new Date(p.lastChecked) >= sevenDaysAgo);
-    }
-
-    if (showIncomplete) {
-      filtered = filtered.filter(p => p.isComplete === 0);
-    }
-
-    if (showLargePlaylists) {
-      filtered = filtered.filter(p => (p.totalTracks || 0) >= 50);
-    }
-
-    if (showHasTracks) {
-      filtered = filtered.filter(p => (p.totalTracks || 0) > 0);
-    }
-
     return filtered;
-  }, [playlists, searchQuery, sourceFilter, showEditorialOnly, showChartmetric, showHighFollowers, showRecentlyUpdated, showIncomplete, showLargePlaylists, showHasTracks]);
+  }, [playlists, searchQuery, sourceFilter]);
 
   // Sort playlists
   const sortedPlaylists = useMemo(() => {
@@ -890,115 +789,6 @@ export default function PlaylistsView() {
             testId="select-source-filter"
           />
 
-          <FilterBar.Pills
-            pills={visibleFilters.map((filter) => {
-              let active = false;
-              let onClick = () => {};
-              let testId = "";
-
-              if (filter.id === "editorial") {
-                active = showEditorialOnly;
-                onClick = () => setShowEditorialOnly(!showEditorialOnly);
-                testId = "badge-filter-editorial";
-              } else if (filter.id === "chartmetric") {
-                active = showChartmetric;
-                onClick = () => setShowChartmetric(!showChartmetric);
-                testId = "badge-filter-chartmetric";
-              } else if (filter.id === "highFollowers") {
-                active = showHighFollowers;
-                onClick = () => setShowHighFollowers(!showHighFollowers);
-                testId = "badge-filter-high-followers";
-              } else if (filter.id === "recentlyUpdated") {
-                active = showRecentlyUpdated;
-                onClick = () => setShowRecentlyUpdated(!showRecentlyUpdated);
-                testId = "badge-filter-recently-updated";
-              } else if (filter.id === "incomplete") {
-                active = showIncomplete;
-                onClick = () => setShowIncomplete(!showIncomplete);
-                testId = "badge-filter-incomplete";
-              } else if (filter.id === "largePlaylists") {
-                active = showLargePlaylists;
-                onClick = () => setShowLargePlaylists(!showLargePlaylists);
-                testId = "badge-filter-large-playlists";
-              } else if (filter.id === "hasTracks") {
-                active = showHasTracks;
-                onClick = () => setShowHasTracks(!showHasTracks);
-                testId = "badge-filter-has-tracks";
-              }
-
-              return {
-                label: filter.label,
-                active,
-                onClick,
-                icon: filter.icon,
-                variant: filter.variant,
-                testId,
-              };
-            })}
-            showClear={true}
-            onClearAll={() => {
-              setSearchQuery("");
-              setSourceFilter("all");
-              setShowEditorialOnly(false);
-              setShowChartmetric(false);
-              setShowHighFollowers(false);
-              setShowRecentlyUpdated(false);
-              setShowIncomplete(false);
-              setShowLargePlaylists(false);
-              setShowHasTracks(false);
-            }}
-          />
-
-          <FilterBar.AdvancedFilters testId="button-advanced-filters">
-            <div className="space-y-4">
-
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Settings2 className="h-4 w-4 text-muted-foreground" />
-                    <h4 className="font-medium">Customize Quick Filters</h4>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetToDefaults}
-                    className="h-7 text-xs"
-                    data-testid="button-reset-filters"
-                  >
-                    Reset
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Choose which quick filters appear in the filter bar
-                </p>
-                <div className="space-y-2">
-                  {allFilters.map((filter) => {
-                    const Icon = filter.icon;
-                    return (
-                      <div
-                        key={filter.id}
-                        className="flex items-center gap-2"
-                      >
-                        <Checkbox
-                          id={`filter-${filter.id}`}
-                          checked={visibleFilterIds.has(filter.id)}
-                          onCheckedChange={() => toggleFilterVisibility(filter.id)}
-                          data-testid={`checkbox-filter-${filter.id}`}
-                        />
-                        <label
-                          htmlFor={`filter-${filter.id}`}
-                          className="flex items-center gap-2 text-sm cursor-pointer flex-1"
-                        >
-                          {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
-                          <span>{filter.label}</span>
-                        </label>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </FilterBar.AdvancedFilters>
         </FilterBar.FiltersGroup>
 
         <FilterBar.Actions>
