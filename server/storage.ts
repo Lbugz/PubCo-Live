@@ -25,7 +25,7 @@ export interface IStorage {
   addTagToTrack(trackId: string, tagId: string): Promise<void>;
   removeTagFromTrack(trackId: string, tagId: string): Promise<void>;
   getTrackTags(trackId: string): Promise<Tag[]>;
-  getTracksByTag(tagId: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]>;
+  getTracksByTag(tagId: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]>;
   getTracksByTagCount(tagId: string): Promise<number>;
   getTrackedPlaylists(): Promise<TrackedPlaylist[]>;
   getTrackedPlaylistBySpotifyId(playlistId: string): Promise<TrackedPlaylist | null>;
@@ -453,15 +453,18 @@ export class DatabaseStorage implements IStorage {
     return result.map(r => r.tag);
   }
 
-  async getTracksByTag(tagId: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]> {
-    const { limit, offset } = options || {};
+  async getTracksByTag(tagId: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]> {
+    const { limit, offset, sortField, sortDirection = 'desc' } = options || {};
+    
+    const sortColumn = this.getSortColumn(sortField);
+    const sortFn = sortDirection === 'asc' ? asc : desc;
     
     let query = db
       .select({ track: playlistSnapshots })
       .from(trackTags)
       .innerJoin(playlistSnapshots, eq(trackTags.trackId, playlistSnapshots.id))
       .where(eq(trackTags.tagId, tagId))
-      .orderBy(desc(playlistSnapshots.addedAt))
+      .orderBy(sortFn(sortColumn))
       .$dynamic();
     
     if (limit !== undefined) {

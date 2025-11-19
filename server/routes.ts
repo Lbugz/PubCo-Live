@@ -495,6 +495,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const week = req.query.week as string || "latest";
       const tagId = req.query.tagId as string | undefined;
       const playlistId = req.query.playlist as string | undefined;
+      const sortField = req.query.sortField as string | undefined;
+      const sortDirection = (req.query.sortDirection as 'asc' | 'desc') || 'desc';
 
       // Parse and validate pagination parameters
       let limit: number | undefined = undefined;
@@ -540,10 +542,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : storage.getTracksByWeekCount(week),
         // Get paginated tracks
         tagId
-          ? storage.getTracksByTag(tagId, { limit, offset })
+          ? storage.getTracksByTag(tagId, { limit, offset, sortField, sortDirection })
           : playlistId
-          ? storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined, { limit, offset })
-          : storage.getTracksByWeek(week, { limit, offset })
+          ? storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined, { limit, offset, sortField, sortDirection })
+          : storage.getTracksByWeek(week, { limit, offset, sortField, sortDirection })
       ]);
 
       res.json({
