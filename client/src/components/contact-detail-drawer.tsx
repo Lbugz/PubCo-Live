@@ -303,25 +303,55 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 </div>
               </Card>
 
-              {/* Relationship Panel */}
+              {/* Unsigned Score Panel */}
               <Card className="p-4">
                 <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Relationship
+                  <Target className="h-4 w-4" />
+                  Unsigned Score
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <div className="text-xs text-muted-foreground mb-1">Owner</div>
-                    <div className="text-sm font-medium">Unassigned</div>
+                    <div className="text-xs text-muted-foreground mb-1">Score</div>
+                    <div className="flex items-center gap-2">
+                      {contact.unsignedScore !== null && contact.unsignedScore !== undefined ? (
+                        <>
+                          <div className="text-3xl font-bold" data-testid="text-unsigned-score">
+                            {contact.unsignedScore}/10
+                          </div>
+                          <Badge 
+                            variant={
+                              contact.unsignedScore >= 8 ? "high" : 
+                              contact.unsignedScore >= 5 ? "medium" : 
+                              "low"
+                            }
+                            data-testid="badge-score-confidence"
+                          >
+                            {contact.scoreConfidence || "medium"}
+                          </Badge>
+                        </>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Not yet scored</span>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">Created</div>
-                    <div className="text-sm font-medium">{formatDate(contact.createdAt)}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">Last Updated</div>
-                    <div className="text-sm font-medium">{formatDate(contact.updatedAt)}</div>
-                  </div>
+                  {contact.unsignedScore !== null && contact.unsignedScore !== undefined && (
+                    <>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Last Updated</div>
+                        <div className="text-sm font-medium">
+                          {contact.unsignedScoreUpdatedAt ? formatDate(contact.unsignedScoreUpdatedAt) : "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Signal Strength</div>
+                        <div className="text-sm font-medium">
+                          {contact.scoreConfidence === "high" && "Strong unsigned indicators"}
+                          {contact.scoreConfidence === "medium" && "Moderate unsigned indicators"}
+                          {contact.scoreConfidence === "low" && "Limited data available"}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </Card>
             </div>
