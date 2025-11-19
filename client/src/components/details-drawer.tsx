@@ -31,6 +31,7 @@ import {
   Twitter,
   Facebook,
   Youtube,
+  RefreshCw,
 } from "lucide-react";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { TrackTagPopover } from "@/components/track-tag-popover";
@@ -39,7 +40,6 @@ import { PublisherStatusBadge } from "./publisher-status-badge";
 import { SongwriterDisplay } from "./songwriter-display";
 import { SongwriterPanel } from "./songwriter-panel";
 import { EnrichmentSourceIndicator } from "./enrichment-source-indicator";
-import { PhaseEnrichmentButton, PhaseStatus } from "./phase-enrichment-button";
 import { cn } from "@/lib/utils";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { queryClient } from "@/lib/queryClient";
@@ -134,51 +134,6 @@ export function DetailsDrawer({
       setEnrichingPhase(null);
     }
   }, [open, track?.id]);
-
-  // Helper to compute phase status from track data
-  const getPhaseStatus = (phase: number, trackData: PlaylistSnapshot | FullTrackDetails): PhaseStatus => {
-    switch (phase) {
-      case 1: // Spotify API
-        return {
-          searched: true,
-          found: !!trackData.isrc,
-          label: trackData.isrc || "No ISRC"
-        };
-      case 2: // Credits Scraping
-        return {
-          searched: trackData.enrichmentStatus === 'enriched',
-          found: !!(trackData.songwriter || trackData.producer),
-          label: trackData.songwriter || trackData.producer || "No credits"
-        };
-      case 3: // MusicBrainz
-        const hasArtists = (trackData as FullTrackDetails).artists?.length > 0;
-        return {
-          searched: hasArtists,
-          found: hasArtists,
-          label: hasArtists ? `${(trackData as FullTrackDetails).artists.length} artist(s)` : "No data"
-        };
-      case 4: // Chartmetric
-        return {
-          searched: !!trackData.chartmetricId,
-          found: !!trackData.chartmetricId,
-          label: trackData.chartmetricId ? `ID: ${trackData.chartmetricId}` : "No data"
-        };
-      case 5: // MLC
-        return {
-          searched: trackData.publisherStatus === 'published' || trackData.publisherStatus === 'unsigned',
-          found: !!trackData.publisher,
-          label: trackData.publisher || (trackData.publisherStatus ? "Unsigned" : "Not searched")
-        };
-      case 6: // YouTube
-        return {
-          searched: !!trackData.youtubeVideoId,
-          found: !!trackData.youtubeVideoId,
-          label: trackData.youtubeViews ? `${trackData.youtubeViews.toLocaleString()} views` : "Not searched"
-        };
-      default:
-        return { searched: false, found: false, label: "Unknown" };
-    }
-  };
 
   // Handle phase-specific enrichment
   const handlePhaseEnrich = async (phase: number) => {
@@ -813,54 +768,191 @@ export function DetailsDrawer({
                       ENRICHMENT PIPELINE STATUS
                     </h3>
                     <div className="space-y-2">
-                      <PhaseEnrichmentButton
-                        phase={1}
-                        phaseName="Spotify API"
-                        icon="🎵"
-                        status={getPhaseStatus(1, displayTrack)}
-                        isLoading={enrichingPhase === 1 && isEnrichingPhase}
-                        onClick={() => handlePhaseEnrich(1)}
-                      />
-                      <PhaseEnrichmentButton
-                        phase={2}
-                        phaseName="Credits Scraping"
-                        icon="🎭"
-                        status={getPhaseStatus(2, displayTrack)}
-                        isLoading={enrichingPhase === 2 && isEnrichingPhase}
-                        onClick={() => handlePhaseEnrich(2)}
-                      />
-                      <PhaseEnrichmentButton
-                        phase={3}
-                        phaseName="MusicBrainz"
-                        icon="🎸"
-                        status={getPhaseStatus(3, displayTrack)}
-                        isLoading={enrichingPhase === 3 && isEnrichingPhase}
-                        onClick={() => handlePhaseEnrich(3)}
-                      />
-                      <PhaseEnrichmentButton
-                        phase={4}
-                        phaseName="Chartmetric"
-                        icon="📊"
-                        status={getPhaseStatus(4, displayTrack)}
-                        isLoading={enrichingPhase === 4 && isEnrichingPhase}
-                        onClick={() => handlePhaseEnrich(4)}
-                      />
-                      <PhaseEnrichmentButton
-                        phase={5}
-                        phaseName="MLC"
-                        icon="📄"
-                        status={getPhaseStatus(5, displayTrack)}
-                        isLoading={enrichingPhase === 5 && isEnrichingPhase}
-                        onClick={() => handlePhaseEnrich(5)}
-                      />
-                      <PhaseEnrichmentButton
-                        phase={6}
-                        phaseName="YouTube"
-                        icon="📺"
-                        status={getPhaseStatus(6, displayTrack)}
-                        isLoading={enrichingPhase === 6 && isEnrichingPhase}
-                        onClick={() => handlePhaseEnrich(6)}
-                      />
+                      {/* Phase 1: Spotify API */}
+                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-1">
+                        <div className={cn(
+                          "h-2 w-2 rounded-full transition-all duration-300 flex-shrink-0",
+                          displayTrack.isrc ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                        )} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">Phase 1: Spotify API</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {displayTrack.isrc 
+                              ? `✓ ISRC recovered: ${displayTrack.isrc}` 
+                              : "Pending ISRC recovery"}
+                          </p>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handlePhaseEnrich(1)}
+                          disabled={enrichingPhase === 1 && isEnrichingPhase}
+                          className="flex-shrink-0"
+                          data-testid="button-enrich-phase-1"
+                        >
+                          {enrichingPhase === 1 && isEnrichingPhase ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Phase 2: Credits Scraping */}
+                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-2">
+                        <div className={cn(
+                          "h-2 w-2 rounded-full transition-all duration-300 flex-shrink-0",
+                          displayTrack.enrichmentStatus === 'enriched' ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                        )} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">Phase 2: Credits Scraping</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {displayTrack.enrichmentStatus === 'enriched'
+                              ? `✓ Credits found: ${displayTrack.songwriter || 'Unknown'}` 
+                              : "Pending credit scraping"}
+                          </p>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handlePhaseEnrich(2)}
+                          disabled={enrichingPhase === 2 && isEnrichingPhase}
+                          className="flex-shrink-0"
+                          data-testid="button-enrich-phase-2"
+                        >
+                          {enrichingPhase === 2 && isEnrichingPhase ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Phase 3: MusicBrainz */}
+                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-3">
+                        <div className={cn(
+                          "h-2 w-2 rounded-full transition-all duration-300 flex-shrink-0",
+                          artists.length > 0 && artists.some(a => 'musicbrainzId' in a) 
+                            ? "bg-green-500 shadow-lg shadow-green-500/50" 
+                            : "bg-muted animate-pulse"
+                        )} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">Phase 3: MusicBrainz</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {artists.length > 0 && artists.some(a => 'musicbrainzId' in a)
+                              ? `✓ Artist links found for ${artists.filter(a => 'musicbrainzId' in a).length} artist(s)` 
+                              : "Pending artist social links"}
+                          </p>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handlePhaseEnrich(3)}
+                          disabled={enrichingPhase === 3 && isEnrichingPhase}
+                          className="flex-shrink-0"
+                          data-testid="button-enrich-phase-3"
+                        >
+                          {enrichingPhase === 3 && isEnrichingPhase ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Phase 4: Chartmetric */}
+                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-4">
+                        <div className={cn(
+                          "h-2 w-2 rounded-full transition-all duration-300 flex-shrink-0",
+                          displayTrack.chartmetricStatus === 'success' ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                        )} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">Phase 4: Chartmetric</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {displayTrack.chartmetricStatus === 'success'
+                              ? `✓ Analytics: ${displayTrack.spotifyStreams?.toLocaleString() || 'N/A'} streams` 
+                              : displayTrack.chartmetricStatus === 'not_found'
+                                ? "✓ Not found in Chartmetric"
+                                : "Pending analytics data"}
+                          </p>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handlePhaseEnrich(4)}
+                          disabled={enrichingPhase === 4 && isEnrichingPhase}
+                          className="flex-shrink-0"
+                          data-testid="button-enrich-phase-4"
+                        >
+                          {enrichingPhase === 4 && isEnrichingPhase ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Phase 5: MLC Publisher */}
+                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-5">
+                        <div className={cn(
+                          "h-2 w-2 rounded-full transition-all duration-300 flex-shrink-0",
+                          displayTrack.publisherStatus === 'published' ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                        )} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">Phase 5: MLC Lookup</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {displayTrack.publisherStatus === 'published'
+                              ? `✓ Publisher verified: ${displayTrack.publisher || 'Unknown'}` 
+                              : displayTrack.publisherStatus === 'unsigned'
+                                ? "✓ Unsigned artist confirmed"
+                                : "Pending publisher verification"}
+                          </p>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handlePhaseEnrich(5)}
+                          disabled={enrichingPhase === 5 && isEnrichingPhase}
+                          className="flex-shrink-0"
+                          data-testid="button-enrich-phase-5"
+                        >
+                          {enrichingPhase === 5 && isEnrichingPhase ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Phase 6: YouTube */}
+                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-6">
+                        <div className={cn(
+                          "h-2 w-2 rounded-full transition-all duration-300 flex-shrink-0",
+                          displayTrack.youtubeVideoId ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                        )} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">Phase 6: YouTube Enrichment</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {displayTrack.youtubeVideoId
+                              ? `✓ Video found: ${displayTrack.youtubeViews?.toLocaleString() || 'N/A'} views` 
+                              : "Pending YouTube metadata"}
+                          </p>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handlePhaseEnrich(6)}
+                          disabled={enrichingPhase === 6 && isEnrichingPhase}
+                          className="flex-shrink-0"
+                          data-testid="button-enrich-phase-6"
+                        >
+                          {enrichingPhase === 6 && isEnrichingPhase ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </section>
                 </div>
