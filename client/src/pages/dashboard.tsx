@@ -590,7 +590,19 @@ export default function Dashboard() {
   }, [enrichMutation]);
 
   const handleEnrichPhase = useCallback(async (trackId: string, phase: number) => {
-    await enrichPhaseMutation.mutateAsync({ trackId, phase });
+    console.log(`[Dashboard] handleEnrichPhase called with trackId=${trackId}, phase=${phase}`);
+    console.log(`[Dashboard] enrichPhaseMutation exists:`, !!enrichPhaseMutation);
+    console.log(`[Dashboard] enrichPhaseMutation.mutateAsync exists:`, !!enrichPhaseMutation.mutateAsync);
+    
+    try {
+      console.log(`[Dashboard] Calling mutateAsync...`);
+      const result = await enrichPhaseMutation.mutateAsync({ trackId, phase });
+      console.log(`[Dashboard] mutateAsync completed:`, result);
+      return result;
+    } catch (error) {
+      console.error(`[Dashboard] handleEnrichPhase error:`, error);
+      throw error;
+    }
   }, [enrichPhaseMutation]);
 
   const enrichArtistsButton = useMemo(() => (
