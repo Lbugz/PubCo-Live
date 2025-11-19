@@ -205,6 +205,45 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
     updateContactMutation.mutate({ hotLead: contact.hotLead > 0 ? 0 : 1 });
   };
 
+  // Re-enrich contact tracks mutation
+  const reEnrichMutation = useMutation({
+    mutationFn: async () => {
+      if (!contactId || !tracks || tracks.length === 0) {
+        throw new Error("No tracks to enrich");
+      }
+      const trackIds = tracks.map(t => t.id);
+      return apiRequest("POST", "/api/enrichment-jobs", { 
+        trackIds 
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Re-enrichment started",
+        description: `Started enrichment for ${tracks.length} tracks. Check the Activity panel for progress.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts", contactId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start re-enrichment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleReEnrich = () => {
+    if (!tracks || tracks.length === 0) {
+      toast({
+        title: "No tracks",
+        description: "This contact has no tracks to re-enrich",
+        variant: "destructive",
+      });
+      return;
+    }
+    reEnrichMutation.mutate();
+  };
+
   const saveNoteMutation = useMutation({
     mutationFn: async (text: string) => {
       if (!contactId) throw new Error("No contact ID");
@@ -393,9 +432,11 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                       variant="ghost"
                       size="sm"
                       className="gap-2"
+                      onClick={handleReEnrich}
+                      disabled={reEnrichMutation.isPending}
                       data-testid="button-re-enrich"
                     >
-                      <RefreshCw className="h-4 w-4" />
+                      <RefreshCw className={`h-4 w-4 ${reEnrichMutation.isPending ? 'animate-spin' : ''}`} />
                       Re-Enrich
                     </Button>
                   </div>

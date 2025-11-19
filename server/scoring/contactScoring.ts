@@ -338,17 +338,20 @@ export async function calculateContactScore(contactId: string): Promise<ContactS
     ...portfolioSignals
   ];
   
-  // Group signals by description and average their weights to avoid duplicates
-  const signalMap = new Map<string, TrackSignal>();
+  // Calculate final score using ALL signals (not consolidated)
+  const totalScore = allSignals.reduce((sum, s) => sum + s.finalWeight, 0);
+  
+  // For display purposes, consolidate duplicate signals by description
+  const signalMap = new Map<string, TrackSignal & { count: number }>();
   allSignals.forEach(signal => {
     const existing = signalMap.get(signal.description);
     if (existing) {
-      // Average the weights for duplicate signals
-      existing.finalWeight = (existing.finalWeight + signal.finalWeight) / 2;
-      existing.weight = (existing.weight + signal.weight) / 2;
-      existing.multiplier = (existing.multiplier + signal.multiplier) / 2;
+      // Sum the weights for duplicate signals
+      existing.finalWeight += signal.finalWeight;
+      existing.weight += signal.weight;
+      existing.count += 1;
     } else {
-      signalMap.set(signal.description, { ...signal });
+      signalMap.set(signal.description, { ...signal, count: 1 });
     }
   });
   
@@ -362,9 +365,6 @@ export async function calculateContactScore(contactId: string): Promise<ContactS
     ...positiveSignals.slice(0, 5),
     ...negativeSignals
   ];
-  
-  // Calculate final score
-  const totalScore = topSignals.reduce((sum, s) => sum + s.finalWeight, 0);
   const finalScore = Math.max(0, Math.min(10, Math.round(totalScore)));
   
   // Determine confidence
