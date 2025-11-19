@@ -1,0 +1,243 @@
+Absolutely, 1sthexagram — let’s refine this into a **clean, usable, mathematically solid** scoring framework you can immediately implement inside Pub Feed.
+
+I’m going to:
+
+1. **Correct the taxonomy** (Category → Signal → Marker → Track/Writer Level → Weight → Rationale)
+2. **Resolve missing definitions** (Quality of Data + new unsigned inference signals)
+3. **Normalize scoring ranges** so Contact-Level Scoring becomes predictable and stable.
+4. **Prepare it for real implementation** inside `contactScoring.ts`.
+
+Below is a **structured, Version 1.5 Scoring Model Draft**.
+
+---
+
+# ✅ **AI Pub Feed — Scoring Methodology (V1.5)**
+
+**Contact-Level Opportunity Score (0–10)**
+All track-level signals roll up → songwriter-level aggregates.
+
+---
+
+# **I. Core Taxonomy (Updated)**
+
+| Field           | Meaning                                             |
+| --------------- | --------------------------------------------------- |
+| **Category**    | High-level group (Discovery, Label, Metadata, etc.) |
+| **Signal**      | The actual thing being evaluated                    |
+| **Marker**      | Track-level or Songwriter-level                     |
+| **Description** | What the signal means                               |
+| **Weight**      | Points contributed (+ or –)                         |
+| **Rationale**   | Why it matters                                      |
+
+---
+
+# **II. Updated Scoring Table (Improved & Completed)**
+
+Below is your original table — rewritten, cleaned, and expanded.
+
+---
+
+## **A. DISCOVERY SIGNALS**
+
+| Category  | Signal                                  | Marker | Description                             | Weight | Rationale                                                         |
+| --------- | --------------------------------------- | ------ | --------------------------------------- | ------ | ----------------------------------------------------------------- |
+| Discovery | Appears on any **Fresh Finds** playlist | Track  | Fresh Finds ecosystem (main + subgenre) | **+3** | Spotify’s biggest editorial discovery system; heavy unsigned bias |
+
+---
+
+## **B. LABEL & DISTRIBUTION SIGNALS**
+
+### **Distribution / Label Type**
+
+| Category             | Signal                                                                                | Marker     | Description                                            | Weight | Rationale                                          |
+| -------------------- | ------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------ | ------ | -------------------------------------------------- |
+| Label & Distribution | Label contains **DK**, **DistroKid**, **Ditto**, **Amuse**, **CD Baby**, **Tunecore** | Track      | DIY distributor                                        | **+2** | Strong unsigned signal                             |
+| Label & Distribution | **Independent / Unknown Label**                                                       | Track      | No label or indie imprint                              | **+1** | Indicates early-career or unsigned                 |
+| Label & Distribution | **Major Label** (Sony / Warner / Universal / Atlantic / RCA)                          | Track      | Major-label release                                    | **–3** | Major-label artists often have pub handled         |
+| Label & Distribution | **Presence on multiple unsigned/DIY tracks**                                          | Songwriter | Writer appears across tracks with indie/DK labels >50% | **+2** | Portfolio-level unsigned inference                 |
+| Label & Distribution | **Presence on accelerating songs**                                                    | Songwriter | Writer appears on multiple high-growth tracks          | **+1** | Indicates emerging prolific collaborator           |
+| Label & Distribution | **Volume of songs**                                                                   | Songwriter | Writer has >3 tracks in dataset                        | **+1** | Higher volume = stronger signal to evaluate writer |
+
+---
+
+## **C. PUBLISHER METADATA SIGNALS (MLC)**
+
+*(The strongest section)*
+
+| Category           | Signal                                           | Marker     | Description                                | Weight | Rationale                                 |
+| ------------------ | ------------------------------------------------ | ---------- | ------------------------------------------ | ------ | ----------------------------------------- |
+| Publisher Metadata | **No publisher listed on MLC**                   | Songwriter | Writer profile exists but has no publisher | **+3** | Top-tier unsigned signal                  |
+| Publisher Metadata | **Writer not found in MLC**                      | Songwriter | Search returns no MLC record               | **+2** | Writer not registered = early stage       |
+| Publisher Metadata | **Publisher shares incomplete** (<100% coverage) | Songwriter | Gaps in MLC shares (20–50% missing)        | **+1** | Indicates opportunity/representation gaps |
+| Publisher Metadata | **Multiple publishers covering 100%**            | Songwriter | Full publisher coverage                    | **–2** | Fully represented; lower priority         |
+
+---
+
+## **D. TRACK METADATA SIGNALS**
+
+| Category       | Signal                                                 | Marker | Description                    | Weight | Rationale                                 |
+| -------------- | ------------------------------------------------------ | ------ | ------------------------------ | ------ | ----------------------------------------- |
+| Track Metadata | **Single songwriter listed**                           | Track  | One-writer track               | **+1** | Often early-career/self-written           |
+| Track Metadata | **Missing writer metadata** (from Chartmetric/Spotify) | Track  | No writer info found           | **+1** | Metadata gap = early stage or independent |
+| Track Metadata | **High streaming velocity**                            | Track  | >50% WoW or algorithmic pickup | **+1** | Adds urgency signal                       |
+
+---
+
+## **E. DATA QUALITY SIGNALS (New Definitions)**
+
+You had % brackets but no definition—here is the corrected version.
+
+**How to measure completion:**
+For each track → percentage of fields present:
+
+* ISRC
+* Label
+* Writers
+* Publisher
+* Admin
+* IPI
+* ISWC
+* Streams
+* Social links (optional)
+* Release date
+
+**Scored at track-level → averaged at songwriter-level**
+
+| Category        | Signal          | Marker | Description                         | Weight | Rationale                               |
+| --------------- | --------------- | ------ | ----------------------------------- | ------ | --------------------------------------- |
+| Quality of Data | <25% complete   | Track  | Extremely low metadata completeness | **+4** | Strong proxy for **early/unregistered** |
+| Quality of Data | 26–50% complete | Track  | Partial metadata                    | **+3** | Moderate unsigned signal                |
+| Quality of Data | 51–75% complete | Track  | Most metadata present               | **+2** | Medium maturity                         |
+| Quality of Data | >75% complete   | Track  | Fully enriched                      | **+1** | Lower unsigned probability              |
+
+**Why high = fewer points?**
+Highly complete data = higher likelihood of representation or administrative setup.
+
+---
+
+# **III. Weight Normalization**
+
+To keep the final score capped at **10**, use:
+
+* **Take top 5 weighted signals** from the contact’s portfolio
+* Sum them
+* Cap at **10**
+* Floor at **0**
+
+This prevents runaway totals like 18–25 and keeps the UX consistent.
+
+---
+
+# **IV. Aggregation Rules (Critical for Implementation)**
+
+### 1. **Track → Contact Aggregation**
+
+For each songwriter:
+
+```
+PublisherSignals = max(songwriter-level signals)
+LabelSignals = average(track-level signals)
+MetadataSignals = average(track-level signals)
+QualitySignals = average(track-level signals)
+VelocitySignals = average(track-level signals)
+DiscoverySignals = sum(unique discovery-based signals)
+UnsignedInferenceSignals = portfolio logic (see below)
+```
+
+### 2. **Portfolio Logic (New)**
+
+These are high-value proprietary signals:
+
+1. **Unsigned Distribution Pattern**
+
+   ```
+   if >50% tracks use DIY distributors → +2
+   ```
+
+2. **Unsigned Peer Pattern**
+
+   ```
+   if writer appears on >3 unsigned/DIY tracks → +2
+   ```
+
+3. **Emerging Collaborator Pattern**
+
+   ```
+   if writer appears on >2 tracks with high WoW growth → +1
+   ```
+
+This is what Jon meant by the "proprietary inference" layer.
+
+---
+
+# **V. Final Score Formula (Simple + Powerful)**
+
+### **FinalScore = min(10, weightedSum(topSignals))**
+
+Where:
+
+```
+topSignals = select the top 5 highest-weight positive signals
++ include any negative signals (major label, fully represented)
+Score = bounded 0–10
+```
+
+This ensures:
+
+* High-confidence unsigned → 9–10
+* Medium-confidence → 5–7
+* Low → 0–4
+
+---
+
+# **VI. Example Outputs**
+
+### **Case 1 — Highly Unsigned Writer**
+
+* No MLC publisher (+3)
+* Fresh Finds (+3)
+* DIY distribution (+2)
+* Data quality low (+3)
+* Appears on unsigned peers (+2)
+
+**Calculated:** top weights = 3+3+2+3+2 = 13 → **Score = 10**
+
+---
+
+### **Case 2 — Mid-Level Potential**
+
+* Incomplete shares (+1)
+* Indie label (+1)
+* Single writer (+1)
+* Medium QoD (51–75%) (+2)
+
+Total = 1+1+1+2 = **5**
+
+---
+
+### **Case 3 — Fully Represented Major-Label Writer**
+
+* Major-label track: –3
+* Fully covered by multiple publishers: –2
+
+Top positive signals may add up to 2–3 → net near **0–2**
+
+---
+
+# **VII. Deliverables I Can Generate Next**
+
+Tell me which one you want, 1sthexagram:
+
+### **A. Clean CSV Version** (ready to import into the scoring sheet)
+
+### **B. JSON Schema** for backend implementation
+
+### **C. Updated `contactScoring.ts` logic**
+
+### **D. UI explanation card for the Contact Drawer (Score Breakdown)**
+
+### **E. “Scoring Philosophy” page for A&R team docs**
+
+---
+
+Which output do you want next?

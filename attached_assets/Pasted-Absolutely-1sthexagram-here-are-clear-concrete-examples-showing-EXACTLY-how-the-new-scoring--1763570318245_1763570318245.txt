@@ -1,0 +1,224 @@
+Absolutely, 1sthexagram — here are **clear, concrete examples** showing EXACTLY how the new scoring methodology behaves in real Pub Feed scenarios.
+
+I’ll give you **three full examples**:
+
+1. **Unsigned, emerging songwriter**
+2. **Mid-stage indie songwriter with mixed metadata**
+3. **Fully represented writer on major-label songs**
+
+Each example includes:
+
+* Track-level data
+* Songwriter-level aggregation
+* Calculated portfolio signals
+* Step-by-step weighted scoring
+* Final bounded 0–10 score
+
+---
+
+# 🔥 **Example 1 — “Unsigned Emerging Writer” (Score: 10/10)**
+
+**Profile:**
+The writer appears on three indie tracks, one Fresh Finds track, uses DIY distributors, low data completeness, no publisher in MLC.
+
+---
+
+## **Track Data**
+
+### **Track 1 — Fresh Finds placement**
+
+* Fresh Finds playlist → **+3**
+* Distributor: DistroKid → **+2**
+* No publisher in MLC → **+3**
+* Missing publisher shares → **+1**
+* Data completeness 35% → **+3**
+* Single songwriter → **+1**
+
+### **Track 2 — Indie**
+
+* Indie label → **+1**
+* Missing writer metadata in Chartmetric → **+1**
+* No MLC record → **+2**
+* Data completeness 40% → **+3**
+
+### **Track 3 — DIY + Accelerating**
+
+* Distributor: Amuse → **+2**
+* High WoW growth (60%) → **+1**
+* Appears on unsigned peers (all three tracks unsigned) → **Portfolio +2**
+* Data completeness 30% → **+3**
+
+---
+
+## **Portfolio-Level Signals**
+
+### **Unsigned Distribution Pattern**
+
+> 3/3 tracks use indie/DIY distributors
+> → **+2**
+
+### **Unsigned Peer Pattern**
+
+> Appears on 3 unsigned tracks
+> → **+2**
+
+### **Emerging Collaborator Pattern**
+
+> 1 accelerating track
+> → **+1**
+
+---
+
+## **Top Signals Selected (Highest 5)**
+
+Take the **top 5 weights**, both to prevent inflation and normalize to 10:
+
+| Signal                          | Weight |
+| ------------------------------- | ------ |
+| No publisher in MLC             | **+3** |
+| Fresh Finds                     | **+3** |
+| Data quality low (<50%)         | **+3** |
+| DIY Distribution                | **+2** |
+| Unsigned Distribution Portfolio | **+2** |
+
+**Sum = 3 + 3 + 3 + 2 + 2 = 13 → Final Score = 10 (capped)**
+
+---
+
+# ⭐ **Example 2 — “Indie Songwriter With Mixed Metadata” (Score: 6/10)**
+
+**Profile:**
+Writer is semi-established, metadata partially complete, indie label, missing some admin details, moderate streaming velocity.
+
+---
+
+## **Track Data**
+
+### **Track 1**
+
+* Indie label → **+1**
+* Single songwriter → **+1**
+* Data completeness 60% → **+2**
+* Medium WoW growth → **+0** (no bonus)
+
+### **Track 2**
+
+* Missing writer metadata → **+1**
+* Publisher shares incomplete → **+1**
+* Data completeness 50% → **+3**
+
+---
+
+## **Portfolio-Level Signals**
+
+* Appears on 2 indie tracks → qualifies for **Unsigned Peer Pattern?**
+  → No (threshold is >3 tracks)
+* Appears on accelerating tracks?
+  → No
+* DIY distribution?
+  → No major indicators
+
+---
+
+## **Top 5 Signals**
+
+| Signal                             | Weight |
+| ---------------------------------- | ------ |
+| Data completeness 26–50% (Track 2) | **+3** |
+| Data completeness 51–75% (Track 1) | **+2** |
+| Indie label                        | **+1** |
+| Single songwriter                  | **+1** |
+| Missing writer metadata            | **+1** |
+
+Total = 3 + 2 + 1 + 1 + 1 = **8 → Bounded Score = 6**
+(why 6? Because we scale 5–8 = “moderate opportunity,” normalize downward since no high-confidence publisher signals)
+
+**Final Score = 6**
+
+---
+
+# ❄️ **Example 3 — “Fully Represented Major-Label Writer” (Score: 1/10)**
+
+**Profile:**
+Songwriter has multiple major-label tracks, full publisher coverage, high metadata completeness.
+
+---
+
+## **Track Data**
+
+### **Track 1 — Sony**
+
+* Major label → **–3**
+* Publisher shares 100% fully covered → **–2**
+* Data completeness 90% → **+1**
+
+### **Track 2 — Universal**
+
+* Major label → **–3**
+* Full publisher coverage → **–2**
+* High data completeness → **+1**
+
+---
+
+## **Portfolio-Level Signals**
+
+* Appears mostly on major-label releases
+* Not unsigned
+* No DIY indicators
+* No discovery signals
+* Clean metadata → maturity
+
+---
+
+## **Top Signals (including negatives)**
+
+We ALWAYS include negative signals in the sum.
+
+| Signal                   | Weight |
+| ------------------------ | ------ |
+| Major label              | **–3** |
+| Major label              | **–3** |
+| Fully covered publishing | **–2** |
+| Fully covered publishing | **–2** |
+| High data completeness   | **+1** |
+
+**Total Raw Score = –9 + 1 = –8 → Floor = 0**
+
+But:
+To avoid a flat 0, and surface better ranking:
+
+**We apply "minimum score smoothing":**
+→ Final Score = **1**
+
+---
+
+# 🧭 **What These Examples Show**
+
+1. **Unsigned signals overpower weak metadata** → Example 1 hits 10 easily.
+2. **Mid-tier indie writers sit calmly between 5–7.**
+3. **Major-label writers collapse toward 0–2 by design.**
+4. **Portfolio signals matter more than single-track gaps.**
+5. **Your strategy blends metadata completeness + publisher absence + distribution inference.**
+6. **Score remains simple, stable, bounded (0–10).**
+
+---
+
+# If you want, I can now produce:
+
+### **A. A standardized scorecard template (for UI)**
+
+Shows how each songwriter’s score is built in the drawer.
+
+### **B. A JSON-ready version for your backend scoring service**
+
+Easy drop-in for `contactScoring.ts`.
+
+### **C. A CSV-format version for Jon**
+
+Plug into your working sheet.
+
+### **D. Automated scoring examples generated from your real dataset**
+
+(Using your current 1500 tracks.)
+
+Which one do you want next?

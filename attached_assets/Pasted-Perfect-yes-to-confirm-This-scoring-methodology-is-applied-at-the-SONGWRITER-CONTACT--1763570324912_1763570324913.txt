@@ -1,0 +1,245 @@
+Perfect — yes, to confirm:
+
+# ✅ **This scoring methodology is applied at the *SONGWRITER (CONTACT)* level.**
+
+Track-level signals roll up → songwriter-level aggregates.
+The final stored value goes into **`contacts.unsignedScore`**.
+
+You now need a **Replit Agent prompt** (and step-by-step instructions) so the agent can:
+
+1. Modify backend code
+2. Implement scoring logic
+3. Update the DB
+4. Recalculate scores
+5. Update API + UI if needed
+
+I’ll give you:
+
+* **A. A ready-to-use Replit Agent prompt**
+* **B. Implementation steps (exact file edits the agent should do)**
+* **C. Data model changes**
+* **D. The full scoring algorithm (pseudo + TypeScript)**
+
+You can paste this directly into your Replit project.
+
+---
+
+# 🚀 **A. REPLIT AGENT — COMPLETE PROMPT (Copy & Paste)**
+
+Use this EXACT prompt when talking to the Replit Agent:
+
+---
+
+## **REPLIT AGENT PROMPT — Implement New Contact-Level Scoring Methodology**
+
+**Goal:**
+Implement the new AI Pub Feed **songwriter scoring methodology**.
+Update backend logic, create scoring utilities, and recalculate all contact scores.
+
+### **1. Modify/Update Files**
+
+Update the following:
+
+* `server/contactScoring.ts` → Replace old logic with the new weighted scoring model.
+* `server/enrichment/updateContactScore.ts` or whichever function updates contacts after enrichment.
+* `db/schema.ts` → Confirm `contacts.unsignedScore` exists (float or integer).
+* `server/routes/contacts.ts` → Ensure score is included in API outputs.
+* `scripts/recalculateScores.ts` → (Create if missing) script to recompute all scores.
+
+### **2. Scoring Model (Implement This Exact Logic)**
+
+#### **Track-Level Signals (Evaluate per track)**
+
+Weights:
+
+* Fresh Finds playlist → +3
+* DIY Distribution (DistroKid, Ditto, CD Baby, Amuse, Tunecore, etc.) → +2
+* Independent/Unknown Label → +1
+* Major Label (Sony, Warner, Universal, RCA, Atlantic) → –3
+* No Chartmetric writer metadata → +1
+* Single songwriter → +1
+* High Streaming Velocity (>50% WoW) → +1
+
+**Data Completeness:**
+Calculate percentage of fields present (ISRC, label, writers, publisher, admin, IPI, ISWC, streams, releaseDate)
+
+```
+<25% → +4
+26–50% → +3
+51–75% → +2
+>75% → +1
+```
+
+#### **Songwriter-Level (Portfolio) Signals**
+
+Evaluate across **all tracks assigned to the songwriter**:
+
+* No publisher listed in MLC → +3
+* Writer not found in MLC → +2
+* Publisher shares incomplete (<100%) → +1
+* Multiple publishers covering 100% → –2
+* Presence on >50% DIY/indie tracks → +2
+* Appears on >3 unsigned/DIY tracks → +2
+* Appears on >2 accelerating tracks → +1
+
+#### **3. Aggregation Logic**
+
+For each songwriter:
+
+* Evaluate all track-level signals → produce track scores
+* Evaluate all songwriter-level signals → produce portfolio signals
+* Combine **all** signals into a list
+* **Select top 5 positive signals**
+* Add negative signals (cannot be removed)
+* Compute final score
+* Apply bounding:
+
+  ```
+  if score > 10 → score = 10
+  if score < 0 → score = 0
+  ```
+* Save final to `contacts.unsignedScore`
+
+### **4. Build Utility Functions**
+
+Inside `contactScoring.ts` create:
+
+* `computeTrackSignals(track)`
+* `computePortfolioSignals(songwriter, tracks)`
+* `computeDataCompleteness(track)`
+* `computeFinalScore(trackSignals, portfolioSignals)`
+
+### **5. Add Script**
+
+Add a new script:
+
+`scripts/recalculateScores.ts`:
+
+* Fetch all contacts
+* Fetch their related tracks
+* Recompute scores
+* Update each contact
+
+Add npm script:
+
+```
+"recalculate:scores": "ts-node scripts/recalculateScores.ts"
+```
+
+### **6. Testing Requirements**
+
+* Test with multiple songwriters (full, partial, and missing metadata)
+* Verify scores appear in `/api/contacts`
+* Ensure scoring runs after enrichment jobs
+
+### **7. Do Not Modify**
+
+* Worker job queue logic
+* Playlist ingestion
+* WebSocket infrastructure
+
+---
+
+**End of Replit Agent Prompt**
+
+---
+
+# 🧠 **B. Implementation Steps (Manual Overview Before Agent Acts)**
+
+These instructions are for *you* to understand what the agent will edit.
+
+---
+
+## **1. Add/Confirm DB Column**
+
+In `db/schema.ts`:
+
+```ts
+unsignedScore: double precision("unsigned_score").default(0),
+```
+
+---
+
+## **2. Build Scoring Utility**
+
+File: `server/contactScoring.ts`:
+
+Implement:
+
+```ts
+export function scoreContact(contact, tracks) {
+  const trackSignals = tracks.map(computeTrackSignals)
+  const portfolioSignals = computePortfolioSignals(contact, tracks)
+  const finalScore = computeFinalScore(trackSignals, portfolioSignals)
+  return finalScore
+}
+```
+
+---
+
+## **3. Update Enrichment Worker**
+
+In your enrichment pipeline:
+
+After tracks are enriched:
+
+```ts
+await recalcContactScore(track.songwriterId)
+```
+
+---
+
+## **4. Add New Script**
+
+Create:
+
+`scripts/recalculateScores.ts`
+
+```ts
+import { db } from "../db"
+import { scoreContact } from "../server/contactScoring"
+
+async function main() {
+  const contacts = await db.query.contacts.findMany()
+  for (const contact of contacts) {
+    const tracks = await getTracksForContact(contact.id)
+    const score = scoreContact(contact, tracks)
+    await db.update(contacts)
+      .set({ unsignedScore: score })
+      .where(eq(contacts.id, contact.id))
+  }
+  console.log("Done recalculating all scores")
+}
+
+main()
+```
+
+---
+
+# 🎯 **C. How Replit Agent Will Use This Prompt**
+
+When you paste the Replit Agent prompt:
+
+* It will locate required files
+* Modify code
+* Add missing utilities
+* Add script
+* Push working implementation
+* Test endpoint responses
+* Show diffs
+* Confirm runnable
+
+This is the highest-success way to integrate a complex algorithm without hand-editing everything.
+
+---
+
+# 🌟 Ready for Deployment?
+
+If you want, I can also generate:
+
+* **Final JSON spec** for scoring
+* **Flow diagram** (Tracks → Signals → Portfolio → Score → DB)
+* **UI component:** “Score Breakdown” panel for the drawer
+* **Data completeness calculator**
+
+Would you like those?
