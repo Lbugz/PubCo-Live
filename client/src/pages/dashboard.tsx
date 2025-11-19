@@ -589,8 +589,8 @@ export default function Dashboard() {
     enrichMutation.mutate({ trackId });
   }, [enrichMutation]);
 
-  const handleEnrichPhase = useCallback((trackId: string, phase: number) => {
-    enrichPhaseMutation.mutate({ trackId, phase });
+  const handleEnrichPhase = useCallback(async (trackId: string, phase: number) => {
+    await enrichPhaseMutation.mutateAsync({ trackId, phase });
   }, [enrichPhaseMutation]);
 
   const enrichArtistsButton = useMemo(() => (
