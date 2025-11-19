@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { 
   Mail, MessageCircle, RefreshCw, TrendingUp, Music, Activity, 
   FileText, ExternalLink, Instagram, Twitter, Flame, Edit,
-  Phone, Hash, Building, User as UserIcon, Award, Target, Check, X
+  Phone, Hash, Building, User as UserIcon, Award, Target, Check, X, Share2
 } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -93,7 +93,14 @@ function parseScoreBreakdown(trackScoreData: string | null) {
   
   try {
     const data = JSON.parse(trackScoreData);
-    return data.breakdown || null;
+    // Use topSignals to show the most impactful signals
+    if (data.topSignals && data.topSignals.length > 0) {
+      return data.topSignals.map((signal: any) => ({
+        signal: signal.description || signal.signal,
+        points: signal.weight
+      }));
+    }
+    return null;
   } catch {
     return null;
   }
@@ -290,12 +297,17 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
           </div>
         ) : contact ? (
           <>
-            {/* Header: Name with Score Badge */}
-            <SheetHeader className="mb-4">
-              <div className="flex items-center justify-between gap-4">
-                <SheetTitle className="text-2xl" data-testid="text-contact-name">
+            <SheetHeader className="sr-only">
+              <SheetTitle>{contact.songwriterName}</SheetTitle>
+            </SheetHeader>
+
+            {/* Header Card: Name, Score, and Actions */}
+            <Card className="p-5 mb-6">
+              {/* Name and Score */}
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <h2 className="text-2xl font-semibold" data-testid="text-contact-name">
                   {contact.songwriterName}
-                </SheetTitle>
+                </h2>
                 {contact.unsignedScore !== null && contact.unsignedScore !== undefined && (
                   <Badge 
                     variant={contact.unsignedScore >= 7 ? "high" : contact.unsignedScore >= 4 ? "medium" : "low"}
@@ -306,86 +318,87 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                   </Badge>
                 )}
               </div>
-            </SheetHeader>
 
-            {/* Action Buttons with Pipeline Stage Dropdown */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {/* Combined Contact Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="gap-2"
-                    data-testid="button-contact"
-                  >
-                    <Mail className="h-4 w-4" />
-                    Contact
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem data-testid="button-send-email">
-                    <Mail className="h-4 w-4 mr-2" />
-                    Send Email
-                  </DropdownMenuItem>
-                  <DropdownMenuItem data-testid="button-send-dm">
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Send DM
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-2">
+                {/* Combined Contact Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      data-testid="button-contact"
+                    >
+                      <Mail className="h-4 w-4" />
+                      Contact
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem data-testid="button-send-email">
+                      <Mail className="h-4 w-4 mr-2" />
+                      Send Email
+                    </DropdownMenuItem>
+                    <DropdownMenuItem data-testid="button-send-dm">
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Send DM
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-              <Button
-                variant={contact.hotLead > 0 ? "secondary" : "outline"}
-                size="sm"
-                className="gap-2"
-                onClick={handleHotLeadToggle}
-                data-testid="button-toggle-hot-lead"
-              >
-                <Flame className="h-4 w-4" />
-                {contact.hotLead > 0 ? "Hot Lead" : "Mark Hot Lead"}
-              </Button>
-              
-              {/* Pipeline Stage Selector (inline with buttons) */}
-              <Select value={contact.stage} onValueChange={handleStageChange}>
-                <SelectTrigger 
-                  className="w-[180px] h-9"
-                  data-testid="select-change-stage"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={handleHotLeadToggle}
+                  data-testid="button-toggle-hot-lead"
                 >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="discovery">Discovery Pool</SelectItem>
-                  <SelectItem value="watch">Watch List</SelectItem>
-                  <SelectItem value="search">Active Search</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                data-testid="button-re-enrich"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Re-Enrich
-              </Button>
-            </div>
+                  <Flame className={`h-4 w-4 ${contact.hotLead > 0 ? 'fill-current' : ''}`} />
+                  {contact.hotLead > 0 ? "Hot Lead" : "Mark Hot Lead"}
+                </Button>
+                
+                {/* Pipeline Stage Selector */}
+                <Select value={contact.stage} onValueChange={handleStageChange}>
+                  <SelectTrigger 
+                    className="w-[180px] h-9"
+                    data-testid="select-change-stage"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="discovery">Discovery Pool</SelectItem>
+                    <SelectItem value="watch">Watch List</SelectItem>
+                    <SelectItem value="search">Active Search</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </Card>
 
             {/* Contact Information - Two Column Layout */}
             <Card className="p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-muted-foreground">Contact Information</h3>
                 {!isEditingContact ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleEditContact}
-                    data-testid="button-edit-contact"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleEditContact}
+                      data-testid="button-edit-contact"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-2"
+                      data-testid="button-re-enrich"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Re-Enrich
+                    </Button>
+                  </div>
                 ) : (
                   <div className="flex gap-2">
                     <Button
@@ -409,149 +422,75 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 {/* Left Column: Personal Contact */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {/* Email */}
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    {isEditingContact ? (
-                      <Input
-                        type="email"
-                        placeholder="Email"
-                        value={editForm.email}
-                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                        className="h-8 text-sm"
-                        data-testid="input-email"
-                      />
-                    ) : contactInfo?.email ? (
-                      <a
-                        href={`mailto:${contactInfo.email}`}
-                        className="text-sm hover:underline truncate"
-                        data-testid="link-email"
-                      >
-                        {contactInfo.email}
-                      </a>
-                    ) : (
-                      <span className="text-sm text-muted-foreground italic">No email available</span>
-                    )}
+                  <div className="flex items-start gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-1">Email</p>
+                      {isEditingContact ? (
+                        <Input
+                          type="email"
+                          placeholder="Email"
+                          value={editForm.email}
+                          onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                          className="h-8 text-sm"
+                          data-testid="input-email"
+                        />
+                      ) : contactInfo?.email ? (
+                        <a
+                          href={`mailto:${contactInfo.email}`}
+                          className="text-sm hover:underline truncate block"
+                          data-testid="link-email"
+                        >
+                          {contactInfo.email}
+                        </a>
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">No email available</span>
+                      )}
+                    </div>
                   </div>
-                  
-                  {/* Social Media Handles */}
-                  {isEditingContact ? (
-                    <>
-                      <div className="flex items-center gap-3">
-                        <Instagram className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <Input
-                          placeholder="Instagram"
-                          value={editForm.instagram}
-                          onChange={(e) => setEditForm({ ...editForm, instagram: e.target.value })}
-                          className="h-8 text-sm"
-                          data-testid="input-instagram"
-                        />
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Twitter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <Input
-                          placeholder="Twitter"
-                          value={editForm.twitter}
-                          onChange={(e) => setEditForm({ ...editForm, twitter: e.target.value })}
-                          className="h-8 text-sm"
-                          data-testid="input-twitter"
-                        />
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <SiTiktok className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <Input
-                          placeholder="TikTok"
-                          value={editForm.tiktok}
-                          onChange={(e) => setEditForm({ ...editForm, tiktok: e.target.value })}
-                          className="h-8 text-sm"
-                          data-testid="input-tiktok"
-                        />
-                      </div>
-                    </>
-                  ) : (contactInfo?.instagram || contactInfo?.twitter || contactInfo?.tiktok) ? (
-                    <div className="flex items-center gap-3">
-                      <div className="text-xs text-muted-foreground w-4"></div>
-                      <div className="flex gap-2">
-                        {contactInfo?.instagram && (
-                          <a
-                            href={`https://instagram.com/${contactInfo.instagram.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover-elevate p-2 rounded"
-                            data-testid="link-instagram"
-                          >
-                            <Instagram className="h-4 w-4" />
-                          </a>
-                        )}
-                        {contactInfo?.twitter && (
-                          <a
-                            href={`https://twitter.com/${contactInfo.twitter.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover-elevate p-2 rounded"
-                            data-testid="link-twitter"
-                          >
-                            <Twitter className="h-4 w-4" />
-                          </a>
-                        )}
-                        {contactInfo?.tiktok && (
-                          <a
-                            href={`https://tiktok.com/@${contactInfo.tiktok.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover-elevate p-2 rounded"
-                            data-testid="link-tiktok"
-                          >
-                            <SiTiktok className="h-4 w-4" />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <div className="w-4"></div>
-                      <span className="text-sm text-muted-foreground italic">No social media links</span>
-                    </div>
-                  )}
 
                   {/* Phone Number */}
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    {isEditingContact ? (
-                      <Input
-                        type="tel"
-                        placeholder="Phone"
-                        value={editForm.phone}
-                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                        className="h-8 text-sm"
-                        data-testid="input-phone"
-                      />
-                    ) : contactInfo?.phone ? (
-                      <a
-                        href={`tel:${contactInfo.phone}`}
-                        className="text-sm hover:underline truncate"
-                        data-testid="text-phone"
-                      >
-                        {contactInfo.phone}
-                      </a>
-                    ) : (
-                      <span className="text-sm text-muted-foreground italic" data-testid="text-phone">
-                        No phone available
-                      </span>
-                    )}
+                  <div className="flex items-start gap-3">
+                    <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-1">Phone</p>
+                      {isEditingContact ? (
+                        <Input
+                          type="tel"
+                          placeholder="Phone"
+                          value={editForm.phone}
+                          onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                          className="h-8 text-sm"
+                          data-testid="input-phone"
+                        />
+                      ) : contactInfo?.phone ? (
+                        <a
+                          href={`tel:${contactInfo.phone}`}
+                          className="text-sm hover:underline truncate block"
+                          data-testid="text-phone"
+                        >
+                          {contactInfo.phone}
+                        </a>
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic" data-testid="text-phone">
+                          No phone available
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Right Column: Professional Identifiers */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {/* ISWC */}
                   <div className="flex items-start gap-3">
                     <Hash className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground mb-0.5">ISWC</p>
+                      <p className="text-xs text-muted-foreground mb-1">ISWC</p>
                       {isEditingContact ? (
                         <Input
                           placeholder="ISWC"
@@ -572,7 +511,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                   <div className="flex items-start gap-3">
                     <UserIcon className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground mb-0.5">IPI Number</p>
+                      <p className="text-xs text-muted-foreground mb-1">IPI Number</p>
                       {isEditingContact ? (
                         <Input
                           placeholder="IPI Number"
@@ -593,7 +532,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                   <div className="flex items-start gap-3">
                     <Building className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground mb-0.5">Publisher</p>
+                      <p className="text-xs text-muted-foreground mb-1">Publisher</p>
                       {isEditingContact ? (
                         <Input
                           placeholder="Publisher"
@@ -614,7 +553,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                   <div className="flex items-start gap-3">
                     <Award className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground mb-0.5">Administrator</p>
+                      <p className="text-xs text-muted-foreground mb-1">Administrator</p>
                       {isEditingContact ? (
                         <Input
                           placeholder="Administrator"
@@ -629,6 +568,88 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                         <p className="text-sm text-muted-foreground italic">Not available</p>
                       )}
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Media Section - Full Width Below */}
+              <div className="pt-4 border-t">
+                <div className="flex items-start gap-3">
+                  <Share2 className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground mb-2">Social Media</p>
+                    {isEditingContact ? (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="flex items-center gap-2">
+                          <Instagram className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <Input
+                            placeholder="Instagram"
+                            value={editForm.instagram}
+                            onChange={(e) => setEditForm({ ...editForm, instagram: e.target.value })}
+                            className="h-8 text-sm"
+                            data-testid="input-instagram"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Twitter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <Input
+                            placeholder="Twitter"
+                            value={editForm.twitter}
+                            onChange={(e) => setEditForm({ ...editForm, twitter: e.target.value })}
+                            className="h-8 text-sm"
+                            data-testid="input-twitter"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <SiTiktok className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <Input
+                            placeholder="TikTok"
+                            value={editForm.tiktok}
+                            onChange={(e) => setEditForm({ ...editForm, tiktok: e.target.value })}
+                            className="h-8 text-sm"
+                            data-testid="input-tiktok"
+                          />
+                        </div>
+                      </div>
+                    ) : (contactInfo?.instagram || contactInfo?.twitter || contactInfo?.tiktok) ? (
+                      <div className="flex gap-2">
+                        {contactInfo?.instagram && (
+                          <a
+                            href={`https://instagram.com/${contactInfo.instagram.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover-elevate p-2 rounded"
+                            data-testid="link-instagram"
+                          >
+                            <Instagram className="h-5 w-5" />
+                          </a>
+                        )}
+                        {contactInfo?.twitter && (
+                          <a
+                            href={`https://twitter.com/${contactInfo.twitter.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover-elevate p-2 rounded"
+                            data-testid="link-twitter"
+                          >
+                            <Twitter className="h-5 w-5" />
+                          </a>
+                        )}
+                        {contactInfo?.tiktok && (
+                          <a
+                            href={`https://tiktok.com/@${contactInfo.tiktok.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover-elevate p-2 rounded"
+                            data-testid="link-tiktok"
+                          >
+                            <SiTiktok className="h-5 w-5" />
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic">No social media links</span>
+                    )}
                   </div>
                 </div>
               </div>
