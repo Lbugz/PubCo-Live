@@ -137,14 +137,19 @@ export function DetailsDrawer({
 
   // Handle phase-specific enrichment
   const handlePhaseEnrich = async (phase: number) => {
-    if (track) {
-      setEnrichingPhase(phase);
-      try {
-        await onEnrichPhase(track.id, phase);
-      } catch (error) {
-        console.error(`Phase ${phase} enrichment error:`, error);
-        setEnrichingPhase(null);
-      }
+    if (!track) return;
+    
+    console.log(`[DetailsDrawer] Attempting to enrich Phase ${phase} for track ${track.id}`);
+    setEnrichingPhase(phase);
+    
+    try {
+      console.log(`[DetailsDrawer] Calling onEnrichPhase callback...`);
+      await onEnrichPhase(track.id, phase);
+      console.log(`[DetailsDrawer] Phase ${phase} enrichment callback completed`);
+    } catch (error) {
+      console.error(`[DetailsDrawer] Phase ${phase} enrichment error:`, error);
+      console.error(`[DetailsDrawer] Error details:`, JSON.stringify(error));
+      setEnrichingPhase(null);
     }
   };
 
