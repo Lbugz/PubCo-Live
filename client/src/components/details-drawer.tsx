@@ -646,11 +646,54 @@ export function DetailsDrawer({
                             </div>
                             <div>
                               <span className="text-muted-foreground block mb-1">YouTube Views</span>
-                              <span className="font-semibold text-lg">
-                                {displayTrack.youtubeViews ? displayTrack.youtubeViews.toLocaleString() : '—'}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-lg">
+                                  {displayTrack.youtubeViews ? displayTrack.youtubeViews.toLocaleString() : '—'}
+                                </span>
+                                {displayTrack.youtubeVideoId && (
+                                  <a
+                                    href={`https://www.youtube.com/watch?v=${displayTrack.youtubeVideoId}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-muted-foreground hover:text-foreground transition-colors"
+                                    data-testid={`link-youtube-${displayTrack.youtubeVideoId}`}
+                                  >
+                                    <Youtube className="h-4 w-4" />
+                                  </a>
+                                )}
+                              </div>
                             </div>
                           </div>
+
+                          {/* YouTube Engagement Metrics */}
+                          {displayTrack.youtubeVideoId && (displayTrack.youtubeLikes !== null || displayTrack.youtubeComments !== null) && (
+                            <div className="grid grid-cols-3 gap-4 pt-2 border-t">
+                              <div>
+                                <span className="text-xs text-muted-foreground block mb-1">YouTube Likes</span>
+                                <span className="font-medium">
+                                  {displayTrack.youtubeLikes !== null ? displayTrack.youtubeLikes.toLocaleString() : '—'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-xs text-muted-foreground block mb-1">Comments</span>
+                                <span className="font-medium">
+                                  {displayTrack.youtubeComments !== null ? displayTrack.youtubeComments.toLocaleString() : '—'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-xs text-muted-foreground block mb-1">Engagement</span>
+                                <span className="font-medium">
+                                  {(() => {
+                                    if (displayTrack.youtubeViews && displayTrack.youtubeLikes !== null) {
+                                      const engagementRate = (displayTrack.youtubeLikes / displayTrack.youtubeViews) * 100;
+                                      return `${engagementRate.toFixed(2)}%`;
+                                    }
+                                    return '—';
+                                  })()}
+                                </span>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Moods */}
                           {displayTrack.moods && displayTrack.moods.length > 0 && (
@@ -808,6 +851,27 @@ export function DetailsDrawer({
                               : displayTrack.publisherStatus === 'unsigned'
                                 ? "✓ Unsigned artist confirmed"
                                 : "Pending publisher verification"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Phase 6: YouTube Video Metadata */}
+                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-6">
+                        <div className={cn(
+                          "h-2 w-2 rounded-full transition-all duration-300",
+                          displayTrack.youtubeVideoId ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                        )} />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">Phase 6: YouTube Enrichment</p>
+                            {displayTrack.youtubeVideoId && (
+                              <Badge variant="secondary" className="text-xs">Complete</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {displayTrack.youtubeVideoId
+                              ? `✓ Video found: ${displayTrack.youtubeViews?.toLocaleString() || 'N/A'} views${displayTrack.youtubeLikes ? `, ${displayTrack.youtubeLikes.toLocaleString()} likes` : ''}` 
+                              : "Pending YouTube metadata"}
                           </p>
                         </div>
                       </div>
