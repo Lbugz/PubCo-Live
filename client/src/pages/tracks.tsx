@@ -274,6 +274,34 @@ export default function Tracks() {
     },
   });
 
+  const enrichPhaseMutation = useMutation({
+    mutationFn: async ({ trackId, phase }: { trackId: string; phase: number }) => {
+      console.log(`Starting Phase ${phase} enrichment for track ${trackId}`);
+      
+      const response = await apiRequest("POST", "/api/enrich-phase", { 
+        trackId,
+        phase
+      });
+      const data = await response.json();
+      console.log(`Phase ${phase} enrichment response:`, data);
+      return data;
+    },
+    onSuccess: (data: any, variables) => {
+      notify.success(
+        `Phase ${variables.phase} enrichment completed`,
+        "Success"
+      );
+      queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tracks", variables.trackId, "full"] });
+    },
+    onError: (error: any, variables) => {
+      notify.error(
+        error.message || `Phase ${variables.phase} enrichment failed`,
+        "Error"
+      );
+    },
+  });
+
   // Memoize filtered tracks to avoid recomputation on every render
   const filteredTracks = useMemo(() => {
     const filtered = tracks?.filter((track) => {
@@ -662,6 +690,11 @@ export default function Tracks() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         onEnrich={handleEnrichTrack}
+        onEnrichPhase={(trackId: string, phase: number) => {
+          console.log("[Tracks] onEnrichPhase called", { trackId, phase });
+          return enrichPhaseMutation.mutateAsync({ trackId, phase });
+        }}
+        isEnrichingPhase={enrichPhaseMutation.isPending}
       />
 
       <ActivityPanel 
