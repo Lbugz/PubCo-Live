@@ -302,7 +302,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
             </SheetHeader>
 
             {/* Header Card: Name, Score, and Actions */}
-            <Card className="p-5 mb-6">
+            <Card className="pt-8 px-5 pb-5 mb-6">
               {/* Name and Score */}
               <div className="flex items-center justify-between gap-4 mb-4">
                 <h2 className="text-2xl font-semibold" data-testid="text-contact-name">
@@ -319,8 +319,8 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap gap-2">
+              {/* Action Buttons Row */}
+              <div className="flex flex-wrap items-center gap-2">
                 {/* Combined Contact Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -357,7 +357,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                   {contact.hotLead > 0 ? "Hot Lead" : "Mark Hot Lead"}
                 </Button>
                 
-                {/* Pipeline Stage Selector */}
+                {/* Pipeline Stage Selector on Same Row */}
                 <Select value={contact.stage} onValueChange={handleStageChange}>
                   <SelectTrigger 
                     className="w-[180px] h-9"
