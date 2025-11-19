@@ -48,7 +48,7 @@ export function PlaylistManager({ open: controlledOpen, onOpenChange }: Playlist
       }
 
       const res = await apiRequest("POST", "/api/tracked-playlists", {
-        name: "Untitled Playlist",
+        name: "Loading playlist...",
         playlistId: playlistId,
         spotifyUrl: `https://open.spotify.com/playlist/${playlistId}`,
       });
