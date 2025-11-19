@@ -7,6 +7,7 @@ import { enrichTracksWithSpotifyAPI } from "./spotifyBatchEnrichment";
 import { getUncachableSpotifyClient } from "../spotify";
 import { searchArtistByName, getArtistExternalLinks } from "../musicbrainz";
 import { enrichTrackWithChartmetric } from "../chartmetric";
+import { enrichTrackWithYouTube } from "../youtube";
 import { notificationService } from "../services/notificationService";
 import { calculateUnsignedScore } from "../scoring";
 import { syncContactEnrichmentFlags } from "../services/contactEnrichmentSync";
@@ -954,6 +955,109 @@ export class EnrichmentWorker {
             });
           }
         }
+      }
+
+      // ============================================================
+      // Phase 6: YouTube Video Metadata Enrichment
+      // ============================================================
+      await this.jobQueue.updateJobProgress(job.id, {
+        progress: 92,
+        logs: [`[${new Date().toISOString()}] Starting Phase 6 enrichment (YouTube video metadata)...`],
+      });
+
+      // Broadcast Phase 6 start
+      if (this.wsBroadcast) {
+        this.wsBroadcast('enrichment_phase_started', {
+          type: 'enrichment_phase_started',
+          jobId: job.id,
+          phase: 6,
+          phaseName: 'YouTube Metadata',
+        });
+      }
+
+      this.broadcastProgress(job.id, {
+        status: 'running',
+        progress: 92,
+        message: 'Phase 6: Fetching YouTube video metadata...',
+        enrichedCount: 0,
+        trackCount: job.trackIds.length,
+      });
+
+      let youtubeEnrichedCount = 0;
+      let youtubeNotFoundCount = 0;
+      let youtubeFailedCount = 0;
+
+      try {
+        // Only enrich tracks that have an ISRC
+        const tracksWithISRC = ctx.getAllTracks().filter((t: PlaylistSnapshot) => t.isrc);
+        
+        console.log(`[Phase 6: YouTube] Processing ${tracksWithISRC.length} tracks with ISRC`);
+
+        for (const track of tracksWithISRC) {
+          try {
+            const youtubeData = await enrichTrackWithYouTube(track.isrc!);
+
+            if (youtubeData) {
+              ctx.applyPatch(track.id, {
+                youtubeVideoId: youtubeData.videoId,
+                youtubeChannelId: youtubeData.channelId,
+                youtubeViews: youtubeData.views,
+                youtubeLikes: youtubeData.likes,
+                youtubeComments: youtubeData.comments,
+                youtubePublishedAt: youtubeData.publishedAt,
+                youtubeDescription: youtubeData.description,
+                youtubeLicensed: youtubeData.licensed ? 1 : 0,
+              });
+              youtubeEnrichedCount++;
+
+              console.log(`[Phase 6: YouTube] ✅ ${track.trackName} - ${youtubeData.views.toLocaleString()} views`);
+            } else {
+              youtubeNotFoundCount++;
+              console.log(`[Phase 6: YouTube] ⚠️ No video found for ${track.trackName} (ISRC: ${track.isrc})`);
+            }
+          } catch (trackError) {
+            console.error(`[Phase 6: YouTube] ❌ Failed to enrich ${track.trackName}:`, trackError);
+            youtubeFailedCount++;
+          }
+        }
+
+        const { persistedCount: youtubePersisted } = await this.persistPhaseUpdates(ctx, job.id, 'Phase 6');
+
+        await this.jobQueue.updateJobProgress(job.id, {
+          progress: 95,
+          logs: [
+            `[${new Date().toISOString()}] Phase 6 (YouTube) complete: ${youtubeEnrichedCount} enriched, ${youtubeNotFoundCount} not found, ${youtubeFailedCount} failed, ${youtubePersisted} persisted`,
+          ],
+        });
+
+        this.broadcastProgress(job.id, {
+          status: 'running',
+          progress: 95,
+          message: `Phase 6 complete: ${youtubeEnrichedCount} tracks enriched with YouTube data`,
+          enrichedCount: youtubeEnrichedCount,
+          trackCount: job.trackIds.length,
+        });
+
+        console.log(`[Phase 6: YouTube] ✅ Complete: ${youtubeEnrichedCount} enriched, ${youtubeNotFoundCount} not found, ${youtubeFailedCount} failed`);
+
+        // Broadcast quality metric update
+        if (this.wsBroadcast && job.playlistId) {
+          this.wsBroadcast('playlist_quality_updated', {
+            type: 'playlist_quality_updated',
+            playlistId: job.playlistId,
+            phase: 6,
+            tracksEnriched: youtubeEnrichedCount,
+          });
+        }
+      } catch (youtubeError) {
+        console.error("[Worker] Phase 6 (YouTube) failed, continuing to finalization:", youtubeError);
+
+        await this.jobQueue.updateJobProgress(job.id, {
+          progress: 95,
+          logs: [
+            `[${new Date().toISOString()}] Phase 6 failed: ${youtubeError instanceof Error ? youtubeError.message : String(youtubeError)}. Finalizing job.`,
+          ],
+        });
       }
 
       await this.jobQueue.updateJobProgress(job.id, {
