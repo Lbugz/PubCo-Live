@@ -590,12 +590,14 @@ export default function Dashboard() {
   }, [enrichMutation]);
 
   const handleEnrichPhase = useCallback(async (trackId: string, phase: number) => {
+    if (!enrichPhaseMutation) {
+      console.error(`[Dashboard] enrichPhaseMutation is undefined!`);
+      throw new Error("Enrichment mutation not initialized");
+    }
+    
     console.log(`[Dashboard] handleEnrichPhase called with trackId=${trackId}, phase=${phase}`);
-    console.log(`[Dashboard] enrichPhaseMutation exists:`, !!enrichPhaseMutation);
-    console.log(`[Dashboard] enrichPhaseMutation.mutateAsync exists:`, !!enrichPhaseMutation.mutateAsync);
     
     try {
-      console.log(`[Dashboard] Calling mutateAsync...`);
       const result = await enrichPhaseMutation.mutateAsync({ trackId, phase });
       console.log(`[Dashboard] mutateAsync completed:`, result);
       return result;
@@ -604,13 +606,6 @@ export default function Dashboard() {
       throw error;
     }
   }, [enrichPhaseMutation]);
-
-  // Debug: Log callback creation
-  console.log(`[Dashboard RENDER] handleEnrichPhase created:`, {
-    handleEnrichPhaseExists: !!handleEnrichPhase,
-    handleEnrichPhaseType: typeof handleEnrichPhase,
-    enrichPhaseMutationExists: !!enrichPhaseMutation,
-  });
 
   const enrichArtistsButton = useMemo(() => (
     <Button
@@ -857,7 +852,10 @@ export default function Dashboard() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         onEnrich={handleEnrichTrack}
-        onEnrichPhase={handleEnrichPhase}
+        onEnrichPhase={(trackId: string, phase: number) => {
+          console.log("[Dashboard] Inline onEnrichPhase called", { trackId, phase });
+          return enrichPhaseMutation.mutateAsync({ trackId, phase });
+        }}
         isEnrichingPhase={enrichPhaseMutation.isPending}
       />
 
