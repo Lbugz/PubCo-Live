@@ -911,6 +911,7 @@ export class DatabaseStorage implements IStorage {
       enrichedTracks: row.enriched_tracks,
       errorCount: row.error_count,
       logs: row.logs || [],
+      targetPhase: row.target_phase,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
       completedAt: row.completed_at ? new Date(row.completed_at) : null,

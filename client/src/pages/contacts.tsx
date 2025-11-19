@@ -81,6 +81,11 @@ export default function Contacts() {
   const [sortField, setSortField] = useState<string>("totalStreams");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
+  // Reset offset to 0 whenever filters change to avoid empty pages
+  useEffect(() => {
+    setOffset(0);
+  }, [selectedStage, debouncedSearchQuery, hasEmail, scoreRange[0], scoreRange[1], hasSocialLinks]);
+
   // Fetch contacts with filters
   const { data: contactsData, isLoading } = useQuery<{
     contacts: ContactWithSongwriter[];
