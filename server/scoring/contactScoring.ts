@@ -7,15 +7,13 @@ const SIGNAL_WEIGHTS = {
   // Discovery Signals
   FRESH_FINDS: 3,
   
+  // Publishing Signals (Phase 1)
+  NO_PUBLISHER: 3,
+  
   // Label & Distribution
   DIY_DISTRIBUTION: 2,
   INDEPENDENT_LABEL: 1,
   MAJOR_LABEL: -3,
-  
-  // Track Metadata
-  SINGLE_SONGWRITER: 1,
-  MISSING_WRITER_METADATA: 1,
-  HIGH_STREAMING_VELOCITY: 1,
   
   // Data Quality (completeness %)
   COMPLETENESS_UNDER_25: 4,
@@ -26,7 +24,6 @@ const SIGNAL_WEIGHTS = {
   // Portfolio Signals (contact-level)
   UNSIGNED_DISTRIBUTION_PATTERN: 2,
   UNSIGNED_PEER_PATTERN: 2,
-  ACCELERATING_COLLABORATOR: 1,
   MUSICBRAINZ_PRESENT: 1,
   
   // Phase 2 - MLC Signals (not yet implemented)
@@ -152,6 +149,17 @@ export function calculateTrackSignals(track: any): TrackSignal[] {
     });
   }
   
+  // Publishing Signals
+  if (!track.publisher || track.publisher === '' || track.publisher === '[]') {
+    signals.push({
+      signal: 'NO_PUBLISHER',
+      weight: SIGNAL_WEIGHTS.NO_PUBLISHER,
+      description: 'No publisher metadata',
+      multiplier: combinedMult,
+      finalWeight: SIGNAL_WEIGHTS.NO_PUBLISHER * combinedMult
+    });
+  }
+  
   // Label & Distribution Signals
   if (isDIYDistribution(track.label)) {
     signals.push({
@@ -176,17 +184,6 @@ export function calculateTrackSignals(track: any): TrackSignal[] {
       description: 'Independent label',
       multiplier: combinedMult,
       finalWeight: SIGNAL_WEIGHTS.INDEPENDENT_LABEL * combinedMult
-    });
-  }
-  
-  // Track Metadata Signals
-  if (!track.songwriter || track.songwriter === '') {
-    signals.push({
-      signal: 'MISSING_WRITER_METADATA',
-      weight: SIGNAL_WEIGHTS.MISSING_WRITER_METADATA,
-      description: 'No songwriter metadata',
-      multiplier: combinedMult,
-      finalWeight: SIGNAL_WEIGHTS.MISSING_WRITER_METADATA * combinedMult
     });
   }
   
