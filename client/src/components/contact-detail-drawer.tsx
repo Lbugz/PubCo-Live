@@ -854,20 +854,23 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                   {scoreBreakdown && scoreBreakdown.length > 0 && (
                     <div className="space-y-2 mt-4 pt-4 border-t">
                       <p className="text-xs font-medium text-muted-foreground mb-2">How This Score Was Calculated</p>
-                      {scoreBreakdown.map((item: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">{item.signal}</span>
-                          <Badge 
-                            variant="outline"
-                            className={cn(
-                              "font-medium",
-                              item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
-                            )}
-                          >
-                            {item.points > 0 ? "+" : ""}{item.points}
-                          </Badge>
-                        </div>
-                      ))}
+                      {scoreBreakdown.map((item: any, idx: number) => {
+                        const formattedPoints = Number(item.points).toFixed(2).replace(/\.?0+$/, '');
+                        return (
+                          <div key={idx} className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">{item.signal}</span>
+                            <Badge 
+                              variant="outline"
+                              className={cn(
+                                "font-medium",
+                                item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
+                              )}
+                            >
+                              {item.points > 0 ? "+" : ""}{formattedPoints}
+                            </Badge>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
