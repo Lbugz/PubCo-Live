@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { 
-  X, Mail, MessageCircle, RefreshCw, Edit, TrendingUp, Music, Activity, 
-  FileText, ExternalLink, Instagram, Twitter, Music2, Flame, User, Clock,
-  Hash, Link as LinkIcon, Target, ChevronDown
+  Mail, MessageCircle, RefreshCw, TrendingUp, Music, Activity, 
+  FileText, ExternalLink, Instagram, Twitter, Flame, Edit,
+  Phone, Hash, Building, User as UserIcon, Award, Target
 } from "lucide-react";
+import { SiTiktok } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -27,10 +29,8 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import type { ContactWithSongwriter, PlaylistSnapshot } from "@shared/schema";
-import { EnrichmentSourceIndicator } from "./enrichment-source-indicator";
 
 const STAGE_CONFIG = {
   discovery: {
@@ -53,11 +53,50 @@ interface ContactDetailDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Helper function to get the most common value from tracks
+function getMostCommon(values: (string | null)[]): string | null {
+  const filtered = values.filter((v): v is string => v !== null && v !== undefined && v !== '');
+  if (filtered.length === 0) return null;
+  
+  const counts = filtered.reduce((acc, val) => {
+    acc[val] = (acc[val] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+// Helper function to aggregate contact info from tracks
+function aggregateContactInfo(tracks: PlaylistSnapshot[]) {
+  return {
+    email: getMostCommon(tracks.map(t => t.email)),
+    instagram: getMostCommon(tracks.map(t => t.instagram)),
+    twitter: getMostCommon(tracks.map(t => t.twitter)),
+    tiktok: getMostCommon(tracks.map(t => t.tiktok)),
+    iswc: getMostCommon(tracks.map(t => t.iswc)),
+    ipiNumber: getMostCommon(tracks.map(t => t.ipiNumber)),
+    publisher: getMostCommon(tracks.map(t => t.publisher)),
+    administrators: getMostCommon(tracks.map(t => t.administrators)),
+  };
+}
+
+// Parse score breakdown from trackScoreData JSON
+function parseScoreBreakdown(trackScoreData: string | null) {
+  if (!trackScoreData) return null;
+  
+  try {
+    const data = JSON.parse(trackScoreData);
+    return data.breakdown || null;
+  } catch {
+    return null;
+  }
+}
+
 export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDetailDrawerProps) {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [noteText, setNoteText] = useState("");
   const [activeTab, setActiveTab] = useState("tracks");
-  const [identifiersOpen, setIdentifiersOpen] = useState(false);
 
   // Fetch contact details
   const { data: contact, isLoading: loadingContact } = useQuery<ContactWithSongwriter>({
@@ -80,8 +119,12 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
       if (!response.ok) return [];
       return response.json();
     },
-    enabled: !!contactId && open && activeTab === "tracks",
+    enabled: !!contactId && open,
   });
+
+  // Aggregate contact info from tracks
+  const contactInfo = tracks.length > 0 ? aggregateContactInfo(tracks) : null;
+  const scoreBreakdown = contact?.trackScoreData ? parseScoreBreakdown(contact.trackScoreData) : null;
 
   // Update contact mutation
   const updateContactMutation = useMutation({
@@ -90,7 +133,6 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
       return apiRequest("PATCH", `/api/contacts/${contactId}`, updates);
     },
     onSuccess: () => {
-      // Invalidate both the list and the specific contact detail query
       queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/contacts", contactId] });
       toast({
@@ -142,22 +184,16 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
     saveNoteMutation.mutate(noteText);
   };
 
+  const handleTrackClick = (trackId: string) => {
+    // Navigate to tracks page with this track selected
+    onOpenChange(false);
+    setLocation(`/tracks?selected=${trackId}`);
+  };
+
   const formatNumber = (num: number) => num.toLocaleString();
   const formatDate = (date: string | Date) => {
     const d = typeof date === 'string' ? new Date(date) : date;
     return d.toLocaleDateString();
-  };
-  
-  const getTimeInStage = (stageUpdatedAt: string | Date) => {
-    const updated = typeof stageUpdatedAt === 'string' ? new Date(stageUpdatedAt) : stageUpdatedAt;
-    const now = new Date();
-    const diffDays = Math.floor((now.getTime() - updated.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "1 day";
-    if (diffDays < 7) return `${diffDays} days`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks`;
-    return `${Math.floor(diffDays / 30)} months`;
   };
 
   if (!open || !contactId) return null;
@@ -173,191 +209,15 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
           </div>
         ) : contact ? (
           <>
-            <SheetHeader>
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <SheetTitle className="text-2xl" data-testid="text-contact-name">
-                    {contact.songwriterName}
-                  </SheetTitle>
-                </div>
-                <div className="flex-shrink-0 mt-1">
-                  <EnrichmentSourceIndicator
-                    mlc={{
-                      searched: contact.mlcSearched === 1,
-                      found: contact.mlcFound === 1
-                    }}
-                    musicbrainz={{
-                      searched: contact.musicbrainzSearched === 1,
-                      found: contact.musicbrainzFound === 1
-                    }}
-                    chartmetric={{
-                      searched: contact.chartmetricSearched === 1,
-                      found: contact.chartmetricFound === 1
-                    }}
-                  />
-                </div>
-              </div>
+            {/* Header: Name */}
+            <SheetHeader className="mb-4">
+              <SheetTitle className="text-2xl" data-testid="text-contact-name">
+                {contact.songwriterName}
+              </SheetTitle>
             </SheetHeader>
 
-            {/* Engagement Snapshot Hero */}
-            <Card className="p-5 mt-4 bg-muted/50">
-              <h3 className="text-sm font-medium mb-4 text-muted-foreground">Engagement Snapshot</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Target className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Unsigned Score</span>
-                  </div>
-                  {contact.unsignedScore !== null && contact.unsignedScore !== undefined ? (
-                    <Badge
-                      variant={contact.unsignedScore >= 7 ? "high" : contact.unsignedScore >= 4 ? "medium" : "low"}
-                      className="font-semibold text-base"
-                      data-testid="badge-contact-score"
-                    >
-                      {contact.unsignedScore}/10
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-xs" data-testid="badge-contact-score">
-                      Pending
-                    </Badge>
-                  )}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Target className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Stage</span>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-xs",
-                      STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG]?.color
-                    )}
-                    data-testid="badge-contact-stage"
-                  >
-                    {STAGE_CONFIG[contact.stage as keyof typeof STAGE_CONFIG]?.label || contact.stage}
-                  </Badge>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Time in Stage</span>
-                  </div>
-                  <div className="text-sm font-medium">{getTimeInStage(contact.stageUpdatedAt)}</div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Music className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Tracked Tracks</span>
-                  </div>
-                  <div className="text-sm font-medium" data-testid="text-total-tracks">{contact.totalTracks || 0}</div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Flame className="h-4 w-4 text-orange-500" />
-                    <span className="text-xs text-muted-foreground">Hot Lead</span>
-                  </div>
-                  <div className="text-sm font-medium">
-                    {contact.hotLead > 0 ? (
-                      <Badge variant="default" className="gap-1" data-testid="badge-hot-lead">
-                        <Flame className="h-3 w-3" />
-                        Yes
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground">No</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Info Cards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              {/* Performance Pulse */}
-              <Card className="p-4">
-                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Performance Pulse
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">Total Streams</div>
-                    <div className="text-xl font-bold" data-testid="text-total-streams">
-                      {formatNumber(contact.totalStreams || 0)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">Track Count</div>
-                    <div className="text-xl font-bold">{contact.totalTracks || 0}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">WoW Growth</div>
-                    <div className={cn(
-                      "text-xl font-bold",
-                      contact.wowGrowthPct !== null && contact.wowGrowthPct > 0 && "text-chart-2",
-                      contact.wowGrowthPct !== null && contact.wowGrowthPct < 0 && "text-red-400"
-                    )} data-testid="text-wow-growth">
-                      {contact.wowGrowthPct !== null ? `${contact.wowGrowthPct > 0 ? "+" : ""}${contact.wowGrowthPct}%` : "—"}
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Unsigned Score Panel */}
-              <Card className="p-4">
-                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Unsigned Score
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">Score</div>
-                    <div className="flex items-center gap-2">
-                      {contact.unsignedScore !== null && contact.unsignedScore !== undefined ? (
-                        <>
-                          <div className="text-3xl font-bold" data-testid="text-unsigned-score">
-                            {contact.unsignedScore}/10
-                          </div>
-                          <Badge 
-                            variant={
-                              contact.unsignedScore >= 8 ? "high" : 
-                              contact.unsignedScore >= 5 ? "medium" : 
-                              "low"
-                            }
-                            data-testid="badge-score-confidence"
-                          >
-                            {contact.scoreConfidence || "medium"}
-                          </Badge>
-                        </>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Not yet scored</span>
-                      )}
-                    </div>
-                  </div>
-                  {contact.unsignedScore !== null && contact.unsignedScore !== undefined && (
-                    <>
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">Last Updated</div>
-                        <div className="text-sm font-medium">
-                          {contact.unsignedScoreUpdatedAt ? formatDate(contact.unsignedScoreUpdatedAt) : "—"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">Signal Strength</div>
-                        <div className="text-sm font-medium">
-                          {contact.scoreConfidence === "high" && "Strong unsigned indicators"}
-                          {contact.scoreConfidence === "medium" && "Moderate unsigned indicators"}
-                          {contact.scoreConfidence === "low" && "Limited data available"}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="flex flex-wrap gap-2 mt-4">
+            {/* Action Buttons with Pipeline Stage Dropdown */}
+            <div className="flex flex-wrap gap-2 mb-6">
               <Button
                 variant="default"
                 size="sm"
@@ -384,8 +244,24 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 data-testid="button-toggle-hot-lead"
               >
                 <Flame className="h-4 w-4" />
-                {contact.hotLead > 0 ? "Remove Hot Lead" : "Mark Hot Lead"}
+                {contact.hotLead > 0 ? "Hot Lead" : "Mark Hot Lead"}
               </Button>
+              
+              {/* Pipeline Stage Selector (inline with buttons) */}
+              <Select value={contact.stage} onValueChange={handleStageChange}>
+                <SelectTrigger 
+                  className="w-[180px] h-9"
+                  data-testid="select-change-stage"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="discovery">Discovery Pool</SelectItem>
+                  <SelectItem value="watch">Watch List</SelectItem>
+                  <SelectItem value="search">Active Search</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -397,65 +273,188 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
               </Button>
             </div>
 
-            {/* Stage Selector */}
-            <div className="mt-4">
-              <label className="text-sm font-medium mb-2 block">Pipeline Stage</label>
-              <Select value={contact.stage} onValueChange={handleStageChange}>
-                <SelectTrigger data-testid="select-change-stage">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="discovery">Discovery Pool</SelectItem>
-                  <SelectItem value="watch">Watch List</SelectItem>
-                  <SelectItem value="search">Active Search</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Contact Information - Two Column Layout */}
+            <Card className="p-5 mb-6">
+              <h3 className="text-sm font-medium mb-4 text-muted-foreground">Contact Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left Column: Personal Contact */}
+                <div className="space-y-3">
+                  {/* Email */}
+                  {contactInfo?.email ? (
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <a
+                        href={`mailto:${contactInfo.email}`}
+                        className="text-sm hover:underline truncate"
+                        data-testid="link-email"
+                      >
+                        {contactInfo.email}
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm text-muted-foreground italic">No email available</span>
+                    </div>
+                  )}
+                  
+                  {/* Social Media Icons */}
+                  {(contactInfo?.instagram || contactInfo?.twitter || contactInfo?.tiktok) ? (
+                    <div className="flex items-center gap-3">
+                      <div className="text-xs text-muted-foreground w-4"></div>
+                      <div className="flex gap-2">
+                        {contactInfo?.instagram && (
+                          <a
+                            href={`https://instagram.com/${contactInfo.instagram.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover-elevate p-2 rounded"
+                            data-testid="link-instagram"
+                          >
+                            <Instagram className="h-4 w-4" />
+                          </a>
+                        )}
+                        {contactInfo?.twitter && (
+                          <a
+                            href={`https://twitter.com/${contactInfo.twitter.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover-elevate p-2 rounded"
+                            data-testid="link-twitter"
+                          >
+                            <Twitter className="h-4 w-4" />
+                          </a>
+                        )}
+                        {contactInfo?.tiktok && (
+                          <a
+                            href={`https://tiktok.com/@${contactInfo.tiktok.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover-elevate p-2 rounded"
+                            data-testid="link-tiktok"
+                          >
+                            <SiTiktok className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="w-4"></div>
+                      <span className="text-sm text-muted-foreground italic">No social media links</span>
+                    </div>
+                  )}
 
-            {/* Identifiers Card - Collapsible */}
-            <Collapsible open={identifiersOpen} onOpenChange={setIdentifiersOpen}>
-              <Card className="p-4 mt-4">
-                <CollapsibleTrigger className="flex items-center justify-between w-full hover-elevate p-0">
-                  <h3 className="text-sm font-medium">Identifiers</h3>
-                  <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", identifiersOpen && "rotate-180")} />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-3">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Hash className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Contact ID</span>
-                      </div>
-                      <span className="text-sm font-mono">{contact.id.slice(0, 8)}...</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Hash className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Songwriter ID</span>
-                      </div>
-                      <span className="text-sm font-mono">{contact.songwriterId.slice(0, 8)}...</span>
-                    </div>
-                    {contact.songwriterChartmetricId && (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Chartmetric ID</span>
-                        </div>
-                        <a 
-                          href={`https://app.chartmetric.com/artist/${contact.songwriterChartmetricId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary hover:underline flex items-center gap-1"
-                        >
-                          {contact.songwriterChartmetricId}
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </div>
-                    )}
+                  {/* Phone Number - Placeholder for future implementation */}
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm text-muted-foreground italic" data-testid="text-phone">
+                      No phone available
+                    </span>
                   </div>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+                </div>
+
+                {/* Right Column: Professional Identifiers */}
+                <div className="space-y-3">
+                  {contactInfo?.iswc && (
+                    <div className="flex items-start gap-3">
+                      <Hash className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground mb-0.5">ISWC</p>
+                        <p className="text-sm font-mono truncate" data-testid="text-iswc">{contactInfo.iswc}</p>
+                      </div>
+                    </div>
+                  )}
+                  {contactInfo?.ipiNumber && (
+                    <div className="flex items-start gap-3">
+                      <UserIcon className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground mb-0.5">IPI Number</p>
+                        <p className="text-sm font-mono truncate" data-testid="text-ipi">{contactInfo.ipiNumber}</p>
+                      </div>
+                    </div>
+                  )}
+                  {contactInfo?.publisher && (
+                    <div className="flex items-start gap-3">
+                      <Building className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground mb-0.5">Publisher</p>
+                        <p className="text-sm truncate" data-testid="text-publisher">{contactInfo.publisher}</p>
+                      </div>
+                    </div>
+                  )}
+                  {contactInfo?.administrators && (
+                    <div className="flex items-start gap-3">
+                      <Award className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground mb-0.5">Administrator</p>
+                        <p className="text-sm truncate" data-testid="text-administrator">{contactInfo.administrators}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!contactInfo?.iswc && !contactInfo?.ipiNumber && !contactInfo?.publisher && !contactInfo?.administrators && (
+                    <p className="text-sm text-muted-foreground italic">No professional identifiers available</p>
+                  )}
+                </div>
+              </div>
+            </Card>
+
+            {/* Score Card */}
+            <Card className="p-5 mb-6">
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Unsigned Score</h3>
+                {contact.unsignedScore !== null && contact.unsignedScore !== undefined && (
+                  <Badge
+                    variant={contact.unsignedScore >= 7 ? "high" : contact.unsignedScore >= 4 ? "medium" : "low"}
+                    data-testid="badge-score-confidence"
+                  >
+                    {contact.scoreConfidence || "medium"}
+                  </Badge>
+                )}
+              </div>
+
+              {contact.unsignedScore !== null && contact.unsignedScore !== undefined ? (
+                <>
+                  {/* Large Score Display */}
+                  <div className="flex items-baseline gap-2 mb-4">
+                    <div className="text-5xl font-bold" data-testid="text-unsigned-score">
+                      {contact.unsignedScore}
+                    </div>
+                    <div className="text-2xl text-muted-foreground">/10</div>
+                  </div>
+
+                  {/* Point Allocation Breakdown */}
+                  {scoreBreakdown && scoreBreakdown.length > 0 && (
+                    <div className="space-y-2 mt-4 pt-4 border-t">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Point Allocation</p>
+                      {scoreBreakdown.map((item: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">{item.signal}</span>
+                          <span className={cn(
+                            "font-medium",
+                            item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
+                          )}>
+                            {item.points > 0 ? "+" : ""}{item.points}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {contact.unsignedScoreUpdatedAt && (
+                    <p className="text-xs text-muted-foreground mt-4">
+                      Last updated: {formatDate(contact.unsignedScoreUpdatedAt)}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <Target className="h-12 w-12 mx-auto mb-2 text-muted-foreground opacity-50" />
+                  <p className="text-sm text-muted-foreground">Score not yet calculated</p>
+                </div>
+              )}
+            </Card>
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -478,7 +477,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 </TabsTrigger>
               </TabsList>
 
-              {/* Tracks Tab */}
+              {/* Tracks Tab - Clickable */}
               <TabsContent value="tracks" className="space-y-3">
                 {loadingTracks ? (
                   <div className="space-y-2">
@@ -492,7 +491,12 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                   </div>
                 ) : (
                   tracks.map((track) => (
-                    <Card key={track.id} className="p-4 hover-elevate" data-testid={`card-track-${track.id}`}>
+                    <Card 
+                      key={track.id} 
+                      className="p-4 hover-elevate cursor-pointer" 
+                      onClick={() => handleTrackClick(track.id)}
+                      data-testid={`card-track-${track.id}`}
+                    >
                       <div className="flex items-start gap-3">
                         {/* Album Art */}
                         {track.albumArt ? (
@@ -512,17 +516,12 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                         
                         {/* Stacked Track Info */}
                         <div className="flex-1 min-w-0 space-y-1">
-                          {/* Track Name - Primary */}
                           <h4 className="font-medium text-base leading-tight" data-testid={`text-track-name-${track.id}`}>
                             {track.trackName}
                           </h4>
-                          
-                          {/* Artist Name - Secondary */}
                           <p className="text-sm text-muted-foreground leading-tight" data-testid={`text-track-artist-${track.id}`}>
                             {track.artistName}
                           </p>
-                          
-                          {/* Playlist Badge - Tertiary */}
                           {track.playlistName && (
                             <div>
                               <Badge variant="outline" className="text-xs font-normal">
@@ -530,14 +529,13 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                               </Badge>
                             </div>
                           )}
-                          
-                          {/* Stream Count */}
                           {track.spotifyStreams && (
                             <p className="text-xs text-muted-foreground">
                               {formatNumber(track.spotifyStreams)} streams
                             </p>
                           )}
                         </div>
+                        <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       </div>
                     </Card>
                   ))
