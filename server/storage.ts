@@ -1,11 +1,11 @@
 import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, artists, artistSongwriters, enrichmentJobs, contacts, contactTracks, songwriterProfiles, contactNotes, apiQuotaUsage, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory, type Artist, type InsertArtist, type EnrichmentJob, type InsertEnrichmentJob, type Contact, type ContactWithSongwriter, type ContactNote, type InsertContactNote } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, desc, inArray, and, count } from "drizzle-orm";
+import { eq, sql, desc, asc, inArray, and, count } from "drizzle-orm";
 
 export interface IStorage {
-  getTracksByWeek(week: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]>;
+  getTracksByWeek(week: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]>;
   getTracksByWeekCount(week: string): Promise<number>;
-  getTracksByPlaylist(playlistId: string, week?: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]>;
+  getTracksByPlaylist(playlistId: string, week?: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]>;
   getTracksByPlaylistCount(playlistId: string, week?: string): Promise<number>;
   getTrackById(id: string): Promise<PlaylistSnapshot | null>;
   getTracksByIds(ids: string[]): Promise<PlaylistSnapshot[]>;
@@ -76,14 +76,37 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async getTracksByWeek(week: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]> {
-    const { limit, offset } = options || {};
+  private getSortColumn(sortField?: string) {
+    switch (sortField) {
+      case "trackName":
+        return playlistSnapshots.trackName;
+      case "artistName":
+        return playlistSnapshots.artistName;
+      case "playlistName":
+        return playlistSnapshots.playlistName;
+      case "albumLabel":
+        return playlistSnapshots.label;
+      case "songwriter":
+        return playlistSnapshots.songwriter;
+      case "spotifyStreams":
+        return playlistSnapshots.spotifyStreams;
+      case "addedAt":
+      default:
+        return playlistSnapshots.addedAt;
+    }
+  }
+
+  async getTracksByWeek(week: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]> {
+    const { limit, offset, sortField, sortDirection = 'desc' } = options || {};
+    
+    const sortColumn = this.getSortColumn(sortField);
+    const sortFn = sortDirection === 'asc' ? asc : desc;
     
     // Deduplicate tracks by ISRC (or spotify_url if ISRC is null)
     if (week === "all") {
       let query = db.select()
         .from(playlistSnapshots)
-        .orderBy(desc(playlistSnapshots.addedAt))
+        .orderBy(sortFn(sortColumn))
         .$dynamic();
       
       if (limit !== undefined) {
@@ -103,7 +126,7 @@ export class DatabaseStorage implements IStorage {
       let query = db.select()
         .from(playlistSnapshots)
         .where(eq(playlistSnapshots.week, latestWeek))
-        .orderBy(desc(playlistSnapshots.addedAt))
+        .orderBy(sortFn(sortColumn))
         .$dynamic();
       
       if (limit !== undefined) {
@@ -119,7 +142,7 @@ export class DatabaseStorage implements IStorage {
     let query = db.select()
       .from(playlistSnapshots)
       .where(eq(playlistSnapshots.week, week))
-      .orderBy(desc(playlistSnapshots.addedAt))
+      .orderBy(sortFn(sortColumn))
       .$dynamic();
     
     if (limit !== undefined) {
@@ -165,8 +188,11 @@ export class DatabaseStorage implements IStorage {
     return typeof raw === "bigint" ? Number(raw) : Number(raw);
   }
 
-  async getTracksByPlaylist(playlistId: string, week?: string, options?: { limit?: number; offset?: number }): Promise<PlaylistSnapshot[]> {
-    const { limit, offset } = options || {};
+  async getTracksByPlaylist(playlistId: string, week?: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]> {
+    const { limit, offset, sortField, sortDirection = 'desc' } = options || {};
+    
+    const sortColumn = this.getSortColumn(sortField);
+    const sortFn = sortDirection === 'asc' ? asc : desc;
     
     // First, get the database UUID from the Spotify playlist ID
     const [playlist] = await db.select({ id: trackedPlaylists.id })
@@ -198,7 +224,7 @@ export class DatabaseStorage implements IStorage {
     let query = db.select()
       .from(playlistSnapshots)
       .where(and(...conditions))
-      .orderBy(desc(playlistSnapshots.addedAt))
+      .orderBy(sortFn(sortColumn))
       .$dynamic();
     
     if (limit !== undefined) {
