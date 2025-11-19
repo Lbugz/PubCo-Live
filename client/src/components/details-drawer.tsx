@@ -128,6 +128,71 @@ export function DetailsDrawer({
     }
   }, [fullTrack?.enrichmentStatus, track?.enrichmentStatus, isEnriching]);
 
+  // Reset phase enriching state when drawer closes or track changes
+  useEffect(() => {
+    if (!open || track?.id !== previousTrackId.current) {
+      setEnrichingPhase(null);
+    }
+  }, [open, track?.id]);
+
+  // Helper to compute phase status from track data
+  const getPhaseStatus = (phase: number, trackData: PlaylistSnapshot | FullTrackDetails): PhaseStatus => {
+    switch (phase) {
+      case 1: // Spotify API
+        return {
+          searched: true,
+          found: !!trackData.isrc,
+          label: trackData.isrc || "No ISRC"
+        };
+      case 2: // Credits Scraping
+        return {
+          searched: trackData.enrichmentStatus === 'enriched',
+          found: !!(trackData.songwriter || trackData.producer),
+          label: trackData.songwriter || trackData.producer || "No credits"
+        };
+      case 3: // MusicBrainz
+        const hasArtists = (trackData as FullTrackDetails).artists?.length > 0;
+        return {
+          searched: hasArtists,
+          found: hasArtists,
+          label: hasArtists ? `${(trackData as FullTrackDetails).artists.length} artist(s)` : "No data"
+        };
+      case 4: // Chartmetric
+        return {
+          searched: !!trackData.chartmetricId,
+          found: !!trackData.chartmetricId,
+          label: trackData.chartmetricId ? `ID: ${trackData.chartmetricId}` : "No data"
+        };
+      case 5: // MLC
+        return {
+          searched: trackData.publisherStatus === 'published' || trackData.publisherStatus === 'unsigned',
+          found: !!trackData.publisher,
+          label: trackData.publisher || (trackData.publisherStatus ? "Unsigned" : "Not searched")
+        };
+      case 6: // YouTube
+        return {
+          searched: !!trackData.youtubeVideoId,
+          found: !!trackData.youtubeVideoId,
+          label: trackData.youtubeViews ? `${trackData.youtubeViews.toLocaleString()} views` : "Not searched"
+        };
+      default:
+        return { searched: false, found: false, label: "Unknown" };
+    }
+  };
+
+  // Handle phase-specific enrichment
+  const handlePhaseEnrich = async (phase: number) => {
+    if (track) {
+      setEnrichingPhase(phase);
+      try {
+        await onEnrichPhase(track.id, phase);
+      } catch (error) {
+        console.error(`Phase ${phase} enrichment error:`, error);
+        setEnrichingPhase(null);
+      }
+    }
+  };
+
   if (!track) return null;
 
   // Use fullTrack data if available, otherwise fall back to track prop
@@ -748,139 +813,54 @@ export function DetailsDrawer({
                       ENRICHMENT PIPELINE STATUS
                     </h3>
                     <div className="space-y-2">
-                      {/* Phase 1: Spotify API (ISRC Recovery) */}
-                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-1">
-                        <div className={cn(
-                          "h-2 w-2 rounded-full transition-all duration-300",
-                          displayTrack.isrc ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
-                        )} />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium">Phase 1: Spotify API</p>
-                            {displayTrack.isrc && (
-                              <Badge variant="secondary" className="text-xs">Complete</Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {displayTrack.isrc 
-                              ? `✓ ISRC recovered: ${displayTrack.isrc}` 
-                              : "Pending ISRC recovery"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Phase 2: Credits Scraping */}
-                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-2">
-                        <div className={cn(
-                          "h-2 w-2 rounded-full transition-all duration-300",
-                          displayTrack.enrichmentStatus === 'enriched' ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
-                        )} />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium">Phase 2: Credits Scraping</p>
-                            {displayTrack.enrichmentStatus === 'enriched' && (
-                              <Badge variant="secondary" className="text-xs">Complete</Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {displayTrack.enrichmentStatus === 'enriched'
-                              ? `✓ Credits found: ${displayTrack.songwriter || 'Unknown'}` 
-                              : isEnriching 
-                                ? "⟳ Scraping credits data..." 
-                                : "Pending credit scraping"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Phase 3: MusicBrainz Artist Links */}
-                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-3">
-                        <div className={cn(
-                          "h-2 w-2 rounded-full transition-all duration-300",
-                          artists.length > 0 && artists.some(a => 'musicbrainzId' in a) 
-                            ? "bg-green-500 shadow-lg shadow-green-500/50" 
-                            : "bg-muted animate-pulse"
-                        )} />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium">Phase 3: MusicBrainz</p>
-                            {artists.length > 0 && artists.some(a => 'musicbrainzId' in a) && (
-                              <Badge variant="secondary" className="text-xs">Complete</Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {artists.length > 0 && artists.some(a => 'musicbrainzId' in a)
-                              ? `✓ Artist links found for ${artists.filter(a => 'musicbrainzId' in a).length} artist(s)` 
-                              : "Pending artist social links"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Phase 4: Chartmetric Analytics */}
-                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-4">
-                        <div className={cn(
-                          "h-2 w-2 rounded-full transition-all duration-300",
-                          displayTrack.chartmetricStatus === 'success' ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
-                        )} />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium">Phase 4: Chartmetric</p>
-                            {displayTrack.chartmetricStatus === 'success' && (
-                              <Badge variant="secondary" className="text-xs">Complete</Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {displayTrack.chartmetricStatus === 'success'
-                              ? `✓ Analytics: ${displayTrack.spotifyStreams?.toLocaleString() || 'N/A'} streams, ${displayTrack.trackStage || 'stage unknown'}` 
-                              : displayTrack.chartmetricStatus === 'not_found'
-                                ? "✓ Not found in Chartmetric"
-                                : "Pending analytics data"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Phase 5: MLC Publisher Lookup */}
-                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-5">
-                        <div className={cn(
-                          "h-2 w-2 rounded-full transition-all duration-300",
-                          displayTrack.publisherStatus === 'published' ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
-                        )} />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium">Phase 5: MLC Lookup</p>
-                            {displayTrack.publisherStatus === 'published' && (
-                              <Badge variant="secondary" className="text-xs">Complete</Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {displayTrack.publisherStatus === 'published'
-                              ? `✓ Publisher verified: ${displayTrack.publisher || 'Unknown'}` 
-                              : displayTrack.publisherStatus === 'unsigned'
-                                ? "✓ Unsigned artist confirmed"
-                                : "Pending publisher verification"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Phase 6: YouTube Video Metadata */}
-                      <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-6">
-                        <div className={cn(
-                          "h-2 w-2 rounded-full transition-all duration-300",
-                          displayTrack.youtubeVideoId ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
-                        )} />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium">Phase 6: YouTube Enrichment</p>
-                            {displayTrack.youtubeVideoId && (
-                              <Badge variant="secondary" className="text-xs">Complete</Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {displayTrack.youtubeVideoId
-                              ? `✓ Video found: ${displayTrack.youtubeViews?.toLocaleString() || 'N/A'} views${displayTrack.youtubeLikes ? `, ${displayTrack.youtubeLikes.toLocaleString()} likes` : ''}` 
-                              : "Pending YouTube metadata"}
-                          </p>
-                        </div>
-                      </div>
+                      <PhaseEnrichmentButton
+                        phase={1}
+                        phaseName="Spotify API"
+                        icon="🎵"
+                        status={getPhaseStatus(1, displayTrack)}
+                        isLoading={enrichingPhase === 1 && isEnrichingPhase}
+                        onClick={() => handlePhaseEnrich(1)}
+                      />
+                      <PhaseEnrichmentButton
+                        phase={2}
+                        phaseName="Credits Scraping"
+                        icon="🎭"
+                        status={getPhaseStatus(2, displayTrack)}
+                        isLoading={enrichingPhase === 2 && isEnrichingPhase}
+                        onClick={() => handlePhaseEnrich(2)}
+                      />
+                      <PhaseEnrichmentButton
+                        phase={3}
+                        phaseName="MusicBrainz"
+                        icon="🎸"
+                        status={getPhaseStatus(3, displayTrack)}
+                        isLoading={enrichingPhase === 3 && isEnrichingPhase}
+                        onClick={() => handlePhaseEnrich(3)}
+                      />
+                      <PhaseEnrichmentButton
+                        phase={4}
+                        phaseName="Chartmetric"
+                        icon="📊"
+                        status={getPhaseStatus(4, displayTrack)}
+                        isLoading={enrichingPhase === 4 && isEnrichingPhase}
+                        onClick={() => handlePhaseEnrich(4)}
+                      />
+                      <PhaseEnrichmentButton
+                        phase={5}
+                        phaseName="MLC"
+                        icon="📄"
+                        status={getPhaseStatus(5, displayTrack)}
+                        isLoading={enrichingPhase === 5 && isEnrichingPhase}
+                        onClick={() => handlePhaseEnrich(5)}
+                      />
+                      <PhaseEnrichmentButton
+                        phase={6}
+                        phaseName="YouTube"
+                        icon="📺"
+                        status={getPhaseStatus(6, displayTrack)}
+                        isLoading={enrichingPhase === 6 && isEnrichingPhase}
+                        onClick={() => handlePhaseEnrich(6)}
+                      />
                     </div>
                   </section>
                 </div>

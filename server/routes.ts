@@ -3325,9 +3325,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      if (!phase || typeof phase !== 'number' || phase < 1 || phase > 6) {
+      if (!phase || typeof phase !== 'number' || !Number.isInteger(phase) || phase < 1 || phase > 6) {
         return res.status(400).json({ 
-          error: "phase is required and must be a number between 1 and 6" 
+          error: "phase is required and must be an integer between 1 and 6" 
+        });
+      }
+
+      // Verify track exists before creating job
+      const track = await storage.getTrackById(trackId);
+      if (!track) {
+        return res.status(404).json({ 
+          error: "Track not found",
+          trackId 
         });
       }
 
