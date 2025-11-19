@@ -1107,9 +1107,13 @@ export class EnrichmentWorker {
             }
 
             try {
-              const youtubeData = await enrichTrackWithYouTube(track.isrc!);
+              const youtubeData = await enrichTrackWithYouTube(
+                track.isrc!,
+                track.trackName,
+                track.artistName
+              );
 
-              // Increment quota counter after successful API call (~100 units per search)
+              // Increment quota counter after successful API call (~100 units per search, up to 200 with fallback)
               const newQuota = await this.incrementYouTubeQuota(100);
               
               // Alert if approaching safe limit (based on YOUTUBE_SAFE_QUOTA)

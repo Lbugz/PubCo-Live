@@ -72,51 +72,97 @@ class YouTubeRateLimiter {
 const rateLimiter = new YouTubeRateLimiter();
 
 /**
- * Search YouTube for a video by ISRC code
- * Cost: ~100 quota units
+ * Search YouTube for a video by ISRC code with fallback to track/artist search
+ * Cost: ~100 quota units per attempt (max 200 if fallback is used)
  */
-export async function searchVideoByISRC(isrc: string): Promise<string | null> {
+export async function searchVideoByISRC(
+  isrc: string, 
+  trackName?: string, 
+  artistName?: string
+): Promise<string | null> {
   if (!YOUTUBE_API_KEY) {
     throw new Error("YOUTUBE_API_KEY not configured. Please add it to Replit Secrets.");
   }
 
-  if (!isrc) {
+  if (!isrc && (!trackName || !artistName)) {
     return null;
   }
 
-  await rateLimiter.throttle();
+  // Strategy 1: Try ISRC search first
+  if (isrc) {
+    await rateLimiter.throttle();
 
-  const searchQuery = `ISRC:${isrc}`;
-  const url = new URL(`${YOUTUBE_API_BASE}/search`);
-  url.searchParams.set('part', 'snippet');
-  url.searchParams.set('q', searchQuery);
-  url.searchParams.set('type', 'video');
-  url.searchParams.set('maxResults', '1');
-  url.searchParams.set('key', YOUTUBE_API_KEY);
+    const searchQuery = `ISRC:${isrc}`;
+    const url = new URL(`${YOUTUBE_API_BASE}/search`);
+    url.searchParams.set('part', 'snippet');
+    url.searchParams.set('q', searchQuery);
+    url.searchParams.set('type', 'video');
+    url.searchParams.set('maxResults', '1');
+    url.searchParams.set('key', YOUTUBE_API_KEY);
 
-  try {
-    const response = await fetch(url.toString());
+    try {
+      const response = await fetch(url.toString());
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`YouTube search failed for ISRC ${isrc}: ${response.status} - ${errorText}`);
-      return null;
+      if (response.ok) {
+        const data: YouTubeSearchResult = await response.json();
+        
+        if (data.items && data.items.length > 0) {
+          const videoId = data.items[0].id.videoId;
+          console.log(`✅ Found YouTube video via ISRC ${isrc}: ${videoId}`);
+          return videoId;
+        }
+      }
+    } catch (error) {
+      console.error(`ISRC search error for ${isrc}:`, error);
     }
 
-    const data: YouTubeSearchResult = await response.json();
-    
-    if (!data.items || data.items.length === 0) {
-      console.log(`No YouTube video found for ISRC: ${isrc}`);
-      return null;
-    }
-
-    const videoId = data.items[0].id.videoId;
-    console.log(`✅ Found YouTube video for ISRC ${isrc}: ${videoId}`);
-    return videoId;
-  } catch (error) {
-    console.error(`Error searching YouTube for ISRC ${isrc}:`, error);
-    return null;
+    console.log(`No YouTube video found via ISRC: ${isrc}`);
   }
+
+  // Strategy 2: Fallback to track name + artist name search
+  if (trackName && artistName) {
+    await rateLimiter.throttle();
+
+    // Search for "track name artist name official music video"
+    const searchQuery = `${trackName} ${artistName} official music video`;
+    const url = new URL(`${YOUTUBE_API_BASE}/search`);
+    url.searchParams.set('part', 'snippet');
+    url.searchParams.set('q', searchQuery);
+    url.searchParams.set('type', 'video');
+    url.searchParams.set('maxResults', '3'); // Get top 3 to find best match
+    url.searchParams.set('key', YOUTUBE_API_KEY);
+
+    try {
+      const response = await fetch(url.toString());
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`YouTube fallback search failed: ${response.status} - ${errorText}`);
+        return null;
+      }
+
+      const data: YouTubeSearchResult = await response.json();
+      
+      if (!data.items || data.items.length === 0) {
+        console.log(`No YouTube video found for: ${trackName} by ${artistName}`);
+        return null;
+      }
+
+      // Look for best match (prefer videos with "official" in title)
+      const officialVideo = data.items.find(item => 
+        item.snippet.title.toLowerCase().includes('official')
+      );
+      
+      const videoId = (officialVideo || data.items[0]).id.videoId;
+      console.log(`✅ Found YouTube video via fallback search for "${trackName}" by ${artistName}: ${videoId}`);
+      return videoId;
+    } catch (error) {
+      console.error(`Error in fallback YouTube search for ${trackName}:`, error);
+      return null;
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -171,12 +217,16 @@ export async function getVideoMetadata(videoId: string): Promise<YouTubeMetadata
 }
 
 /**
- * Search for a video by ISRC and return full metadata
+ * Search for a video by ISRC (with fallback to track/artist name) and return full metadata
  * This combines both search and metadata fetch
- * Total cost: ~101 quota units
+ * Total cost: ~101 quota units (up to ~201 if fallback is used)
  */
-export async function enrichTrackWithYouTube(isrc: string): Promise<YouTubeMetadata | null> {
-  const videoId = await searchVideoByISRC(isrc);
+export async function enrichTrackWithYouTube(
+  isrc: string,
+  trackName?: string,
+  artistName?: string
+): Promise<YouTubeMetadata | null> {
+  const videoId = await searchVideoByISRC(isrc, trackName, artistName);
   
   if (!videoId) {
     return null;
