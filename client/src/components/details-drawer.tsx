@@ -135,25 +135,32 @@ export function DetailsDrawer({
     }
   }, [open, track?.id]);
 
-  // Handle phase-specific enrichment
+  // Handle phase-specific enrichment - v2 (cache bust)
   const handlePhaseEnrich = async (phase: number) => {
-    if (!track) return;
+    if (!track) {
+      console.log(`[DetailsDrawer v2] No track available`);
+      return;
+    }
     
-    console.log(`[DetailsDrawer] Attempting to enrich Phase ${phase} for track ${track.id}`);
-    console.log(`[DetailsDrawer] onEnrichPhase is:`, onEnrichPhase);
-    console.log(`[DetailsDrawer] onEnrichPhase type:`, typeof onEnrichPhase);
+    console.log(`[DetailsDrawer v2] Phase ${phase} enrichment starting for track ${track.id}`);
+    console.log(`[DetailsDrawer v2] onEnrichPhase prop:`, onEnrichPhase);
+    console.log(`[DetailsDrawer v2] onEnrichPhase type:`, typeof onEnrichPhase);
     
     setEnrichingPhase(phase);
     
     try {
-      console.log(`[DetailsDrawer] Calling onEnrichPhase callback...`);
+      console.log(`[DetailsDrawer v2] About to call onEnrichPhase...`);
       const result = await onEnrichPhase(track.id, phase);
-      console.log(`[DetailsDrawer] Phase ${phase} enrichment callback completed:`, result);
+      console.log(`[DetailsDrawer v2] Phase ${phase} completed successfully:`, result);
       setEnrichingPhase(null);
     } catch (error) {
-      console.error(`[DetailsDrawer] Phase ${phase} enrichment error:`, error);
-      console.error(`[DetailsDrawer] Error details:`, JSON.stringify(error));
-      console.error(`[DetailsDrawer] Error stack:`, error instanceof Error ? error.stack : 'No stack');
+      console.error(`[DetailsDrawer v2] Phase ${phase} error:`, error);
+      console.error(`[DetailsDrawer v2] Error type:`, typeof error);
+      console.error(`[DetailsDrawer v2] Error stringified:`, JSON.stringify(error));
+      if (error instanceof Error) {
+        console.error(`[DetailsDrawer v2] Error stack:`, error.stack);
+        console.error(`[DetailsDrawer v2] Error message:`, error.message);
+      }
       setEnrichingPhase(null);
     }
   };
