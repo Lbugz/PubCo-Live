@@ -555,6 +555,25 @@ export const insertSystemNotificationSchema = createInsertSchema(systemNotificat
 export type SystemNotification = typeof systemNotifications.$inferSelect;
 export type InsertSystemNotification = z.infer<typeof insertSystemNotificationSchema>;
 
+// API Quota Usage Tracking
+export const apiQuotaUsage = pgTable("api_quota_usage", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  service: text("service").notNull(), // e.g., 'youtube', 'chartmetric'
+  quotaDate: date("quota_date").notNull(), // YYYY-MM-DD format
+  usedUnits: integer("used_units").notNull().default(0),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  uniqueServiceDateIdx: uniqueIndex("unique_service_date_idx").on(table.service, table.quotaDate),
+}));
+
+export const insertApiQuotaUsageSchema = createInsertSchema(apiQuotaUsage).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type ApiQuotaUsage = typeof apiQuotaUsage.$inferSelect;
+export type InsertApiQuotaUsage = z.infer<typeof insertApiQuotaUsageSchema>;
+
 export const playlists = [
   {
     name: "Fresh Finds",

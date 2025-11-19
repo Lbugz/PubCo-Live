@@ -1,4 +1,4 @@
-import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, artists, artistSongwriters, enrichmentJobs, contacts, contactTracks, songwriterProfiles, contactNotes, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory, type Artist, type InsertArtist, type EnrichmentJob, type InsertEnrichmentJob, type Contact, type ContactWithSongwriter, type ContactNote, type InsertContactNote } from "@shared/schema";
+import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, artists, artistSongwriters, enrichmentJobs, contacts, contactTracks, songwriterProfiles, contactNotes, apiQuotaUsage, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory, type Artist, type InsertArtist, type EnrichmentJob, type InsertEnrichmentJob, type Contact, type ContactWithSongwriter, type ContactNote, type InsertContactNote } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, inArray, and, count } from "drizzle-orm";
 
@@ -68,6 +68,10 @@ export interface IStorage {
   getContactTracks(contactId: string): Promise<PlaylistSnapshot[]>;
   createContactNote(contactId: string, content: string): Promise<ContactNote>;
   getContactNotesById(contactId: string): Promise<ContactNote[]>;
+  
+  // API Quota tracking methods
+  getQuotaUsage(service: string, quotaDate: string): Promise<number>;
+  incrementQuotaUsage(service: string, quotaDate: string, units: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1304,6 +1308,41 @@ export class DatabaseStorage implements IStorage {
       .from(contactNotes)
       .where(eq(contactNotes.contactId, contactId))
       .orderBy(desc(contactNotes.createdAt));
+  }
+
+  async getQuotaUsage(service: string, quotaDate: string): Promise<number> {
+    const result = await db.select()
+      .from(apiQuotaUsage)
+      .where(
+        and(
+          eq(apiQuotaUsage.service, service),
+          eq(apiQuotaUsage.quotaDate, quotaDate)
+        )
+      )
+      .limit(1);
+    
+    return result.length > 0 ? result[0].usedUnits : 0;
+  }
+
+  async incrementQuotaUsage(service: string, quotaDate: string, units: number): Promise<number> {
+    // Use UPSERT to atomically increment or insert quota usage
+    const result = await db
+      .insert(apiQuotaUsage)
+      .values({
+        service,
+        quotaDate,
+        usedUnits: units,
+      })
+      .onConflictDoUpdate({
+        target: [apiQuotaUsage.service, apiQuotaUsage.quotaDate],
+        set: {
+          usedUnits: sql`${apiQuotaUsage.usedUnits} + ${units}`,
+          updatedAt: new Date(),
+        },
+      })
+      .returning({ usedUnits: apiQuotaUsage.usedUnits });
+    
+    return result[0].usedUnits;
   }
 }
 

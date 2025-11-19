@@ -79,11 +79,40 @@ export class EnrichmentWorker {
   private isRunning: boolean = false;
   private processingInterval: NodeJS.Timeout | null = null;
   private cleanupInterval: NodeJS.Timeout | null = null;
+  
+  // YouTube quota tracking (in-memory, resets daily)
+  private youtubeQuotaUsed: number = 0;
+  private youtubeQuotaResetDate: string = new Date().toISOString().split('T')[0];
+  private readonly YOUTUBE_DAILY_QUOTA = 80; // Conservative limit (8,000 units of 10,000 daily budget)
 
   constructor(options: WorkerOptions) {
     this.jobQueue = options.jobQueue;
     this.storage = options.storage;
     this.wsBroadcast = options.wsBroadcast;
+  }
+
+  // Check and reset YouTube quota if it's a new day
+  private checkYouTubeQuota(): { allowed: boolean; remaining: number } {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Reset quota if it's a new day
+    if (today !== this.youtubeQuotaResetDate) {
+      this.youtubeQuotaUsed = 0;
+      this.youtubeQuotaResetDate = today;
+      console.log(`[YouTube Quota] Reset for new day: ${today}`);
+    }
+    
+    const remaining = this.YOUTUBE_DAILY_QUOTA - this.youtubeQuotaUsed;
+    return {
+      allowed: this.youtubeQuotaUsed < this.YOUTUBE_DAILY_QUOTA,
+      remaining: Math.max(0, remaining),
+    };
+  }
+
+  // Increment YouTube quota usage
+  private incrementYouTubeQuota(count: number = 1): void {
+    this.youtubeQuotaUsed += count;
+    console.log(`[YouTube Quota] Used: ${this.youtubeQuotaUsed}/${this.YOUTUBE_DAILY_QUOTA}`);
   }
 
   start() {
@@ -986,59 +1015,117 @@ export class EnrichmentWorker {
       let youtubeEnrichedCount = 0;
       let youtubeNotFoundCount = 0;
       let youtubeFailedCount = 0;
+      let youtubeSkippedCount = 0;
+      let youtubeQuotaLimitReached = false;
 
       try {
-        // Only enrich tracks that have an ISRC
-        const tracksWithISRC = ctx.getAllTracks().filter((t: PlaylistSnapshot) => t.isrc);
+        // Check global YouTube quota
+        const quotaCheck = this.checkYouTubeQuota();
         
-        console.log(`[Phase 6: YouTube] Processing ${tracksWithISRC.length} tracks with ISRC`);
+        if (!quotaCheck.allowed) {
+          console.log(`[Phase 6: YouTube] ⚠️ Daily quota exhausted (${this.youtubeQuotaUsed}/${this.YOUTUBE_DAILY_QUOTA}). Skipping YouTube enrichment for this job.`);
+          
+          await this.jobQueue.updateJobProgress(job.id, {
+            progress: 95,
+            logs: [
+              `[${new Date().toISOString()}] Phase 6 (YouTube) skipped: Daily quota exhausted (${this.youtubeQuotaUsed}/${this.YOUTUBE_DAILY_QUOTA} searches used)`,
+            ],
+          });
 
-        for (const track of tracksWithISRC) {
-          try {
-            const youtubeData = await enrichTrackWithYouTube(track.isrc!);
+          this.broadcastProgress(job.id, {
+            status: 'running',
+            progress: 95,
+            message: 'Phase 6 skipped: YouTube quota exhausted for today',
+            enrichedCount: 0,
+            trackCount: job.trackIds.length,
+          });
+        } else {
+          // Only enrich tracks that:
+          // 1. Have an ISRC
+          // 2. Don't already have YouTube data (to avoid re-enriching)
+          const tracksNeedingYouTube = ctx.getAllTracks().filter((t: PlaylistSnapshot) => 
+            t.isrc && !t.youtubeVideoId
+          );
+          
+          console.log(`[Phase 6: YouTube] ${tracksNeedingYouTube.length} tracks need YouTube enrichment (have ISRC, no existing data)`);
+          console.log(`[Phase 6: YouTube] Quota remaining: ${quotaCheck.remaining}/${this.YOUTUBE_DAILY_QUOTA}`);
 
-            if (youtubeData) {
-              ctx.applyPatch(track.id, {
-                youtubeVideoId: youtubeData.videoId,
-                youtubeChannelId: youtubeData.channelId,
-                youtubeViews: youtubeData.views,
-                youtubeLikes: youtubeData.likes,
-                youtubeComments: youtubeData.comments,
-                youtubePublishedAt: youtubeData.publishedAt,
-                youtubeDescription: youtubeData.description,
-                youtubeLicensed: youtubeData.licensed ? 1 : 0,
-              });
-              youtubeEnrichedCount++;
+          // Limit searches to remaining quota
+          const tracksToEnrich = tracksNeedingYouTube.slice(0, quotaCheck.remaining);
+          
+          if (tracksNeedingYouTube.length > quotaCheck.remaining) {
+            youtubeQuotaLimitReached = true;
+            const skipped = tracksNeedingYouTube.length - quotaCheck.remaining;
+            console.log(`[Phase 6: YouTube] ⚠️ Quota limit: Only enriching ${quotaCheck.remaining} tracks, skipping ${skipped} to preserve quota`);
+          }
 
-              console.log(`[Phase 6: YouTube] ✅ ${track.trackName} - ${youtubeData.views.toLocaleString()} views`);
-            } else {
-              youtubeNotFoundCount++;
-              console.log(`[Phase 6: YouTube] ⚠️ No video found for ${track.trackName} (ISRC: ${track.isrc})`);
+          for (const track of tracksToEnrich) {
+            try {
+              const youtubeData = await enrichTrackWithYouTube(track.isrc!);
+
+              // Increment quota counter after successful API call
+              this.incrementYouTubeQuota(1);
+
+              if (youtubeData) {
+                ctx.applyPatch(track.id, {
+                  youtubeVideoId: youtubeData.videoId,
+                  youtubeChannelId: youtubeData.channelId,
+                  youtubeViews: youtubeData.views,
+                  youtubeLikes: youtubeData.likes,
+                  youtubeComments: youtubeData.comments,
+                  youtubePublishedAt: youtubeData.publishedAt,
+                  youtubeDescription: youtubeData.description,
+                  youtubeLicensed: youtubeData.licensed ? 1 : 0,
+                });
+                youtubeEnrichedCount++;
+
+                console.log(`[Phase 6: YouTube] ✅ ${track.trackName} - ${youtubeData.views.toLocaleString()} views`);
+              } else {
+                youtubeNotFoundCount++;
+                console.log(`[Phase 6: YouTube] ⚠️ No video found for ${track.trackName} (ISRC: ${track.isrc})`);
+              }
+            } catch (trackError) {
+              console.error(`[Phase 6: YouTube] ❌ Failed to enrich ${track.trackName}:`, trackError);
+              youtubeFailedCount++;
+              // Still increment quota on failure since the API call was made
+              this.incrementYouTubeQuota(1);
             }
-          } catch (trackError) {
-            console.error(`[Phase 6: YouTube] ❌ Failed to enrich ${track.trackName}:`, trackError);
-            youtubeFailedCount++;
+          }
+
+          // Count tracks that were skipped due to quota
+          if (youtubeQuotaLimitReached) {
+            youtubeSkippedCount = tracksNeedingYouTube.length - tracksToEnrich.length;
+          }
+
+          // Count tracks that already had YouTube data
+          const tracksAlreadyEnriched = ctx.getAllTracks().filter((t: PlaylistSnapshot) => t.youtubeVideoId).length - youtubeEnrichedCount;
+          if (tracksAlreadyEnriched > 0) {
+            console.log(`[Phase 6: YouTube] ℹ️ ${tracksAlreadyEnriched} tracks already have YouTube data (skipped)`);
           }
         }
 
         const { persistedCount: youtubePersisted } = await this.persistPhaseUpdates(ctx, job.id, 'Phase 6');
 
+        const quotaMessage = youtubeQuotaLimitReached 
+          ? `, ${youtubeSkippedCount} skipped (quota limit)` 
+          : '';
+
         await this.jobQueue.updateJobProgress(job.id, {
           progress: 95,
           logs: [
-            `[${new Date().toISOString()}] Phase 6 (YouTube) complete: ${youtubeEnrichedCount} enriched, ${youtubeNotFoundCount} not found, ${youtubeFailedCount} failed, ${youtubePersisted} persisted`,
+            `[${new Date().toISOString()}] Phase 6 (YouTube) complete: ${youtubeEnrichedCount} enriched, ${youtubeNotFoundCount} not found, ${youtubeFailedCount} failed${quotaMessage}, ${youtubePersisted} persisted`,
           ],
         });
 
         this.broadcastProgress(job.id, {
           status: 'running',
           progress: 95,
-          message: `Phase 6 complete: ${youtubeEnrichedCount} tracks enriched with YouTube data`,
+          message: `Phase 6 complete: ${youtubeEnrichedCount} tracks enriched with YouTube data${quotaMessage}`,
           enrichedCount: youtubeEnrichedCount,
           trackCount: job.trackIds.length,
         });
 
-        console.log(`[Phase 6: YouTube] ✅ Complete: ${youtubeEnrichedCount} enriched, ${youtubeNotFoundCount} not found, ${youtubeFailedCount} failed`);
+        console.log(`[Phase 6: YouTube] ✅ Complete: ${youtubeEnrichedCount} enriched, ${youtubeNotFoundCount} not found, ${youtubeFailedCount} failed${quotaMessage}`);
 
         // Broadcast quality metric update
         if (this.wsBroadcast && job.playlistId) {
