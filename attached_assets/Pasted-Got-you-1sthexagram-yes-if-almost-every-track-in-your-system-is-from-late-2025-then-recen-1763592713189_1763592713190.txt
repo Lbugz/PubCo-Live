@@ -1,0 +1,144 @@
+Got you, 1sthexagram — **yes**, if almost every track in your system is from *late 2025*, then recency weighting and stream-based weighting will **distort scores**, create noise, and give false precision.
+
+**Removing weighting is the right move for Phase 1.**
+
+Here is the **clean, weight-free scoring system** — simple, fair, and consistent with your current dataset.
+
+---
+
+# ✅ **Unsigned Score — Simplified (No Weighting Version)**
+
+*A clean 0–10 score using raw signals only.*
+
+---
+
+# **1. Core Concept**
+
+The score now comes from **four direct signal groups** with fixed points.
+No multipliers.
+No adjustments for recency or streams.
+No hidden math.
+
+This is the cleanest version to launch with a fresh database.
+
+---
+
+# **2. Signal Groups (Fixed Points Only)**
+
+## **A. Discovery**
+
+| Signal               | Points |
+| -------------------- | ------ |
+| Fresh Finds playlist | **+3** |
+
+---
+
+## **B. Publishing**
+
+| Signal                  | Points                                                     |
+| ----------------------- | ---------------------------------------------------------- |
+| No publisher metadata   | **+3**                                                     |
+| No administrator listed | **+1**                                                     |
+| No IPI / ISWC           | **+1** (optional; can merge into “no publishing metadata”) |
+
+---
+
+## **C. Label / Distribution**
+
+| Signal          | Points |
+| --------------- | ------ |
+| DIY distributor | **+2** |
+| Indie label     | **+1** |
+| Major label     | **–3** |
+
+---
+
+## **D. Metadata Completeness (9 fields)**
+
+| Completeness | Points |
+| ------------ | ------ |
+| <25%         | **+4** |
+| 25–49%       | **+3** |
+| 50–74%       | **+2** |
+| 75–100%      | **+1** |
+
+Fields include:
+ISRC, label, songwriter, publisher, admin, IPI, ISWC, streams, release date.
+
+---
+
+# **3. Portfolio-Level Signals (Still Simple)**
+
+None of these use multipliers — just add them once:
+
+| Portfolio Signal        | Points |
+| ----------------------- | ------ |
+| Majority DIY releases   | **+2** |
+| At least 3 tracks found | **+2** |
+| MusicBrainz profile     | **+1** |
+
+---
+
+# **4. Final Score Calculation (Straightforward)**
+
+```
+Total Score = Sum of ALL track signals + portfolio signals  
+Final Score = Round(Clamp(Total Score, 0–10))
+```
+
+No weighting.
+No recency adjustments.
+No stream adjustments.
+No averaging of duplicates — sum everything.
+
+---
+
+# **5. Why This Works for Phase 1**
+
+### ✔ All your tracks are from the same period
+
+So recency weighting = meaningless noise.
+
+### ✔ Stream counts early on are misleading
+
+Fresh Finds + early playlisting often yields inflated short-term streams.
+
+### ✔ Keeps the system stable while data volume grows
+
+You introduce weighting **later** when you have tracks from across months/years.
+
+---
+
+# **6. Optional (Phase 2 Later): Add Weighting Back**
+
+When:
+
+* database spans multiple months/years
+* enough stream variance exists
+* enough non-Fresh-Finds tracks exist
+
+Then you reintroduce:
+
+* recency weighting
+* prominence weighting
+* catalog stability weighting
+
+But not now.
+
+---
+
+# ✔ **Ultra-Simple Tooltip Version (UI-Ready)**
+
+```
+Score ranks how likely a songwriter is unsigned based on playlist signals, publishing gaps, distribution type, and metadata completeness.
+```
+
+---
+
+If you'd like, I can also produce:
+
+* A **one-page version** for the team
+* A **schema-ready version** for backend implementation
+* A **UI explanation drawer** version for the Contact Profile
+
+Just tell me which format you need next.

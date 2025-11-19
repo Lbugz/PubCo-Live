@@ -358,15 +358,15 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 )}
               </div>
 
-              {/* Action Buttons Row */}
-              <div className="flex flex-wrap items-center gap-2">
+              {/* Action Buttons Row - All on Same Line */}
+              <div className="flex items-center gap-2 flex-nowrap">
                 {/* Combined Contact Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2"
+                      className="gap-2 flex-shrink-0"
                       data-testid="button-contact"
                     >
                       <Mail className="h-4 w-4" />
@@ -388,7 +388,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2"
+                  className="gap-2 flex-shrink-0"
                   onClick={handleHotLeadToggle}
                   data-testid="button-toggle-hot-lead"
                 >
@@ -399,7 +399,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 {/* Pipeline Stage Selector on Same Row */}
                 <Select value={contact.stage} onValueChange={handleStageChange}>
                   <SelectTrigger 
-                    className="w-[180px] h-9"
+                    className="w-[180px] h-9 flex-shrink-0"
                     data-testid="select-change-stage"
                   >
                     <SelectValue />
