@@ -633,6 +633,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/contacts/:id/recalculate-score", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { updateContactScore } = await import("./scoring/contactScoring");
+      
+      const scoreResult = await updateContactScore(id);
+      
+      res.json({
+        success: true,
+        score: scoreResult.finalScore,
+        confidence: scoreResult.confidence,
+        updatedAt: scoreResult.updatedAt
+      });
+    } catch (error) {
+      console.error("Error recalculating contact score:", error);
+      res.status(500).json({ error: "Failed to recalculate score" });
+    }
+  });
+
   app.post("/api/contacts/:id/notes", async (req, res) => {
     try {
       const { id } = req.params;
