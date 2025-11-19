@@ -140,15 +140,20 @@ export function DetailsDrawer({
     if (!track) return;
     
     console.log(`[DetailsDrawer] Attempting to enrich Phase ${phase} for track ${track.id}`);
+    console.log(`[DetailsDrawer] onEnrichPhase is:`, onEnrichPhase);
+    console.log(`[DetailsDrawer] onEnrichPhase type:`, typeof onEnrichPhase);
+    
     setEnrichingPhase(phase);
     
     try {
       console.log(`[DetailsDrawer] Calling onEnrichPhase callback...`);
-      await onEnrichPhase(track.id, phase);
-      console.log(`[DetailsDrawer] Phase ${phase} enrichment callback completed`);
+      const result = await onEnrichPhase(track.id, phase);
+      console.log(`[DetailsDrawer] Phase ${phase} enrichment callback completed:`, result);
+      setEnrichingPhase(null);
     } catch (error) {
       console.error(`[DetailsDrawer] Phase ${phase} enrichment error:`, error);
       console.error(`[DetailsDrawer] Error details:`, JSON.stringify(error));
+      console.error(`[DetailsDrawer] Error stack:`, error instanceof Error ? error.stack : 'No stack');
       setEnrichingPhase(null);
     }
   };
