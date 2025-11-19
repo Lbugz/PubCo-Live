@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { 
   Mail, MessageCircle, RefreshCw, TrendingUp, Music, Activity, 
   FileText, ExternalLink, Instagram, Twitter, Flame, Edit,
-  Phone, Hash, Building, User as UserIcon, Award, Target
+  Phone, Hash, Building, User as UserIcon, Award, Target, Check, X
 } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -21,6 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -97,6 +104,29 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
   const [, setLocation] = useLocation();
   const [noteText, setNoteText] = useState("");
   const [activeTab, setActiveTab] = useState("tracks");
+  const [isEditingContact, setIsEditingContact] = useState(false);
+  const [savedContactData, setSavedContactData] = useState<{
+    email: string;
+    instagram: string;
+    twitter: string;
+    tiktok: string;
+    phone: string;
+    iswc: string;
+    ipiNumber: string;
+    publisher: string;
+    administrators: string;
+  } | null>(null);
+  const [editForm, setEditForm] = useState({
+    email: "",
+    instagram: "",
+    twitter: "",
+    tiktok: "",
+    phone: "",
+    iswc: "",
+    ipiNumber: "",
+    publisher: "",
+    administrators: "",
+  });
 
   // Fetch contact details
   const { data: contact, isLoading: loadingContact } = useQuery<ContactWithSongwriter>({
@@ -122,9 +152,19 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
     enabled: !!contactId && open,
   });
 
-  // Aggregate contact info from tracks
-  const contactInfo = tracks.length > 0 ? aggregateContactInfo(tracks) : null;
+  // Aggregate contact info from tracks, then merge with saved data (saved data takes precedence)
+  const aggregatedInfo = tracks.length > 0 ? aggregateContactInfo(tracks) : null;
+  const contactInfo = aggregatedInfo ? {
+    ...aggregatedInfo,
+    ...(savedContactData || {}),
+  } : (savedContactData || null);
   const scoreBreakdown = contact?.trackScoreData ? parseScoreBreakdown(contact.trackScoreData) : null;
+
+  // Reset saved contact data and edit mode ONLY when switching to a different contact
+  useEffect(() => {
+    setSavedContactData(null);
+    setIsEditingContact(false);
+  }, [contactId]);
 
   // Update contact mutation
   const updateContactMutation = useMutation({
@@ -190,6 +230,47 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
     setLocation(`/tracks?selected=${trackId}`);
   };
 
+  const handleEditContact = () => {
+    // Populate form with current data (merged aggregated + saved)
+    setEditForm({
+      email: contactInfo?.email || "",
+      instagram: contactInfo?.instagram || "",
+      twitter: contactInfo?.twitter || "",
+      tiktok: contactInfo?.tiktok || "",
+      phone: contactInfo?.phone || "",
+      iswc: contactInfo?.iswc || "",
+      ipiNumber: contactInfo?.ipiNumber || "",
+      publisher: contactInfo?.publisher || "",
+      administrators: contactInfo?.administrators || "",
+    });
+    setIsEditingContact(true);
+  };
+
+  const handleSaveContact = () => {
+    // Save edited data to local state for display
+    // Note: Backend persistence will be implemented once schema supports contact-level data storage
+    setSavedContactData({
+      email: editForm.email,
+      instagram: editForm.instagram,
+      twitter: editForm.twitter,
+      tiktok: editForm.tiktok,
+      phone: editForm.phone,
+      iswc: editForm.iswc,
+      ipiNumber: editForm.ipiNumber,
+      publisher: editForm.publisher,
+      administrators: editForm.administrators,
+    });
+    setIsEditingContact(false);
+    toast({
+      title: "Contact information updated",
+      description: "Changes saved locally. Backend persistence pending schema update.",
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingContact(false);
+  };
+
   const formatNumber = (num: number) => num.toLocaleString();
   const formatDate = (date: string | Date) => {
     const d = typeof date === 'string' ? new Date(date) : date;
@@ -209,33 +290,51 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
           </div>
         ) : contact ? (
           <>
-            {/* Header: Name */}
+            {/* Header: Name with Score Badge */}
             <SheetHeader className="mb-4">
-              <SheetTitle className="text-2xl" data-testid="text-contact-name">
-                {contact.songwriterName}
-              </SheetTitle>
+              <div className="flex items-center justify-between gap-4">
+                <SheetTitle className="text-2xl" data-testid="text-contact-name">
+                  {contact.songwriterName}
+                </SheetTitle>
+                {contact.unsignedScore !== null && contact.unsignedScore !== undefined && (
+                  <Badge 
+                    variant={contact.unsignedScore >= 7 ? "high" : contact.unsignedScore >= 4 ? "medium" : "low"}
+                    className="text-lg font-bold px-3 py-1"
+                    data-testid="badge-score-header"
+                  >
+                    {contact.unsignedScore}/10
+                  </Badge>
+                )}
+              </div>
             </SheetHeader>
 
             {/* Action Buttons with Pipeline Stage Dropdown */}
             <div className="flex flex-wrap gap-2 mb-6">
-              <Button
-                variant="default"
-                size="sm"
-                className="gap-2"
-                data-testid="button-send-email"
-              >
-                <Mail className="h-4 w-4" />
-                Send Email
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                className="gap-2"
-                data-testid="button-send-dm"
-              >
-                <MessageCircle className="h-4 w-4" />
-                Send DM
-              </Button>
+              {/* Combined Contact Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="gap-2"
+                    data-testid="button-contact"
+                  >
+                    <Mail className="h-4 w-4" />
+                    Contact
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem data-testid="button-send-email">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Send Email
+                  </DropdownMenuItem>
+                  <DropdownMenuItem data-testid="button-send-dm">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Send DM
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button
                 variant={contact.hotLead > 0 ? "secondary" : "outline"}
                 size="sm"
@@ -275,14 +374,57 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
 
             {/* Contact Information - Two Column Layout */}
             <Card className="p-5 mb-6">
-              <h3 className="text-sm font-medium mb-4 text-muted-foreground">Contact Information</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Contact Information</h3>
+                {!isEditingContact ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleEditContact}
+                    data-testid="button-edit-contact"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCancelEdit}
+                      data-testid="button-cancel-edit"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleSaveContact}
+                      data-testid="button-save-contact"
+                    >
+                      <Check className="h-4 w-4 mr-2" />
+                      Save
+                    </Button>
+                  </div>
+                )}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left Column: Personal Contact */}
                 <div className="space-y-3">
                   {/* Email */}
-                  {contactInfo?.email ? (
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    {isEditingContact ? (
+                      <Input
+                        type="email"
+                        placeholder="Email"
+                        value={editForm.email}
+                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                        className="h-8 text-sm"
+                        data-testid="input-email"
+                      />
+                    ) : contactInfo?.email ? (
                       <a
                         href={`mailto:${contactInfo.email}`}
                         className="text-sm hover:underline truncate"
@@ -290,16 +432,46 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                       >
                         {contactInfo.email}
                       </a>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    ) : (
                       <span className="text-sm text-muted-foreground italic">No email available</span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                   
-                  {/* Social Media Icons */}
-                  {(contactInfo?.instagram || contactInfo?.twitter || contactInfo?.tiktok) ? (
+                  {/* Social Media Handles */}
+                  {isEditingContact ? (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <Instagram className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <Input
+                          placeholder="Instagram"
+                          value={editForm.instagram}
+                          onChange={(e) => setEditForm({ ...editForm, instagram: e.target.value })}
+                          className="h-8 text-sm"
+                          data-testid="input-instagram"
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Twitter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <Input
+                          placeholder="Twitter"
+                          value={editForm.twitter}
+                          onChange={(e) => setEditForm({ ...editForm, twitter: e.target.value })}
+                          className="h-8 text-sm"
+                          data-testid="input-twitter"
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <SiTiktok className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <Input
+                          placeholder="TikTok"
+                          value={editForm.tiktok}
+                          onChange={(e) => setEditForm({ ...editForm, tiktok: e.target.value })}
+                          className="h-8 text-sm"
+                          data-testid="input-tiktok"
+                        />
+                      </div>
+                    </>
+                  ) : (contactInfo?.instagram || contactInfo?.twitter || contactInfo?.tiktok) ? (
                     <div className="flex items-center gap-3">
                       <div className="text-xs text-muted-foreground w-4"></div>
                       <div className="flex gap-2">
@@ -345,115 +517,121 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                     </div>
                   )}
 
-                  {/* Phone Number - Placeholder for future implementation */}
+                  {/* Phone Number */}
                   <div className="flex items-center gap-3">
                     <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <span className="text-sm text-muted-foreground italic" data-testid="text-phone">
-                      No phone available
-                    </span>
+                    {isEditingContact ? (
+                      <Input
+                        type="tel"
+                        placeholder="Phone"
+                        value={editForm.phone}
+                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                        className="h-8 text-sm"
+                        data-testid="input-phone"
+                      />
+                    ) : contactInfo?.phone ? (
+                      <a
+                        href={`tel:${contactInfo.phone}`}
+                        className="text-sm hover:underline truncate"
+                        data-testid="text-phone"
+                      >
+                        {contactInfo.phone}
+                      </a>
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic" data-testid="text-phone">
+                        No phone available
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 {/* Right Column: Professional Identifiers */}
                 <div className="space-y-3">
-                  {contactInfo?.iswc && (
-                    <div className="flex items-start gap-3">
-                      <Hash className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground mb-0.5">ISWC</p>
+                  {/* ISWC */}
+                  <div className="flex items-start gap-3">
+                    <Hash className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-0.5">ISWC</p>
+                      {isEditingContact ? (
+                        <Input
+                          placeholder="ISWC"
+                          value={editForm.iswc}
+                          onChange={(e) => setEditForm({ ...editForm, iswc: e.target.value })}
+                          className="h-8 text-sm font-mono"
+                          data-testid="input-iswc"
+                        />
+                      ) : contactInfo?.iswc ? (
                         <p className="text-sm font-mono truncate" data-testid="text-iswc">{contactInfo.iswc}</p>
-                      </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">Not available</p>
+                      )}
                     </div>
-                  )}
-                  {contactInfo?.ipiNumber && (
-                    <div className="flex items-start gap-3">
-                      <UserIcon className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground mb-0.5">IPI Number</p>
-                        <p className="text-sm font-mono truncate" data-testid="text-ipi">{contactInfo.ipiNumber}</p>
-                      </div>
-                    </div>
-                  )}
-                  {contactInfo?.publisher && (
-                    <div className="flex items-start gap-3">
-                      <Building className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground mb-0.5">Publisher</p>
-                        <p className="text-sm truncate" data-testid="text-publisher">{contactInfo.publisher}</p>
-                      </div>
-                    </div>
-                  )}
-                  {contactInfo?.administrators && (
-                    <div className="flex items-start gap-3">
-                      <Award className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground mb-0.5">Administrator</p>
-                        <p className="text-sm truncate" data-testid="text-administrator">{contactInfo.administrators}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {!contactInfo?.iswc && !contactInfo?.ipiNumber && !contactInfo?.publisher && !contactInfo?.administrators && (
-                    <p className="text-sm text-muted-foreground italic">No professional identifiers available</p>
-                  )}
-                </div>
-              </div>
-            </Card>
-
-            {/* Score Card */}
-            <Card className="p-5 mb-6">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-sm font-medium text-muted-foreground">Unsigned Score</h3>
-                {contact.unsignedScore !== null && contact.unsignedScore !== undefined && (
-                  <Badge
-                    variant={contact.unsignedScore >= 7 ? "high" : contact.unsignedScore >= 4 ? "medium" : "low"}
-                    data-testid="badge-score-confidence"
-                  >
-                    {contact.scoreConfidence || "medium"}
-                  </Badge>
-                )}
-              </div>
-
-              {contact.unsignedScore !== null && contact.unsignedScore !== undefined ? (
-                <>
-                  {/* Large Score Display */}
-                  <div className="flex items-baseline gap-2 mb-4">
-                    <div className="text-5xl font-bold" data-testid="text-unsigned-score">
-                      {contact.unsignedScore}
-                    </div>
-                    <div className="text-2xl text-muted-foreground">/10</div>
                   </div>
 
-                  {/* Point Allocation Breakdown */}
-                  {scoreBreakdown && scoreBreakdown.length > 0 && (
-                    <div className="space-y-2 mt-4 pt-4 border-t">
-                      <p className="text-xs font-medium text-muted-foreground mb-2">Point Allocation</p>
-                      {scoreBreakdown.map((item: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">{item.signal}</span>
-                          <span className={cn(
-                            "font-medium",
-                            item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
-                          )}>
-                            {item.points > 0 ? "+" : ""}{item.points}
-                          </span>
-                        </div>
-                      ))}
+                  {/* IPI Number */}
+                  <div className="flex items-start gap-3">
+                    <UserIcon className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-0.5">IPI Number</p>
+                      {isEditingContact ? (
+                        <Input
+                          placeholder="IPI Number"
+                          value={editForm.ipiNumber}
+                          onChange={(e) => setEditForm({ ...editForm, ipiNumber: e.target.value })}
+                          className="h-8 text-sm font-mono"
+                          data-testid="input-ipi"
+                        />
+                      ) : contactInfo?.ipiNumber ? (
+                        <p className="text-sm font-mono truncate" data-testid="text-ipi">{contactInfo.ipiNumber}</p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">Not available</p>
+                      )}
                     </div>
-                  )}
+                  </div>
 
-                  {contact.unsignedScoreUpdatedAt && (
-                    <p className="text-xs text-muted-foreground mt-4">
-                      Last updated: {formatDate(contact.unsignedScoreUpdatedAt)}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <Target className="h-12 w-12 mx-auto mb-2 text-muted-foreground opacity-50" />
-                  <p className="text-sm text-muted-foreground">Score not yet calculated</p>
+                  {/* Publisher */}
+                  <div className="flex items-start gap-3">
+                    <Building className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-0.5">Publisher</p>
+                      {isEditingContact ? (
+                        <Input
+                          placeholder="Publisher"
+                          value={editForm.publisher}
+                          onChange={(e) => setEditForm({ ...editForm, publisher: e.target.value })}
+                          className="h-8 text-sm"
+                          data-testid="input-publisher"
+                        />
+                      ) : contactInfo?.publisher ? (
+                        <p className="text-sm truncate" data-testid="text-publisher">{contactInfo.publisher}</p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">Not available</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Administrator */}
+                  <div className="flex items-start gap-3">
+                    <Award className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-0.5">Administrator</p>
+                      {isEditingContact ? (
+                        <Input
+                          placeholder="Administrator"
+                          value={editForm.administrators}
+                          onChange={(e) => setEditForm({ ...editForm, administrators: e.target.value })}
+                          className="h-8 text-sm"
+                          data-testid="input-administrator"
+                        />
+                      ) : contactInfo?.administrators ? (
+                        <p className="text-sm truncate" data-testid="text-administrator">{contactInfo.administrators}</p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">Not available</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
+              </div>
             </Card>
 
             {/* Tabs */}
@@ -626,6 +804,65 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 </div>
               </TabsContent>
             </Tabs>
+
+            {/* Score Card - Moved to Bottom */}
+            <Card className="p-5 mt-6">
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Unsigned Score Breakdown</h3>
+                {contact.unsignedScore !== null && contact.unsignedScore !== undefined && (
+                  <Badge
+                    variant={contact.unsignedScore >= 7 ? "high" : contact.unsignedScore >= 4 ? "medium" : "low"}
+                    data-testid="badge-score-confidence"
+                  >
+                    {contact.scoreConfidence || "medium"}
+                  </Badge>
+                )}
+              </div>
+
+              {contact.unsignedScore !== null && contact.unsignedScore !== undefined ? (
+                <>
+                  {/* Large Score Display */}
+                  <div className="flex items-baseline gap-2 mb-4">
+                    <div className="text-5xl font-bold" data-testid="text-unsigned-score">
+                      {contact.unsignedScore}
+                    </div>
+                    <div className="text-2xl text-muted-foreground">/10</div>
+                  </div>
+
+                  {/* Point Allocation Breakdown */}
+                  {scoreBreakdown && scoreBreakdown.length > 0 && (
+                    <div className="space-y-2 mt-4 pt-4 border-t">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">How This Score Was Calculated</p>
+                      {scoreBreakdown.map((item: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">{item.signal}</span>
+                          <Badge 
+                            variant="outline"
+                            className={cn(
+                              "font-medium",
+                              item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
+                            )}
+                          >
+                            {item.points > 0 ? "+" : ""}{item.points}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {contact.unsignedScoreUpdatedAt && (
+                    <p className="text-xs text-muted-foreground mt-4">
+                      Last updated: {formatDate(contact.unsignedScoreUpdatedAt)}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <Target className="h-12 w-12 mx-auto mb-2 text-muted-foreground opacity-50" />
+                  <p className="text-sm text-muted-foreground">Score not yet calculated</p>
+                </div>
+              )}
+            </Card>
           </>
         ) : (
           <div className="text-center py-12">
