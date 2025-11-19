@@ -80,8 +80,24 @@ export class EnrichmentWorker {
   private processingInterval: NodeJS.Timeout | null = null;
   private cleanupInterval: NodeJS.Timeout | null = null;
   
-  // YouTube API quota limits with safety margin
-  private readonly YOUTUBE_DAILY_QUOTA = 10000; // YouTube API official daily limit
+  /**
+   * YouTube API Quota Management
+   * 
+   * YouTube Data API v3 has a daily quota of 10,000 units that resets at midnight Pacific Time.
+   * Each search operation costs ~100 units (search.list costs 100 units + video.list costs ~1 unit).
+   * 
+   * To prevent concurrent workers from overshooting the hard limit, we enforce a safe quota
+   * of 8,000 units (80% of hard limit), providing a 2,000-unit safety margin (20%).
+   * 
+   * Quota checks occur:
+   * 1. Before starting YouTube enrichment phase
+   * 2. Before EACH individual search (prevents mid-loop overshoot)
+   * 
+   * Warnings trigger at:
+   * - 80% of safe quota (6,400 units): Warning log
+   * - 90% of safe quota (7,200 units): Critical alert
+   */
+  private readonly YOUTUBE_DAILY_QUOTA = 10000; // YouTube API official daily limit (hard cap)
   private readonly YOUTUBE_SAFE_QUOTA = 8000;   // Safe limit with 20% margin for concurrent workers
 
   constructor(options: WorkerOptions) {
@@ -90,7 +106,11 @@ export class EnrichmentWorker {
     this.wsBroadcast = options.wsBroadcast;
   }
 
-  // Check YouTube quota from persistent storage (uses safe limit to prevent concurrent overshoot)
+  /**
+   * Check YouTube quota from persistent database storage.
+   * Uses YOUTUBE_SAFE_QUOTA (8,000 units) to stop before hitting hard limit (10,000 units).
+   * This provides a safety buffer for concurrent workers and measurement uncertainty.
+   */
   private async checkYouTubeQuota(): Promise<{ allowed: boolean; remaining: number }> {
     const today = new Date().toISOString().split('T')[0];
     
@@ -103,11 +123,16 @@ export class EnrichmentWorker {
     };
   }
 
-  // Increment YouTube quota usage in persistent storage
-  private async incrementYouTubeQuota(units: number = 100): Promise<void> {
+  /**
+   * Atomically increment YouTube quota usage in persistent storage.
+   * Uses database UPSERT to prevent race conditions between concurrent workers.
+   * Returns the new total quota usage for monitoring.
+   */
+  private async incrementYouTubeQuota(units: number = 100): Promise<number> {
     const today = new Date().toISOString().split('T')[0];
     const newTotal = await this.storage.incrementQuotaUsage('youtube', today, units);
-    console.log(`[YouTube Quota] Used: ${newTotal}/${this.YOUTUBE_DAILY_QUOTA} units`);
+    console.log(`[YouTube Quota] Used: ${newTotal}/${this.YOUTUBE_SAFE_QUOTA} safe units (Hard limit: ${this.YOUTUBE_DAILY_QUOTA})`);
+    return newTotal;
   }
 
   start() {
@@ -1031,7 +1056,7 @@ export class EnrichmentWorker {
           this.broadcastProgress(job.id, {
             status: 'running',
             progress: 95,
-            message: 'Phase 6 skipped: YouTube quota exhausted for today',
+            message: 'Phase 6 skipped: YouTube safe quota limit reached (preserving 20% margin)',
             enrichedCount: 0,
             trackCount: job.trackIds.length,
           });
