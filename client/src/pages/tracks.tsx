@@ -35,7 +35,6 @@ import { PageContainer } from "@/components/layout/page-container";
 import { PageHeaderControls, type ViewMode } from "@/components/layout/page-header-controls";
 import { FilterBar } from "@/components/layout/filter-bar";
 import { StickyHeaderContainer } from "@/components/layout/sticky-header-container";
-import { ActivityPanel, type EnrichmentJob } from "@/components/activity-panel";
 import { type PlaylistSnapshot, type Tag, type TrackedPlaylist } from "@shared/schema";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -61,23 +60,10 @@ export default function Tracks() {
   const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set());
   const [playlistManagerOpen, setPlaylistManagerOpen] = useState(false);
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
-  const [activeJobs, setActiveJobs] = useState<EnrichmentJob[]>([]);
   const [sortField, setSortField] = useState<string>("addedAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const notify = useNotify();
   const isMobile = useMobile(768);
-  
-  // Auto-dismiss completed jobs after 5 seconds
-  useEffect(() => {
-    const completedJobs = activeJobs.filter(job => job.status === 'success' || job.status === 'error');
-    if (completedJobs.length === 0) return;
-    
-    const timeout = setTimeout(() => {
-      setActiveJobs(prev => prev.filter(job => job.status === 'running'));
-    }, 5000);
-    
-    return () => clearTimeout(timeout);
-  }, [activeJobs]);
   
   // Auto-switch to card view on mobile (from table or kanban)
   useEffect(() => {
@@ -94,60 +80,10 @@ export default function Tracks() {
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
       queryClient.refetchQueries({ queryKey: ["/api/tracks"] });
     },
-    onEnrichmentProgress: (data) => {
-      console.log('Enrichment progress:', data);
-      // Update active job progress
-      if (data.jobId) {
-        setActiveJobs(prev => prev.map(job => 
-          job.jobId === data.jobId 
-            ? { ...job, enrichedCount: data.enrichedCount || 0 }
-            : job
-        ));
-      }
-    },
-    onJobStarted: (data) => {
-      console.log('Job started:', data);
-      setActiveJobs(prev => {
-        // Prevent duplicate jobs from being added
-        const exists = prev.some(job => job.jobId === data.jobId);
-        if (exists) {
-          console.log('Job already exists, skipping duplicate:', data.jobId);
-          return prev;
-        }
-        return [...prev, { 
-          jobId: data.jobId || '', 
-          playlistName: data.playlistName,
-          trackCount: data.trackCount || 0, 
-          enrichedCount: 0,
-          phase: 1,
-          status: 'running',
-          startTime: Date.now(),
-        }];
-      });
-    },
     onJobCompleted: (data) => {
       console.log('Job completed:', data);
-      setActiveJobs(prev => prev.map(job => 
-        job.jobId === data.jobId
-          ? { ...job, status: data.success ? 'success' : 'error', enrichedCount: data.tracksEnriched || job.trackCount, completedAt: Date.now() }
-          : job
-      ));
       queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
       queryClient.refetchQueries({ queryKey: ["/api/tracks"] });
-    },
-    onJobFailed: (data) => {
-      console.log('Job failed:', data);
-      setActiveJobs(prev => prev.map(job => 
-        job.jobId === data.jobId
-          ? { ...job, status: 'error', errorMessage: data.error, completedAt: Date.now() }
-          : job
-      ));
-    },
-    onPhaseStarted: (data) => {
-      console.log('Phase started:', data);
-      setActiveJobs(prev => prev.map(job => 
-        job.jobId === data.jobId ? { ...job, phase: data.phase || 1 } : job
-      ));
     },
   });
 
@@ -695,11 +631,6 @@ export default function Tracks() {
           return enrichPhaseMutation.mutateAsync({ trackId, phase });
         }}
         isEnrichingPhase={enrichPhaseMutation.isPending}
-      />
-
-      <ActivityPanel 
-        jobs={activeJobs}
-        onDismiss={(jobId) => setActiveJobs(prev => prev.filter(job => job.jobId !== jobId))}
       />
     </div>
   );

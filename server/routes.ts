@@ -1166,11 +1166,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 };
                 metadataSource = 'spotify';
               } else {
-                console.log(`⚠️  [Async] Both Chartmetric and Spotify API failed for ${asyncPayload.playlistId}`);
-                metadataUpdates = {
-                  isEditorial: 1, // Assume editorial if APIs fail
-                };
-                metadataSource = 'none';
+                console.log(`⚠️  [Async] Both Chartmetric and Spotify API failed for ${asyncPayload.playlistId}, trying Puppeteer fallback...`);
+                
+                // Fallback to Puppeteer scraping to get playlist name
+                try {
+                  const playlistUrl = `https://open.spotify.com/playlist/${asyncPayload.playlistId}`;
+                  const scrapeResult = await scrapeSpotifyPlaylist(playlistUrl);
+                  
+                  if (scrapeResult.success && scrapeResult.playlistName) {
+                    console.log(`✅ [Async] Puppeteer fallback succeeded: ${scrapeResult.playlistName}`);
+                    metadataUpdates = {
+                      name: scrapeResult.playlistName,
+                      totalTracks: scrapeResult.tracks?.length || null,
+                      curator: scrapeResult.curator || null,
+                      followers: scrapeResult.followers || null,
+                      imageUrl: scrapeResult.imageUrl || null,
+                      fetchMethod: 'puppeteer_scrape',
+                      isEditorial: scrapeResult.curator?.toLowerCase() === 'spotify' ? 1 : 0,
+                    };
+                    metadataSource = 'spotify';
+                  } else {
+                    console.error(`❌ [Async] Puppeteer fallback failed: ${scrapeResult.error || 'Unknown error'}`);
+                    // Final fallback: Use playlist ID as name
+                    const fallbackName = `Spotify Playlist (${asyncPayload.playlistId.substring(0, 8)}...)`;
+                    console.log(`⚠️  [Async] All metadata fetch methods failed, using fallback name: ${fallbackName}`);
+                    metadataUpdates = {
+                      name: fallbackName,
+                      isEditorial: 1, // Assume editorial if all methods fail
+                    };
+                    metadataSource = 'none';
+                  }
+                } catch (scrapeError: any) {
+                  console.error(`❌ [Async] Puppeteer scraper threw error: ${scrapeError.message}`);
+                  // Final fallback: Use playlist ID as name
+                  const fallbackName = `Spotify Playlist (${asyncPayload.playlistId.substring(0, 8)}...)`;
+                  console.log(`⚠️  [Async] All metadata fetch methods failed, using fallback name: ${fallbackName}`);
+                  metadataUpdates = {
+                    name: fallbackName,
+                    isEditorial: 1, // Assume editorial if APIs fail
+                  };
+                  metadataSource = 'none';
+                }
               }
 
               if (Object.keys(metadataUpdates).length > 0) {
