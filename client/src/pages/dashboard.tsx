@@ -338,6 +338,36 @@ export default function Dashboard() {
     },
   });
 
+  const enrichPhaseMutation = useMutation({
+    mutationFn: async ({ trackId, phase }: { trackId: string; phase: number }) => {
+      console.log(`Starting Phase ${phase} enrichment for track ${trackId}`);
+      
+      const response = await apiRequest("POST", "/api/enrich-phase", { 
+        trackId,
+        phase
+      });
+      const data = await response.json();
+      console.log(`Phase ${phase} enrichment response:`, data);
+      return data;
+    },
+    onSuccess: (data: any) => {
+      console.log(`Phase ${data.phase} enrichment job created:`, data);
+      notify.success(
+        data.message,
+        "Enrichment Job Created"
+      );
+      // Invalidate track queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ["/api/tracks"] });
+    },
+    onError: (error: any) => {
+      console.error("Phase enrichment error:", error);
+      notify.error(
+        error.message || "Failed to create enrichment job",
+        "Error"
+      );
+    },
+  });
+
   const enrichArtistsMutation = useMutation({
     mutationFn: async ({ limit = 50 }: { limit?: number }) => {
       const response = await apiRequest("POST", "/api/enrich-artists", { limit });
@@ -558,6 +588,10 @@ export default function Dashboard() {
   const handleEnrichTrack = useCallback((trackId: string) => {
     enrichMutation.mutate({ trackId });
   }, [enrichMutation]);
+
+  const handleEnrichPhase = useCallback((trackId: string, phase: number) => {
+    enrichPhaseMutation.mutate({ trackId, phase });
+  }, [enrichPhaseMutation]);
 
   const enrichArtistsButton = useMemo(() => (
     <Button
@@ -804,6 +838,8 @@ export default function Dashboard() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         onEnrich={handleEnrichTrack}
+        onEnrichPhase={handleEnrichPhase}
+        isEnrichingPhase={enrichPhaseMutation.isPending}
       />
 
       <ActivityPanel 

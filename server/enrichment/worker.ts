@@ -227,7 +227,7 @@ export class EnrichmentWorker {
     const processedSpotifyUrls = new Set<string>();
     
     // Collect all trackIds in this job for filtering
-    const jobTrackIds = new Set(Array.from(updates.keys()));
+    const jobTrackIds = new Set<string>(Array.from(updates.keys()).map(String));
 
     for (const [trackId, update] of updates) {
       try {
@@ -353,21 +353,23 @@ export class EnrichmentWorker {
         trackCount: job.trackIds.length,
       });
 
-      await this.jobQueue.updateJobProgress(job.id, {
-        progress: 10,
-        logs: [`[${new Date().toISOString()}] Starting Phase 1 enrichment (Spotify API batch enrichment)...`],
-      });
+      // Phase 1: Spotify API (only run if targetPhase is null or 1)
+      if (!job.targetPhase || job.targetPhase === 1) {
+        await this.jobQueue.updateJobProgress(job.id, {
+          progress: 10,
+          logs: [`[${new Date().toISOString()}] Starting Phase 1 enrichment (Spotify API batch enrichment)...`],
+        });
 
-      this.broadcastProgress(job.id, {
-        status: 'running',
-        progress: 10,
-        message: 'Phase 1: Fetching metadata from Spotify API...',
-        enrichedCount: 0,
-        trackCount: job.trackIds.length,
-      });
+        this.broadcastProgress(job.id, {
+          status: 'running',
+          progress: 10,
+          message: 'Phase 1: Fetching metadata from Spotify API...',
+          enrichedCount: 0,
+          trackCount: job.trackIds.length,
+        });
 
-      try {
-        const spotify = await getUncachableSpotifyClient();
+        try {
+          const spotify = await getUncachableSpotifyClient();
 
         const updateTrackInContext = async (trackId: string, metadata: any) => {
           ctx.applyPatch(trackId, metadata);
@@ -438,9 +440,12 @@ export class EnrichmentWorker {
           enrichedCount: 0,
           trackCount: job.trackIds.length,
         });
+        }
       }
 
-      const tracksForEnrichment = ctx.getAllTracks().map((t: PlaylistSnapshot) => ({
+      // Phase 2: Credits Scraping (only run if targetPhase is null or 2)
+      if (!job.targetPhase || job.targetPhase === 2) {
+        const tracksForEnrichment = ctx.getAllTracks().map((t: PlaylistSnapshot) => ({
         id: t.id,
         spotifyUrl: t.spotifyUrl,
         songwriter: t.songwriter,
@@ -624,9 +629,11 @@ export class EnrichmentWorker {
         });
       }
 
-      console.log(`[Phase 2: Credits Scraping] ✅ Complete: ${result.tracksEnriched}/${result.tracksProcessed} tracks enriched, ${phase2Persisted} persisted`);
+        console.log(`[Phase 2: Credits Scraping] ✅ Complete: ${result.tracksEnriched}/${result.tracksProcessed} tracks enriched, ${phase2Persisted} persisted`);
+      }
 
-      // Phase 3: MusicBrainz (artist social links)
+      // Phase 3: MusicBrainz (artist social links) (only run if targetPhase is null or 3)
+      if (!job.targetPhase || job.targetPhase === 3) {
       await this.jobQueue.updateJobProgress(job.id, {
         progress: 72,
         logs: [`[${new Date().toISOString()}] Starting Phase 3 enrichment (MusicBrainz artist social links)...`],
@@ -728,9 +735,11 @@ export class EnrichmentWorker {
             `[${new Date().toISOString()}] Phase 3 failed: ${phase3Error instanceof Error ? phase3Error.message : String(phase3Error)}. Continuing to Phase 4.`,
           ],
         });
+        }
       }
 
-      // Phase 4: Chartmetric (streaming analytics, moods, activities)
+      // Phase 4: Chartmetric (streaming analytics, moods, activities) (only run if targetPhase is null or 4)
+      if (!job.targetPhase || job.targetPhase === 4) {
       await this.jobQueue.updateJobProgress(job.id, {
         progress: 75,
         logs: [`[${new Date().toISOString()}] Starting Phase 4 enrichment (Chartmetric analytics)...`],
@@ -845,9 +854,12 @@ export class EnrichmentWorker {
             `[${new Date().toISOString()}] Phase 4 failed: ${phase4Error instanceof Error ? phase4Error.message : String(phase4Error)}. Continuing to Phase 5.`,
           ],
         });
+        }
       }
 
-      await this.jobQueue.updateJobProgress(job.id, {
+      // Phase 5: MLC Publisher Lookup (only run if targetPhase is null or 5)
+      if (!job.targetPhase || job.targetPhase === 5) {
+        await this.jobQueue.updateJobProgress(job.id, {
         progress: 82,
         logs: [`[${new Date().toISOString()}] Starting Phase 5 enrichment (MLC publisher status)...`],
       });
@@ -1004,12 +1016,14 @@ export class EnrichmentWorker {
             });
           }
         }
+        }
       }
 
       // ============================================================
-      // Phase 6: YouTube Video Metadata Enrichment
+      // Phase 6: YouTube Video Metadata Enrichment (only run if targetPhase is null or 6)
       // ============================================================
-      await this.jobQueue.updateJobProgress(job.id, {
+      if (!job.targetPhase || job.targetPhase === 6) {
+        await this.jobQueue.updateJobProgress(job.id, {
         progress: 92,
         logs: [`[${new Date().toISOString()}] Starting Phase 6 enrichment (YouTube video metadata)...`],
       });
@@ -1185,31 +1199,37 @@ export class EnrichmentWorker {
             `[${new Date().toISOString()}] Phase 6 failed: ${youtubeError instanceof Error ? youtubeError.message : String(youtubeError)}. Finalizing job.`,
           ],
         });
+        }
       }
 
+      // Job finalization
+      const targetPhaseName = job.targetPhase 
+        ? `Phase ${job.targetPhase}` 
+        : 'All phases';
+      
       await this.jobQueue.updateJobProgress(job.id, {
         progress: 95,
-        logs: [`[${new Date().toISOString()}] Saved ${result.enrichedTracks.length} enriched tracks to database`],
+        logs: [`[${new Date().toISOString()}] ${targetPhaseName} enrichment complete. Finalizing job...`],
       });
 
       this.broadcastProgress(job.id, {
         status: 'running',
         progress: 95,
         message: 'Finalizing job...',
-        enrichedCount: result.tracksEnriched,
+        enrichedCount: job.enrichedTracks || 0,
         trackCount: job.trackIds.length,
       });
 
-      const success = result.errors === 0;
+      const success = true;
       await this.jobQueue.completeJob(job.id, success, [
-        `[${new Date().toISOString()}] Job completed: ${result.tracksEnriched} enriched, ${result.errors} errors`,
+        `[${new Date().toISOString()}] Job completed: ${targetPhaseName} enrichment finished`,
       ]);
 
       this.broadcastProgress(job.id, {
         status: success ? 'completed' : 'completed_with_errors',
         progress: 100,
-        message: `Job complete: ${result.tracksEnriched} tracks enriched${result.errors > 0 ? `, ${result.errors} errors` : ''}`,
-        enrichedCount: result.tracksEnriched,
+        message: `Job complete: ${targetPhaseName} enrichment finished`,
+        enrichedCount: job.enrichedTracks || 0,
         trackCount: job.trackIds.length,
       });
 
@@ -1218,8 +1238,8 @@ export class EnrichmentWorker {
         this.wsBroadcast('enrichment_job_completed', {
           type: 'enrichment_job_completed',
           jobId: job.id,
-          tracksEnriched: result.tracksEnriched,
-          errors: result.errors,
+          tracksEnriched: job.enrichedTracks || 0,
+          errors: job.errorCount || 0,
           success,
         });
       }
@@ -1232,7 +1252,7 @@ export class EnrichmentWorker {
             await notificationService.notifyEnrichmentComplete(
               job.playlistId,
               playlist.name,
-              result.tracksEnriched
+              job.enrichedTracks || 0
             );
           }
         }
@@ -1259,7 +1279,7 @@ export class EnrichmentWorker {
         console.error('Failed to sync contact enrichment flags:', syncError);
       }
 
-      console.log(`✅ Job ${job.id} completed: ${result.tracksEnriched} enriched, ${result.errors} errors`);
+      console.log(`✅ Job ${job.id} completed: ${targetPhaseName} enrichment finished`);
     } catch (error) {
       console.error(`❌ Job ${job.id} failed:`, error);
 

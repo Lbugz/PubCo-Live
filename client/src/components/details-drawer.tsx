@@ -39,6 +39,7 @@ import { PublisherStatusBadge } from "./publisher-status-badge";
 import { SongwriterDisplay } from "./songwriter-display";
 import { SongwriterPanel } from "./songwriter-panel";
 import { EnrichmentSourceIndicator } from "./enrichment-source-indicator";
+import { PhaseEnrichmentButton, PhaseStatus } from "./phase-enrichment-button";
 import { cn } from "@/lib/utils";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { queryClient } from "@/lib/queryClient";
@@ -49,6 +50,8 @@ interface DetailsDrawerProps {
   open: boolean;
   onClose: () => void;
   onEnrich: (trackId: string) => void;
+  onEnrichPhase: (trackId: string, phase: number) => void;
+  isEnrichingPhase: boolean;
 }
 
 interface FullTrackDetails extends PlaylistSnapshot {
@@ -62,8 +65,11 @@ export function DetailsDrawer({
   open,
   onClose,
   onEnrich,
+  onEnrichPhase,
+  isEnrichingPhase,
 }: DetailsDrawerProps) {
   const [isEnriching, setIsEnriching] = useState(false);
+  const [enrichingPhase, setEnrichingPhase] = useState<number | null>(null);
 
   // Fetch full track details immediately on open
   const { data: fullTrack, isLoading: trackLoading } = useQuery<FullTrackDetails>({

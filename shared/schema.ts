@@ -340,6 +340,7 @@ export const enrichmentJobs = pgTable("enrichment_jobs", {
   type: jobTypeEnum("type").notNull(),
   playlistId: varchar("playlist_id").references(() => trackedPlaylists.id, { onDelete: "cascade" }),
   trackIds: text("track_ids").array().notNull(),
+  targetPhase: integer("target_phase"),
   status: jobStatusEnum("status").notNull().default('queued'),
   progress: integer("progress").notNull().default(0),
   totalTracks: integer("total_tracks").notNull().default(0),

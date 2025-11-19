@@ -3315,6 +3315,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/enrich-phase", async (req, res) => {
+    try {
+      const { trackId, phase } = req.body;
+
+      if (!trackId || typeof trackId !== 'string') {
+        return res.status(400).json({ 
+          error: "trackId is required and must be a string" 
+        });
+      }
+
+      if (!phase || typeof phase !== 'number' || phase < 1 || phase > 6) {
+        return res.status(400).json({ 
+          error: "phase is required and must be a number between 1 and 6" 
+        });
+      }
+
+      const { getJobQueue } = await import("./enrichment/jobQueueManager");
+      const jobQueue = getJobQueue();
+
+      if (!jobQueue) {
+        return res.status(503).json({ error: "Job queue not initialized" });
+      }
+
+      const phaseNames = {
+        1: 'Spotify API',
+        2: 'Credits Scraping',
+        3: 'MusicBrainz',
+        4: 'Chartmetric',
+        5: 'MLC',
+        6: 'YouTube'
+      };
+
+      const job = await jobQueue.enqueue({
+        type: 'enrich-tracks',
+        playlistId: null,
+        trackIds: [trackId],
+        targetPhase: phase,
+        status: 'queued',
+        progress: 0,
+        totalTracks: 1,
+        enrichedTracks: 0,
+        errorCount: 0,
+        logs: [],
+      });
+
+      res.json({ 
+        jobId: job.id,
+        status: job.status,
+        phase,
+        phaseName: phaseNames[phase as keyof typeof phaseNames],
+        message: `Phase ${phase} (${phaseNames[phase as keyof typeof phaseNames]}) enrichment job created`
+      });
+    } catch (error: any) {
+      console.error("Error creating phase enrichment job:", error);
+      res.status(500).json({ error: error.message || "Failed to create phase enrichment job" });
+    }
+  });
+
   app.get("/api/enrichment-jobs/:jobId", async (req, res) => {
     try {
       const { jobId } = req.params;
