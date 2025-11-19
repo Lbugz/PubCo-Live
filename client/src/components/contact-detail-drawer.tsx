@@ -100,56 +100,127 @@ function getMetadataCompletenessLabel(description: string): string {
 }
 
 // Helper to group signals into sections
+// Maps exact signal constants from server/scoring/contactScoring.ts
 function groupSignals(signals: Array<{ signal: string; description: string; weight: number }>) {
   const discovery: Array<{ label: string; points: number }> = [];
   const publishing: Array<{ label: string; points: number }> = [];
   const metadata: Array<{ label: string; points: number }> = [];
-  const other: Array<{ label: string; points: number }> = [];
+  const portfolio: Array<{ label: string; points: number }> = [];
   
   signals.forEach(signal => {
     const points = Math.round(signal.weight);
     
-    // Group by signal type
+    // Discovery Signals (from SIGNAL_WEIGHTS.FRESH_FINDS)
     if (signal.signal === 'FRESH_FINDS') {
-      discovery.push({ label: "Fresh Finds playlist", points });
-    } else if (signal.signal === 'NO_PUBLISHER') {
-      publishing.push({ label: "No publisher metadata", points });
-    } else if (signal.signal.startsWith('COMPLETENESS_')) {
+      discovery.push({ label: signal.description, points });
+    }
+    // Publishing Signals (from SIGNAL_WEIGHTS.NO_PUBLISHER)
+    else if (signal.signal === 'NO_PUBLISHER') {
+      publishing.push({ label: signal.description, points });
+    }
+    // Metadata Completeness Signals (from SIGNAL_WEIGHTS.COMPLETENESS_*)
+    else if (signal.signal === 'COMPLETENESS_UNDER_25' || 
+             signal.signal === 'COMPLETENESS_25_50' || 
+             signal.signal === 'COMPLETENESS_50_75' || 
+             signal.signal === 'COMPLETENESS_75_PLUS') {
       const completenessLabel = getMetadataCompletenessLabel(signal.description);
       const percentMatch = signal.description.match(/(\d+)%/);
       const label = percentMatch 
         ? `Data ${percentMatch[1]}% complete (${completenessLabel.toLowerCase().replace(' metadata', '')})`
         : completenessLabel;
       metadata.push({ label, points });
-    } else if (signal.signal === 'DIY_DISTRIBUTION' || signal.signal === 'INDEPENDENT_LABEL' || signal.signal === 'MAJOR_LABEL') {
-      // Label signals go in publishing section
-      publishing.push({ label: signal.description, points });
-    } else if (signal.signal === 'UNSIGNED_DISTRIBUTION_PATTERN' || signal.signal === 'UNSIGNED_PEER_PATTERN') {
-      // Portfolio signals
-      other.push({ label: signal.description, points });
-    } else {
-      other.push({ label: signal.description, points });
+    }
+    // Portfolio Signals (from SIGNAL_WEIGHTS: DIY_DISTRIBUTION, INDEPENDENT_LABEL, MAJOR_LABEL, UNSIGNED_DISTRIBUTION_PATTERN, UNSIGNED_PEER_PATTERN, MUSICBRAINZ_PRESENT)
+    else if (signal.signal === 'DIY_DISTRIBUTION' || 
+             signal.signal === 'INDEPENDENT_LABEL' || 
+             signal.signal === 'MAJOR_LABEL' || 
+             signal.signal === 'UNSIGNED_DISTRIBUTION_PATTERN' || 
+             signal.signal === 'UNSIGNED_PEER_PATTERN' ||
+             signal.signal === 'MUSICBRAINZ_PRESENT') {
+      portfolio.push({ label: signal.description, points });
+    }
+    // Phase 2 signals or unknown - default to portfolio
+    else {
+      portfolio.push({ label: signal.description, points });
     }
   });
   
-  return { discovery, publishing, metadata, other };
+  return { discovery, publishing, metadata, portfolio };
 }
 
-// Generate summary sentence based on signals
-function generateScoreSummary(signals: Array<{ signal: string; description: string; weight: number }>): string {
+// Generate summary sentence based on signals and confidence
+// Uses exact signal constants from server/scoring/contactScoring.ts
+function generateScoreSummary(
+  signals: Array<{ signal: string; description: string; weight: number }>,
+  confidence?: string
+): string {
+  // Group signals first for better context
+  const grouped = groupSignals(signals);
+  const totalSignals = signals.length;
+  
+  // Extract specific signal types
   const hasFreshFinds = signals.some(s => s.signal === 'FRESH_FINDS');
   const hasNoPublisher = signals.some(s => s.signal === 'NO_PUBLISHER');
-  const hasMetadataGaps = signals.some(s => s.signal.startsWith('COMPLETENESS_') && s.weight >= 2);
+  const hasDIY = signals.some(s => s.signal === 'DIY_DISTRIBUTION');
+  const hasIndieLabel = signals.some(s => s.signal === 'INDEPENDENT_LABEL');
+  const hasMajorLabel = signals.some(s => s.signal === 'MAJOR_LABEL');
+  const hasUnsignedPattern = signals.some(s => s.signal === 'UNSIGNED_DISTRIBUTION_PATTERN' || s.signal === 'UNSIGNED_PEER_PATTERN');
+  const metadataCompleteness = signals.find(s => s.signal.startsWith('COMPLETENESS_'));
+  const hasMetadataGaps = metadataCompleteness && (
+    metadataCompleteness.signal === 'COMPLETENESS_UNDER_25' || 
+    metadataCompleteness.signal === 'COMPLETENESS_25_50'
+  );
+  const hasStrongMetadata = metadataCompleteness && metadataCompleteness.signal === 'COMPLETENESS_75_PLUS';
   
+  // CRITICAL: Check negative signals FIRST to avoid false positives
+  // Scenario 1: Major label confirmed (negative signal - overrides all unsigned scenarios)
+  if (hasMajorLabel) {
+    return "Major label metadata found. Likely already signed.";
+  }
+  
+  // Now check unsigned-positive scenarios (safe because major label pre-empted)
+  // Scenario 2: Strong unsigned (Fresh Finds + no publisher)
   if (hasFreshFinds && hasNoPublisher) {
     return "Strong unsigned signals detected. Appears on Fresh Finds with incomplete publishing metadata.";
   }
-  if (hasNoPublisher) {
-    return "Likely unsigned. Publishing metadata missing.";
+  
+  // Scenario 3: Portfolio-driven unsigned (patterns + publisher gaps)
+  if (hasUnsignedPattern && hasNoPublisher) {
+    return "Multiple unsigned signals detected. Portfolio shows DIY distribution pattern and missing publisher metadata.";
   }
-  if (hasMetadataGaps) {
+  
+  // Scenario 4: Fresh Finds + strong metadata (no publisher gap)
+  if (hasFreshFinds && hasStrongMetadata) {
+    return "Discovered via Fresh Finds with complete metadata. Unsigned status likely.";
+  }
+  
+  // Scenario 5: Portfolio-only wins (DIY/indie + unsigned patterns, no discovery)
+  if (!hasFreshFinds && (hasDIY || hasIndieLabel) && hasUnsignedPattern) {
+    return "DIY/indie distribution pattern detected across multiple tracks. Potentially unsigned or early-stage.";
+  }
+  
+  // Scenario 6: DIY/Indie only (no patterns)
+  if (hasDIY || hasIndieLabel) {
+    return "DIY or independent label distribution detected. Potentially unsigned or early-stage.";
+  }
+  
+  // Scenario 7: Publisher gap only
+  if (hasNoPublisher && !hasMetadataGaps) {
+    return "Likely unsigned. Publishing metadata missing but other data complete.";
+  }
+  
+  // Scenario 8: Metadata gaps dominant
+  if (hasMetadataGaps && totalSignals <= 2) {
     return "Limited metadata available. Status unclear but leans unsigned.";
   }
+  
+  // Default with confidence context
+  if (confidence === 'high') {
+    return "Strong unsigned signals detected across multiple indicators.";
+  } else if (confidence === 'low') {
+    return "Weak unsigned signals. Status uncertain, requires manual review.";
+  }
+  
   return "Unsigned status based on available signals.";
 }
 
@@ -876,7 +947,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                       {/* Summary Sentence */}
                       {scoreBreakdown && scoreBreakdown.length > 0 && (
                         <p className="text-sm text-muted-foreground leading-relaxed" data-testid="text-score-summary">
-                          {generateScoreSummary(scoreBreakdown)}
+                          {generateScoreSummary(scoreBreakdown, contact.scoreConfidence || undefined)}
                         </p>
                       )}
                     </Card>
@@ -945,16 +1016,22 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                             </div>
                           )}
 
-                          {/* Other Portfolio Signals */}
-                          {grouped.other.length > 0 && (
+                          {/* Portfolio Signals */}
+                          {grouped.portfolio.length > 0 && (
                             <div className="mb-4">
                               <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Portfolio Signals</h4>
                               <div className="space-y-2">
-                                {grouped.other.map((item, idx) => (
+                                {grouped.portfolio.map((item, idx) => (
                                   <div key={idx} className="flex items-center justify-between">
                                     <span className="text-sm">{item.label}</span>
-                                    <Badge variant="outline" className="font-medium text-chart-2">
-                                      +{item.points}
+                                    <Badge 
+                                      variant="outline" 
+                                      className={cn(
+                                        "font-medium",
+                                        item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
+                                      )}
+                                    >
+                                      {item.points > 0 ? "+" : ""}{item.points}
                                     </Badge>
                                   </div>
                                 ))}
