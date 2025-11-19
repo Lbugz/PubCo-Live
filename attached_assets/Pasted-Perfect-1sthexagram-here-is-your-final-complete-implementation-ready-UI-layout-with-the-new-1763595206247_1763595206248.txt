@@ -1,0 +1,276 @@
+Perfect, 1sthexagram — here is your **final, complete, implementation-ready UI layout** with the new **Scoring tab** integrated into the Contact Drawer.
+
+This is written precisely for your Replit agent and development environment.
+It includes structure, ordering, component responsibilities, and what to remove from other sections.
+
+---
+
+# 🔥 **FINAL CONTACT DRAWER UI LAYOUT (WITH SCORING TAB)**
+
+### *Implementation-Ready Instructions for Replit Agent*
+
+---
+
+# **1. Overall Drawer Structure (Top to Bottom)**
+
+```
+[Contact Header]
+[Contact Information Section]
+[Social Media Section]
+[Tab Bar]
+    Tracks | Scoring | Activity | Notes | Performance
+[Active Tab Content]
+```
+
+---
+
+# **2. CONTACT HEADER (unchanged except for removing scoring block)**
+
+**Keep:**
+
+* Contact name
+* Contact button
+* Mark Hot Lead button
+* List dropdown (Discovery Pool / Watch List / etc.)
+* Score badge (e.g., “8/10”)
+* Close X
+
+**Remove from header:**
+
+* Any score breakdown
+* Any scoring explanation
+* Any summary line
+* Confidence level
+
+**Optional Addition Under Name:**
+
+```
+Songwriter • 2 tracks found • Data completeness: 56%
+Discovered via: Fresh Finds Indie
+```
+
+---
+
+# **3. CONTACT INFORMATION SECTION**
+
+**Keep same structure**, but add optional improvements:
+
+**A. Add enrichment info:**
+
+```
+Last enriched: <timestamp>
+Data completeness: <percentage>
+```
+
+**B. Optional collapse for empty fields** (if agent wants to implement):
+
+```
+Publishing Metadata (collapsed)
+Contact Info (collapsed)
+```
+
+**Do NOT place scoring info here anymore.**
+
+---
+
+# **4. SOCIAL MEDIA SECTION**
+
+Same as current.
+
+If blank:
+
+```
+No links found • Add Link
+```
+
+---
+
+# **5. TAB BAR (UPDATED)**
+
+### **Final Order (must implement):**
+
+1. **Tracks**
+2. **Scoring** ← ⭐ NEW TAB
+3. Activity
+4. Notes
+5. Performance
+
+**Reasoning:**
+Tracks → Scoring → Activity follow the natural A&R workflow.
+
+---
+
+# **6. SCORING TAB — NEW COMPONENT (FULL SPEC)**
+
+This is the content shown when user clicks **Scoring** in the tab bar.
+
+---
+
+## **SCORING TAB LAYOUT**
+
+```
+[Unsigned Score]
+10/10 — Medium Confidence
+
+[1-line summary]
+“Strong unsigned signals. Fresh Finds placement and missing publishing metadata.”
+
+--- Discovery ---
+Fresh Finds playlist                +3
+
+--- Publishing ---
+No publisher metadata               +3
+
+--- Metadata Completeness ---
+Data 56% complete (partial)         +2
+
+[Total Score]
+Total: 3 + 3 + 2 = 10/10
+
+Last updated: 11/19/2025
+```
+
+---
+
+## **SCORING TAB — IMPLEMENTATION RULES FOR AGENT**
+
+**1. No weighting.**
+All point values must be integers based on the simplified scoring.
+
+**2. Group signals under these exact sections:**
+
+* Discovery
+* Publishing
+* Metadata Completeness
+
+**3. Generate a 1-line summary:**
+Examples:
+
+* If Fresh Finds + No publisher:
+  “Strong unsigned signals. Fresh Finds placement and missing publishing metadata.”
+* If only metadata incomplete:
+  “Limited metadata available. Status unclear but leans unsigned.”
+
+**4. Add a Total Score line:**
+
+```
+Total: <sum_of_points> = <final_score>/10
+```
+
+**5. Add timestamp from backend scoring:**
+
+```
+Last updated: <timestamp>
+```
+
+**6. Remove decimals from any score**
+(e.g., +3.15 → +3)
+
+**7. Do not duplicate signals per track.**
+Each signal appears **once**, representing the combined effect.
+
+---
+
+# **7. OTHER TABS (NO SCORING INFO ANYMORE)**
+
+### **Tracks Tab**
+
+Cards only show:
+
+* Track name
+* Artists
+* Label/Distribution
+* Playlist badges
+* Stream count
+* Release year
+
+**No scoring lines.**
+
+---
+
+### **Activity Tab**
+
+Shows enrichment jobs, list moves, scoring recalculations, etc.
+
+---
+
+### **Notes Tab**
+
+No changes.
+
+---
+
+### **Performance Tab**
+
+Keep as is; usually empty early on.
+
+---
+
+# 🚀 **FULL REPLIT AGENT INSTRUCTION BLOCK (COPY/PASTE)**
+
+Use the following with the Replit Agent:
+
+---
+
+### **REPLIT AGENT INSTRUCTIONS — CONTACT DRAWER SCORE TAB UPDATE**
+
+**1. Add a new tab to the Contact Drawer called “Scoring.”**
+Tab order must be:
+
+```
+Tracks | Scoring | Activity | Notes | Performance
+```
+
+**2. Move ALL scoring breakdown content from the main drawer into the new “Scoring” tab.**
+Remove scoring sections from all other parts of the UI.
+
+**3. In the Scoring tab, display:**
+
+* `<score>/10 — <confidence>`
+* 1-line summary sentence
+* Grouped scoring categories:
+
+  * Discovery
+  * Publishing
+  * Metadata Completeness
+* Each signal with integer points only
+* Total score line
+* Last updated timestamp
+
+**4. Use exactly this structure inside the Scoring tab:**
+
+```
+[Unsigned Score]
+10/10 — Medium Confidence
+
+[Summary Sentence]
+
+--- Discovery ---
+Fresh Finds playlist                +3
+
+--- Publishing ---
+No publisher metadata               +3
+
+--- Metadata Completeness ---
+Data 56% complete (partial)         +2
+
+Total: 3 + 3 + 2 = 10/10
+
+Last updated: <timestamp>
+```
+
+**5. Remove all weighting, multipliers, and decimal scores from UI.**
+
+**6. Do not duplicate signals even if multiple tracks contribute.**
+
+**7. Keep the score badge (e.g., “10/10”) in the Contact header, but nothing else from scoring.**
+
+---
+
+# If you want next:
+
+👉 I can generate the **React/TSX components** (`ContactScoringTab.tsx` + tab integration)
+👉 Or a **Figma-style wireframe** for your design team
+👉 Or a **backend response format update** for scoring
+
+Just tell me which format you want.

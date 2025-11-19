@@ -87,6 +87,72 @@ function aggregateContactInfo(tracks: PlaylistSnapshot[]) {
   };
 }
 
+// Helper to get metadata completeness label
+function getMetadataCompletenessLabel(description: string): string {
+  const match = description.match(/(\d+)%/);
+  if (!match) return description;
+  
+  const percent = parseInt(match[1]);
+  if (percent < 25) return "Very incomplete metadata";
+  if (percent < 50) return "Incomplete metadata";
+  if (percent < 75) return "Partial metadata";
+  return "Mostly complete metadata";
+}
+
+// Helper to group signals into sections
+function groupSignals(signals: Array<{ signal: string; description: string; weight: number }>) {
+  const discovery: Array<{ label: string; points: number }> = [];
+  const publishing: Array<{ label: string; points: number }> = [];
+  const metadata: Array<{ label: string; points: number }> = [];
+  const other: Array<{ label: string; points: number }> = [];
+  
+  signals.forEach(signal => {
+    const points = Math.round(signal.weight);
+    
+    // Group by signal type
+    if (signal.signal === 'FRESH_FINDS') {
+      discovery.push({ label: "Fresh Finds playlist", points });
+    } else if (signal.signal === 'NO_PUBLISHER') {
+      publishing.push({ label: "No publisher metadata", points });
+    } else if (signal.signal.startsWith('COMPLETENESS_')) {
+      const completenessLabel = getMetadataCompletenessLabel(signal.description);
+      const percentMatch = signal.description.match(/(\d+)%/);
+      const label = percentMatch 
+        ? `Data ${percentMatch[1]}% complete (${completenessLabel.toLowerCase().replace(' metadata', '')})`
+        : completenessLabel;
+      metadata.push({ label, points });
+    } else if (signal.signal === 'DIY_DISTRIBUTION' || signal.signal === 'INDEPENDENT_LABEL' || signal.signal === 'MAJOR_LABEL') {
+      // Label signals go in publishing section
+      publishing.push({ label: signal.description, points });
+    } else if (signal.signal === 'UNSIGNED_DISTRIBUTION_PATTERN' || signal.signal === 'UNSIGNED_PEER_PATTERN') {
+      // Portfolio signals
+      other.push({ label: signal.description, points });
+    } else {
+      other.push({ label: signal.description, points });
+    }
+  });
+  
+  return { discovery, publishing, metadata, other };
+}
+
+// Generate summary sentence based on signals
+function generateScoreSummary(signals: Array<{ signal: string; description: string; weight: number }>): string {
+  const hasFreshFinds = signals.some(s => s.signal === 'FRESH_FINDS');
+  const hasNoPublisher = signals.some(s => s.signal === 'NO_PUBLISHER');
+  const hasMetadataGaps = signals.some(s => s.signal.startsWith('COMPLETENESS_') && s.weight >= 2);
+  
+  if (hasFreshFinds && hasNoPublisher) {
+    return "Strong unsigned signals detected. Appears on Fresh Finds with incomplete publishing metadata.";
+  }
+  if (hasNoPublisher) {
+    return "Likely unsigned. Publishing metadata missing.";
+  }
+  if (hasMetadataGaps) {
+    return "Limited metadata available. Status unclear but leans unsigned.";
+  }
+  return "Unsigned status based on available signals.";
+}
+
 // Parse score breakdown from trackScoreData JSON
 function parseScoreBreakdown(trackScoreData: string | null) {
   if (!trackScoreData) return null;
@@ -96,8 +162,9 @@ function parseScoreBreakdown(trackScoreData: string | null) {
     // Use topSignals to show the most impactful signals
     if (data.topSignals && data.topSignals.length > 0) {
       return data.topSignals.map((signal: any) => ({
-        signal: signal.description || signal.signal,
-        points: signal.weight
+        signal: signal.signal,
+        description: signal.description || signal.signal,
+        weight: signal.weight
       }));
     }
     return null;
@@ -698,14 +765,14 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="tracks" data-testid="tab-tracks">
                   <Music className="h-4 w-4 mr-2" />
                   Tracks
                 </TabsTrigger>
-                <TabsTrigger value="performance" data-testid="tab-performance">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Performance
+                <TabsTrigger value="scoring" data-testid="tab-scoring">
+                  <Target className="h-4 w-4 mr-2" />
+                  Scoring
                 </TabsTrigger>
                 <TabsTrigger value="activity" data-testid="tab-activity">
                   <Activity className="h-4 w-4 mr-2" />
@@ -714,6 +781,10 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 <TabsTrigger value="notes" data-testid="tab-notes">
                   <FileText className="h-4 w-4 mr-2" />
                   Notes
+                </TabsTrigger>
+                <TabsTrigger value="performance" data-testid="tab-performance">
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Performance
                 </TabsTrigger>
               </TabsList>
 
@@ -779,6 +850,145 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                       </div>
                     </Card>
                   ))
+                )}
+              </TabsContent>
+
+              {/* Scoring Tab - NEW */}
+              <TabsContent value="scoring" className="space-y-4">
+                {contact.unsignedScore !== null && contact.unsignedScore !== undefined ? (
+                  <>
+                    {/* Score Header with Confidence */}
+                    <Card className="p-5">
+                      <div className="flex items-baseline gap-3 mb-3">
+                        <div className="text-5xl font-bold" data-testid="text-unsigned-score-detail">
+                          {contact.unsignedScore}
+                        </div>
+                        <div className="text-2xl text-muted-foreground">/10</div>
+                        <Badge
+                          variant={contact.unsignedScore >= 7 ? "high" : contact.unsignedScore >= 4 ? "medium" : "low"}
+                          className="ml-2"
+                          data-testid="badge-score-confidence-detail"
+                        >
+                          {contact.scoreConfidence || "medium"} confidence
+                        </Badge>
+                      </div>
+
+                      {/* Summary Sentence */}
+                      {scoreBreakdown && scoreBreakdown.length > 0 && (
+                        <p className="text-sm text-muted-foreground leading-relaxed" data-testid="text-score-summary">
+                          {generateScoreSummary(scoreBreakdown)}
+                        </p>
+                      )}
+                    </Card>
+
+                    {/* Grouped Signals Breakdown */}
+                    {scoreBreakdown && scoreBreakdown.length > 0 && (() => {
+                      const grouped = groupSignals(scoreBreakdown);
+                      const totalPoints = scoreBreakdown.reduce((sum: number, s: any) => sum + Math.round(s.weight), 0);
+                      
+                      return (
+                        <Card className="p-5">
+                          {/* Discovery Section */}
+                          {grouped.discovery.length > 0 && (
+                            <div className="mb-4">
+                              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Discovery</h4>
+                              <div className="space-y-2">
+                                {grouped.discovery.map((item, idx) => (
+                                  <div key={idx} className="flex items-center justify-between">
+                                    <span className="text-sm">{item.label}</span>
+                                    <Badge variant="outline" className="font-medium text-chart-2">
+                                      +{item.points}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Publishing Section */}
+                          {grouped.publishing.length > 0 && (
+                            <div className="mb-4">
+                              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Publishing</h4>
+                              <div className="space-y-2">
+                                {grouped.publishing.map((item, idx) => (
+                                  <div key={idx} className="flex items-center justify-between">
+                                    <span className="text-sm">{item.label}</span>
+                                    <Badge 
+                                      variant="outline" 
+                                      className={cn(
+                                        "font-medium",
+                                        item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
+                                      )}
+                                    >
+                                      {item.points > 0 ? "+" : ""}{item.points}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Metadata Completeness Section */}
+                          {grouped.metadata.length > 0 && (
+                            <div className="mb-4">
+                              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Metadata Completeness</h4>
+                              <div className="space-y-2">
+                                {grouped.metadata.map((item, idx) => (
+                                  <div key={idx} className="flex items-center justify-between">
+                                    <span className="text-sm">{item.label}</span>
+                                    <Badge variant="outline" className="font-medium text-chart-2">
+                                      +{item.points}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Other Portfolio Signals */}
+                          {grouped.other.length > 0 && (
+                            <div className="mb-4">
+                              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Portfolio Signals</h4>
+                              <div className="space-y-2">
+                                {grouped.other.map((item, idx) => (
+                                  <div key={idx} className="flex items-center justify-between">
+                                    <span className="text-sm">{item.label}</span>
+                                    <Badge variant="outline" className="font-medium text-chart-2">
+                                      +{item.points}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Total Score Line */}
+                          <div className="pt-4 mt-4 border-t">
+                            <div className="flex items-center justify-between text-base font-medium">
+                              <span>Total</span>
+                              <span data-testid="text-total-score">
+                                {scoreBreakdown.map((s: any) => Math.round(s.weight)).filter((p: number) => p > 0).join(' + ')} = {contact.unsignedScore}/10
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Last Updated */}
+                          {contact.unsignedScoreUpdatedAt && (
+                            <p className="text-xs text-muted-foreground mt-4">
+                              Last updated: {formatDate(contact.unsignedScoreUpdatedAt)}
+                            </p>
+                          )}
+                        </Card>
+                      );
+                    })()}
+                  </>
+                ) : (
+                  <Card className="p-8">
+                    <div className="text-center">
+                      <Target className="h-12 w-12 mx-auto mb-2 text-muted-foreground opacity-50" />
+                      <p className="text-sm text-muted-foreground">Score not yet calculated</p>
+                    </div>
+                  </Card>
                 )}
               </TabsContent>
 
@@ -866,68 +1076,6 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 </div>
               </TabsContent>
             </Tabs>
-
-            {/* Score Card - Moved to Bottom */}
-            <Card className="p-5 mt-6">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-sm font-medium text-muted-foreground">Unsigned Score Breakdown</h3>
-                {contact.unsignedScore !== null && contact.unsignedScore !== undefined && (
-                  <Badge
-                    variant={contact.unsignedScore >= 7 ? "high" : contact.unsignedScore >= 4 ? "medium" : "low"}
-                    data-testid="badge-score-confidence"
-                  >
-                    {contact.scoreConfidence || "medium"}
-                  </Badge>
-                )}
-              </div>
-
-              {contact.unsignedScore !== null && contact.unsignedScore !== undefined ? (
-                <>
-                  {/* Large Score Display */}
-                  <div className="flex items-baseline gap-2 mb-4">
-                    <div className="text-5xl font-bold" data-testid="text-unsigned-score">
-                      {contact.unsignedScore}
-                    </div>
-                    <div className="text-2xl text-muted-foreground">/10</div>
-                  </div>
-
-                  {/* Point Allocation Breakdown */}
-                  {scoreBreakdown && scoreBreakdown.length > 0 && (
-                    <div className="space-y-2 mt-4 pt-4 border-t">
-                      <p className="text-xs font-medium text-muted-foreground mb-2">How This Score Was Calculated</p>
-                      {scoreBreakdown.map((item: any, idx: number) => {
-                        const formattedPoints = Number(item.points).toFixed(2).replace(/\.?0+$/, '');
-                        return (
-                          <div key={idx} className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">{item.signal}</span>
-                            <Badge 
-                              variant="outline"
-                              className={cn(
-                                "font-medium",
-                                item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
-                              )}
-                            >
-                              {item.points > 0 ? "+" : ""}{formattedPoints}
-                            </Badge>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {contact.unsignedScoreUpdatedAt && (
-                    <p className="text-xs text-muted-foreground mt-4">
-                      Last updated: {formatDate(contact.unsignedScoreUpdatedAt)}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <Target className="h-12 w-12 mx-auto mb-2 text-muted-foreground opacity-50" />
-                  <p className="text-sm text-muted-foreground">Score not yet calculated</p>
-                </div>
-              )}
-            </Card>
           </>
         ) : (
           <div className="text-center py-12">
