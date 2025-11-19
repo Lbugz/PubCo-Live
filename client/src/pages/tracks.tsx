@@ -47,6 +47,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SimplePagination } from "@/components/ui/simple-pagination";
 
 export default function Tracks() {
   const [location] = useLocation();
@@ -62,6 +63,8 @@ export default function Tracks() {
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const [sortField, setSortField] = useState<string>("addedAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [limit] = useState(50);
+  const [offset, setOffset] = useState(0);
   const notify = useNotify();
   const isMobile = useMobile(768);
   
@@ -124,15 +127,21 @@ export default function Tracks() {
 
   const { data: tracksData, isLoading: tracksLoading } = useQuery<{ tracks: PlaylistSnapshot[]; total: number; hasMore: boolean } | PlaylistSnapshot[]>({
     queryKey: selectedPlaylist !== "all"
-      ? ["/api/tracks", "playlist", selectedPlaylist, selectedWeek]
-      : ["/api/tracks", selectedWeek],
+      ? ["/api/tracks", "playlist", selectedPlaylist, selectedWeek, limit, offset]
+      : ["/api/tracks", selectedWeek, limit, offset],
     queryFn: async ({ queryKey }) => {
+      const params = new URLSearchParams();
+      params.append("limit", limit.toString());
+      params.append("offset", offset.toString());
+      
       if (queryKey[1] === "playlist") {
-        const response = await fetch(`/api/tracks?playlist=${queryKey[2]}`);
+        params.append("playlist", queryKey[2] as string);
+        const response = await fetch(`/api/tracks?${params.toString()}`);
         if (!response.ok) throw new Error("Failed to fetch tracks by playlist");
         return response.json();
       } else {
-        const response = await fetch(`/api/tracks?week=${queryKey[1]}`);
+        params.append("week", queryKey[1] as string);
+        const response = await fetch(`/api/tracks?${params.toString()}`);
         if (!response.ok) throw new Error("Failed to fetch tracks");
         return response.json();
       }
@@ -140,12 +149,17 @@ export default function Tracks() {
     enabled: !!selectedWeek || selectedPlaylist !== "all",
   });
 
-  // Extract tracks array from paginated response (supports both old and new format)
+  // Extract tracks array and total from paginated response (supports both old and new format)
   const tracks = useMemo(() => {
     if (!tracksData) return [];
     if (Array.isArray(tracksData)) return tracksData; // Old format
     return tracksData.tracks; // New paginated format
   }, [tracksData]);
+
+  const total = useMemo(() => {
+    if (!tracksData || Array.isArray(tracksData)) return tracks.length;
+    return tracksData.total;
+  }, [tracksData, tracks.length]);
 
   const { data: trackedPlaylists = [] } = useQuery<TrackedPlaylist[]>({
     queryKey: ["/api/tracked-playlists"],
@@ -309,6 +323,16 @@ export default function Tracks() {
       setSortDirection(field === "spotifyStreams" ? "desc" : "asc");
     }
   }, [sortField]);
+
+  // Handle pagination
+  const handlePageChange = (page: number) => {
+    const newOffset = (page - 1) * limit;
+    setOffset(newOffset);
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const currentPage = Math.floor(offset / limit) + 1;
 
   // toggleSelectAll depends on filteredTracks, so define it after the useMemo
   const toggleSelectAll = useCallback(() => {
@@ -616,6 +640,17 @@ export default function Tracks() {
                 setDrawerOpen(true);
               }}
               onEnrich={handleEnrichTrack}
+            />
+          )}
+
+          {/* Pagination */}
+          {!tracksLoading && total > 0 && viewMode === "table" && (
+            <SimplePagination
+              currentPage={currentPage}
+              totalItems={total}
+              itemsPerPage={limit}
+              onPageChange={handlePageChange}
+              itemName="tracks"
             />
           )}
         </div>
