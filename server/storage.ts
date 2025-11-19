@@ -64,6 +64,7 @@ export interface IStorage {
   getContactsCountWithHotLead(): Promise<number>;
   getContactStats(): Promise<{ total: number; hotLeads: number; discovery: number; watch: number; search: number; unsignedPct: number }>;
   getContactById(id: string): Promise<ContactWithSongwriter | null>;
+  getContactsBySongwriterIds(songwriterIds: string[]): Promise<Contact[]>;
   updateContact(id: string, updates: Partial<Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void>;
   getContactTracks(contactId: string): Promise<PlaylistSnapshot[]>;
   createContactNote(contactId: string, content: string): Promise<ContactNote>;
@@ -1223,6 +1224,14 @@ export class DatabaseStorage implements IStorage {
     const result = await query;
     const raw = result[0]?.count ?? 0;
     return typeof raw === "bigint" ? Number(raw) : Number(raw);
+  }
+
+  async getContactsBySongwriterIds(songwriterIds: string[]): Promise<Contact[]> {
+    if (songwriterIds.length === 0) return [];
+    
+    return await db.select()
+      .from(contacts)
+      .where(inArray(contacts.songwriterId, songwriterIds));
   }
 
   async getContactById(id: string): Promise<ContactWithSongwriter | null> {

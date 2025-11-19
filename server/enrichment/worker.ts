@@ -1283,6 +1283,40 @@ export class EnrichmentWorker {
         console.error('Failed to sync contact enrichment flags:', syncError);
       }
 
+      // Recalculate unsigned scores for all affected contacts after enrichment
+      try {
+        const { updateContactScore } = await import("../scoring/contactScoring");
+        const uniqueSongwriterIds = new Set<string>();
+        
+        // Get unique songwriter IDs from enriched tracks
+        for (const track of ctx.getAllTracks()) {
+          if (track.songwriterIds && track.songwriterIds.length > 0) {
+            track.songwriterIds.forEach(id => uniqueSongwriterIds.add(id));
+          }
+        }
+
+        if (uniqueSongwriterIds.size > 0) {
+          console.log(`[ContactScoring] Recalculating scores for ${uniqueSongwriterIds.size} contacts...`);
+          
+          // Get contact IDs for these songwriters
+          const contactsToUpdate = await this.storage.getContactsBySongwriterIds(Array.from(uniqueSongwriterIds));
+          
+          let scoredCount = 0;
+          for (const contact of contactsToUpdate) {
+            try {
+              await updateContactScore(contact.id);
+              scoredCount++;
+            } catch (scoreError) {
+              console.error(`Failed to score contact ${contact.id}:`, scoreError);
+            }
+          }
+          
+          console.log(`[ContactScoring] ✅ Scored ${scoredCount}/${contactsToUpdate.length} contacts`);
+        }
+      } catch (scoringError) {
+        console.error('Failed to recalculate contact scores:', scoringError);
+      }
+
       console.log(`✅ Job ${job.id} completed: ${targetPhaseName} enrichment finished`);
     } catch (error) {
       console.error(`❌ Job ${job.id} failed:`, error);

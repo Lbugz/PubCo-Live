@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { playlistSnapshots, contacts, contactTracks, songwriterProfiles, trackedPlaylists } from "../shared/schema";
+import { playlistSnapshots, contacts, contactTracks, songwriterProfiles, trackedPlaylists } from "@shared/schema";
 import { eq, inArray, sql } from "drizzle-orm";
 
 // Track-level signal weights (Phase 1 - without MLC)
