@@ -605,6 +605,13 @@ export default function Dashboard() {
     }
   }, [enrichPhaseMutation]);
 
+  // Debug: Log callback creation
+  console.log(`[Dashboard RENDER] handleEnrichPhase created:`, {
+    handleEnrichPhaseExists: !!handleEnrichPhase,
+    handleEnrichPhaseType: typeof handleEnrichPhase,
+    enrichPhaseMutationExists: !!enrichPhaseMutation,
+  });
+
   const enrichArtistsButton = useMemo(() => (
     <Button
       onClick={() => enrichArtistsMutation.mutate({ limit: 50 })}
