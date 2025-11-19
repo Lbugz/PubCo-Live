@@ -80,10 +80,7 @@ export class EnrichmentWorker {
   private processingInterval: NodeJS.Timeout | null = null;
   private cleanupInterval: NodeJS.Timeout | null = null;
   
-  // YouTube quota tracking (in-memory, resets daily)
-  private youtubeQuotaUsed: number = 0;
-  private youtubeQuotaResetDate: string = new Date().toISOString().split('T')[0];
-  private readonly YOUTUBE_DAILY_QUOTA = 80; // Conservative limit (8,000 units of 10,000 daily budget)
+  private readonly YOUTUBE_DAILY_QUOTA = 8000; // YouTube API daily quota (10,000 units, use 8,000 conservatively)
 
   constructor(options: WorkerOptions) {
     this.jobQueue = options.jobQueue;
@@ -91,28 +88,24 @@ export class EnrichmentWorker {
     this.wsBroadcast = options.wsBroadcast;
   }
 
-  // Check and reset YouTube quota if it's a new day
-  private checkYouTubeQuota(): { allowed: boolean; remaining: number } {
+  // Check YouTube quota from persistent storage
+  private async checkYouTubeQuota(): Promise<{ allowed: boolean; remaining: number }> {
     const today = new Date().toISOString().split('T')[0];
     
-    // Reset quota if it's a new day
-    if (today !== this.youtubeQuotaResetDate) {
-      this.youtubeQuotaUsed = 0;
-      this.youtubeQuotaResetDate = today;
-      console.log(`[YouTube Quota] Reset for new day: ${today}`);
-    }
+    const quotaUsed = await this.storage.getQuotaUsage('youtube', today);
+    const remaining = this.YOUTUBE_DAILY_QUOTA - quotaUsed;
     
-    const remaining = this.YOUTUBE_DAILY_QUOTA - this.youtubeQuotaUsed;
     return {
-      allowed: this.youtubeQuotaUsed < this.YOUTUBE_DAILY_QUOTA,
+      allowed: quotaUsed < this.YOUTUBE_DAILY_QUOTA,
       remaining: Math.max(0, remaining),
     };
   }
 
-  // Increment YouTube quota usage
-  private incrementYouTubeQuota(count: number = 1): void {
-    this.youtubeQuotaUsed += count;
-    console.log(`[YouTube Quota] Used: ${this.youtubeQuotaUsed}/${this.YOUTUBE_DAILY_QUOTA}`);
+  // Increment YouTube quota usage in persistent storage
+  private async incrementYouTubeQuota(units: number = 100): Promise<void> {
+    const today = new Date().toISOString().split('T')[0];
+    const newTotal = await this.storage.incrementQuotaUsage('youtube', today, units);
+    console.log(`[YouTube Quota] Used: ${newTotal}/${this.YOUTUBE_DAILY_QUOTA} units`);
   }
 
   start() {
@@ -1019,16 +1012,17 @@ export class EnrichmentWorker {
       let youtubeQuotaLimitReached = false;
 
       try {
-        // Check global YouTube quota
-        const quotaCheck = this.checkYouTubeQuota();
+        // Check global YouTube quota from persistent storage
+        const quotaCheck = await this.checkYouTubeQuota();
         
         if (!quotaCheck.allowed) {
-          console.log(`[Phase 6: YouTube] ⚠️ Daily quota exhausted (${this.youtubeQuotaUsed}/${this.YOUTUBE_DAILY_QUOTA}). Skipping YouTube enrichment for this job.`);
+          const quotaUsed = this.YOUTUBE_DAILY_QUOTA - quotaCheck.remaining;
+          console.log(`[Phase 6: YouTube] ⚠️ Daily quota exhausted (${quotaUsed}/${this.YOUTUBE_DAILY_QUOTA} units). Skipping YouTube enrichment for this job.`);
           
           await this.jobQueue.updateJobProgress(job.id, {
             progress: 95,
             logs: [
-              `[${new Date().toISOString()}] Phase 6 (YouTube) skipped: Daily quota exhausted (${this.youtubeQuotaUsed}/${this.YOUTUBE_DAILY_QUOTA} searches used)`,
+              `[${new Date().toISOString()}] Phase 6 (YouTube) skipped: Daily quota exhausted (${quotaUsed}/${this.YOUTUBE_DAILY_QUOTA} units used)`,
             ],
           });
 
@@ -1048,23 +1042,24 @@ export class EnrichmentWorker {
           );
           
           console.log(`[Phase 6: YouTube] ${tracksNeedingYouTube.length} tracks need YouTube enrichment (have ISRC, no existing data)`);
-          console.log(`[Phase 6: YouTube] Quota remaining: ${quotaCheck.remaining}/${this.YOUTUBE_DAILY_QUOTA}`);
+          console.log(`[Phase 6: YouTube] Quota remaining: ${quotaCheck.remaining}/${this.YOUTUBE_DAILY_QUOTA} units`);
 
-          // Limit searches to remaining quota
-          const tracksToEnrich = tracksNeedingYouTube.slice(0, quotaCheck.remaining);
+          // Each search costs ~100 units, so calculate how many searches we can do
+          const maxSearches = Math.floor(quotaCheck.remaining / 100);
+          const tracksToEnrich = tracksNeedingYouTube.slice(0, maxSearches);
           
-          if (tracksNeedingYouTube.length > quotaCheck.remaining) {
+          if (tracksNeedingYouTube.length > maxSearches) {
             youtubeQuotaLimitReached = true;
-            const skipped = tracksNeedingYouTube.length - quotaCheck.remaining;
-            console.log(`[Phase 6: YouTube] ⚠️ Quota limit: Only enriching ${quotaCheck.remaining} tracks, skipping ${skipped} to preserve quota`);
+            const skipped = tracksNeedingYouTube.length - maxSearches;
+            console.log(`[Phase 6: YouTube] ⚠️ Quota limit: Only enriching ${maxSearches} tracks, skipping ${skipped} to preserve quota`);
           }
 
           for (const track of tracksToEnrich) {
             try {
               const youtubeData = await enrichTrackWithYouTube(track.isrc!);
 
-              // Increment quota counter after successful API call
-              this.incrementYouTubeQuota(1);
+              // Increment quota counter after successful API call (~100 units per search)
+              await this.incrementYouTubeQuota(100);
 
               if (youtubeData) {
                 ctx.applyPatch(track.id, {
@@ -1088,7 +1083,7 @@ export class EnrichmentWorker {
               console.error(`[Phase 6: YouTube] ❌ Failed to enrich ${track.trackName}:`, trackError);
               youtubeFailedCount++;
               // Still increment quota on failure since the API call was made
-              this.incrementYouTubeQuota(1);
+              await this.incrementYouTubeQuota(100);
             }
           }
 
