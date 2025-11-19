@@ -127,12 +127,14 @@ export default function Tracks() {
 
   const { data: tracksData, isLoading: tracksLoading } = useQuery<{ tracks: PlaylistSnapshot[]; total: number; hasMore: boolean }>({
     queryKey: selectedPlaylist !== "all"
-      ? ["/api/tracks", "playlist", selectedPlaylist, selectedWeek, limit, offset]
-      : ["/api/tracks", selectedWeek, limit, offset],
+      ? ["/api/tracks", "playlist", selectedPlaylist, selectedWeek, limit, offset, sortField, sortDirection]
+      : ["/api/tracks", selectedWeek, limit, offset, sortField, sortDirection],
     queryFn: async ({ queryKey }) => {
       const params = new URLSearchParams();
       params.append("limit", limit.toString());
       params.append("offset", offset.toString());
+      params.append("sortField", sortField);
+      params.append("sortDirection", sortDirection);
       
       if (queryKey[1] === "playlist") {
         params.append("playlist", queryKey[2] as string);
@@ -252,6 +254,7 @@ export default function Tracks() {
   });
 
   // Memoize filtered tracks to avoid recomputation on every render
+  // Note: Search is still client-side (filters current page only)
   const filteredTracks = useMemo(() => {
     const filtered = tracks?.filter((track) => {
       const matchesSearch = 
@@ -266,52 +269,11 @@ export default function Tracks() {
     return filtered;
   }, [tracks, debouncedSearchQuery]);
 
-  // Sort filtered tracks
-  const sortedTracks = useMemo(() => {
-    if (!filteredTracks || filteredTracks.length === 0) return [];
-    
-    const sorted = [...filteredTracks].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
+  // Sorting is now server-side - no need to sort client-side
+  // Just use filteredTracks directly (they're already sorted from backend)
+  const sortedTracks = filteredTracks;
 
-      switch (sortField) {
-        case "trackName":
-          aValue = a.trackName?.toLowerCase() || "";
-          bValue = b.trackName?.toLowerCase() || "";
-          break;
-        case "artistName":
-          aValue = a.artistName?.toLowerCase() || "";
-          bValue = b.artistName?.toLowerCase() || "";
-          break;
-        case "playlistName":
-          aValue = a.playlistName?.toLowerCase() || "";
-          bValue = b.playlistName?.toLowerCase() || "";
-          break;
-        case "albumLabel":
-          aValue = a.label?.toLowerCase() || "";
-          bValue = b.label?.toLowerCase() || "";
-          break;
-        case "songwriter":
-          aValue = a.songwriter?.toLowerCase() || "";
-          bValue = b.songwriter?.toLowerCase() || "";
-          break;
-        case "spotifyStreams":
-          aValue = a.spotifyStreams || 0;
-          bValue = b.spotifyStreams || 0;
-          break;
-        default:
-          return 0;
-      }
-
-      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-
-    return sorted;
-  }, [filteredTracks, sortField, sortDirection]);
-
-  // Handle sorting
+  // Handle sorting - updates state which triggers new API call with server-side sort
   const handleSort = useCallback((field: string) => {
     if (sortField === field) {
       // Toggle direction if same field
@@ -321,6 +283,8 @@ export default function Tracks() {
       setSortField(field);
       setSortDirection(field === "spotifyStreams" ? "desc" : "asc");
     }
+    // Reset to first page when sorting changes
+    setOffset(0);
   }, [sortField]);
 
   // Handle pagination
