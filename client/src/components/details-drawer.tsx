@@ -68,6 +68,16 @@ export function DetailsDrawer({
   onEnrichPhase,
   isEnrichingPhase,
 }: DetailsDrawerProps) {
+  // Debug: Log props on mount
+  console.log(`[DetailsDrawer MOUNT] Props received:`, {
+    hasTrack: !!track,
+    open,
+    hasOnEnrich: !!onEnrich,
+    hasOnEnrichPhase: !!onEnrichPhase,
+    onEnrichPhaseType: typeof onEnrichPhase,
+    onEnrichPhaseValue: onEnrichPhase,
+  });
+
   const [isEnriching, setIsEnriching] = useState(false);
   const [enrichingPhase, setEnrichingPhase] = useState<number | null>(null);
 
