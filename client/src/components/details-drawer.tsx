@@ -700,19 +700,27 @@ export function DetailsDrawer({
                             <div>
                               <span className="text-muted-foreground block mb-1">YouTube Views</span>
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold text-lg">
-                                  {displayTrack.youtubeViews ? displayTrack.youtubeViews.toLocaleString() : '—'}
-                                </span>
-                                {displayTrack.youtubeVideoId && (
-                                  <a
-                                    href={`https://www.youtube.com/watch?v=${displayTrack.youtubeVideoId}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-muted-foreground hover:text-foreground transition-colors"
-                                    data-testid={`link-youtube-${displayTrack.youtubeVideoId}`}
-                                  >
-                                    <Youtube className="h-4 w-4" />
-                                  </a>
+                                {displayTrack.youtubeViews ? (
+                                  <>
+                                    <span className="font-semibold text-lg">
+                                      {displayTrack.youtubeViews.toLocaleString()}
+                                    </span>
+                                    {displayTrack.youtubeVideoId && (
+                                      <a
+                                        href={`https://www.youtube.com/watch?v=${displayTrack.youtubeVideoId}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-muted-foreground hover:text-foreground transition-colors"
+                                        data-testid={`link-youtube-${displayTrack.youtubeVideoId}`}
+                                      >
+                                        <Youtube className="h-4 w-4" />
+                                      </a>
+                                    )}
+                                  </>
+                                ) : displayTrack.enrichmentStatus === 'enriched' ? (
+                                  <span className="text-sm text-muted-foreground italic">No video found</span>
+                                ) : (
+                                  <span className="font-semibold text-lg">—</span>
                                 )}
                               </div>
                             </div>
@@ -955,14 +963,20 @@ export function DetailsDrawer({
                       <div className="flex items-center gap-3 p-3 bg-background/40 rounded-lg transition-all duration-300" data-testid="enrichment-phase-6">
                         <div className={cn(
                           "h-2 w-2 rounded-full transition-all duration-300 flex-shrink-0",
-                          displayTrack.youtubeVideoId ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-muted animate-pulse"
+                          displayTrack.youtubeVideoId 
+                            ? "bg-green-500 shadow-lg shadow-green-500/50" 
+                            : displayTrack.enrichmentStatus === 'enriched'
+                              ? "bg-yellow-500/60"
+                              : "bg-muted animate-pulse"
                         )} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium">Phase 6: YouTube Enrichment</p>
                           <p className="text-xs text-muted-foreground truncate">
                             {displayTrack.youtubeVideoId
                               ? `✓ Video found: ${displayTrack.youtubeViews?.toLocaleString() || 'N/A'} views` 
-                              : "Pending YouTube metadata"}
+                              : displayTrack.enrichmentStatus === 'enriched'
+                                ? "⚠️ Searched - no video found on YouTube"
+                                : "Pending YouTube metadata"}
                           </p>
                         </div>
                         <Button
