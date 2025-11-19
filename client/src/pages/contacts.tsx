@@ -67,7 +67,7 @@ export default function Contacts() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [limit] = useState(50);
+  const [limit] = useState(100);
   const [offset, setOffset] = useState(0);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);

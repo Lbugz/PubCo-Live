@@ -63,7 +63,7 @@ export default function Tracks() {
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const [sortField, setSortField] = useState<string>("addedAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [limit] = useState(50);
+  const [limit] = useState(100);
   const [offset, setOffset] = useState(0);
   const notify = useNotify();
   const isMobile = useMobile(768);
