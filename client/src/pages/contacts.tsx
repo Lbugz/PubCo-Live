@@ -39,6 +39,7 @@ import { ContactDetailDrawer } from "@/components/contact-detail-drawer";
 import { PageContainer } from "@/components/layout/page-container";
 import { FilterBar } from "@/components/layout/filter-bar";
 import { StickyHeaderContainer } from "@/components/layout/sticky-header-container";
+import { SimplePagination } from "@/components/ui/simple-pagination";
 
 const STAGE_CONFIG = {
   discovery: {
@@ -266,6 +267,16 @@ export default function Contacts() {
       setSortDirection(field === "totalStreams" || field === "trackCount" || field === "wowGrowth" ? "desc" : "asc");
     }
   };
+
+  // Handle pagination
+  const handlePageChange = (page: number) => {
+    const newOffset = (page - 1) * limit;
+    setOffset(newOffset);
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const currentPage = Math.floor(offset / limit) + 1;
 
   const contactColumns: DataTableColumn<ContactWithSongwriter>[] = [
     {
@@ -716,6 +727,17 @@ export default function Contacts() {
         stickyHeader={true}
         testIdPrefix="contact"
       />
+
+      {/* Pagination */}
+      {!isLoading && total > 0 && (
+        <SimplePagination
+          currentPage={currentPage}
+          totalItems={total}
+          itemsPerPage={limit}
+          onPageChange={handlePageChange}
+          itemName="contacts"
+        />
+      )}
 
       {/* Contact Detail Drawer */}
       <ContactDetailDrawer
