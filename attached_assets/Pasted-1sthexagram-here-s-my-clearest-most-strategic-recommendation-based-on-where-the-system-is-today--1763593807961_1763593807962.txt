@@ -1,0 +1,160 @@
+1sthexagram — here’s my clearest, most strategic recommendation based on where the system is today, what your UI is showing, and where PubCo Discovery is going over the next 60–90 days.
+
+I’ll answer in three parts:
+
+1. **Which option you should choose (A vs B)**
+2. **What to do with Administrator / IPI / ISWC**
+3. **When to re-introduce weighting**
+
+---
+
+# **1. Recommendation: Choose Option A (Cleanest Now, Easiest to Maintain, No Surprises)**
+
+Given:
+
+* Your dataset is **brand new**
+* All tracks are **within the same date cluster**
+* The UI already reflects the simplified breakdown
+* You’re still validating *core ingestion and metadata stability*
+* A&R teams need **predictable, intuitive scores**
+
+👉 **Option A is the right move right now.**
+This keeps your logic stable, predictable, and fast.
+
+### **Option A (what I recommend now):**
+
+* Remove all weighting
+* Keep signals exactly as they currently are in production
+* Don’t introduce new sub-signals yet
+* Keep metadata completeness as **one unified signal**
+
+This gives you **speed, reliability, and consistency** while you verify the UI and backend.
+
+Once the pipeline is stable, then we can move to fine-tuning.
+
+---
+
+# **2. Should “Administrator”, “IPI”, and “ISWC” be separate signals?**
+
+Short answer: **Not yet. Add them in Phase 2, not Phase 1.**
+
+Here’s why:
+
+### **A. Low availability today**
+
+Most Fresh Finds / emerging writers will be missing IPI, ISWC, admin, and publisher all at once.
+
+If you turn each missing field into a separate +1:
+
+* Almost EVERYONE becomes +3 or +4 on publishing signals
+* It inflates scores
+* It destroys score separation
+* It punishes people who simply have incomplete metadata
+
+### **B. You first need more data**
+
+These fields only become meaningful once:
+
+* You have 500–2,000 contacts
+* At least 20–30% have real IPI/ISWC
+* You're regularly enriching from MLC or PRO data
+
+None of that is true yet.
+
+### **C. It complicates the UX too early**
+
+Right now, your breakdown is readable like this:
+
+* Fresh Finds → +3
+* No publisher metadata → +3
+* Data 56% complete → +2
+
+If you start adding:
+
+* No Administrator → +1
+* No IPI → +1
+* No ISWC → +1
+
+Your breakdown quickly becomes:
+
+```
+Fresh Finds +3  
+No publisher +3  
+No admin +1  
+No IPI +1  
+No ISWC +1  
+Data incomplete +2
+```
+
+That’s overwhelming AND redundant.
+
+### **My recommendation:**
+
+**Keep all publishing/information gaps rolled up inside `Data completeness` for now.**
+
+Then, **in Phase 2**, once you add MLC signals, we break them out.
+
+---
+
+# **3. When to reintroduce weighting? (Clear Criteria)**
+
+Here’s the smart, measurable trigger:
+
+### **Reintroduce weighting once BOTH are true:**
+
+#### **1. You have ≥ 4 months of rolling data**
+
+(so recency ACTUALLY matters)
+
+#### **2. Stream distribution normalizes**
+
+meaning you have a mix of:
+
+* <10K stream tracks
+* 10K–100K
+* 100K–500K
+* 500K+
+
+Right now everything has:
+
+* Fresh Finds bump
+* <100K streams
+* no real variability
+
+When the dataset has enough variability, weighting becomes meaningful.
+
+### **Expected timeline:** 45–90 days after initial launch.
+
+---
+
+# **TL;DR — My Expert Recommendation**
+
+### ✔️ Go with **Option A**:
+
+* Remove weighting
+* Keep the exact current signals
+* Keep publishing gaps rolled into data completeness
+* No new sub-signals yet
+
+### ✔️ Why?
+
+* Keeps it clean while your dataset is still small
+* Avoids inflation
+* Keeps the UX readable
+* Lets you stabilize the ingestion + enrichment pipeline
+* Allows UI verification without noisy changes
+
+### ✔️ Plan for Phase 2
+
+Once you have more months of data + MLC integration → add next-level signals + weighting.
+
+---
+
+If you want, I can also produce:
+
+* **A 1-paragraph version** for your internal Slack
+* **A PRD-style description** for dev
+* **A migration note** for your GitHub repo / Replit worker
+* **A Phase 2 scoring roadmap**
+
+Just tell me which format you want.

@@ -2,6 +2,22 @@ import { db } from "../db";
 import { playlistSnapshots, contacts, contactTracks, songwriterProfiles, trackedPlaylists } from "@shared/schema";
 import { eq, inArray, sql } from "drizzle-orm";
 
+/**
+ * PHASE 1 SCORING SYSTEM (Simplified - No Weighting)
+ * 
+ * This version uses BASE WEIGHTS ONLY with no recency or prominence multipliers.
+ * 
+ * Rationale for removing weighting:
+ * - Current dataset is temporally homogeneous (all tracks from same period)
+ * - Stream counts are unreliable due to Fresh Finds artificial spikes
+ * - Weighting adds complexity without adding signal value
+ * 
+ * Phase 2 Re-weighting Criteria (45-90 days):
+ * 1. Dataset spans ≥4 months of rolling data (recency becomes meaningful)
+ * 2. Stream distribution normalizes (mix of <10K, 10K-100K, 100K-500K, 500K+)
+ * 3. Sufficient non-Fresh-Finds tracks for baseline comparison
+ */
+
 // Track-level signal weights (Phase 1 - without MLC)
 const SIGNAL_WEIGHTS = {
   // Discovery Signals
@@ -33,46 +49,17 @@ const SIGNAL_WEIGHTS = {
   // FULL_PUBLISHER_COVERAGE: -2,
 };
 
-// Recency multipliers based on release year
-function getRecencyMultiplier(releaseDate: string | null): number {
-  if (!releaseDate) return 0.5; // Unknown release = lower weight
-  
-  const year = parseInt(releaseDate.substring(0, 4));
-  const currentYear = new Date().getFullYear();
-  const age = currentYear - year;
-  
-  if (age <= 1) return 1.5;  // Last year
-  if (age <= 2) return 1.3;  // 2 years ago
-  if (age <= 3) return 1.0;  // 3 years ago
-  if (age <= 5) return 0.8;  // 3-5 years
-  return 0.5;                // Older tracks
-}
-
-// Prominence multiplier based on stream count
-function getProminenceMultiplier(streams: number | null): number {
-  if (!streams) return 0.7; // No stream data = lower weight
-  
-  if (streams >= 1000000) return 1.5;  // 1M+ streams
-  if (streams >= 500000) return 1.3;   // 500k+ streams
-  if (streams >= 100000) return 1.0;   // 100k+ streams
-  if (streams >= 10000) return 0.8;    // 10k+ streams
-  return 0.6;                          // <10k streams
-}
-
 export interface TrackSignal {
   signal: string;
   weight: number;
   description: string;
-  multiplier: number;
-  finalWeight: number;
 }
 
 export interface TrackScore {
   trackId: string;
   trackName: string;
   signals: TrackSignal[];
-  rawScore: number;
-  weightedScore: number;
+  score: number;
 }
 
 export interface ContactScoreResult {
@@ -130,22 +117,17 @@ function isFreshFindsTrack(playlistName: string | null): boolean {
   return playlistName.toLowerCase().includes('fresh finds');
 }
 
-// Calculate track-level signals
+// Calculate track-level signals (simplified - no weighting)
 export function calculateTrackSignals(track: any): TrackSignal[] {
   const signals: TrackSignal[] = [];
   const completeness = calculateDataCompleteness(track);
-  const recencyMult = getRecencyMultiplier(track.releaseDate);
-  const prominenceMult = getProminenceMultiplier(track.spotifyStreams);
-  const combinedMult = (recencyMult + prominenceMult) / 2;
   
   // Discovery Signals
   if (isFreshFindsTrack(track.playlistName)) {
     signals.push({
       signal: 'FRESH_FINDS',
       weight: SIGNAL_WEIGHTS.FRESH_FINDS,
-      description: 'Appears on Fresh Finds playlist',
-      multiplier: combinedMult,
-      finalWeight: SIGNAL_WEIGHTS.FRESH_FINDS * combinedMult
+      description: 'Appears on Fresh Finds playlist'
     });
   }
   
@@ -154,9 +136,7 @@ export function calculateTrackSignals(track: any): TrackSignal[] {
     signals.push({
       signal: 'NO_PUBLISHER',
       weight: SIGNAL_WEIGHTS.NO_PUBLISHER,
-      description: 'No publisher metadata',
-      multiplier: combinedMult,
-      finalWeight: SIGNAL_WEIGHTS.NO_PUBLISHER * combinedMult
+      description: 'No publisher metadata'
     });
   }
   
@@ -165,25 +145,19 @@ export function calculateTrackSignals(track: any): TrackSignal[] {
     signals.push({
       signal: 'DIY_DISTRIBUTION',
       weight: SIGNAL_WEIGHTS.DIY_DISTRIBUTION,
-      description: `DIY distributor: ${track.label}`,
-      multiplier: combinedMult,
-      finalWeight: SIGNAL_WEIGHTS.DIY_DISTRIBUTION * combinedMult
+      description: `DIY distributor: ${track.label}`
     });
   } else if (isMajorLabel(track.label)) {
     signals.push({
       signal: 'MAJOR_LABEL',
       weight: SIGNAL_WEIGHTS.MAJOR_LABEL,
-      description: `Major label: ${track.label}`,
-      multiplier: combinedMult,
-      finalWeight: SIGNAL_WEIGHTS.MAJOR_LABEL * combinedMult
+      description: `Major label: ${track.label}`
     });
   } else if (isIndependentLabel(track.label)) {
     signals.push({
       signal: 'INDEPENDENT_LABEL',
       weight: SIGNAL_WEIGHTS.INDEPENDENT_LABEL,
-      description: 'Independent label',
-      multiplier: combinedMult,
-      finalWeight: SIGNAL_WEIGHTS.INDEPENDENT_LABEL * combinedMult
+      description: 'Independent label'
     });
   }
   
@@ -192,40 +166,32 @@ export function calculateTrackSignals(track: any): TrackSignal[] {
     signals.push({
       signal: 'COMPLETENESS_UNDER_25',
       weight: SIGNAL_WEIGHTS.COMPLETENESS_UNDER_25,
-      description: `Data ${completeness.toFixed(0)}% complete`,
-      multiplier: combinedMult,
-      finalWeight: SIGNAL_WEIGHTS.COMPLETENESS_UNDER_25 * combinedMult
+      description: `Data ${completeness.toFixed(0)}% complete`
     });
   } else if (completeness < 50) {
     signals.push({
       signal: 'COMPLETENESS_25_50',
       weight: SIGNAL_WEIGHTS.COMPLETENESS_25_50,
-      description: `Data ${completeness.toFixed(0)}% complete`,
-      multiplier: combinedMult,
-      finalWeight: SIGNAL_WEIGHTS.COMPLETENESS_25_50 * combinedMult
+      description: `Data ${completeness.toFixed(0)}% complete`
     });
   } else if (completeness < 75) {
     signals.push({
       signal: 'COMPLETENESS_50_75',
       weight: SIGNAL_WEIGHTS.COMPLETENESS_50_75,
-      description: `Data ${completeness.toFixed(0)}% complete`,
-      multiplier: combinedMult,
-      finalWeight: SIGNAL_WEIGHTS.COMPLETENESS_50_75 * combinedMult
+      description: `Data ${completeness.toFixed(0)}% complete`
     });
   } else {
     signals.push({
       signal: 'COMPLETENESS_75_PLUS',
       weight: SIGNAL_WEIGHTS.COMPLETENESS_75_PLUS,
-      description: `Data ${completeness.toFixed(0)}% complete`,
-      multiplier: combinedMult,
-      finalWeight: SIGNAL_WEIGHTS.COMPLETENESS_75_PLUS * combinedMult
+      description: `Data ${completeness.toFixed(0)}% complete`
     });
   }
   
   return signals;
 }
 
-// Calculate portfolio-level signals for a contact
+// Calculate portfolio-level signals for a contact (simplified - no weighting)
 export function calculatePortfolioSignals(tracks: any[], contactData: any): TrackSignal[] {
   const signals: TrackSignal[] = [];
   
@@ -239,9 +205,7 @@ export function calculatePortfolioSignals(tracks: any[], contactData: any): Trac
     signals.push({
       signal: 'UNSIGNED_DISTRIBUTION_PATTERN',
       weight: SIGNAL_WEIGHTS.UNSIGNED_DISTRIBUTION_PATTERN,
-      description: `${diyIndiePercent.toFixed(0)}% DIY/indie releases`,
-      multiplier: 1.0,
-      finalWeight: SIGNAL_WEIGHTS.UNSIGNED_DISTRIBUTION_PATTERN
+      description: `${diyIndiePercent.toFixed(0)}% DIY/indie releases`
     });
   }
   
@@ -250,9 +214,7 @@ export function calculatePortfolioSignals(tracks: any[], contactData: any): Trac
     signals.push({
       signal: 'UNSIGNED_PEER_PATTERN',
       weight: SIGNAL_WEIGHTS.UNSIGNED_PEER_PATTERN,
-      description: `${tracks.length} tracks in dataset`,
-      multiplier: 1.0,
-      finalWeight: SIGNAL_WEIGHTS.UNSIGNED_PEER_PATTERN
+      description: `${tracks.length} tracks in dataset`
     });
   }
   
@@ -261,9 +223,7 @@ export function calculatePortfolioSignals(tracks: any[], contactData: any): Trac
     signals.push({
       signal: 'MUSICBRAINZ_PRESENT',
       weight: SIGNAL_WEIGHTS.MUSICBRAINZ_PRESENT,
-      description: 'Verified via MusicBrainz',
-      multiplier: 1.0,
-      finalWeight: SIGNAL_WEIGHTS.MUSICBRAINZ_PRESENT
+      description: 'Verified via MusicBrainz'
     });
   }
   
@@ -314,18 +274,16 @@ export async function calculateContactScore(contactId: string): Promise<ContactS
     .from(playlistSnapshots)
     .where(inArray(playlistSnapshots.id, trackIds));
   
-  // Calculate track scores
+  // Calculate track scores (simplified - just sum base weights)
   const trackScores: TrackScore[] = tracks.map((track: any) => {
     const signals = calculateTrackSignals(track);
-    const rawScore = signals.reduce((sum, s) => sum + s.weight, 0);
-    const weightedScore = signals.reduce((sum, s) => sum + s.finalWeight, 0);
+    const score = signals.reduce((sum, s) => sum + s.weight, 0);
     
     return {
       trackId: track.id,
       trackName: track.trackName,
       signals,
-      rawScore,
-      weightedScore
+      score
     };
   });
   
@@ -338,8 +296,8 @@ export async function calculateContactScore(contactId: string): Promise<ContactS
     ...portfolioSignals
   ];
   
-  // Calculate final score using ALL signals (not consolidated)
-  const totalScore = allSignals.reduce((sum, s) => sum + s.finalWeight, 0);
+  // Calculate final score by summing ALL signal weights
+  const totalScore = allSignals.reduce((sum, s) => sum + s.weight, 0);
   
   // For display purposes, consolidate duplicate signals by description
   const signalMap = new Map<string, TrackSignal & { count: number }>();
@@ -347,7 +305,6 @@ export async function calculateContactScore(contactId: string): Promise<ContactS
     const existing = signalMap.get(signal.description);
     if (existing) {
       // Sum the weights for duplicate signals
-      existing.finalWeight += signal.finalWeight;
       existing.weight += signal.weight;
       existing.count += 1;
     } else {
@@ -357,9 +314,9 @@ export async function calculateContactScore(contactId: string): Promise<ContactS
   
   const consolidatedSignals = Array.from(signalMap.values());
   
-  // Sort by final weight and take top 5 positive + all negative
-  const positiveSignals = consolidatedSignals.filter(s => s.finalWeight > 0).sort((a, b) => b.finalWeight - a.finalWeight);
-  const negativeSignals = consolidatedSignals.filter(s => s.finalWeight < 0);
+  // Sort by weight and take top 5 positive + all negative
+  const positiveSignals = consolidatedSignals.filter(s => s.weight > 0).sort((a, b) => b.weight - a.weight);
+  const negativeSignals = consolidatedSignals.filter(s => s.weight < 0);
   
   const topSignals = [
     ...positiveSignals.slice(0, 5),
@@ -400,18 +357,18 @@ export async function updateContactScore(contactId: string): Promise<ContactScor
     trackScores: scoreResult.trackScores.map(ts => ({
       trackId: ts.trackId,
       trackName: ts.trackName,
-      weightedScore: ts.weightedScore,
+      score: ts.score,
       signalCount: ts.signals.length
     })),
     portfolioSignals: scoreResult.portfolioSignals.map(ps => ({
       signal: ps.signal,
       description: ps.description,
-      weight: ps.finalWeight
+      weight: ps.weight
     })),
     topSignals: scoreResult.topSignals.map(ts => ({
       signal: ts.signal,
       description: ts.description,
-      weight: ts.finalWeight
+      weight: ts.weight
     }))
   });
   
