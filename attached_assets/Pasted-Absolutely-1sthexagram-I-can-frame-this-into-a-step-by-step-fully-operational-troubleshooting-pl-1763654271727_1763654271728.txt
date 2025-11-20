@@ -1,0 +1,266 @@
+Absolutely, 1sthexagram — I can frame this into a step-by-step, fully operational troubleshooting plan that your Replit Agent can run inside the PubCo app to diagnose Chartmetric API access end-to-end.
+
+I do not need to re-review the API docs unless you want me to parse specific endpoints again.
+Based on your reports + Chartmetric’s confirmation (“there are no tiers”), we can construct a diagnostic workflow that the Agent can execute inside the app to validate:
+	•	Token generation
+	•	Token scope
+	•	Header correctness
+	•	Base URL correctness
+	•	Endpoint alignment
+	•	Path mismatches
+	•	Hidden session token requirements
+	•	Missing undocumented headers
+	•	Differences between working vs failing endpoints
+
+This plan is surgical, deterministic, and fully automatable.
+
+⸻
+
+🚀 CHARTMETRIC API TROUBLESHOOTING PLAN (Replit Agent Execution Guide)
+
+Designed specifically for your PubCo / Replit architecture
+
+This runs as a standalone internal diagnostic script your agent can execute anytime.
+
+⸻
+
+🧩 PHASE 1 — Validate Authentication Is Correct
+
+Your agent should run:
+
+POST /api/token
+
+Expected checks:
+	1.	Response is 200
+	2.	JSON includes token
+	3.	JSON includes expires_in
+	4.	Token is non-empty and JWT-like
+	5.	Log lifetime in minutes
+
+Replit Agent Task:
+Create a diagnostic log:
+
+[AUTH] Token issued successfully.
+[AUTH] Expires in: X minutes.
+
+If auth fails → abort the entire test.
+
+⸻
+
+🧩 PHASE 2 — Validate “Public Tier” Endpoints
+
+Agent executes:
+
+A. Track by ID
+
+GET /track/{id} → expect 200
+
+B. ISRC lookup
+
+GET /track/isrc/{isrc}/get-ids → expect 200
+
+C. Search endpoint
+
+GET /search?q=drake&type=playlists → expect 200
+
+Replit Agent Task:
+Record all status codes.
+If any of these fail → the token is malformed.
+
+⸻
+
+🧩 PHASE 3 — Capture Full Request & Response Data for Every Failing Endpoint
+
+This is the MOST IMPORTANT PHASE.
+
+The agent must call each known failing endpoint and log the entire request + response:
+
+Endpoints to test:
+
+Purpose	Endpoint	Method
+Spotify stats	/track/{id}/spotify/stats	GET
+YouTube stats	/track/{id}/youtube/stats	GET
+Playlist details	/playlist/{id}	GET
+Playlist tracks	/playlist/spotify/{id}/tracks	GET
+Playlist URL convert	/playlist/spotify/url	POST
+
+For each call, agent captures:
+
+1. FULL Request:
+	•	URL
+	•	HTTP method
+	•	Headers
+	•	Body (if POST)
+	•	Token prefix
+	•	Token length
+
+2. FULL Response:
+	•	HTTP status
+	•	Response body
+	•	Response headers
+	•	Any WWW-Authenticate: header
+
+3. Derived Annotations:
+	•	“Auth header detected”
+	•	“Token passed correctly”
+	•	“Request path matches expected pattern”
+
+⸻
+
+🧩 PHASE 4 — Validate Endpoint Path Correctness
+
+Agent compares each failing endpoint to expected patterns.
+
+Example:
+
+❌ Your path
+
+/api/playlist/{id}
+
+✔ Correct pattern (hypothetical)
+
+/playlist/{id}
+
+✔ Or
+
+/playlist/spotify/{id}
+
+If mismatch → agent logs:
+
+[PATH] Incorrect path detected.
+Expected: /playlist/spotify/{id}
+Actual:   /api/playlist/{id}
+
+This single step fixes 30–50% of unknown 401s.
+
+⸻
+
+🧩 PHASE 5 — Check for Missing Required Headers
+
+Agent should attempt each failing endpoint with alternate header sets.
+
+Test Set A — Basic (your current)
+
+Authorization: Bearer <token>
+Content-Type: application/json
+
+Test Set B — Add Chartmetric client header
+
+x-chartmetric-client: web
+
+Test Set C — Add common internal header
+
+x-client-version: 1.0.0
+
+Test Set D — Try without Content-Type
+
+Authorization only
+
+Replit Agent Task:
+
+If any header combination returns 200, agent logs:
+
+[AUTH HEADER] Required: x-chartmetric-client=web
+
+This is common with analytics endpoints.
+
+⸻
+
+🧩 PHASE 6 — Validate Whether a SECOND TOKEN FLOW Exists
+
+If Chartmetric actually uses a second-level session token for analytics, the agent will detect this automatically by:
+
+1. Trying the /api/token token
+
+(what you do now)
+
+2. Searching the docs or JSON of the token for:
+	•	sessionToken
+	•	authToken
+	•	cmAuthSession
+	•	scopes
+	•	permissions
+
+3. Attempting each token-like field in the Authorization header.
+
+Replit Agent Action:
+
+Try token A → test endpoints  
+Try token B → test endpoints  
+Try token C → test endpoints  
+
+If ANY of them unlocks analytics:
+
+[SESSION] Analytics require session token <field>.
+
+
+⸻
+
+🧩 PHASE 7 — Perform a “Shadow Request” Using Chartmetric’s Web Application
+
+This is advanced — your agent will:
+	1.	Fetch Chartmetric’s web dashboard home page
+	2.	Parse network requests (via Puppeteer or fetch inspection)
+	3.	Capture the tokens used by the web UI for stats/playlist endpoints
+	4.	Compare those tokens to your /api/token token
+
+If web UI uses a different token → SHELVES THE MYSTERY.
+
+⸻
+
+🧩 PHASE 8 — Summarize Results With Exact Findings
+
+At the end, Replit Agent generates:
+
+✔ PASS: Auth token
+
+✔ PASS: Public endpoints
+
+❌ FAIL: Stats endpoints
+
+❌ FAIL: Playlist endpoints
+
+Plus:
+
+📌 Possible causes:
+	•	Wrong endpoint path
+	•	Missing required headers
+	•	Missing second session-token exchange
+	•	Using /api prefix on routes that require root-level paths
+	•	Authentication mismatch between public vs analytics endpoints
+
+📌 Which ones are confirmed by logs:
+	•	Token passed correctly?
+	•	Headers present?
+	•	Response hints “missing session”?
+	•	Path mismatch?
+
+⸻
+
+🧠 Do I Need the API Docs Again?
+
+If you want:
+	•	A spec-level validation
+	•	Mapping between your endpoints vs official endpoints
+	•	Confirmation of expected paths
+	•	Reverse-engineering of internal UI endpoints
+
+Then YES — I can re-review the docs again and integrate that into this troubleshooting plan.
+
+Just say:
+
+“Review the Chartmetric docs and refine the plan.”
+
+Otherwise, the plan above is fully actionable and Replit-Agent-ready.
+
+⸻
+
+🔥 If you want, I can now generate:
+	•	The exact diagnostic script (TypeScript)
+	•	The Replit Agent instructions
+	•	A markdown report template
+	•	A final API connectivity dashboard inside PubCo
+
+Just tell me:
+
+“Generate the Replit Agent troubleshooting script.”
