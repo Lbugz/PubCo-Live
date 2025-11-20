@@ -497,6 +497,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const playlistId = req.query.playlist as string | undefined;
       const sortField = req.query.sortField as string | undefined;
       const sortDirection = (req.query.sortDirection as 'asc' | 'desc') || 'desc';
+      
+      // Extract advanced filter parameters
+      const publisherStatus = req.query.publisherStatus as string | undefined;
+      const labelStatus = req.query.labelStatus as string | undefined;
+      const enrichmentStatus = req.query.enrichmentStatus as string | undefined;
+      const creditsStatus = req.query.creditsStatus as string | undefined;
+      const isrcStatus = req.query.isrcStatus as string | undefined;
+      const spotifyStreamsRange = req.query.spotifyStreamsRange as string | undefined;
 
       // Parse and validate pagination parameters
       let limit: number | undefined = undefined;
@@ -517,16 +525,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         offset = parsedOffset;
       }
+      
+      // Build filter options object
+      const filterOptions = {
+        sortField,
+        sortDirection,
+        publisherStatus,
+        labelStatus,
+        enrichmentStatus,
+        creditsStatus,
+        isrcStatus,
+        spotifyStreamsRange
+      };
 
       // Backward compatible: return plain array if no pagination requested
       if (limit === undefined) {
         let tracks;
         if (tagId) {
-          tracks = await storage.getTracksByTag(tagId, { sortField, sortDirection });
+          tracks = await storage.getTracksByTag(tagId, filterOptions);
         } else if (playlistId) {
-          tracks = await storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined, { sortField, sortDirection });
+          tracks = await storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined, filterOptions);
         } else {
-          tracks = await storage.getTracksByWeek(week, { sortField, sortDirection });
+          tracks = await storage.getTracksByWeek(week, filterOptions);
         }
         res.json(tracks);
         return;
@@ -536,16 +556,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [totalTracks, paginatedTracks] = await Promise.all([
         // Get total count using SQL COUNT
         tagId 
-          ? storage.getTracksByTagCount(tagId)
+          ? storage.getTracksByTagCount(tagId, filterOptions)
           : playlistId
-          ? storage.getTracksByPlaylistCount(playlistId, week !== "latest" ? week : undefined)
-          : storage.getTracksByWeekCount(week),
+          ? storage.getTracksByPlaylistCount(playlistId, week !== "latest" ? week : undefined, filterOptions)
+          : storage.getTracksByWeekCount(week, filterOptions),
         // Get paginated tracks
         tagId
-          ? storage.getTracksByTag(tagId, { limit, offset, sortField, sortDirection })
+          ? storage.getTracksByTag(tagId, { ...filterOptions, limit, offset })
           : playlistId
-          ? storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined, { limit, offset, sortField, sortDirection })
-          : storage.getTracksByWeek(week, { limit, offset, sortField, sortDirection })
+          ? storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined, { ...filterOptions, limit, offset })
+          : storage.getTracksByWeek(week, { ...filterOptions, limit, offset })
       ]);
 
       res.json({
