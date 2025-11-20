@@ -503,8 +503,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="outline"
-                      size="sm"
-                      className="gap-2 flex-shrink-0"
+                      className="gap-2 flex-shrink-0 h-9"
                       data-testid="button-contact"
                     >
                       <Mail className="h-4 w-4" />
@@ -525,8 +524,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
 
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="gap-2 flex-shrink-0"
+                  className="gap-2 flex-shrink-0 h-9"
                   onClick={handleHotLeadToggle}
                   data-testid="button-toggle-hot-lead"
                 >

@@ -290,25 +290,65 @@ export async function calculateContactScore(contactId: string): Promise<ContactS
   // Calculate portfolio signals
   const portfolioSignals = calculatePortfolioSignals(tracks, contact);
   
-  // Combine all signals
-  const allSignals: TrackSignal[] = [
-    ...trackScores.flatMap(ts => ts.signals),
+  // CRITICAL FIX: Calculate average data completeness across all tracks
+  // Extract completeness percentages from all tracks
+  const completenessPercentages = tracks.map((track: any) => calculateDataCompleteness(track));
+  const averageCompleteness = completenessPercentages.reduce((sum, pct) => sum + pct, 0) / completenessPercentages.length;
+  
+  // Create a single completeness signal based on the average
+  let completenessSignal: TrackSignal | null = null;
+  if (averageCompleteness < 25) {
+    completenessSignal = {
+      signal: 'COMPLETENESS_UNDER_25',
+      weight: SIGNAL_WEIGHTS.COMPLETENESS_UNDER_25,
+      description: `Data ${averageCompleteness.toFixed(0)}% complete`
+    };
+  } else if (averageCompleteness < 50) {
+    completenessSignal = {
+      signal: 'COMPLETENESS_25_50',
+      weight: SIGNAL_WEIGHTS.COMPLETENESS_25_50,
+      description: `Data ${averageCompleteness.toFixed(0)}% complete`
+    };
+  } else if (averageCompleteness < 75) {
+    completenessSignal = {
+      signal: 'COMPLETENESS_50_75',
+      weight: SIGNAL_WEIGHTS.COMPLETENESS_50_75,
+      description: `Data ${averageCompleteness.toFixed(0)}% complete`
+    };
+  } else {
+    completenessSignal = {
+      signal: 'COMPLETENESS_75_PLUS',
+      weight: SIGNAL_WEIGHTS.COMPLETENESS_75_PLUS,
+      description: `Data ${averageCompleteness.toFixed(0)}% complete`
+    };
+  }
+  
+  // Combine all signals, EXCLUDING per-track completeness signals
+  const allNonCompletenessSignals: TrackSignal[] = [
+    ...trackScores.flatMap(ts => ts.signals.filter(s => !s.signal.startsWith('COMPLETENESS_'))),
     ...portfolioSignals
+  ];
+  
+  // Add the single averaged completeness signal
+  const allSignals: TrackSignal[] = [
+    ...allNonCompletenessSignals,
+    completenessSignal
   ];
   
   // Calculate final score by summing ALL signal weights
   const totalScore = allSignals.reduce((sum, s) => sum + s.weight, 0);
   
-  // For display purposes, consolidate duplicate signals by description
+  // For display purposes, consolidate duplicate signals by SIGNAL CODE (not description)
+  // This prevents duplication of Fresh Finds, No Publisher, etc.
   const signalMap = new Map<string, TrackSignal & { count: number }>();
   allSignals.forEach(signal => {
-    const existing = signalMap.get(signal.description);
+    const existing = signalMap.get(signal.signal);
     if (existing) {
-      // Sum the weights for duplicate signals
+      // For duplicate signals, keep the first description and sum weights
       existing.weight += signal.weight;
       existing.count += 1;
     } else {
-      signalMap.set(signal.description, { ...signal, count: 1 });
+      signalMap.set(signal.signal, { ...signal, count: 1 });
     }
   });
   
