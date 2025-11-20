@@ -1055,8 +1055,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Contact management methods
-  async getContacts(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; hasEmail?: boolean; minScore?: number; maxScore?: number; hasSocialLinks?: boolean; sortField?: string; sortDirection?: "asc" | "desc"; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]> {
-    const { stage, search, hotLeads, chartmetricLinked, positiveWow, hasEmail, minScore, maxScore, hasSocialLinks, sortField = "totalStreams", sortDirection = "desc", limit, offset } = options || {};
+  async getContacts(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; hasEmail?: boolean; minScore?: number; maxScore?: number; hasSocialLinks?: boolean; mlcStatus?: string; musicbrainzStatus?: string; sortField?: string; sortDirection?: "asc" | "desc"; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]> {
+    const { stage, search, hotLeads, chartmetricLinked, positiveWow, hasEmail, minScore, maxScore, hasSocialLinks, mlcStatus, musicbrainzStatus, sortField = "totalStreams", sortDirection = "desc", limit, offset } = options || {};
     
     let query = db.select({
       id: contacts.id,
@@ -1175,6 +1175,38 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
+    // MLC Publisher Status filter
+    if (mlcStatus && mlcStatus !== "all") {
+      if (mlcStatus === "found") {
+        // Found in MLC: mlcSearched = 1 AND mlcFound = 1
+        conditions.push(eq(contacts.mlcSearched, 1));
+        conditions.push(eq(contacts.mlcFound, 1));
+      } else if (mlcStatus === "not-found") {
+        // Not Found in MLC: mlcSearched = 1 AND mlcFound = 0
+        conditions.push(eq(contacts.mlcSearched, 1));
+        conditions.push(eq(contacts.mlcFound, 0));
+      } else if (mlcStatus === "not-searched") {
+        // Not Searched: mlcSearched = 0
+        conditions.push(eq(contacts.mlcSearched, 0));
+      }
+    }
+    
+    // MusicBrainz Status filter
+    if (musicbrainzStatus && musicbrainzStatus !== "all") {
+      if (musicbrainzStatus === "found") {
+        // Found: musicbrainzSearched = 1 AND musicbrainzFound = 1
+        conditions.push(eq(contacts.musicbrainzSearched, 1));
+        conditions.push(eq(contacts.musicbrainzFound, 1));
+      } else if (musicbrainzStatus === "not-found") {
+        // Not Found: musicbrainzSearched = 1 AND musicbrainzFound = 0
+        conditions.push(eq(contacts.musicbrainzSearched, 1));
+        conditions.push(eq(contacts.musicbrainzFound, 0));
+      } else if (musicbrainzStatus === "not-searched") {
+        // Not Searched: musicbrainzSearched = 0
+        conditions.push(eq(contacts.musicbrainzSearched, 0));
+      }
+    }
+    
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
@@ -1290,8 +1322,8 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getContactsCount(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; hasEmail?: boolean; minScore?: number; maxScore?: number; hasSocialLinks?: boolean }): Promise<number> {
-    const { stage, search, hotLeads, chartmetricLinked, positiveWow, hasEmail, minScore, maxScore, hasSocialLinks } = options || {};
+  async getContactsCount(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; hasEmail?: boolean; minScore?: number; maxScore?: number; hasSocialLinks?: boolean; mlcStatus?: string; musicbrainzStatus?: string }): Promise<number> {
+    const { stage, search, hotLeads, chartmetricLinked, positiveWow, hasEmail, minScore, maxScore, hasSocialLinks, mlcStatus, musicbrainzStatus } = options || {};
     
     const conditions = [];
     if (stage) {
@@ -1373,6 +1405,32 @@ export class DatabaseStorage implements IStorage {
             ${artists.youtube} IS NOT NULL
           )
         )`);
+      }
+    }
+    
+    // MLC Publisher Status filter
+    if (mlcStatus && mlcStatus !== "all") {
+      if (mlcStatus === "found") {
+        conditions.push(eq(contacts.mlcSearched, 1));
+        conditions.push(eq(contacts.mlcFound, 1));
+      } else if (mlcStatus === "not-found") {
+        conditions.push(eq(contacts.mlcSearched, 1));
+        conditions.push(eq(contacts.mlcFound, 0));
+      } else if (mlcStatus === "not-searched") {
+        conditions.push(eq(contacts.mlcSearched, 0));
+      }
+    }
+    
+    // MusicBrainz Status filter
+    if (musicbrainzStatus && musicbrainzStatus !== "all") {
+      if (musicbrainzStatus === "found") {
+        conditions.push(eq(contacts.musicbrainzSearched, 1));
+        conditions.push(eq(contacts.musicbrainzFound, 1));
+      } else if (musicbrainzStatus === "not-found") {
+        conditions.push(eq(contacts.musicbrainzSearched, 1));
+        conditions.push(eq(contacts.musicbrainzFound, 0));
+      } else if (musicbrainzStatus === "not-searched") {
+        conditions.push(eq(contacts.musicbrainzSearched, 0));
       }
     }
     
