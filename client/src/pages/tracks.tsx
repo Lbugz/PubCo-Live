@@ -468,50 +468,69 @@ export default function Tracks() {
           <StickyHeaderContainer className="pb-4 border-b">
           {/* Filters Row */}
           <FilterBar>
-            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
-                {/* Week Filter */}
-                <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                  <SelectTrigger className="w-full sm:flex-1 md:w-[160px]" data-testid="select-week">
-                    <SelectValue placeholder="All Dates" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Dates</SelectItem>
-                    {weeks?.map((week) => (
-                      <SelectItem key={week} value={week}>
-                        {week}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <FilterBar.FiltersGroup>
+              {/* Search Bar */}
+              <FilterBar.Search
+                placeholder="Search tracks, artists, labels..."
+                value={searchQuery}
+                onChange={setSearchQuery}
+                testId="input-search"
+              />
+            </FilterBar.FiltersGroup>
 
-                {/* Playlist Filter */}
-                <Select value={selectedPlaylist} onValueChange={setSelectedPlaylist}>
-                  <SelectTrigger className="w-full sm:flex-1 md:w-[160px]" data-testid="select-playlist">
-                    <SelectValue placeholder="All Playlists" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Playlists</SelectItem>
-                    {trackedPlaylists.map((playlist) => (
-                      <SelectItem key={playlist.playlistId} value={playlist.playlistId}>
-                        {playlist.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <FilterBar.Actions>
+              {/* Advanced Filters */}
+              <FilterBar.AdvancedFilters testId="button-advanced-filters">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Date Range</label>
+                    <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                      <SelectTrigger className="w-full" data-testid="select-week">
+                        <SelectValue placeholder="All Dates" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Dates</SelectItem>
+                        {weeks?.map((week) => (
+                          <SelectItem key={week} value={week}>
+                            {week}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Search Bar */}
-                <div className="relative w-full sm:flex-1 md:min-w-[240px]">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Search tracks, artists, labels..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                    data-testid="input-search"
-                  />
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Playlist</label>
+                    <Select value={selectedPlaylist} onValueChange={setSelectedPlaylist}>
+                      <SelectTrigger className="w-full" data-testid="select-playlist">
+                        <SelectValue placeholder="All Playlists" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Playlists</SelectItem>
+                        {trackedPlaylists.map((playlist) => (
+                          <SelectItem key={playlist.playlistId} value={playlist.playlistId}>
+                            {playlist.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {(selectedWeek !== "all" || selectedPlaylist !== "all") && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearAllFilters}
+                      className="w-full gap-2"
+                      data-testid="button-clear-filters"
+                    >
+                      <X className="h-4 w-4" />
+                      Clear Filters
+                    </Button>
+                  )}
                 </div>
-            </div>
+              </FilterBar.AdvancedFilters>
+            </FilterBar.Actions>
 
             <FilterBar.Actions>
               <Button

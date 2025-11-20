@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, EyeOff, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Clock, Settings2, Flame, Link as LinkIcon, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { Music2, List, Calendar, Search, Filter, ExternalLink, MoreVertical, Eye, EyeOff, RefreshCw, Plus, LayoutGrid, LayoutList, User2, Users, ChevronDown, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Clock, Settings2, Flame, Link as LinkIcon, AlertTriangle, CheckCircle, XCircle, X } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -769,21 +769,44 @@ export default function PlaylistsView() {
             onChange={setSearchQuery}
             testId="input-playlist-search"
           />
-
-          <FilterBar.Dropdown
-            value={sourceFilter}
-            onChange={setSourceFilter}
-            options={[
-              { value: "all", label: "All Sources" },
-              ...sources.map(source => ({
-                value: source,
-                label: source.charAt(0).toUpperCase() + source.slice(1)
-              }))
-            ]}
-            testId="select-source-filter"
-          />
-
         </FilterBar.FiltersGroup>
+
+        <FilterBar.Actions>
+          {/* Advanced Filters */}
+          <FilterBar.AdvancedFilters testId="button-advanced-filters">
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Source</label>
+                <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                  <SelectTrigger className="w-full" data-testid="select-source-filter">
+                    <SelectValue placeholder="All Sources" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sources</SelectItem>
+                    {sources.map(source => (
+                      <SelectItem key={source} value={source}>
+                        {source.charAt(0).toUpperCase() + source.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {sourceFilter !== "all" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSourceFilter("all")}
+                  className="w-full gap-2"
+                  data-testid="button-clear-filters"
+                >
+                  <X className="h-4 w-4" />
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          </FilterBar.AdvancedFilters>
+        </FilterBar.Actions>
 
         <FilterBar.Actions>
           <DropdownMenu>
