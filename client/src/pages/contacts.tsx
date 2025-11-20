@@ -97,7 +97,9 @@ export default function Contacts() {
       hasEmail,
       minScore: scoreRange[0],
       maxScore: scoreRange[1],
-      hasSocialLinks
+      hasSocialLinks,
+      sortField,
+      sortDirection
     }],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -109,6 +111,8 @@ export default function Contacts() {
         params.append("maxScore", scoreRange[1].toString());
       }
       if (hasSocialLinks !== undefined) params.append("hasSocialLinks", hasSocialLinks.toString());
+      params.append("sortField", sortField);
+      params.append("sortDirection", sortDirection);
       
       const response = await fetch(`/api/contacts?${params.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch contacts");
@@ -126,51 +130,6 @@ export default function Contacts() {
     search: 0,
     unsignedPct: 0,
   };
-
-  // Sort contacts
-  const sortedContacts = useMemo(() => {
-    if (!contacts || contacts.length === 0) return [];
-    
-    const sorted = [...contacts].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-
-      switch (sortField) {
-        case "songwriterName":
-          aValue = a.songwriterName?.toLowerCase() || "";
-          bValue = b.songwriterName?.toLowerCase() || "";
-          break;
-        case "totalStreams":
-          aValue = a.totalStreams || 0;
-          bValue = b.totalStreams || 0;
-          break;
-        case "trackCount":
-          aValue = a.totalTracks || 0;
-          bValue = b.totalTracks || 0;
-          break;
-        case "stage":
-          aValue = a.stage || "";
-          bValue = b.stage || "";
-          break;
-        case "wowGrowth":
-          aValue = a.wowGrowthPct || 0;
-          bValue = b.wowGrowthPct || 0;
-          break;
-        case "unsignedScore":
-          aValue = a.unsignedScore ?? -1;
-          bValue = b.unsignedScore ?? -1;
-          break;
-        default:
-          return 0;
-      }
-
-      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-
-    return sorted;
-  }, [contacts, sortField, sortDirection]);
 
   // Bulk update mutation
   const updateContactMutation = useMutation({
@@ -207,10 +166,10 @@ export default function Contacts() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === sortedContacts.length) {
+    if (selectedIds.size === contacts.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(sortedContacts.map(c => c.id)));
+      setSelectedIds(new Set(contacts.map(c => c.id)));
     }
   };
 
@@ -623,7 +582,7 @@ export default function Contacts() {
               <div>
                 <div className="text-lg font-semibold mb-1 flex items-center gap-1">
                   <Flame className="h-4 w-4 text-orange-500" />
-                  {sortedContacts.filter(c => selectedIds.has(c.id) && c.hotLead > 0).length}
+                  {contacts.filter(c => selectedIds.has(c.id) && c.hotLead > 0).length}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   hot leads
@@ -681,7 +640,7 @@ export default function Contacts() {
 
       {/* Contacts Table */}
       <DataTable
-        data={sortedContacts}
+        data={contacts}
         columns={contactColumns}
         getRowId={(contact) => contact.id}
         isLoading={isLoading}

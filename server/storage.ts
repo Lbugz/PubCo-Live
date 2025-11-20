@@ -59,7 +59,7 @@ export interface IStorage {
   claimNextEnrichmentJob(): Promise<EnrichmentJob | null>;
   
   // Contact management methods
-  getContacts(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]>;
+  getContacts(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; hasEmail?: boolean; minScore?: number; maxScore?: number; hasSocialLinks?: boolean; sortField?: string; sortDirection?: "asc" | "desc"; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]>;
   getContactsCount(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean }): Promise<number>;
   getContactsCountWithHotLead(): Promise<number>;
   getContactStats(): Promise<{ total: number; hotLeads: number; discovery: number; watch: number; search: number; unsignedPct: number }>;
@@ -948,8 +948,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Contact management methods
-  async getContacts(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; hasEmail?: boolean; minScore?: number; maxScore?: number; hasSocialLinks?: boolean; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]> {
-    const { stage, search, hotLeads, chartmetricLinked, positiveWow, hasEmail, minScore, maxScore, hasSocialLinks, limit, offset } = options || {};
+  async getContacts(options?: { stage?: string; search?: string; hotLeads?: boolean; chartmetricLinked?: boolean; positiveWow?: boolean; hasEmail?: boolean; minScore?: number; maxScore?: number; hasSocialLinks?: boolean; sortField?: string; sortDirection?: "asc" | "desc"; limit?: number; offset?: number }): Promise<ContactWithSongwriter[]> {
+    const { stage, search, hotLeads, chartmetricLinked, positiveWow, hasEmail, minScore, maxScore, hasSocialLinks, sortField = "totalStreams", sortDirection = "desc", limit, offset } = options || {};
     
     let query = db.select({
       id: contacts.id,
@@ -1072,11 +1072,35 @@ export class DatabaseStorage implements IStorage {
       query = query.where(and(...conditions));
     }
     
-    query = query.orderBy(
-      desc(contacts.hotLead),
-      desc(contacts.stageUpdatedAt),
-      desc(contacts.id)
-    );
+    // Apply sorting based on sortField and sortDirection
+    const orderFn = sortDirection === "asc" ? asc : desc;
+    
+    switch (sortField) {
+      case "songwriterName":
+        query = query.orderBy(orderFn(songwriterProfiles.name), desc(contacts.id));
+        break;
+      case "totalStreams":
+        query = query.orderBy(orderFn(contacts.totalStreams), desc(contacts.id));
+        break;
+      case "trackCount":
+        query = query.orderBy(orderFn(contacts.totalTracks), desc(contacts.id));
+        break;
+      case "stage":
+        query = query.orderBy(orderFn(contacts.stage), desc(contacts.id));
+        break;
+      case "wowGrowth":
+        query = query.orderBy(orderFn(contacts.wowGrowthPct), desc(contacts.id));
+        break;
+      case "unsignedScore":
+        query = query.orderBy(orderFn(contacts.unsignedScore), desc(contacts.id));
+        break;
+      default:
+        query = query.orderBy(
+          desc(contacts.hotLead),
+          desc(contacts.stageUpdatedAt),
+          desc(contacts.id)
+        );
+    }
     
     if (limit !== undefined) {
       query = query.limit(limit);
