@@ -35,6 +35,7 @@ import { formatDistanceToNow } from "date-fns";
 import { TrackContactDialog } from "@/components/track-contact-dialog";
 import { EnrichmentSourceIndicator } from "./enrichment-source-indicator";
 import { cn } from "@/lib/utils";
+import { splitConcatenatedNames } from "@/lib/name-utils";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { queryClient } from "@/lib/queryClient";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -177,10 +178,10 @@ export function TrackDetailDrawerV2({
         ? 'Indie'
         : 'DIY';
 
-  // Extract songwriters and producers
+  // Extract songwriters and producers (with proper name splitting)
   const songwriterNames = displayTrack.songwriter
     ?.split(",")
-    .map((name) => name.trim())
+    .flatMap((name) => splitConcatenatedNames(name.trim()))
     .filter((name) => name && name !== "-" && name !== "—" && name !== "unknown")
     ?? [];
   const songwriterRefs = new Map(artists.map((artist) => [artist.name.trim().toLowerCase(), artist]));
@@ -193,13 +194,13 @@ export function TrackDetailDrawerV2({
 
   const producerNames = displayTrack.producer
     ?.split(",")
-    .map((name) => name.trim().toLowerCase())
+    .flatMap((name) => splitConcatenatedNames(name.trim()))
     .filter((name) => name && name !== "-" && name !== "—" && name !== "unknown")
     ?? [];
   const producerRefs = new Map(artists.map((artist) => [artist.name.trim().toLowerCase(), artist]));
   const producerEntries = producerNames.length
     ? producerNames.map((name) => {
-        const artist = producerRefs.get(name);
+        const artist = producerRefs.get(name.toLowerCase());
         return artist ?? { id: `unmatched-${name}`, name, role: "Producer" as const };
       })
     : [];
