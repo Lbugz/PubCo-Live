@@ -80,6 +80,9 @@ export class EnrichmentWorker {
   private processingInterval: NodeJS.Timeout | null = null;
   private cleanupInterval: NodeJS.Timeout | null = null;
   
+  // Phase timing metrics
+  private phaseTimings: Map<string, { start: number; end?: number; duration?: number }> = new Map();
+  
   /**
    * YouTube API Quota Management
    * 
@@ -133,6 +136,36 @@ export class EnrichmentWorker {
     const newTotal = await this.storage.incrementQuotaUsage('youtube', today, units);
     console.log(`[YouTube Quota] Used: ${newTotal}/${this.YOUTUBE_SAFE_QUOTA} safe units (Hard limit: ${this.YOUTUBE_DAILY_QUOTA})`);
     return newTotal;
+  }
+
+  /**
+   * Start timing a phase
+   */
+  private startPhaseTimer(jobId: string, phaseName: string): void {
+    const key = `${jobId}-${phaseName}`;
+    this.phaseTimings.set(key, { start: Date.now() });
+    console.log(`[Timing] ${phaseName} started`);
+  }
+
+  /**
+   * End timing a phase and log results
+   */
+  private endPhaseTimer(jobId: string, phaseName: string): number {
+    const key = `${jobId}-${phaseName}`;
+    const timing = this.phaseTimings.get(key);
+    
+    if (!timing) {
+      console.warn(`[Timing] No start time found for ${phaseName}`);
+      return 0;
+    }
+
+    timing.end = Date.now();
+    timing.duration = timing.end - timing.start;
+    
+    const durationSec = (timing.duration / 1000).toFixed(2);
+    console.log(`[Timing] ${phaseName} completed in ${durationSec}s`);
+    
+    return timing.duration;
   }
 
   start() {
