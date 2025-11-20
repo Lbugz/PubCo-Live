@@ -220,7 +220,7 @@ export type ArtistSongwriter = typeof artistSongwriters.$inferSelect;
 export const songwriterProfiles = pgTable("songwriter_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   chartmetricId: text("chartmetric_id").unique().notNull(),
-  name: text("name").notNull(),
+  name: text("name").notNull().unique(),
   normalizedName: text("normalized_name"),
   totalTracks: integer("total_tracks"),
   playlistFollowers: integer("playlist_followers"),

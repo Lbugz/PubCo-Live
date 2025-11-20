@@ -117,50 +117,84 @@ async function fixContactNames(dryRun: boolean = true): Promise<FixResult> {
         const newContactIds: string[] = [];
         
         for (const newName of suggestedNames) {
-          // Generate a chartmetric_id placeholder (normalized name as ID)
-          const normalizedName = newName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-          const chartmetricIdPlaceholder = `cm-${normalizedName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          
-          // Create new songwriter_profile
-          const profileResult = await db.execute(sql`
-            INSERT INTO songwriter_profiles (name, chartmetric_id, normalized_name)
-            VALUES (${newName}, ${chartmetricIdPlaceholder}, ${normalizedName})
-            RETURNING id
+          // Check if songwriter_profile already exists with this name
+          const existingProfile = await db.execute(sql`
+            SELECT id FROM songwriter_profiles WHERE name = ${newName} LIMIT 1
           `);
           
-          const newSongwriterId = (profileResult.rows[0] as any).id;
-          console.log(`   ✓ Created songwriter_profile for "${newName}" (ID: ${newSongwriterId})`);
+          let newSongwriterId: string;
           
-          // Create new contact
-          const contactResult = await db.execute(sql`
-            INSERT INTO contacts (
-              songwriter_id,
-              stage,
-              unsigned_score,
-              total_streams,
-              total_tracks,
-              collaboration_count,
-              hot_lead,
-              wow_growth_pct
-            )
-            VALUES (
-              ${newSongwriterId},
-              ${contact.stage},
-              ${contact.unsigned_score},
-              ${contact.total_streams},
-              ${contact.total_tracks},
-              ${contact.collaboration_count},
-              ${contact.hot_lead},
-              ${contact.wow_growth_pct}
-            )
-            RETURNING id
+          if (existingProfile.rows.length > 0) {
+            // Use existing profile
+            newSongwriterId = (existingProfile.rows[0] as any).id;
+            console.log(`   ✓ Found existing songwriter_profile for "${newName}" (ID: ${newSongwriterId})`);
+          } else {
+            // Create new songwriter_profile
+            const normalizedName = newName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            const chartmetricIdPlaceholder = `cm-${normalizedName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
+            const profileResult = await db.execute(sql`
+              INSERT INTO songwriter_profiles (name, chartmetric_id, normalized_name)
+              VALUES (${newName}, ${chartmetricIdPlaceholder}, ${normalizedName})
+              RETURNING id
+            `);
+            
+            newSongwriterId = (profileResult.rows[0] as any).id;
+            console.log(`   ✓ Created songwriter_profile for "${newName}" (ID: ${newSongwriterId})`);
+          }
+          
+          // Check if contact already exists for this songwriter_profile
+          const existingContact = await db.execute(sql`
+            SELECT id FROM contacts WHERE songwriter_id = ${newSongwriterId} LIMIT 1
           `);
           
-          const newContactId = (contactResult.rows[0] as any).id;
+          let newContactId: string;
+          
+          if (existingContact.rows.length > 0) {
+            // Use existing contact and update its stats
+            newContactId = (existingContact.rows[0] as any).id;
+            await db.execute(sql`
+              UPDATE contacts
+              SET total_streams = ${contact.total_streams},
+                  total_tracks = ${contact.total_tracks},
+                  updated_at = NOW()
+              WHERE id = ${newContactId}
+            `);
+            console.log(`   ✓ Found existing contact for "${newName}" (ID: ${newContactId}), updated stats`);
+          } else {
+            // Create new contact
+            const contactResult = await db.execute(sql`
+              INSERT INTO contacts (
+                songwriter_id,
+                stage,
+                unsigned_score,
+                total_streams,
+                total_tracks,
+                collaboration_count,
+                hot_lead,
+                wow_growth_pct
+              )
+              VALUES (
+                ${newSongwriterId},
+                ${contact.stage},
+                ${contact.unsigned_score},
+                ${contact.total_streams},
+                ${contact.total_tracks},
+                ${contact.collaboration_count},
+                ${contact.hot_lead},
+                ${contact.wow_growth_pct}
+              )
+              RETURNING id
+            `);
+            
+            newContactId = (contactResult.rows[0] as any).id;
+            console.log(`   ✓ Created contact for "${newName}" (ID: ${newContactId})`);
+          }
+          
+          // Add to tracking array
           newContactIds.push(newContactId);
-          console.log(`   ✓ Created contact for "${newName}" (ID: ${newContactId})`);
           
-          // Link all tracks to the new contact
+          // Link all tracks to the contact (new or existing)
           if (trackIds.length > 0) {
             for (const trackId of trackIds) {
               // Check if the link already exists
