@@ -73,6 +73,8 @@ export default function Contacts() {
   const [hasEmail, setHasEmail] = useState<boolean | undefined>(undefined);
   const [scoreRange, setScoreRange] = useState<[number, number]>([0, 10]);
   const [hasSocialLinks, setHasSocialLinks] = useState<boolean | undefined>(undefined);
+  const [mlcStatus, setMlcStatus] = useState<string>("all");
+  const [musicbrainzStatus, setMusicbrainzStatus] = useState<string>("all");
   
   // Sorting
   const [sortField, setSortField] = useState<string>("totalStreams");
@@ -98,6 +100,8 @@ export default function Contacts() {
       minScore: scoreRange[0],
       maxScore: scoreRange[1],
       hasSocialLinks,
+      mlcStatus,
+      musicbrainzStatus,
       sortField,
       sortDirection
     }],
@@ -111,6 +115,8 @@ export default function Contacts() {
         params.append("maxScore", scoreRange[1].toString());
       }
       if (hasSocialLinks !== undefined) params.append("hasSocialLinks", hasSocialLinks.toString());
+      if (mlcStatus !== "all") params.append("mlcStatus", mlcStatus);
+      if (musicbrainzStatus !== "all") params.append("musicbrainzStatus", musicbrainzStatus);
       params.append("sortField", sortField);
       params.append("sortDirection", sortDirection);
       
