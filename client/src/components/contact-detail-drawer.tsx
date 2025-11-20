@@ -252,7 +252,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [noteText, setNoteText] = useState("");
-  const [activeTab, setActiveTab] = useState("tracks");
+  const [activeTab, setActiveTab] = useState("scoring");
   const [isEditingContact, setIsEditingContact] = useState(false);
   const [savedContactData, setSavedContactData] = useState<{
     email: string;
@@ -839,13 +839,13 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="tracks" data-testid="tab-tracks">
-                  <Music className="h-4 w-4 mr-2" />
-                  Tracks
-                </TabsTrigger>
                 <TabsTrigger value="scoring" data-testid="tab-scoring">
                   <Target className="h-4 w-4 mr-2" />
                   Scoring
+                </TabsTrigger>
+                <TabsTrigger value="tracks" data-testid="tab-tracks">
+                  <Music className="h-4 w-4 mr-2" />
+                  Tracks
                 </TabsTrigger>
                 <TabsTrigger value="activity" data-testid="tab-activity">
                   <Activity className="h-4 w-4 mr-2" />
