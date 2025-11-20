@@ -1,0 +1,196 @@
+# PubCo Discovery Engine — Updated Scoring Methodology (v1.0)
+
+**Effective Immediately – November 2025**
+
+---
+
+## Overview
+
+The PubCo Discovery Engine now uses a simplified **0–10 scoring system** to evaluate how likely a songwriter is **unsigned or unpublished**. This new approach removes all weighting multipliers and focuses on **clear, interpretable, fixed-point signals** that match our early-stage dataset.
+
+This simplification improves accuracy, stability, and A&R usability. Scores are now predictable, transparent, and aligned with how metadata behaves for emerging writers.
+
+---
+
+## What the Score Measures
+
+The score answers one central question:
+
+> **“Is this songwriter likely unsigned or unpublished?”**
+
+**Score Interpretation:**
+
+* **8–10** → Strong unsigned/unpublished signal
+* **5–7** → Mixed indicators
+* **0–4** → Likely signed or published
+
+No multipliers. No recency adjustments. No stream weighting. No decimals.
+
+---
+
+## Core Signal Groups (Fixed Points – Updated)
+
+The current production scoring system evaluates five unique signal categories using **fixed point values** (no weighting, no multipliers). Below is the **single, correct table** for the active scoring system.
+
+### **Scoring Table (Current Production System)**
+
+| **Category**              | **Signal**                                                              | **Weight** | **Description**                                                                       |
+| ------------------------- | ----------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------- |
+| **Discovery**             | Fresh Finds playlist                                                    | **+3**     | Track appears on any Spotify Fresh Finds playlist.                                    |
+| **Publishing**            | No publisher metadata                                                   | **+3**     | Missing publisher/admin/IPI/ISWC metadata on the track. Strong unpublished indicator. |
+| **Label & Distribution**  | DIY distribution (DistroKid, Amuse, Ditto, CD Baby, TuneCore, "DK")     | **+2**     | Indicates unsigned or self-released eligibility.                                      |
+| **Label & Distribution**  | Independent label                                                       | **+1**     | Label contains “independent” or similar non‑major identifiers.                        |
+| **Label & Distribution**  | Major label detected (Sony, Warner, Universal, Atlantic, RCA, Columbia) | **−3**     | Strong indicator of major‑label backing.                                              |
+| **Metadata Completeness** | Very incomplete (<25%)                                                  | **+4**     | Sparse metadata across 9 key fields.                                                  |
+| **Metadata Completeness** | Incomplete (25–49%)                                                     | **+3**     | Limited metadata coverage.                                                            |
+| **Metadata Completeness** | Partial (50–74%)                                                        | **+2**     | Moderate amount of metadata available.                                                |
+| **Metadata Completeness** | Mostly complete (75–100%)                                               | **+1**     | High metadata completeness, typical of established creators.                          |
+| **Portfolio Signals**     | Unsigned distribution pattern (>50% DIY/indie releases)                 | **+2**     | Track record of independent releases.                                                 |
+| **Portfolio Signals**     | Unsigned peer pattern (>3 tracks found)                                 | **+2**     | Indicates active independent creator behavior.                                        |
+| **Portfolio Signals**     | MusicBrainz profile found                                               | **+1**     | External identity verification.                                                       |
+
+**Fields measured (9 total):** ISRC, label, songwriter, publisher, administrators, IPI number, ISWC, Spotify streams, release date.
+
+## Score Calculation
+
+### **Step 1 — Identify applicable signals**
+
+Check the contact’s tracks and metadata across the three categories:
+
+* Fresh Finds placement
+* Publishing metadata completeness
+* Metadata completeness bracket
+
+### **Step 2 — Add fixed point values**
+
+Example:
+
+```
+Fresh Finds playlist: +3
+No publisher metadata: +3
+Data 56% complete (partial): +2
+
+Raw Total = 3 + 3 + 2 = 8
+```
+
+### **Step 3 — Cap and round to the 0–10 scale**
+
+Final Score = **8/10**
+
+No multipliers. No decimal calculations. No averaging of duplicate signals.
+
+---
+
+## Confidence Levels
+
+Confidence communicates **data quality**, not unsigned certainty.
+
+| Level      | Criteria                    |
+| ---------- | --------------------------- |
+| **High**   | ≥70% enriched AND ≥3 tracks |
+| **Medium** | ≥40% enriched OR ≥2 tracks  |
+| **Low**    | <40% enriched AND <2 tracks |
+
+This ensures the A&R team understands how complete the underlying data is.
+
+---
+
+## Why We Simplified
+
+### **A. Homogeneous Dataset (All Tracks ≈ Late 2025)**
+
+Recency weighting would distort results because everything is clustered in the same timeframe.
+
+### **B. Early Stream Counts Are Unreliable**
+
+Fresh Finds inflates short-term streams, making prominence multipliers misleading.
+
+### **C. A&R Usability**
+
+The new system is instantly understandable—no formulas, no hidden math, no uncertainty.
+
+### **D. Stability During Early Scaling**
+
+Scores will not fluctuate unpredictably as we ingest more tracks.
+
+---
+
+## UI Changes (New Scoring Tab)
+
+The Contact Drawer now includes a dedicated **Scoring** tab:
+
+**Tabs (final order):**
+
+1. Tracks
+2. **Scoring**
+3. Activity
+4. Notes
+5. Performance
+
+Inside the Scoring tab, display:
+
+```
+Unsigned Score
+8/10 — Medium Confidence
+
+Summary:
+"Strong unsigned signals. Fresh Finds placement and missing publishing metadata."
+
+--- Discovery ---
+Fresh Finds playlist                +3
+
+--- Publishing ---
+No publisher metadata               +3
+
+--- Metadata Completeness ---
+Data 56% complete (partial)         +2
+
+Total: 3 + 3 + 2 = 8/10
+
+Last updated: <timestamp>
+```
+
+No scoring content should appear in the header or other tabs.
+
+---
+
+## Phase 2 Enhancements (Future)
+
+Once the dataset grows (6+ months of variance), we will reintroduce advanced scoring signals:
+
+* **MLC integration:**
+
+  * No MLC publisher: +3
+  * Not found in MLC: +2
+  * Partial publisher shares: +1
+  * Fully published: –2
+
+* **Publishing identity signals** (new standalone signals):
+
+  * No Administrator
+  * No IPI
+  * No ISWC
+
+* **Weighting multipliers** (recency + streams) once meaningful differentials appear.
+
+These upgrades will allow differentiation between:
+
+* Unsigned
+* Unpublished
+* Indie published
+* Major published
+
+---
+
+## Summary
+
+The simplified scoring system is:
+
+* **Clear** — Easy for A&R to understand
+* **Stable** — No noise from early metadata
+* **Transparent** — All signals visible in the Scoring tab
+* **Scalable** — Ready for MLC + future weighting when data volume increases
+
+The new dedicated **Scoring Tab** provides a clean, grouped, and interpretable breakdown for every contact.
+
+---
