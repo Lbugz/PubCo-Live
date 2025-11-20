@@ -1,0 +1,332 @@
+Absolutely 1sthexagram — here is a **full, top-to-bottom UX/UI review** for the **Track Detail Drawer**, based on both screenshots.
+This is structured, actionable, and optimized for Replit implementation.
+
+I’ll break this down into **8 key areas**, each with:
+
+* What’s working
+* What’s not working
+* Recommended redesign
+* Optional enhancements that fit PubCo’s vision
+
+---
+
+# 🔥 **TRACK DETAIL DRAWER — FULL UI REVIEW & RECOMMENDATIONS**
+
+Your Track Detail Drawer has *great bones* — but this redesign will improve clarity, hierarchy, and usefulness for A&R and internal ops.
+
+---
+
+# **1. Header Section (Artwork, Title, Artist, Badges)**
+
+### ✅ What’s working
+
+* Clean visual hierarchy
+* Playlist + label badges look professional
+* ISRC tag is prominent
+* Timestamp (“Added 19 hours ago”) is helpful
+* Enrich + Open in Spotify buttons are in the right place
+
+### ❗ What needs improvement
+
+* No quick summary of track status
+* Missing distribution indicator (DIY / Indie / Major)
+* No “track version” or “release type” (Single / EP / Album)
+* Too much empty space on the right side
+* No “confidence” for track-level enrichment
+
+### ⭐ Recommendations
+
+#### **Add a track-level summary line beneath the artist:**
+
+```
+Single • Released 2025 • DIY Distribution • 4,854 streams
+```
+
+#### **Add track-level metadata completeness:**
+
+```
+Metadata: 42% complete
+```
+
+#### **Add a hover tooltip on ISRC badge:**
+
+> “ISRC recovered from Spotify API. Used to track credits, publishers, and YouTube matches.”
+
+#### **Add a “Track Status” badge (small):**
+
+* Enriched
+* Missing credits
+* MLC pending
+* Video not found
+
+This reduces friction and aligns with how your Contact drawer now shows status in the Scoring tab.
+
+---
+
+# **2. Songwriters & Producers Tabs**
+
+### 👍 What’s working
+
+* Clear separation
+* Good horizontal space
+* Minimalist design works well
+
+### ❗ Current issue
+
+* When empty, it looks *too empty* and feels like a broken state
+* "Enrich this track to discover songwriters" is too subtle
+* No placeholder avatars
+* No visual identity for songwriters or producers
+
+### ⭐ Recommendations
+
+### When empty:
+
+Replace the current empty state with:
+
+**Empty State Illustration + Clear CTA**
+
+```
+No songwriter information yet  
+Run enrichment to discover songwriters and publisher metadata.
+```
+
+Include the “Enrich” button **inside the empty state** as well.
+
+### When songwriter data exists:
+
+Upgrade each songwriter card to include:
+
+* Name
+* Roles (Writer, Composer, Lyricist)
+* PRO affiliation (ASCAP/BMI/SESAC)
+* MLC match status
+* IPI (if found)
+* Publisher (if recovered)
+
+Example card:
+
+```
+Levi Gallagher  
+MLC Match: Yes • IPI: 00495768329  
+Publisher: Kobalt Music  
+```
+
+These details dramatically improve the value of this tab to A&R and publishing teams.
+
+---
+
+# **3. Track Analytics Section**
+
+### 👍 What’s working
+
+* Layout is clean
+* Labeling is clear
+* Consistent with the rest of UI
+
+### ❗ Issues
+
+* Too minimal
+* No “Change over Time”
+* No growth indicator (+X streams since last enrich)
+* YouTube missing state is too subtle
+
+### ⭐ Recommendations
+
+#### Add deeper analytics:
+
+```
+Spotify Streams: 13,155 (↑ +842 in last 7 days)
+
+YouTube Views: No video found  
+(url last attempted: <query>)
+```
+
+#### Add a sparkline chart (optional)
+
+Helps track the trajectory of playlisted songs.
+
+---
+
+# **4. Enrichment Pipeline Status**
+
+This area is already STRONG — one of the best UX pieces in the app.
+
+### 👍 What’s working
+
+* Clear phases
+* Correct icon signals
+* Per-phase refresh
+* Good vertical spacing
+
+### ❗ Problems
+
+* Some descriptions are too vague
+* Order is correct but can benefit from grouping
+* No overall enrichment “badge” in header
+* Inconsistency between tracks with 0 results vs. partial results
+
+### ⭐ Recommendations
+
+#### A. Replace “Unknown” with clearer language:
+
+Instead of:
+
+```
+Credits found: Unknown
+```
+
+Use:
+
+```
+No credits extracted
+```
+
+or
+
+```
+Credits not found on DSP
+```
+
+#### B. Add “Overall Enrichment Status” summary at top:
+
+Just under header:
+
+```
+Enrichment: 4 of 6 phases complete
+```
+
+#### C. Add phase grouping
+
+Group phases into:
+
+* **Identity & Metadata Retrieval** (Spotify, Credits, MusicBrainz)
+* **Market Signals** (Chartmetric)
+* **Publishing Signals** (MLC)
+* **Media Signals** (YouTube)
+
+Makes phases more intuitive.
+
+#### D. Add timestamps inside each phase:
+
+Example:
+
+```
+Last run: 3 hours ago
+```
+
+---
+
+# **5. Error / Warning States (e.g., “No video found”)**
+
+### ❗ Problem
+
+* The YouTube enrichment “warning” is small and easy to ignore
+* Users don’t know what query was used
+* They don’t know if it’s recoverable
+
+### ⭐ Recommended upgrade
+
+Add expandable diagnostic details:
+
+```
+⚠ YouTube video not found  
+Search attempted: “Chains of Love – Charli XCX (Official)”  
+Try rerunning enrichment or editing track title.
+```
+
+This reduces support requests dramatically.
+
+---
+
+# **6. Add a new “Track Summary” section (recommended)**
+
+Right below the header:
+
+### **TRACK SUMMARY**
+
+```
+Track Score: 4 indicators  
+Songwriters: 0  
+Label: None (DIY)  
+Publishing Metadata: Incomplete  
+Data completeness: 42%
+```
+
+This matches the Contact Drawer’s Scoring Tab thinking.
+
+---
+
+# **7. Improve the visibility of Songwriter & Producer counts**
+
+Instead of:
+
+```
+Songwriters (0)
+Producers (0)
+```
+
+Make them:
+
+```
+Songwriters — 0 found  
+Producers — 0 found
+```
+
+Or visually:
+
+| Songwriters | Producers |
+| ----------- | --------- |
+| **0**       | **0**     |
+
+Much cleaner and more modern.
+
+---
+
+# **8. Modernize the visual rhythm**
+
+Your drawer is very **vertical**.
+We want to add **horizontal rhythm** to reduce scroll and add scanning breaks.
+
+Recommended:
+
+* Narrower padding between sections
+* Thinner dividers
+* Bold section headers
+* Light grey section backgrounds behind grouped items
+
+This is exactly how Spotify and Chartmetric structure their drawers.
+
+---
+
+# ⭐ **HIGH-LEVEL SUMMARY — WHAT TO CHANGE (Top Priorities)**
+
+### **Top 5 UI Improvements (high impact):**
+
+1. Add track-level summary under title
+2. Improve empty states for songwriters/producers
+3. Add clearer analytics (growth indicators + sparkline)
+4. Add an enrichment summary + more helpful warnings
+5. Add metadata completeness + distribution type to header
+
+### **Secondary priorities:**
+
+6. Visual grouping of phases
+7. Better songwriter credit cards
+8. More expressive tab labels
+9. Stronger error diagnostics
+10. Add timestamp details per enrichment phase
+
+---
+
+# If you want, I can now produce:
+
+### ✔ A **Replit Agent Instruction Block** to implement all changes
+
+### ✔ A **TSX component rewrite** for TrackDetailDrawer
+
+### ✔ A **Figma-style wireframe**
+
+### ✔ A **before/after mockup**
+
+Which format should I generate next?
