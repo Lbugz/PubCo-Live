@@ -346,30 +346,57 @@ async function extractCredits(
     window.splitConcatenatedNames = function(fullName) {
       if (!fullName || typeof fullName !== 'string') return [];
       
-      const hasMcMac = /Mc[A-Z]/.test(fullName) || /Mac[A-Z]/.test(fullName);
-      const transitions = (fullName.match(/[a-z][A-Z]/g) || []).length;
+      const trimmed = fullName.trim();
       
-      if (transitions === 0 || hasMcMac) return [fullName];
+      // Count lowercase-to-uppercase transitions (excluding Mc/Mac patterns)
+      let transitions = 0;
+      const transitionIndices = [];
       
-      const splitNames = [];
-      let currentName = '';
-      
-      for (let i = 0; i < fullName.length; i++) {
-        const char = fullName[i];
-        const prevChar = i > 0 ? fullName[i - 1] : '';
-        
-        if (i > 0 && /[a-z]/.test(prevChar) && /[A-Z]/.test(char)) {
-          if (currentName.trim().length > 0) splitNames.push(currentName.trim());
-          currentName = char;
-        } else {
-          currentName += char;
+      for (let i = 1; i < trimmed.length; i++) {
+        if (/[a-z]/.test(trimmed[i - 1]) && /[A-Z]/.test(trimmed[i])) {
+          // Check if this might be a "Mc" or "Mac" pattern
+          const twoCharsBefore = i >= 2 ? trimmed.substring(i - 2, i) : '';
+          const isMcPattern = /Mc|Ma/.test(twoCharsBefore) && twoCharsBefore[0] === 'M';
+          
+          if (!isMcPattern) {
+            transitions++;
+            transitionIndices.push(i);
+          }
         }
       }
       
-      if (currentName.trim().length > 0) splitNames.push(currentName.trim());
+      // If no significant transitions, return as-is
+      if (transitions === 0) return [trimmed];
       
-      const validSegments = splitNames.filter(seg => seg.length > 1);
-      return transitions >= 2 ? validSegments : [fullName];
+      // Split at transition points if we have 2+ transitions
+      if (transitions >= 2) {
+        const splitNames = [];
+        let startIdx = 0;
+        
+        for (const transitionIdx of transitionIndices) {
+          const segment = trimmed.substring(startIdx, transitionIdx).trim();
+          if (segment.length > 2) {  // Minimum name length
+            splitNames.push(segment);
+          }
+          startIdx = transitionIdx;
+        }
+        
+        // Add the last segment
+        const lastSegment = trimmed.substring(startIdx).trim();
+        if (lastSegment.length > 2) {
+          splitNames.push(lastSegment);
+        }
+        
+        // Validate: each name should be reasonable
+        const allValid = splitNames.every(name => name.length > 1);
+        
+        if (allValid && splitNames.length >= 2) {
+          return splitNames;
+        }
+      }
+      
+      // Fallback: return as-is if splitting didn't work well
+      return [trimmed];
     };
   `;
   
