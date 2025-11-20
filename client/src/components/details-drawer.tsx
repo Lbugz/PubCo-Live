@@ -383,7 +383,7 @@ export function DetailsDrawer({
                               data-testid={`accordion-songwriter-${entry.id}`}
                             >
                               <AccordionTrigger className="px-4 py-3 hover:no-underline hover-elevate">
-                                <div className="flex flex-wrap items-center justify-between gap-2 flex-1 text-left">
+                                <div className="flex flex-wrap items-center gap-3 flex-1 text-left">
                                   <span className="font-semibold">{entry.name}</span>
                                   <EnrichmentSourceIndicator
                                     mlc={{ searched: false, found: false }}
