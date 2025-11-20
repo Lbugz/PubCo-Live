@@ -1,12 +1,12 @@
 import { playlistSnapshots, tags, trackTags, trackedPlaylists, activityHistory, artists, artistSongwriters, enrichmentJobs, contacts, contactTracks, songwriterProfiles, contactNotes, apiQuotaUsage, type PlaylistSnapshot, type InsertPlaylistSnapshot, type Tag, type InsertTag, type TrackedPlaylist, type InsertTrackedPlaylist, type ActivityHistory, type InsertActivityHistory, type Artist, type InsertArtist, type EnrichmentJob, type InsertEnrichmentJob, type Contact, type ContactWithSongwriter, type ContactNote, type InsertContactNote } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, desc, asc, inArray, and, count } from "drizzle-orm";
+import { eq, sql, desc, asc, inArray, and, count, isNull, isNotNull, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
-  getTracksByWeek(week: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]>;
-  getTracksByWeekCount(week: string): Promise<number>;
-  getTracksByPlaylist(playlistId: string, week?: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]>;
-  getTracksByPlaylistCount(playlistId: string, week?: string): Promise<number>;
+  getTracksByWeek(week: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc'; publisherStatus?: string; labelStatus?: string; enrichmentStatus?: string; creditsStatus?: string; isrcStatus?: string; spotifyStreamsRange?: string }): Promise<PlaylistSnapshot[]>;
+  getTracksByWeekCount(week: string, options?: { publisherStatus?: string; labelStatus?: string; enrichmentStatus?: string; creditsStatus?: string; isrcStatus?: string; spotifyStreamsRange?: string }): Promise<number>;
+  getTracksByPlaylist(playlistId: string, week?: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc'; publisherStatus?: string; labelStatus?: string; enrichmentStatus?: string; creditsStatus?: string; isrcStatus?: string; spotifyStreamsRange?: string }): Promise<PlaylistSnapshot[]>;
+  getTracksByPlaylistCount(playlistId: string, week?: string, options?: { publisherStatus?: string; labelStatus?: string; enrichmentStatus?: string; creditsStatus?: string; isrcStatus?: string; spotifyStreamsRange?: string }): Promise<number>;
   getTrackById(id: string): Promise<PlaylistSnapshot | null>;
   getTracksByIds(ids: string[]): Promise<PlaylistSnapshot[]>;
   getTracksBySpotifyUrl(spotifyUrl: string): Promise<PlaylistSnapshot[]>;
@@ -25,8 +25,8 @@ export interface IStorage {
   addTagToTrack(trackId: string, tagId: string): Promise<void>;
   removeTagFromTrack(trackId: string, tagId: string): Promise<void>;
   getTrackTags(trackId: string): Promise<Tag[]>;
-  getTracksByTag(tagId: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]>;
-  getTracksByTagCount(tagId: string): Promise<number>;
+  getTracksByTag(tagId: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc'; publisherStatus?: string; labelStatus?: string; enrichmentStatus?: string; creditsStatus?: string; isrcStatus?: string; spotifyStreamsRange?: string }): Promise<PlaylistSnapshot[]>;
+  getTracksByTagCount(tagId: string, options?: { publisherStatus?: string; labelStatus?: string; enrichmentStatus?: string; creditsStatus?: string; isrcStatus?: string; spotifyStreamsRange?: string }): Promise<number>;
   getTrackedPlaylists(): Promise<TrackedPlaylist[]>;
   getTrackedPlaylistBySpotifyId(playlistId: string): Promise<TrackedPlaylist | null>;
   getPlaylistById(id: string): Promise<TrackedPlaylist | null>;
@@ -95,20 +95,104 @@ export class DatabaseStorage implements IStorage {
         return playlistSnapshots.addedAt;
     }
   }
+  
+  private buildTrackFilters(options?: { 
+    publisherStatus?: string; 
+    labelStatus?: string; 
+    enrichmentStatus?: string; 
+    creditsStatus?: string; 
+    isrcStatus?: string; 
+    spotifyStreamsRange?: string 
+  }) {
+    const filters: any[] = [];
+    
+    if (!options) return filters;
+    
+    // Publisher Status filter
+    if (options.publisherStatus === "has_publisher") {
+      filters.push(isNotNull(playlistSnapshots.publisher));
+    } else if (options.publisherStatus === "no_publisher") {
+      filters.push(isNull(playlistSnapshots.publisher));
+    }
+    
+    // Label Status filter
+    if (options.labelStatus === "has_label") {
+      filters.push(isNotNull(playlistSnapshots.label));
+    } else if (options.labelStatus === "no_label") {
+      filters.push(isNull(playlistSnapshots.label));
+    }
+    
+    // Enrichment Status filter
+    if (options.enrichmentStatus === "fully_enriched") {
+      filters.push(eq(playlistSnapshots.enrichmentStatus, "completed"));
+    } else if (options.enrichmentStatus === "pending") {
+      filters.push(eq(playlistSnapshots.enrichmentStatus, "pending"));
+    } else if (options.enrichmentStatus === "failed") {
+      filters.push(eq(playlistSnapshots.enrichmentStatus, "failed"));
+    }
+    
+    // Credits Status filter
+    if (options.creditsStatus === "has_credits") {
+      filters.push(eq(playlistSnapshots.creditsStatus, "completed"));
+    } else if (options.creditsStatus === "needs_credits") {
+      filters.push(eq(playlistSnapshots.creditsStatus, "pending"));
+    } else if (options.creditsStatus === "failed") {
+      filters.push(eq(playlistSnapshots.creditsStatus, "failed"));
+    }
+    
+    // ISRC Status filter
+    if (options.isrcStatus === "has_isrc") {
+      filters.push(isNotNull(playlistSnapshots.isrc));
+    } else if (options.isrcStatus === "no_isrc") {
+      filters.push(isNull(playlistSnapshots.isrc));
+    }
+    
+    // Spotify Streams Range filter
+    if (options.spotifyStreamsRange && options.spotifyStreamsRange !== "all") {
+      switch (options.spotifyStreamsRange) {
+        case "0-100k":
+          filters.push(gte(playlistSnapshots.spotifyStreams, 0));
+          filters.push(lte(playlistSnapshots.spotifyStreams, 100000));
+          break;
+        case "100k-1m":
+          filters.push(gte(playlistSnapshots.spotifyStreams, 100000));
+          filters.push(lte(playlistSnapshots.spotifyStreams, 1000000));
+          break;
+        case "1m-10m":
+          filters.push(gte(playlistSnapshots.spotifyStreams, 1000000));
+          filters.push(lte(playlistSnapshots.spotifyStreams, 10000000));
+          break;
+        case "10m+":
+          filters.push(gte(playlistSnapshots.spotifyStreams, 10000000));
+          break;
+      }
+    }
+    
+    return filters;
+  }
 
-  async getTracksByWeek(week: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]> {
+  async getTracksByWeek(week: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc'; publisherStatus?: string; labelStatus?: string; enrichmentStatus?: string; creditsStatus?: string; isrcStatus?: string; spotifyStreamsRange?: string }): Promise<PlaylistSnapshot[]> {
     const { limit, offset, sortField, sortDirection = 'desc' } = options || {};
     
     console.log(`[getTracksByWeek] Sorting by: ${sortField} ${sortDirection}`);
     const sortColumn = this.getSortColumn(sortField);
     const sortFn = sortDirection === 'asc' ? asc : desc;
     
+    // Build advanced filter conditions
+    const advancedFilters = this.buildTrackFilters(options);
+    
     // Deduplicate tracks by ISRC (or spotify_url if ISRC is null)
     if (week === "all") {
       let query = db.select()
         .from(playlistSnapshots)
-        .orderBy(sortFn(sortColumn))
         .$dynamic();
+      
+      // Apply advanced filters
+      if (advancedFilters.length > 0) {
+        query = query.where(and(...advancedFilters));
+      }
+      
+      query = query.orderBy(sortFn(sortColumn));
       
       if (limit !== undefined) {
         query = query.limit(limit);
@@ -124,9 +208,11 @@ export class DatabaseStorage implements IStorage {
       const latestWeek = await this.getLatestWeek();
       if (!latestWeek) return [];
       
+      const conditions = [eq(playlistSnapshots.week, latestWeek), ...advancedFilters];
+      
       let query = db.select()
         .from(playlistSnapshots)
-        .where(eq(playlistSnapshots.week, latestWeek))
+        .where(and(...conditions))
         .orderBy(sortFn(sortColumn))
         .$dynamic();
       
@@ -140,9 +226,11 @@ export class DatabaseStorage implements IStorage {
       return query;
     }
     
+    const conditions = [eq(playlistSnapshots.week, week), ...advancedFilters];
+    
     let query = db.select()
       .from(playlistSnapshots)
-      .where(eq(playlistSnapshots.week, week))
+      .where(and(...conditions))
       .orderBy(sortFn(sortColumn))
       .$dynamic();
     
@@ -156,45 +244,51 @@ export class DatabaseStorage implements IStorage {
     return query;
   }
 
-  async getTracksByWeekCount(week: string): Promise<number> {
+  async getTracksByWeekCount(week: string, options?: { publisherStatus?: string; labelStatus?: string; enrichmentStatus?: string; creditsStatus?: string; isrcStatus?: string; spotifyStreamsRange?: string }): Promise<number> {
+    // Build advanced filter conditions
+    const advancedFilters = this.buildTrackFilters(options);
+    
     // Count unique tracks by ISRC (or spotify_url if ISRC is null)
     if (week === "all") {
-      const result = await db.execute(sql`
-        SELECT COUNT(DISTINCT COALESCE(isrc, spotify_url)) as count
-        FROM playlist_snapshots
-      `);
-      const raw = result.rows[0]?.count ?? 0;
-      return typeof raw === "bigint" ? Number(raw) : Number(raw);
+      if (advancedFilters.length > 0) {
+        const result = await db.select({ count: count() })
+          .from(playlistSnapshots)
+          .where(and(...advancedFilters));
+        return result[0]?.count ?? 0;
+      }
+      
+      const result = await db.select({ count: count() })
+        .from(playlistSnapshots);
+      return result[0]?.count ?? 0;
     }
     
     if (week === "latest") {
       const latestWeek = await this.getLatestWeek();
       if (!latestWeek) return 0;
       
-      const result = await db.execute(sql`
-        SELECT COUNT(DISTINCT COALESCE(isrc, spotify_url)) as count
-        FROM playlist_snapshots
-        WHERE week = ${latestWeek}
-      `);
-      const raw = result.rows[0]?.count ?? 0;
-      return typeof raw === "bigint" ? Number(raw) : Number(raw);
+      const conditions = [eq(playlistSnapshots.week, latestWeek), ...advancedFilters];
+      const result = await db.select({ count: count() })
+        .from(playlistSnapshots)
+        .where(and(...conditions));
+      return result[0]?.count ?? 0;
     }
     
-    const result = await db.execute(sql`
-      SELECT COUNT(DISTINCT COALESCE(isrc, spotify_url)) as count
-      FROM playlist_snapshots
-      WHERE week = ${week}
-    `);
-    const raw = result.rows[0]?.count ?? 0;
-    return typeof raw === "bigint" ? Number(raw) : Number(raw);
+    const conditions = [eq(playlistSnapshots.week, week), ...advancedFilters];
+    const result = await db.select({ count: count() })
+      .from(playlistSnapshots)
+      .where(and(...conditions));
+    return result[0]?.count ?? 0;
   }
 
-  async getTracksByPlaylist(playlistId: string, week?: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]> {
+  async getTracksByPlaylist(playlistId: string, week?: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc'; publisherStatus?: string; labelStatus?: string; enrichmentStatus?: string; creditsStatus?: string; isrcStatus?: string; spotifyStreamsRange?: string }): Promise<PlaylistSnapshot[]> {
     const { limit, offset, sortField, sortDirection = 'desc' } = options || {};
     
     console.log(`[getTracksByPlaylist] Sorting by: ${sortField} ${sortDirection}`);
     const sortColumn = this.getSortColumn(sortField);
     const sortFn = sortDirection === 'asc' ? asc : desc;
+    
+    // Build advanced filter conditions
+    const advancedFilters = this.buildTrackFilters(options);
     
     // First, get the database UUID from the Spotify playlist ID
     const [playlist] = await db.select({ id: trackedPlaylists.id })
@@ -217,7 +311,7 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Now query using the database UUID (after Nov 14 FK fix, playlist_snapshots.playlistId stores UUIDs)
-    const conditions = [eq(playlistSnapshots.playlistId, playlist.id)];
+    const conditions = [eq(playlistSnapshots.playlistId, playlist.id), ...advancedFilters];
     
     if (resolvedWeek && resolvedWeek !== "all") {
       conditions.push(eq(playlistSnapshots.week, resolvedWeek));
@@ -239,7 +333,10 @@ export class DatabaseStorage implements IStorage {
     return query;
   }
 
-  async getTracksByPlaylistCount(playlistId: string, week?: string): Promise<number> {
+  async getTracksByPlaylistCount(playlistId: string, week?: string, options?: { publisherStatus?: string; labelStatus?: string; enrichmentStatus?: string; creditsStatus?: string; isrcStatus?: string; spotifyStreamsRange?: string }): Promise<number> {
+    // Build advanced filter conditions
+    const advancedFilters = this.buildTrackFilters(options);
+    
     // First, get the database UUID from the Spotify playlist ID
     const [playlist] = await db.select({ id: trackedPlaylists.id })
       .from(trackedPlaylists)
@@ -261,7 +358,7 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Now query using the database UUID (after Nov 14 FK fix, playlist_snapshots.playlistId stores UUIDs)
-    const conditions = [eq(playlistSnapshots.playlistId, playlist.id)];
+    const conditions = [eq(playlistSnapshots.playlistId, playlist.id), ...advancedFilters];
     
     if (resolvedWeek && resolvedWeek !== "all") {
       conditions.push(eq(playlistSnapshots.week, resolvedWeek));
@@ -455,17 +552,21 @@ export class DatabaseStorage implements IStorage {
     return result.map(r => r.tag);
   }
 
-  async getTracksByTag(tagId: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]> {
+  async getTracksByTag(tagId: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc'; publisherStatus?: string; labelStatus?: string; enrichmentStatus?: string; creditsStatus?: string; isrcStatus?: string; spotifyStreamsRange?: string }): Promise<PlaylistSnapshot[]> {
     const { limit, offset, sortField, sortDirection = 'desc' } = options || {};
     
     const sortColumn = this.getSortColumn(sortField);
     const sortFn = sortDirection === 'asc' ? asc : desc;
     
+    // Build advanced filter conditions
+    const advancedFilters = this.buildTrackFilters(options);
+    const conditions = [eq(trackTags.tagId, tagId), ...advancedFilters];
+    
     let query = db
       .select({ track: playlistSnapshots })
       .from(trackTags)
       .innerJoin(playlistSnapshots, eq(trackTags.trackId, playlistSnapshots.id))
-      .where(eq(trackTags.tagId, tagId))
+      .where(and(...conditions))
       .orderBy(sortFn(sortColumn))
       .$dynamic();
     
@@ -480,12 +581,16 @@ export class DatabaseStorage implements IStorage {
     return result.map(r => r.track);
   }
 
-  async getTracksByTagCount(tagId: string): Promise<number> {
+  async getTracksByTagCount(tagId: string, options?: { publisherStatus?: string; labelStatus?: string; enrichmentStatus?: string; creditsStatus?: string; isrcStatus?: string; spotifyStreamsRange?: string }): Promise<number> {
+    // Build advanced filter conditions
+    const advancedFilters = this.buildTrackFilters(options);
+    const conditions = [eq(trackTags.tagId, tagId), ...advancedFilters];
+    
     const result = await db
       .select({ count: count() })
       .from(trackTags)
       .innerJoin(playlistSnapshots, eq(trackTags.trackId, playlistSnapshots.id))
-      .where(eq(trackTags.tagId, tagId));
+      .where(and(...conditions));
     
     const raw = result[0]?.count ?? 0;
     return typeof raw === "bigint" ? Number(raw) : Number(raw);
