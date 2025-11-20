@@ -156,6 +156,27 @@ export default function Tracks() {
     queryKey: ["/api/tags"],
   });
 
+  // Handle selected track query parameter from URL (from contact links)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const selectedTrackId = params.get('selected');
+    
+    if (selectedTrackId && tracks && tracks.length > 0) {
+      // Find the track by ID
+      const track = tracks.find(t => t.id === selectedTrackId);
+      
+      if (track) {
+        // Open the drawer with this track
+        setSelectedTrack(track);
+        setDrawerOpen(true);
+        
+        // Clear the query parameter from URL without triggering reload
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [tracks]); // Re-run when tracks data is loaded
+
   const enrichMutation = useMutation({
     mutationFn: async ({ trackId, trackIds }: { trackId?: string; trackIds?: string[] }) => {
       console.log("Starting Phase 2 credits enrichment:", { trackId, trackIds });
