@@ -99,6 +99,7 @@ export class DatabaseStorage implements IStorage {
   async getTracksByWeek(week: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]> {
     const { limit, offset, sortField, sortDirection = 'desc' } = options || {};
     
+    console.log(`[getTracksByWeek] Sorting by: ${sortField} ${sortDirection}`);
     const sortColumn = this.getSortColumn(sortField);
     const sortFn = sortDirection === 'asc' ? asc : desc;
     
@@ -191,6 +192,7 @@ export class DatabaseStorage implements IStorage {
   async getTracksByPlaylist(playlistId: string, week?: string, options?: { limit?: number; offset?: number; sortField?: string; sortDirection?: 'asc' | 'desc' }): Promise<PlaylistSnapshot[]> {
     const { limit, offset, sortField, sortDirection = 'desc' } = options || {};
     
+    console.log(`[getTracksByPlaylist] Sorting by: ${sortField} ${sortDirection}`);
     const sortColumn = this.getSortColumn(sortField);
     const sortFn = sortDirection === 'asc' ? asc : desc;
     

@@ -522,11 +522,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (limit === undefined) {
         let tracks;
         if (tagId) {
-          tracks = await storage.getTracksByTag(tagId);
+          tracks = await storage.getTracksByTag(tagId, { sortField, sortDirection });
         } else if (playlistId) {
-          tracks = await storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined);
+          tracks = await storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined, { sortField, sortDirection });
         } else {
-          tracks = await storage.getTracksByWeek(week);
+          tracks = await storage.getTracksByWeek(week, { sortField, sortDirection });
         }
         res.json(tracks);
         return;
