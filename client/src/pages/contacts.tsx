@@ -498,6 +498,42 @@ export default function Contacts() {
                   </div>
                 </div>
 
+                <Separator />
+
+                {/* MLC Publisher Status Filter */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">MLC Publisher Status</h4>
+                  <Select value={mlcStatus} onValueChange={setMlcStatus}>
+                    <SelectTrigger className="w-full" data-testid="select-mlc-status">
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="found">Found in MLC</SelectItem>
+                      <SelectItem value="not-found">Not Found in MLC</SelectItem>
+                      <SelectItem value="not-searched">Not Searched</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator />
+
+                {/* MusicBrainz Status Filter */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">MusicBrainz Status</h4>
+                  <Select value={musicbrainzStatus} onValueChange={setMusicbrainzStatus}>
+                    <SelectTrigger className="w-full" data-testid="select-musicbrainz-status">
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="found">Found</SelectItem>
+                      <SelectItem value="not-found">Not Found</SelectItem>
+                      <SelectItem value="not-searched">Not Searched</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
               </div>
             </FilterBar.AdvancedFilters>
           </FilterBar.FiltersGroup>
