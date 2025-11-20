@@ -2,7 +2,7 @@ import { db } from "../db";
 import { contacts, songwriterProfiles, playlistSnapshots, trackSongwriters } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import { invalidateMetricsCache } from "../metricsService";
-import { scoreContact } from "../contactScoring";
+import { updateContactScore } from "../scoring/contactScoring";
 
 export async function syncContactEnrichmentFlags(songwriterName: string): Promise<void> {
   try {
@@ -133,8 +133,8 @@ export async function syncContactEnrichmentFlags(songwriterName: string): Promis
 
     // Calculate and update contact score based on enrichment data
     try {
-      const score = await scoreContact(contactId);
-      console.log(`[ContactEnrichmentSync] Updated score for ${songwriterName}: ${score}/10`);
+      const scoreResult = await updateContactScore(contactId);
+      console.log(`[ContactEnrichmentSync] Updated score for ${songwriterName}: ${scoreResult.finalScore}/10`);
     } catch (scoreError) {
       console.error(`[ContactEnrichmentSync] Error scoring contact ${songwriterName}:`, scoreError);
     }
