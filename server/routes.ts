@@ -565,7 +565,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { stage, search, hotLeads, chartmetricLinked, positiveWow, hasEmail, minScore, maxScore, hasSocialLinks, limit, offset } = req.query;
       
-      const parsedLimit = limit ? parseInt(limit as string, 10) : 50;
+      // No default limit - fetch all contacts unless explicitly limited
+      const parsedLimit = limit ? parseInt(limit as string, 10) : undefined;
       const parsedOffset = offset ? parseInt(offset as string, 10) : 0;
       
       const filters = {
@@ -591,7 +592,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         total,
         limit: parsedLimit,
         offset: parsedOffset,
-        hasMore: (parsedOffset + parsedLimit) < total,
+        hasMore: parsedLimit !== undefined && (parsedOffset + parsedLimit) < total,
         stats,
       });
     } catch (error) {
