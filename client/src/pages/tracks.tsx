@@ -64,6 +64,15 @@ export default function Tracks() {
   const [sortField, setSortField] = useState<string>("addedAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [useDrawerV2, setUseDrawerV2] = useState(false);
+  
+  // Advanced filter state
+  const [publisherStatus, setPublisherStatus] = useState<string>("all");
+  const [labelStatus, setLabelStatus] = useState<string>("all");
+  const [enrichmentStatus, setEnrichmentStatus] = useState<string>("all");
+  const [creditsStatus, setCreditsStatus] = useState<string>("all");
+  const [isrcStatus, setIsrcStatus] = useState<string>("all");
+  const [spotifyStreamsRange, setSpotifyStreamsRange] = useState<string>("all");
+  
   const notify = useNotify();
   const isMobile = useMobile(768);
   
@@ -93,6 +102,12 @@ export default function Tracks() {
     setSelectedWeek("all");
     setSelectedPlaylist("all");
     setSearchQuery("");
+    setPublisherStatus("all");
+    setLabelStatus("all");
+    setEnrichmentStatus("all");
+    setCreditsStatus("all");
+    setIsrcStatus("all");
+    setSpotifyStreamsRange("all");
   }, []);
 
   const toggleTrackSelection = useCallback((trackId: string) => {
@@ -126,12 +141,20 @@ export default function Tracks() {
 
   const { data: tracks = [], isLoading: tracksLoading } = useQuery<PlaylistSnapshot[]>({
     queryKey: selectedPlaylist !== "all"
-      ? ["/api/tracks", "playlist", selectedPlaylist, selectedWeek, sortField, sortDirection]
-      : ["/api/tracks", selectedWeek, sortField, sortDirection],
+      ? ["/api/tracks", "playlist", selectedPlaylist, selectedWeek, sortField, sortDirection, publisherStatus, labelStatus, enrichmentStatus, creditsStatus, isrcStatus, spotifyStreamsRange]
+      : ["/api/tracks", selectedWeek, sortField, sortDirection, publisherStatus, labelStatus, enrichmentStatus, creditsStatus, isrcStatus, spotifyStreamsRange],
     queryFn: async ({ queryKey }) => {
       const params = new URLSearchParams();
       params.append("sortField", sortField);
       params.append("sortDirection", sortDirection);
+      
+      // Add advanced filters
+      if (publisherStatus !== "all") params.append("publisherStatus", publisherStatus);
+      if (labelStatus !== "all") params.append("labelStatus", labelStatus);
+      if (enrichmentStatus !== "all") params.append("enrichmentStatus", enrichmentStatus);
+      if (creditsStatus !== "all") params.append("creditsStatus", creditsStatus);
+      if (isrcStatus !== "all") params.append("isrcStatus", isrcStatus);
+      if (spotifyStreamsRange !== "all") params.append("spotifyStreamsRange", spotifyStreamsRange);
       
       if (queryKey[1] === "playlist") {
         params.append("playlist", queryKey[2] as string);
@@ -516,7 +539,102 @@ export default function Tracks() {
                     </Select>
                   </div>
 
-                  {(selectedWeek !== "all" || selectedPlaylist !== "all") && (
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Publisher Status</label>
+                    <Select value={publisherStatus} onValueChange={setPublisherStatus}>
+                      <SelectTrigger className="w-full" data-testid="select-publisher-status">
+                        <SelectValue placeholder="All" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="has_publisher">Has Publisher</SelectItem>
+                        <SelectItem value="no_publisher">No Publisher</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Label Status</label>
+                    <Select value={labelStatus} onValueChange={setLabelStatus}>
+                      <SelectTrigger className="w-full" data-testid="select-label-status">
+                        <SelectValue placeholder="All" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="has_label">Has Label</SelectItem>
+                        <SelectItem value="no_label">No Label</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Enrichment Status</label>
+                    <Select value={enrichmentStatus} onValueChange={setEnrichmentStatus}>
+                      <SelectTrigger className="w-full" data-testid="select-enrichment-status">
+                        <SelectValue placeholder="All" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="fully_enriched">Fully Enriched</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="failed">Failed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Credits Status</label>
+                    <Select value={creditsStatus} onValueChange={setCreditsStatus}>
+                      <SelectTrigger className="w-full" data-testid="select-credits-status">
+                        <SelectValue placeholder="All" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="has_credits">Has Credits</SelectItem>
+                        <SelectItem value="needs_credits">Needs Credits</SelectItem>
+                        <SelectItem value="failed">Failed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">ISRC Status</label>
+                    <Select value={isrcStatus} onValueChange={setIsrcStatus}>
+                      <SelectTrigger className="w-full" data-testid="select-isrc-status">
+                        <SelectValue placeholder="All" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="has_isrc">Has ISRC</SelectItem>
+                        <SelectItem value="no_isrc">No ISRC</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Spotify Streams</label>
+                    <Select value={spotifyStreamsRange} onValueChange={setSpotifyStreamsRange}>
+                      <SelectTrigger className="w-full" data-testid="select-spotify-streams">
+                        <SelectValue placeholder="All" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="0-100k">0 - 100K</SelectItem>
+                        <SelectItem value="100k-1m">100K - 1M</SelectItem>
+                        <SelectItem value="1m-10m">1M - 10M</SelectItem>
+                        <SelectItem value="10m+">10M+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {(selectedWeek !== "all" || 
+                    selectedPlaylist !== "all" || 
+                    publisherStatus !== "all" || 
+                    labelStatus !== "all" || 
+                    enrichmentStatus !== "all" || 
+                    creditsStatus !== "all" || 
+                    isrcStatus !== "all" || 
+                    spotifyStreamsRange !== "all") && (
                     <Button
                       variant="outline"
                       size="sm"
