@@ -16,6 +16,7 @@ export interface IStorage {
   insertTracks(tracks: InsertPlaylistSnapshot[]): Promise<string[]>;
   deleteTracksByWeek(week: string): Promise<void>;
   updateTrackMetadata(id: string, metadata: { isrc?: string | null; label?: string | null; spotifyUrl?: string; publisher?: string | null; publisherStatus?: string | null; mlcSongCode?: string | null; songwriter?: string | null; producer?: string | null; spotifyStreams?: number | null; enrichedAt?: Date | null; enrichmentStatus?: string | null; enrichmentTier?: string | null; creditsStatus?: string | null; lastEnrichmentAttempt?: Date | null; unsignedScore?: number | null }): Promise<void>;
+  batchUpdateTrackMetadata(updates: Array<{ id: string; metadata: { isrc?: string | null; label?: string | null; spotifyUrl?: string; publisher?: string | null; publisherStatus?: string | null; mlcSongCode?: string | null; songwriter?: string | null; producer?: string | null; spotifyStreams?: number | null; enrichedAt?: Date | null; enrichmentStatus?: string | null; enrichmentTier?: string | null; creditsStatus?: string | null; lastEnrichmentAttempt?: Date | null; unsignedScore?: number | null; youtubeVideoId?: string | null; youtubeViews?: number | null; youtubeChannelId?: string | null; youtubeChannelSubscribers?: number | null; chartmetricId?: string | null; chartmetricStatus?: string | null } }>): Promise<{ successCount: number; failedIds: string[] }>;
   updateBatchLastEnrichmentAttempt(trackIds: string[]): Promise<void>;
   getUnenrichedTracks(limit?: number): Promise<PlaylistSnapshot[]>;
   getTracksNeedingRetry(beforeDate: Date): Promise<PlaylistSnapshot[]>;
@@ -475,6 +476,42 @@ export class DatabaseStorage implements IStorage {
     await db.update(playlistSnapshots)
       .set(metadata)
       .where(eq(playlistSnapshots.id, id));
+  }
+
+  async batchUpdateTrackMetadata(updates: Array<{ id: string; metadata: any }>): Promise<{ successCount: number; failedIds: string[] }> {
+    if (updates.length === 0) {
+      return { successCount: 0, failedIds: [] };
+    }
+
+    const failedIds: string[] = [];
+    let successCount = 0;
+
+    // Process updates in parallel batches of 50 for optimal performance
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < updates.length; i += BATCH_SIZE) {
+      const batch = updates.slice(i, i + BATCH_SIZE);
+      
+      // Execute batch updates in parallel
+      const results = await Promise.allSettled(
+        batch.map(({ id, metadata }) =>
+          db.update(playlistSnapshots)
+            .set(metadata)
+            .where(eq(playlistSnapshots.id, id))
+        )
+      );
+
+      // Track successes and failures
+      results.forEach((result, idx) => {
+        if (result.status === 'fulfilled') {
+          successCount++;
+        } else {
+          failedIds.push(batch[idx].id);
+          console.error(`[batchUpdateTrackMetadata] Failed to update track ${batch[idx].id}:`, result.reason);
+        }
+      });
+    }
+
+    return { successCount, failedIds };
   }
 
   async updateBatchLastEnrichmentAttempt(trackIds: string[]): Promise<void> {

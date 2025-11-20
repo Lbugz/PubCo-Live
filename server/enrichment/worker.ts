@@ -229,50 +229,73 @@ export class EnrichmentWorker {
     // Collect all trackIds in this job for filtering
     const jobTrackIds = new Set<string>(Array.from(updates.keys()).map(String));
 
+    // Batch 1: Primary updates for tracks in this job
+    const primaryUpdates: Array<{ id: string; metadata: any }> = [];
+    const duplicateSyncMap = new Map<string, { track: PlaylistSnapshot; globalUpdate: any }>();
+
+    // Prepare primary batch updates
     for (const [trackId, update] of updates) {
-      try {
-        const track = ctx.getTrack(trackId);
-        if (!track) {
-          console.warn(`[Worker] Track ${trackId} not found in context, skipping sync`);
-          await this.storage.updateTrackMetadata(trackId, update);
-          persistedCount++;
-          continue;
+      const track = ctx.getTrack(trackId);
+      if (!track) {
+        console.warn(`[Worker] Track ${trackId} not found in context, adding to batch anyway`);
+        primaryUpdates.push({ id: trackId, metadata: update });
+        continue;
+      }
+
+      // Add to primary batch
+      primaryUpdates.push({ id: trackId, metadata: update });
+
+      // Prepare duplicate sync (if not already processed)
+      const spotifyUrl = track.spotifyUrl;
+      if (!processedSpotifyUrls.has(spotifyUrl)) {
+        const globalUpdate = { ...update };
+        delete (globalUpdate as any).unsignedScore; // Score is playlist-specific, don't sync it
+        
+        if (Object.keys(globalUpdate).length > 0) {
+          duplicateSyncMap.set(spotifyUrl, { track, globalUpdate });
         }
+        processedSpotifyUrls.add(spotifyUrl);
+      }
+    }
 
-        const spotifyUrl = track.spotifyUrl;
+    // Execute primary batch update
+    if (primaryUpdates.length > 0) {
+      console.log(`[${phaseName}] Batch updating ${primaryUpdates.length} primary tracks...`);
+      const { successCount, failedIds } = await this.storage.batchUpdateTrackMetadata(primaryUpdates);
+      persistedCount += successCount;
+      failedTrackIds.push(...failedIds);
 
-        // CRITICAL: Each track in the job gets its FULL update (including playlist-specific unsignedScore)
-        // This is because each track is being enriched for its OWN playlist
-        await this.storage.updateTrackMetadata(trackId, update);
-        persistedCount++;
-        ctx.clearUpdate(trackId);
-
-        // Step 2: Sync global fields to duplicates OUTSIDE this job (not in the updates Map)
-        if (!processedSpotifyUrls.has(spotifyUrl)) {
-          const allDuplicates = await this.storage.getTracksBySpotifyUrl(spotifyUrl);
-          // Filter to duplicates NOT in this job (external duplicates only)
-          const externalDuplicates = allDuplicates.filter(d => !jobTrackIds.has(d.id));
-          
-          if (externalDuplicates.length > 0) {
-            const globalUpdate = { ...update };
-            delete (globalUpdate as any).unsignedScore; // Score is playlist-specific, don't sync it
-            
-            // Only sync if there are global fields to update (avoid empty patches)
-            if (Object.keys(globalUpdate).length > 0) {
-              console.log(`[${phaseName} Sync] Syncing global fields to ${externalDuplicates.length} external instances of "${track.trackName}"`);
-              
-              for (const duplicate of externalDuplicates) {
-                await this.storage.updateTrackMetadata(duplicate.id, globalUpdate);
-                persistedCount++;
-              }
-            }
-          }
-          
-          processedSpotifyUrls.add(spotifyUrl);
+      // Clear updates for successful tracks
+      for (const [trackId] of updates) {
+        if (!failedIds.includes(trackId)) {
+          ctx.clearUpdate(trackId);
         }
-      } catch (error) {
-        console.error(`[Worker] Failed to persist ${phaseName} update for track ${trackId}:`, error);
-        failedTrackIds.push(trackId);
+      }
+    }
+
+    // Batch 2: Sync global fields to external duplicates
+    const duplicateUpdates: Array<{ id: string; metadata: any }> = [];
+    
+    for (const [spotifyUrl, { track, globalUpdate }] of duplicateSyncMap) {
+      const allDuplicates = await this.storage.getTracksBySpotifyUrl(spotifyUrl);
+      const externalDuplicates = allDuplicates.filter(d => !jobTrackIds.has(d.id));
+      
+      if (externalDuplicates.length > 0) {
+        console.log(`[${phaseName} Sync] Preparing to sync global fields to ${externalDuplicates.length} external instances of "${track.trackName}"`);
+        for (const duplicate of externalDuplicates) {
+          duplicateUpdates.push({ id: duplicate.id, metadata: globalUpdate });
+        }
+      }
+    }
+
+    // Execute duplicate batch update
+    if (duplicateUpdates.length > 0) {
+      console.log(`[${phaseName}] Batch updating ${duplicateUpdates.length} duplicate tracks...`);
+      const { successCount, failedIds } = await this.storage.batchUpdateTrackMetadata(duplicateUpdates);
+      persistedCount += successCount;
+      // Note: We don't track failed duplicate IDs in failedTrackIds since they're not job tracks
+      if (failedIds.length > 0) {
+        console.warn(`[${phaseName}] ${failedIds.length} duplicate track updates failed`);
       }
     }
 
