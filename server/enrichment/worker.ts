@@ -891,15 +891,31 @@ export class EnrichmentWorker {
       }> = [];
 
       try {
-        const tracksForMLC = ctx.getAllTracks().map((t: PlaylistSnapshot) => ({
-          id: t.id,
-          isrc: t.isrc,
-          trackName: t.trackName,
-          artistName: t.artistName,
-          songwriter: t.songwriter,
-        }));
+        // Filter tracks that need MLC enrichment (skip tracks that already have publisherStatus)
+        const tracksForMLC = ctx.getAllTracks()
+          .filter((t: PlaylistSnapshot) => !t.publisherStatus || t.publisherStatus === 'unknown')
+          .map((t: PlaylistSnapshot) => ({
+            id: t.id,
+            isrc: t.isrc,
+            trackName: t.trackName,
+            artistName: t.artistName,
+            songwriter: t.songwriter,
+          }));
 
-        mlcResults = await enrichTracksWithMLC(tracksForMLC);
+        const allTracksCount = ctx.getAllTracks().length;
+        const skippedCount = allTracksCount - tracksForMLC.length;
+        
+        if (skippedCount > 0) {
+          console.log(`[Phase 5: MLC] Skipping ${skippedCount}/${allTracksCount} tracks that already have publisherStatus`);
+        }
+
+        if (tracksForMLC.length === 0) {
+          console.log("[Phase 5: MLC] All tracks already have publisherStatus, skipping MLC API calls");
+          mlcResults = [];
+        } else {
+          console.log(`[Phase 5: MLC] Enriching ${tracksForMLC.length} tracks with MLC API`);
+          mlcResults = await enrichTracksWithMLC(tracksForMLC);
+        }
 
         for (const mlcResult of mlcResults) {
           const publisherName = mlcResult.publisherNames.join(', ') || undefined;
