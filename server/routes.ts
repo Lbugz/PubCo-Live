@@ -590,7 +590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/contacts", async (req, res) => {
     try {
-      const { stage, search, hotLeads, chartmetricLinked, positiveWow, hasEmail, minScore, maxScore, hasSocialLinks, sortField, sortDirection, limit, offset } = req.query;
+      const { stage, search, hotLeads, chartmetricLinked, positiveWow, hasEmail, minScore, maxScore, hasSocialLinks, mlcStatus, musicbrainzStatus, sortField, sortDirection, limit, offset } = req.query;
       
       // No default limit - fetch all contacts unless explicitly limited
       const parsedLimit = limit ? parseInt(limit as string, 10) : undefined;
@@ -606,6 +606,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         minScore: minScore ? parseInt(minScore as string, 10) : undefined,
         maxScore: maxScore ? parseInt(maxScore as string, 10) : undefined,
         hasSocialLinks: hasSocialLinks === 'true' ? true : hasSocialLinks === 'false' ? false : undefined,
+        mlcStatus: mlcStatus as string | undefined,
+        musicbrainzStatus: musicbrainzStatus as string | undefined,
         sortField: sortField as string | undefined,
         sortDirection: (sortDirection as "asc" | "desc") || "desc",
         limit: parsedLimit,
