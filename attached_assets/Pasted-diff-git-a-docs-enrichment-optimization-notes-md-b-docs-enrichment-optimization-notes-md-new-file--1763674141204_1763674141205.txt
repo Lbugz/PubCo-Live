@@ -1,0 +1,39 @@
+diff --git a/docs/enrichment-optimization-notes.md b/docs/enrichment-optimization-notes.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..d91e84aa011e476e81666e10fc06a5b5b5305421
+--- /dev/null
++++ b/docs/enrichment-optimization-notes.md
+@@ -0,0 +1,33 @@
++# Enrichment pipeline review and optimization ideas
++
++## Current flow (per job)
++- **Phase 1 – Spotify batch metadata**: Fetches metadata via `enrichTracksWithSpotifyAPI`, persists patches, and broadcasts progress/`track_enriched` events. 【F:server/enrichment/worker.ts†L213-L337】
++- **Phase 2 – Credits scraping (Puppeteer)**: Filters tracks missing songwriter/streams, scrapes credits in small chunks with a Puppeteer queue, and marks results with `creditsStatus`/`enrichmentStatus` before scoring updates. 【F:server/enrichment/worker.ts†L340-L505】【F:server/enrichment/spotifyCreditsScaper.ts†L469-L562】
++- **Phase 3 – MusicBrainz links**: Iterates each songwriter name per track, searches MusicBrainz, creates artists, links tracks, and counts social links. 【F:server/enrichment/worker.ts†L523-L599】
++- **Phase 4 – Chartmetric analytics**: Sequentially enriches tracks with Chartmetric data when an ISRC exists and records status. 【F:server/enrichment/worker.ts†L611-L717】
++- **Phase 5 – MLC publisher lookup**: Queries the MLC API for every track, updates publisher info, and logs activity or fallback defaults on failure. 【F:server/enrichment/worker.ts†L728-L876】
++
++## Cross-cutting optimizations
++- **Batch persistence**: `persistPhaseUpdates` writes patches one-by-one; introducing bulk updates (per phase or batched by size) would cut database round-trips, especially after scraping (Phase 2) and analytics (Phase 4). 【F:server/enrichment/worker.ts†L266-L401】【F:server/enrichment/worker.ts†L689-L704】
++- **Replay-safe progress**: Progress/log updates happen after each phase but errors during persistence can leave `ctx` dirty. Consider snapshotting updates and retrying failed patches with backoff before advancing phases. 【F:server/enrichment/worker.ts†L279-L399】
++- **Error/timeout thresholds**: Phase 2 processes a fixed batch of up to 100 tracks with two concurrent browsers and 45s timeouts. Making batch size, concurrency, and timeout configurable per environment (e.g., via env vars) lets operators tune throughput vs. stability. 【F:server/enrichment/spotifyCreditsScaper.ts†L488-L539】
++- **Deduped enrichment inputs**: Phases 3–5 reprocess overlapping songwriter/track sets per job. Deduplicating songwriter names before MusicBrainz/MLC calls and caching Chartmetric lookups by ISRC would reduce duplicate external requests. 【F:server/enrichment/worker.ts†L523-L717】
++- **Partial result streaming**: Broadcasting `track_enriched` for every track after phases 1–2 is immediate, but later phases broadcast only aggregated progress. Streaming per-track outcomes for Chartmetric/MLC would keep the UI fresher and shorten perceived latency. 【F:server/enrichment/worker.ts†L297-L505】【F:server/enrichment/worker.ts†L689-L835】
++
++## Phase-specific ideas
++- **Phase 2 (credits scraping)**
++  - Increase chunk size or queue concurrency dynamically when queue lag is low, and shrink when error rate/timeout count increases. Currently fixed at two browsers and two-at-a-time chunks. 【F:server/enrichment/spotifyCreditsScaper.ts†L488-L539】
++  - Skip scraping tracks that already have both songwriter and streams to avoid work; the filter only checks one or the other today. 【F:server/enrichment/spotifyCreditsScaper.ts†L481-L487】
++- **Phase 3 (MusicBrainz)**
++  - Pre-group unique songwriter names across tracks to avoid repeated `searchArtistByName` calls and to parallelize with a small concurrency limit. The current loop is fully sequential per songwriter. 【F:server/enrichment/worker.ts†L523-L599】
++  - Cache lookups with short TTL to prevent redundant requests across jobs for popular writers.
++- **Phase 4 (Chartmetric)**
++  - Process tracks in parallel with bounded concurrency and reuse Chartmetric results by ISRC when the same track appears in multiple playlists. Presently runs synchronously inside a `for` loop. 【F:server/enrichment/worker.ts†L639-L717】
++  - Record `chartmetricStatus` earlier when ISRC is missing to avoid repeatedly attempting the same track across jobs. 【F:server/enrichment/worker.ts†L641-L678】
++- **Phase 5 (MLC)**
++  - Narrow MLC lookup scope to tracks missing `publisherStatus` or `publisher`, rather than all tracks, to shorten runtime. 【F:server/enrichment/worker.ts†L760-L876】
++  - Persist a `lastEnrichmentAttempt` for MLC similar to credits to throttle retries on repeated failures.
++
++## Operational/observability
++- Add per-phase timers and error counters to log progress updates so ops can spot bottlenecks (e.g., average scrape duration, MusicBrainz hit rate, Chartmetric failures).
++- Emit metrics for queue depth, active workers, and per-phase success rates to support auto-scaling or alerting.
