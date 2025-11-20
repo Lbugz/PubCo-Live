@@ -1,0 +1,286 @@
+{
+  "timestamp": "2025-11-20T21:57:18.437Z",
+  "totalContacts": 807,
+  "issuesFound": 22,
+  "byConfidence": {
+    "high": 18,
+    "medium": 4,
+    "low": 0
+  },
+  "issues": [
+    {
+      "contactId": "34b60bf9-e3e7-4a0d-a8aa-f0d11252c430",
+      "songwriterId": "b3774f32-6ef4-4aac-83f2-9258d3d632c5",
+      "name": "Adam McPhaillDanny MyrickMegan Linville",
+      "issue": "7 capital words with only 3 spaces",
+      "suggestedFix": [
+        "Adam McPhaill",
+        "Danny Myrick",
+        "Megan Linville"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "17e857c9-cdaf-4d9a-b7cc-7ebd412babd6",
+      "songwriterId": "5a014f64-73c3-4720-9ee0-478fe54c8abc",
+      "name": "Adam SeubaDaniel McMillanEsben DithmerFrans NielsenKristoffer LambekMartha Zingraff VersterskovÓliver Bernburg",
+      "issue": "5 lowercase-to-uppercase transitions (likely multiple names)",
+      "suggestedFix": [
+        "Adam Seuba",
+        "Daniel McMillan",
+        "Esben Dithmer",
+        "Frans Nielsen",
+        "Kristoffer Lambek",
+        "Martha Zingraff VersterskovÓliver Bernburg"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "84a57f01-a59e-4cbf-adc6-d5f85751ab2e",
+      "songwriterId": "5a3dcf21-244d-4f34-a0fc-1e534524b475",
+      "name": "Alejandro ReyesBen McGuinessCaleb FreihautDevin Mitchell BirchfieldHaley RoughtonLee Kurt AlbrechtWills Weller",
+      "issue": "6 lowercase-to-uppercase transitions (likely multiple names)",
+      "suggestedFix": [
+        "Alejandro Reyes",
+        "Ben McGuiness",
+        "Caleb Freihaut",
+        "Devin Mitchell Birchfield",
+        "Haley Roughton",
+        "Lee Kurt Albrecht",
+        "Wills Weller"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "7bc8ac25-4046-496f-8460-5f5571b1c492",
+      "songwriterId": "9cd720c9-360c-41a8-a60a-e534b61c4f2c",
+      "name": "Alejandro ReyesBenjamin McGuinessCaleb FreihautDevin Mitchell BirchfieldHaley RoughtonLee Kurt Albrecht",
+      "issue": "5 lowercase-to-uppercase transitions (likely multiple names)",
+      "suggestedFix": [
+        "Alejandro Reyes",
+        "Benjamin McGuiness",
+        "Caleb Freihaut",
+        "Devin Mitchell Birchfield",
+        "Haley Roughton",
+        "Lee Kurt Albrecht"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "7f14b8e4-4277-4ef8-ae8c-f4f6cd5c5c03",
+      "songwriterId": "73de408c-67fe-4440-b5a8-ce3564c6df7b",
+      "name": "Alex JonesKendall QuarlesMiles McCollumNdabenhle TshabalalaPatryk PietrzakTrhaemheon Mitchell",
+      "issue": "5 lowercase-to-uppercase transitions (likely multiple names)",
+      "suggestedFix": [
+        "Alex Jones",
+        "Kendall Quarles",
+        "Miles McCollum",
+        "Ndabenhle Tshabalala",
+        "Patryk Pietrzak",
+        "Trhaemheon Mitchell"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "fe017fb5-6b00-4b81-b5ca-42f9b8eb2131",
+      "songwriterId": "c7632b38-2a7e-455e-81e5-c9b5accbdd75",
+      "name": "Amber Marie McConnellEvie Grace FowlerJulia Morey",
+      "issue": "9 capital words with only 5 spaces",
+      "suggestedFix": [
+        "Amber Marie McConnell",
+        "Evie Grace Fowler",
+        "Julia Morey"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "8588add4-4ca4-492d-94df-1feb44a3c383",
+      "songwriterId": "aa3aff1c-4cd4-4f69-81b5-6e9475bb6d92",
+      "name": "Andrew RobinsonBradley McDermottElliott GeeRyan Webb",
+      "issue": "3 transitions, length 52 chars",
+      "suggestedFix": [
+        "Andrew Robinson",
+        "Bradley McDermott",
+        "Elliott Gee",
+        "Ryan Webb"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "42775200-466d-4af0-8ee4-455fa8de1edd",
+      "songwriterId": "27e50d10-fa3c-421c-919b-60d90088046a",
+      "name": "Ash BowersMartin McDanielMike Mobley",
+      "issue": "7 capital words with only 3 spaces",
+      "suggestedFix": [
+        "Ash Bowers",
+        "Martin McDaniel",
+        "Mike Mobley"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "d0490a4d-4fee-4f9a-a98e-f0b106dd935d",
+      "songwriterId": "daaa32d0-072c-4bec-92a6-5a23e01d0ded",
+      "name": "Benjamin Francis LeftwichElla Megan McNamaraJack Leonard",
+      "issue": "2 transitions, length 56 chars (very long)",
+      "suggestedFix": [
+        "Benjamin Francis Leftwich",
+        "Ella Megan McNamara",
+        "Jack Leonard"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "0d3c6cff-e4e3-4b21-926a-bb145eb5cab2",
+      "songwriterId": "02a28612-5370-4318-9dd6-774501331e93",
+      "name": "Benton St.ClairGraham St.Clair",
+      "issue": "6 capital words with only 2 spaces",
+      "suggestedFix": [
+        "Benton St.ClairGraham St.Clair"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "9fdd377a-b708-42db-8d7e-9877835ad207",
+      "songwriterId": "e82c8ef8-2954-43a4-a1db-270532e66da0",
+      "name": "Christopher BoysMcKinley LanguedocNoah VarleyNoah Wilson",
+      "issue": "3 transitions, length 56 chars",
+      "suggestedFix": [
+        "Christopher Boys",
+        "McKinley Languedoc",
+        "Noah Varley",
+        "Noah Wilson"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "a25593b7-12f9-4051-88bc-5ee5635102f1",
+      "songwriterId": "7f233087-dea0-482c-aa79-8c85baf225c4",
+      "name": "Cody WebbMark NeslerMatt McClure",
+      "issue": "7 capital words with only 3 spaces",
+      "suggestedFix": [
+        "Cody Webb",
+        "Mark Nesler",
+        "Matt McClure"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "0be11442-6351-4e43-945e-3e7ac203cf44",
+      "songwriterId": "2138609b-f11f-4a8b-a53f-9e52c99e7924",
+      "name": "Daniel HowardKenneth McCamman-McGinnis",
+      "issue": "7 capital words with only 2 spaces",
+      "suggestedFix": [
+        "Daniel HowardKenneth McCamman-McGinnis"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "a90dcd05-78a5-4dfb-8537-d5221378f5d6",
+      "songwriterId": "abbc2f56-fba7-498c-a359-4696ca8039b8",
+      "name": "Davon \"Jari Fontaine' MyersDevoon T McLeodKawan PratherLevens \"Sweata\" Jean",
+      "issue": "3 transitions, length 75 chars",
+      "suggestedFix": [
+        "Davon \"Jari Fontaine' Myers",
+        "Devoon T McLeod",
+        "Kawan Prather",
+        "Levens \"Sweata\" Jean"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "ff90160f-3017-4bbd-b1b8-7b0f3b7530f9",
+      "songwriterId": "039ce65c-0bf3-405f-ac8c-6c83aa6dfc92",
+      "name": "Dominic JamesEwan LeeLewis MacRaeMatthew DixTom Prendergast",
+      "issue": "5 lowercase-to-uppercase transitions (likely multiple names)",
+      "suggestedFix": [
+        "Dominic James",
+        "Ewan Lee",
+        "Lewis Mac",
+        "Rae",
+        "Matthew Dix",
+        "Tom Prendergast"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "6a1a1a86-8484-46ff-bf9e-4beccee071ac",
+      "songwriterId": "1aa15145-f579-432d-a33b-19d4661f6efe",
+      "name": "Hariette PilbeamJeremy McLennanJoe Agius",
+      "issue": "7 capital words with only 3 spaces",
+      "suggestedFix": [
+        "Hariette Pilbeam",
+        "Jeremy McLennan",
+        "Joe Agius"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "d49777a8-68e6-4740-8455-9e7636f77b6a",
+      "songwriterId": "f10f1422-905c-47c8-a130-716c2388e0fe",
+      "name": "Meg McReeAndrew PetroffCarter Faith",
+      "issue": "7 capital words with only 3 spaces",
+      "suggestedFix": [
+        "Meg McRee",
+        "Andrew Petroff",
+        "Carter Faith"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "0ae4e0c2-cf6e-46dd-942e-7958d6d0010c",
+      "songwriterId": "13027212-fcfd-4aa5-b662-f4ba82922db3",
+      "name": "Meg McReeBen ChapmanJordan Fletcher",
+      "issue": "7 capital words with only 3 spaces",
+      "suggestedFix": [
+        "Meg McRee",
+        "Ben Chapman",
+        "Jordan Fletcher"
+      ],
+      "confidence": "high"
+    },
+    {
+      "contactId": "84ca0a84-2385-4951-b60f-de04d34b0186",
+      "songwriterId": "7d5896e5-06f4-401b-93d7-62d162828665",
+      "name": "Clayton Blue IIDanny Cooper",
+      "issue": "Roman numeral followed by capital letter (missing space)",
+      "suggestedFix": [
+        "Clayton Blue II",
+        "Danny Cooper"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "contactId": "d1ea20c8-65df-4e7e-abd4-31971464e750",
+      "songwriterId": "7eee07e4-16ef-48fb-a014-d3354d2a67bb",
+      "name": "Demarcus PollardJames Clay Jones III",
+      "issue": "Roman numeral followed by capital letter (missing space)",
+      "suggestedFix": [
+        "Demarcus PollardJames Clay Jones III"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "contactId": "86327451-488c-4e75-8dd2-bd070cd549ed",
+      "songwriterId": "60645dde-cac1-4a4b-84ea-b7886a2c4b92",
+      "name": "Donald Mckinley Glover IILudwig Emil Tomas Göransson",
+      "issue": "Roman numeral followed by capital letter (missing space)",
+      "suggestedFix": [
+        "Donald Mckinley Glover II",
+        "Ludwig Emil Tomas Göransson"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "contactId": "76dc16c4-944b-4994-a894-649b3a280687",
+      "songwriterId": "82ea56ff-2dc2-41cf-90ec-4b7d02a31b60",
+      "name": "Evan BerryLouis Alexandre Hassell IIIRyan Cayo",
+      "issue": "Roman numeral followed by capital letter (missing space)",
+      "suggestedFix": [
+        "Evan BerryLouis Alexandre Hassell II",
+        "IRyan Cayo"
+      ],
+      "confidence": "medium"
+    }
+  ]
+}
