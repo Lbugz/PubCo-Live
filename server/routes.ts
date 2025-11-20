@@ -492,9 +492,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/tracks", async (req, res) => {
     try {
-      const week = req.query.week as string || "latest";
+      const weekParam = req.query.week as string | undefined;
       const tagId = req.query.tagId as string | undefined;
       const playlistId = req.query.playlist as string | undefined;
+      
+      // Default week logic:
+      // - If playlist is specified and no week: undefined (show all weeks for that playlist)
+      // - If no playlist specified and no week: "latest" (show latest week only)
+      const week = weekParam || (playlistId ? undefined : "latest");
+      
       const sortField = req.query.sortField as string | undefined;
       const sortDirection = (req.query.sortDirection as 'asc' | 'desc') || 'desc';
       
@@ -544,9 +550,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (tagId) {
           tracks = await storage.getTracksByTag(tagId, filterOptions);
         } else if (playlistId) {
-          tracks = await storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined, filterOptions);
+          // Pass week as-is - undefined means "all weeks", specific value means "that week"
+          tracks = await storage.getTracksByPlaylist(playlistId, week, filterOptions);
         } else {
-          tracks = await storage.getTracksByWeek(week, filterOptions);
+          tracks = await storage.getTracksByWeek(week!, filterOptions);
         }
         res.json(tracks);
         return;
@@ -558,14 +565,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tagId 
           ? storage.getTracksByTagCount(tagId, filterOptions)
           : playlistId
-          ? storage.getTracksByPlaylistCount(playlistId, week !== "latest" ? week : undefined, filterOptions)
-          : storage.getTracksByWeekCount(week, filterOptions),
+          ? storage.getTracksByPlaylistCount(playlistId, week, filterOptions)
+          : storage.getTracksByWeekCount(week!, filterOptions),
         // Get paginated tracks
         tagId
           ? storage.getTracksByTag(tagId, { ...filterOptions, limit, offset })
           : playlistId
-          ? storage.getTracksByPlaylist(playlistId, week !== "latest" ? week : undefined, { ...filterOptions, limit, offset })
-          : storage.getTracksByWeek(week, { ...filterOptions, limit, offset })
+          ? storage.getTracksByPlaylist(playlistId, week, { ...filterOptions, limit, offset })
+          : storage.getTracksByWeek(week!, { ...filterOptions, limit, offset })
       ]);
 
       res.json({

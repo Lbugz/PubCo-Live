@@ -158,11 +158,20 @@ export default function Tracks() {
       
       if (queryKey[1] === "playlist") {
         params.append("playlist", queryKey[2] as string);
+        // Also include week filter if specified (don't send "all")
+        const week = queryKey[3] as string;
+        if (week && week !== "all") {
+          params.append("week", week);
+        }
         const response = await fetch(`/api/tracks?${params.toString()}`);
         if (!response.ok) throw new Error("Failed to fetch tracks by playlist");
         return response.json();
       } else {
-        params.append("week", queryKey[1] as string);
+        // Only append week if it's not "all"
+        const week = queryKey[1] as string;
+        if (week && week !== "all") {
+          params.append("week", week);
+        }
         const response = await fetch(`/api/tracks?${params.toString()}`);
         if (!response.ok) throw new Error("Failed to fetch tracks");
         return response.json();
