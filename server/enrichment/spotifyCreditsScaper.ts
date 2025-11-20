@@ -348,17 +348,39 @@ async function extractCredits(
       
       const trimmed = fullName.trim();
       
-      // Count lowercase-to-uppercase transitions (excluding Mc/Mac patterns)
+      // Count lowercase-to-uppercase transitions (excluding multi-part surnames)
       let transitions = 0;
       const transitionIndices = [];
       
       for (let i = 1; i < trimmed.length; i++) {
         if (/[a-z]/.test(trimmed[i - 1]) && /[A-Z]/.test(trimmed[i])) {
-          // Check if this might be a "Mc" or "Mac" pattern
-          const twoCharsBefore = i >= 2 ? trimmed.substring(i - 2, i) : '';
-          const isMcPattern = /Mc|Ma/.test(twoCharsBefore) && twoCharsBefore[0] === 'M';
+          // Look back to find the start of the current word to check for surname patterns
+          let wordStart = i;
+          while (wordStart > 0 && /[a-zA-Z']/.test(trimmed[wordStart - 1])) {
+            wordStart--;
+          }
           
-          if (!isMcPattern) {
+          const currentWord = trimmed.substring(wordStart, i + 1);
+          
+          // Common surname patterns to preserve (checking the full word context):
+          // - Mc + Name (McGuinness, McDonald, McRae)
+          // - Mac + Name (MacRae, MacLeod, MacDonald)
+          // - O' + Name (O'Brien, O'Connor)
+          // - St. + Name (St.Clair, St.John)
+          const isMcPattern = /^Mc[A-Z][a-z]+$/.test(currentWord);
+          const isMacPattern = /^Mac[A-Z][a-z]+$/.test(currentWord);
+          const isOPattern = /^O'[A-Z][a-z]+$/.test(currentWord);
+          const isStPattern = /^St\\.[A-Z][a-z]+$/.test(currentWord);
+          const isVanPattern = /^Van[A-Z][a-z]+$/.test(currentWord);
+          const isDePattern = /^De[A-Z][a-z]+$/.test(currentWord);
+          const isVonPattern = /^Von[A-Z][a-z]+$/.test(currentWord);
+          const isLaPattern = /^La[A-Z][a-z]+$/.test(currentWord);
+          const isLePattern = /^Le[A-Z][a-z]+$/.test(currentWord);
+          
+          const isMultiPartSurname = isMcPattern || isMacPattern || isOPattern || isStPattern ||
+                                      isVanPattern || isDePattern || isVonPattern || isLaPattern || isLePattern;
+          
+          if (!isMultiPartSurname) {
             transitions++;
             transitionIndices.push(i);
           }

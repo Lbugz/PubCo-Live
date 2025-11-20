@@ -23,7 +23,7 @@ function detectAndSplitConcatenatedNames(fullName: string): string[] {
   const trimmed = fullName.trim();
   
   // Pattern 1: Detect lowercase-to-uppercase transitions (e.g., "GloverLudwig")
-  // But be careful about names like "McDonald", "McGuinness", etc.
+  // But be careful about names like "McDonald", "McGuinness", "MacRae", "O'Brien", "St.Clair", etc.
   const transitions: number[] = [];
   for (let i = 1; i < trimmed.length; i++) {
     const prevChar = trimmed[i - 1];
@@ -31,11 +31,33 @@ function detectAndSplitConcatenatedNames(fullName: string): string[] {
     
     // Detect transition from lowercase to uppercase
     if (/[a-z]/.test(prevChar) && /[A-Z]/.test(currChar)) {
-      // Check if this might be a "Mc" or "Mac" pattern
-      const twoCharsBefore = i >= 2 ? trimmed.substring(i - 2, i) : '';
-      const isMcPattern = /Mc|Ma/.test(twoCharsBefore) && twoCharsBefore[0] === 'M';
+      // Look back to find the start of the current word to check for surname patterns
+      let wordStart = i;
+      while (wordStart > 0 && /[a-zA-Z']/.test(trimmed[wordStart - 1])) {
+        wordStart--;
+      }
       
-      if (!isMcPattern) {
+      const currentWord = trimmed.substring(wordStart, i + 1);
+      
+      // Common surname patterns to preserve (checking the full word context):
+      // - Mc + Name (McGuinness, McDonald, McRae)
+      // - Mac + Name (MacRae, MacLeod, MacDonald) 
+      // - O' + Name (O'Brien, O'Connor)
+      // - St. + Name (St.Clair, St.John)
+      const isMcPattern = /^Mc[A-Z][a-z]+$/.test(currentWord);
+      const isMacPattern = /^Mac[A-Z][a-z]+$/.test(currentWord);
+      const isOPattern = /^O'[A-Z][a-z]+$/.test(currentWord);
+      const isStPattern = /^St\.[A-Z][a-z]+$/.test(currentWord);
+      const isVanPattern = /^Van[A-Z][a-z]+$/.test(currentWord);
+      const isDePattern = /^De[A-Z][a-z]+$/.test(currentWord) || /^De [A-Z][a-z]+$/.test(currentWord);
+      const isVonPattern = /^Von[A-Z][a-z]+$/.test(currentWord);
+      const isLaPattern = /^La[A-Z][a-z]+$/.test(currentWord);
+      const isLePattern = /^Le[A-Z][a-z]+$/.test(currentWord);
+      
+      const isMultiPartSurname = isMcPattern || isMacPattern || isOPattern || isStPattern ||
+                                  isVanPattern || isDePattern || isVonPattern || isLaPattern || isLePattern;
+      
+      if (!isMultiPartSurname) {
         transitions.push(i);
       }
     }
