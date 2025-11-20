@@ -1,0 +1,1252 @@
+{
+  "generatedAt": "2025-11-20T22:35:34.832Z",
+  "summary": {
+    "duplicateContactNames": 21,
+    "totalDuplicateContacts": 47,
+    "duplicateSongwriterNames": 21,
+    "totalDuplicateProfiles": 47
+  },
+  "duplicateContacts": [
+    {
+      "name": "alejandro reyes",
+      "contactCount": 4,
+      "contacts": [
+        {
+          "contactId": "03d59cf6-927d-44b2-9c03-4c85e8b2c4b1",
+          "songwriterId": "f7949fdd-54b9-416c-b7aa-6f0fa16ceda6",
+          "chartmetricId": "cm-alejandro-reyes-1763676182647-nuoep02xl",
+          "name": "Alejandro Reyes",
+          "totalStreams": 506640,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:02.687482"
+        },
+        {
+          "contactId": "11fcbbdc-ef9f-4652-90fa-396851cc4ac7",
+          "songwriterId": "fb45f47a-c186-4b84-a12c-8b0f8204abfd",
+          "chartmetricId": "cm-alejandro-reyes-1763676181811-sq1o0it9w",
+          "name": "Alejandro Reyes",
+          "totalStreams": 227617,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:01.85054"
+        },
+        {
+          "contactId": "36f9a782-7eb5-49c6-99d3-a68ed2e2e7f5",
+          "songwriterId": "443a3af9-e7b5-4c3d-80fe-13824654f80c",
+          "chartmetricId": "cm-alejandro-reyes-1763676092600-jhsglx7nn",
+          "name": "Alejandro Reyes",
+          "totalStreams": 227617,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:32.639773"
+        },
+        {
+          "contactId": "63ae1398-0e0b-440a-ac29-f0805ce2507b",
+          "songwriterId": "6e41c05f-ac04-4495-86a1-5fdba0254c99",
+          "chartmetricId": "cm-alejandro-reyes-1763676092777-sgkdy7qqn",
+          "name": "Alejandro Reyes",
+          "totalStreams": 506640,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:32.818161"
+        }
+      ]
+    },
+    {
+      "name": "meg mcree",
+      "contactCount": 4,
+      "contacts": [
+        {
+          "contactId": "7042118b-23c5-424a-92f5-02dacdabfc80",
+          "songwriterId": "21f3c986-cee6-4635-9fb9-9b2a5999f7d4",
+          "chartmetricId": "cm-meg-mcree-1763676189385-ycnkdqujq",
+          "name": "Meg McRee",
+          "totalStreams": 33355,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:09.424851"
+        },
+        {
+          "contactId": "bebe678f-9918-44f4-a7c9-ae388a222b97",
+          "songwriterId": "5ff04247-6f8c-4d24-adba-d3500a076518",
+          "chartmetricId": "cm-meg-mcree-1763676095635-frusncdh0",
+          "name": "Meg McRee",
+          "totalStreams": 33355,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:35.674959"
+        },
+        {
+          "contactId": "e0c5ebc0-bea1-4cf7-ab9c-72f25ff044dc",
+          "songwriterId": "e746c755-4975-4c21-b3e5-d670806310fc",
+          "chartmetricId": "cm-meg-mcree-1763676189000-dd58ibhrm",
+          "name": "Meg McRee",
+          "totalStreams": 45682,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:09.040358"
+        },
+        {
+          "contactId": "fc0ebc0b-d5a3-4bb6-8759-d2f872b31d87",
+          "songwriterId": "3cf938f6-aa29-478b-ba0c-71ffddc4e417",
+          "chartmetricId": "cm-meg-mcree-1763676095440-6xv2tym30",
+          "name": "Meg McRee",
+          "totalStreams": 45682,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:35.481082"
+        }
+      ]
+    },
+    {
+      "name": "ash bowers",
+      "contactCount": 3,
+      "contacts": [
+        {
+          "contactId": "51726a6e-0acb-42ea-8c1d-c1bd785d9ed3",
+          "songwriterId": "dffa80de-de3f-4469-8f91-28c08825528b",
+          "chartmetricId": "cm-ash-bowers-1763676184878-gdtryew91",
+          "name": "Ash Bowers",
+          "totalStreams": 72943,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:04.917567"
+        },
+        {
+          "contactId": "bf1e17f1-d064-47d7-ba61-6391da3fbea6",
+          "songwriterId": "73cd7662-1301-4ae1-9d03-eea2722685e1",
+          "chartmetricId": "pending_1763167934025_lafbieihv",
+          "name": "Ash Bowers",
+          "totalStreams": 32306,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-15T00:52:14.088734"
+        },
+        {
+          "contactId": "ee775ed1-80e5-4d38-934b-5a5684bcd0c3",
+          "songwriterId": "0552e4fa-cab7-45f2-9eec-acf3a83a8d08",
+          "chartmetricId": "cm-ash-bowers-1763676093497-4nq43htav",
+          "name": "Ash Bowers",
+          "totalStreams": 72943,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:33.536754"
+        }
+      ]
+    },
+    {
+      "name": "adam mcphaill",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "2049f1b3-756e-457e-8787-972a46eb897c",
+          "songwriterId": "2d8edf51-6a1d-454c-a4ed-7fc49eed5562",
+          "chartmetricId": "cm-adam-mcphaill-1763676180731-bh3zzxa7y",
+          "name": "Adam McPhaill",
+          "totalStreams": 25172,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:00.770723"
+        },
+        {
+          "contactId": "eba7c9aa-a22f-4ca1-83a5-eea52a6b2c88",
+          "songwriterId": "649a7e82-36ef-408f-b28a-faee6a59133c",
+          "chartmetricId": "cm-adam-mcphaill-1763676092239-p4plq7j78",
+          "name": "Adam McPhaill",
+          "totalStreams": 25172,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:32.279971"
+        }
+      ]
+    },
+    {
+      "name": "adam seuba",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "199f7b71-9e94-4e21-a22c-91cbfd45d91e",
+          "songwriterId": "a9cbda8b-8ba6-4e23-95d5-789f3019177b",
+          "chartmetricId": "cm-adam-seuba-1763676092421-tbu7mils9",
+          "name": "Adam Seuba",
+          "totalStreams": 26089,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:32.461581"
+        },
+        {
+          "contactId": "58f8ffd3-676e-4965-93a6-43f6a771a2a9",
+          "songwriterId": "e901964c-c7c4-4441-b6e8-3498becd5eff",
+          "chartmetricId": "cm-adam-seuba-1763676181133-74hvnqy2m",
+          "name": "Adam Seuba",
+          "totalStreams": 26089,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:01.173147"
+        }
+      ]
+    },
+    {
+      "name": "alex jones",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "c623606f-de51-447b-b08d-2dbd0dca39ff",
+          "songwriterId": "eef99164-b83b-4efe-b7f2-8c24cd86df5b",
+          "chartmetricId": "cm-alex-jones-1763676183325-w4yfau2bm",
+          "name": "Alex Jones",
+          "totalStreams": 1050569,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:03.365183"
+        },
+        {
+          "contactId": "eb29af44-38b2-4a7f-bae7-1dac9c4fa643",
+          "songwriterId": "383b4340-c19f-42df-8140-91b233775aa3",
+          "chartmetricId": "cm-alex-jones-1763676092950-2x2h1pmia",
+          "name": "Alex Jones",
+          "totalStreams": 1050569,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:32.9938"
+        }
+      ]
+    },
+    {
+      "name": "amber marie mcconnell",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "409456f1-9841-47da-9e02-ce9844b2edfa",
+          "songwriterId": "c2d06e20-80b3-47a8-b0b5-c5531520ae3a",
+          "chartmetricId": "cm-amber-marie-mcconnell-1763676184003-my2zsyhoo",
+          "name": "Amber Marie McConnell",
+          "totalStreams": 6750,
+          "totalTracks": 1,
+          "unsignedScore": 8,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:04.041698"
+        },
+        {
+          "contactId": "d93b4359-99ab-452d-b2e5-5ff6434f0db9",
+          "songwriterId": "e3edeb86-f41e-45f1-b1d8-a0b1c055328a",
+          "chartmetricId": "cm-amber-marie-mcconnell-1763676093129-4535vn4dh",
+          "name": "Amber Marie McConnell",
+          "totalStreams": 6750,
+          "totalTracks": 1,
+          "unsignedScore": 8,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:33.169825"
+        }
+      ]
+    },
+    {
+      "name": "andrew robinson",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "0c243d28-c600-408c-8899-11e900f44518",
+          "songwriterId": "ebb91c6a-30e6-4e05-9d92-c0e514457cfe",
+          "chartmetricId": "cm-andrew-robinson-1763676093317-mgdcqhwlb",
+          "name": "Andrew Robinson",
+          "totalStreams": 12521,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:33.360241"
+        },
+        {
+          "contactId": "93a618b5-21bc-443c-9401-36e6da04b3f1",
+          "songwriterId": "4ef1cbb3-64bd-4793-a23e-98b5740d980b",
+          "chartmetricId": "cm-andrew-robinson-1763676184393-cnbimtc72",
+          "name": "Andrew Robinson",
+          "totalStreams": 12521,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:04.432221"
+        }
+      ]
+    },
+    {
+      "name": "benjamin francis leftwich",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "305a2a9c-d8fb-4658-a462-5b5b6b731efa",
+          "songwriterId": "5505aa91-cb59-4d71-9060-e8ed8f48672d",
+          "chartmetricId": "cm-benjamin-francis-leftwich-1763676185262-0bkgkmudu",
+          "name": "Benjamin Francis Leftwich",
+          "totalStreams": 19469,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:05.300693"
+        },
+        {
+          "contactId": "a558b2b9-5628-46f1-bbf8-0808c39a4486",
+          "songwriterId": "a8bb90b8-5ad0-4e0b-b35d-f93e845406f5",
+          "chartmetricId": "cm-benjamin-francis-leftwich-1763676093680-y0d0qv3qn",
+          "name": "Benjamin Francis Leftwich",
+          "totalStreams": 19469,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:33.720217"
+        }
+      ]
+    },
+    {
+      "name": "caleb freihaut",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "e68bdbca-95c4-41b2-a9e0-5c8c02513294",
+          "songwriterId": "0f114c21-5834-4335-916a-5bca887a86f1",
+          "chartmetricId": "cm-caleb-freihaut-1763676182841-3brmapwct",
+          "name": "Caleb Freihaut",
+          "totalStreams": 506640,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:02.880887"
+        },
+        {
+          "contactId": "fe4f8728-410f-4645-aeff-c6b0df57fa2a",
+          "songwriterId": "839a76f4-9c20-48c1-bae6-28dc5d631a5c",
+          "chartmetricId": "cm-caleb-freihaut-1763676182003-bqt0rbop6",
+          "name": "Caleb Freihaut",
+          "totalStreams": 227617,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:02.042295"
+        }
+      ]
+    },
+    {
+      "name": "christopher boys",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "82d937c0-a332-4652-83c6-dd6af0030345",
+          "songwriterId": "0b44389f-2352-4619-993a-5c4035d4a522",
+          "chartmetricId": "cm-christopher-boys-1763676185651-kvllqqtk3",
+          "name": "Christopher Boys",
+          "totalStreams": 13509,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:05.695167"
+        },
+        {
+          "contactId": "e51f5d85-9a39-4a90-ab41-48e5ba67c312",
+          "songwriterId": "a8ededfb-8c0d-4946-b970-0aa34669d1a0",
+          "chartmetricId": "cm-christopher-boys-1763676093858-u75mj5lsx",
+          "name": "Christopher Boys",
+          "totalStreams": 13509,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:33.898121"
+        }
+      ]
+    },
+    {
+      "name": "clayton blue ii",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "579d35cd-2c8b-4bf1-ba51-3402e8a0f943",
+          "songwriterId": "8018c178-b561-4eb5-a1bf-ed78975e63b9",
+          "chartmetricId": "cm-clayton-blue-ii-1763676094177-b8dxdvist",
+          "name": "Clayton Blue II",
+          "totalStreams": 69783,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:34.218338"
+        },
+        {
+          "contactId": "99f8486d-e230-4321-a34d-63abd5cf90b8",
+          "songwriterId": "3a7c2de9-2792-4719-b0e8-5f5b1cf13c18",
+          "chartmetricId": "cm-clayton-blue-ii-1763676186139-61rycibpm",
+          "name": "Clayton Blue II",
+          "totalStreams": 69783,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:06.178342"
+        }
+      ]
+    },
+    {
+      "name": "cody webb",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "4ff6338c-34cf-4623-a876-3b094d4c25f8",
+          "songwriterId": "d458cd8a-b492-49ad-8271-2783fb0a96d3",
+          "chartmetricId": "cm-cody-webb-1763676094359-cw9yzywr7",
+          "name": "Cody Webb",
+          "totalStreams": 50155,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:34.398504"
+        },
+        {
+          "contactId": "9e69f472-bd05-4e60-b400-bc7295b4681b",
+          "songwriterId": "a98299cd-06c0-4878-b463-884c790fb3f3",
+          "chartmetricId": "cm-cody-webb-1763676186428-0wv0o3oha",
+          "name": "Cody Webb",
+          "totalStreams": 50155,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:06.466742"
+        }
+      ]
+    },
+    {
+      "name": "davon \"jari fontaine' myers",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "435dac48-cbe9-47a3-8673-c6b4499eabe8",
+          "songwriterId": "c65ba7b8-7611-408f-b253-9625e03279a6",
+          "chartmetricId": "cm-davon--jari-fontaine--myers-1763676186816-mfnoseh4j",
+          "name": "Davon \"Jari Fontaine' Myers",
+          "totalStreams": 6876,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:06.854655"
+        },
+        {
+          "contactId": "a723d66b-f55b-4d13-9240-ff8998a8d478",
+          "songwriterId": "f1ac4692-090c-4e44-89f1-4018c575a30b",
+          "chartmetricId": "cm-davon--jari-fontaine--myers-1763676094547-lkft94i2u",
+          "name": "Davon \"Jari Fontaine' Myers",
+          "totalStreams": 6876,
+          "totalTracks": 1,
+          "unsignedScore": 9,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:34.587742"
+        }
+      ]
+    },
+    {
+      "name": "devin mitchell birchfield",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "b3c5d470-6bf7-4d22-bdb2-2c820a2b94b1",
+          "songwriterId": "685765a8-42a0-4ce1-b97b-c53b516576ef",
+          "chartmetricId": "cm-devin-mitchell-birchfield-1763676182100-rsmvzfjp5",
+          "name": "Devin Mitchell Birchfield",
+          "totalStreams": 227617,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:02.139263"
+        },
+        {
+          "contactId": "bde1f24b-4449-4d3a-b147-e706337aabe3",
+          "songwriterId": "3fa6d4fa-1023-4b93-98e1-66b24e0d58cc",
+          "chartmetricId": "cm-devin-mitchell-birchfield-1763676182938-07h8uepxi",
+          "name": "Devin Mitchell Birchfield",
+          "totalStreams": 506640,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:02.978386"
+        }
+      ]
+    },
+    {
+      "name": "dominic james",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "1e5de785-4f25-48cc-9b64-0b64990f1359",
+          "songwriterId": "a4967005-b942-47d3-a7dc-46a40bc9acec",
+          "chartmetricId": "cm-dominic-james-1763676187301-s8ccjnq5e",
+          "name": "Dominic James",
+          "totalStreams": 8577,
+          "totalTracks": 1,
+          "unsignedScore": 8,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:07.339662"
+        },
+        {
+          "contactId": "72678ac5-633b-4426-8d41-7f0c71998b0d",
+          "songwriterId": "1f16c2a0-93aa-4fbb-92d1-ae7263b785f5",
+          "chartmetricId": "cm-dominic-james-1763676094726-42ll9g8on",
+          "name": "Dominic James",
+          "totalStreams": 8577,
+          "totalTracks": 1,
+          "unsignedScore": 8,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:34.772956"
+        }
+      ]
+    },
+    {
+      "name": "donald mckinley glover ii",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "cd63134b-3400-4526-8f92-897004d1448c",
+          "songwriterId": "f83636b2-7554-4ef0-b88f-5b8150783f12",
+          "chartmetricId": "cm-donald-mckinley-glover-ii-1763676188033-vtveho8ne",
+          "name": "Donald Mckinley Glover II",
+          "totalStreams": 7930243,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:08.072459"
+        },
+        {
+          "contactId": "dbccdf9d-5364-4888-95a8-c5012e14d17d",
+          "songwriterId": "bf6c4c63-376e-4a98-bd66-133ae1cbc39e",
+          "chartmetricId": "cm-donald-mckinley-glover-ii-1763676094910-zqcz07vqt",
+          "name": "Donald Mckinley Glover II",
+          "totalStreams": 7930243,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:34.953437"
+        }
+      ]
+    },
+    {
+      "name": "evan berrylouis alexandre hassell ii",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "24d7ea49-9aa9-4d6d-a4cf-2f8c5ac0e701",
+          "songwriterId": "c6979497-3623-4a5e-8ccf-55e135325d33",
+          "chartmetricId": "cm-evan-berrylouis-alexandre-hassell-ii-1763676188320-7t9k8gmb7",
+          "name": "Evan BerryLouis Alexandre Hassell II",
+          "totalStreams": 0,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:08.359873"
+        },
+        {
+          "contactId": "fa1c2274-56d5-4e8a-abb0-2332dd7ee2db",
+          "songwriterId": "26fa4e30-622f-461f-a17e-c7a06b3446c9",
+          "chartmetricId": "cm-evan-berrylouis-alexandre-hassell-ii-1763676095089-g4btlfemb",
+          "name": "Evan BerryLouis Alexandre Hassell II",
+          "totalStreams": 0,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:01:35.126593"
+        }
+      ]
+    },
+    {
+      "name": "haley roughton",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "3962e3b3-0bba-47f1-85f1-00f37e6e6a3e",
+          "songwriterId": "8de1a89b-f304-4c63-878b-9ff8b6bc0d2c",
+          "chartmetricId": "cm-haley-roughton-1763676183035-jqsu4a3bs",
+          "name": "Haley Roughton",
+          "totalStreams": 506640,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:03.073968"
+        },
+        {
+          "contactId": "5c2ed69e-95f9-4e60-9f8b-081ff3aa75e7",
+          "songwriterId": "e0facb23-111e-4b09-96fe-1c6f2448bc71",
+          "chartmetricId": "cm-haley-roughton-1763676182195-j780lqhmy",
+          "name": "Haley Roughton",
+          "totalStreams": 227617,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:02.234281"
+        }
+      ]
+    },
+    {
+      "name": "hariette pilbeam",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "77ecc051-d21a-4307-a6c2-61f3abf78c9e",
+          "songwriterId": "428013ec-2aa2-4ea4-9eb9-412db5b4b7ff",
+          "chartmetricId": "cm-hariette-pilbeam-1763676188616-uiuikbwvs",
+          "name": "Hariette Pilbeam",
+          "totalStreams": 276711,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "search",
+          "createdAt": "2025-11-20T22:03:08.654651"
+        },
+        {
+          "contactId": "a39adbd8-caa0-4ce9-8a5b-e0fa92955976",
+          "songwriterId": "eccf336f-ac69-496f-b94a-9adafdbda963",
+          "chartmetricId": "cm-hariette-pilbeam-1763676095262-qfvmtqt9g",
+          "name": "Hariette Pilbeam",
+          "totalStreams": 276711,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "search",
+          "createdAt": "2025-11-20T22:01:35.303241"
+        }
+      ]
+    },
+    {
+      "name": "lee kurt albrecht",
+      "contactCount": 2,
+      "contacts": [
+        {
+          "contactId": "dc182b4e-edaf-4998-8843-f76f017099c1",
+          "songwriterId": "24a441e8-c4ee-4864-ae70-c86c4420f653",
+          "chartmetricId": "cm-lee-kurt-albrecht-1763676182291-5d3lxz3m3",
+          "name": "Lee Kurt Albrecht",
+          "totalStreams": 227617,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:02.330984"
+        },
+        {
+          "contactId": "e202892e-c19e-43ea-8f62-4fb41f02aad5",
+          "songwriterId": "fef55b4d-f459-4f14-879b-b0a1a2ce7081",
+          "chartmetricId": "cm-lee-kurt-albrecht-1763676183131-tf9v1jgd9",
+          "name": "Lee Kurt Albrecht",
+          "totalStreams": 506640,
+          "totalTracks": 1,
+          "unsignedScore": 10,
+          "stage": "discovery",
+          "createdAt": "2025-11-20T22:03:03.171333"
+        }
+      ]
+    }
+  ],
+  "duplicateSongwriters": [
+    {
+      "name": "alejandro reyes",
+      "profileCount": 4,
+      "profiles": [
+        {
+          "id": "443a3af9-e7b5-4c3d-80fe-13824654f80c",
+          "chartmetricId": "cm-alejandro-reyes-1763676092600-jhsglx7nn",
+          "name": "Alejandro Reyes",
+          "normalizedName": "alejandro-reyes",
+          "hasContact": true,
+          "contactId": "36f9a782-7eb5-49c6-99d3-a68ed2e2e7f5",
+          "totalStreams": 227617,
+          "totalTracks": 1
+        },
+        {
+          "id": "6e41c05f-ac04-4495-86a1-5fdba0254c99",
+          "chartmetricId": "cm-alejandro-reyes-1763676092777-sgkdy7qqn",
+          "name": "Alejandro Reyes",
+          "normalizedName": "alejandro-reyes",
+          "hasContact": true,
+          "contactId": "63ae1398-0e0b-440a-ac29-f0805ce2507b",
+          "totalStreams": 506640,
+          "totalTracks": 1
+        },
+        {
+          "id": "f7949fdd-54b9-416c-b7aa-6f0fa16ceda6",
+          "chartmetricId": "cm-alejandro-reyes-1763676182647-nuoep02xl",
+          "name": "Alejandro Reyes",
+          "normalizedName": "alejandro-reyes",
+          "hasContact": true,
+          "contactId": "03d59cf6-927d-44b2-9c03-4c85e8b2c4b1",
+          "totalStreams": 506640,
+          "totalTracks": 1
+        },
+        {
+          "id": "fb45f47a-c186-4b84-a12c-8b0f8204abfd",
+          "chartmetricId": "cm-alejandro-reyes-1763676181811-sq1o0it9w",
+          "name": "Alejandro Reyes",
+          "normalizedName": "alejandro-reyes",
+          "hasContact": true,
+          "contactId": "11fcbbdc-ef9f-4652-90fa-396851cc4ac7",
+          "totalStreams": 227617,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "meg mcree",
+      "profileCount": 4,
+      "profiles": [
+        {
+          "id": "21f3c986-cee6-4635-9fb9-9b2a5999f7d4",
+          "chartmetricId": "cm-meg-mcree-1763676189385-ycnkdqujq",
+          "name": "Meg McRee",
+          "normalizedName": "meg-mcree",
+          "hasContact": true,
+          "contactId": "7042118b-23c5-424a-92f5-02dacdabfc80",
+          "totalStreams": 33355,
+          "totalTracks": 1
+        },
+        {
+          "id": "3cf938f6-aa29-478b-ba0c-71ffddc4e417",
+          "chartmetricId": "cm-meg-mcree-1763676095440-6xv2tym30",
+          "name": "Meg McRee",
+          "normalizedName": "meg-mcree",
+          "hasContact": true,
+          "contactId": "fc0ebc0b-d5a3-4bb6-8759-d2f872b31d87",
+          "totalStreams": 45682,
+          "totalTracks": 1
+        },
+        {
+          "id": "5ff04247-6f8c-4d24-adba-d3500a076518",
+          "chartmetricId": "cm-meg-mcree-1763676095635-frusncdh0",
+          "name": "Meg McRee",
+          "normalizedName": "meg-mcree",
+          "hasContact": true,
+          "contactId": "bebe678f-9918-44f4-a7c9-ae388a222b97",
+          "totalStreams": 33355,
+          "totalTracks": 1
+        },
+        {
+          "id": "e746c755-4975-4c21-b3e5-d670806310fc",
+          "chartmetricId": "cm-meg-mcree-1763676189000-dd58ibhrm",
+          "name": "Meg McRee",
+          "normalizedName": "meg-mcree",
+          "hasContact": true,
+          "contactId": "e0c5ebc0-bea1-4cf7-ab9c-72f25ff044dc",
+          "totalStreams": 45682,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "ash bowers",
+      "profileCount": 3,
+      "profiles": [
+        {
+          "id": "0552e4fa-cab7-45f2-9eec-acf3a83a8d08",
+          "chartmetricId": "cm-ash-bowers-1763676093497-4nq43htav",
+          "name": "Ash Bowers",
+          "normalizedName": "ash-bowers",
+          "hasContact": true,
+          "contactId": "ee775ed1-80e5-4d38-934b-5a5684bcd0c3",
+          "totalStreams": 72943,
+          "totalTracks": 1
+        },
+        {
+          "id": "73cd7662-1301-4ae1-9d03-eea2722685e1",
+          "chartmetricId": "pending_1763167934025_lafbieihv",
+          "name": "Ash Bowers",
+          "normalizedName": "ash bowers",
+          "hasContact": true,
+          "contactId": "bf1e17f1-d064-47d7-ba61-6391da3fbea6",
+          "totalStreams": 32306,
+          "totalTracks": 1
+        },
+        {
+          "id": "dffa80de-de3f-4469-8f91-28c08825528b",
+          "chartmetricId": "cm-ash-bowers-1763676184878-gdtryew91",
+          "name": "Ash Bowers",
+          "normalizedName": "ash-bowers",
+          "hasContact": true,
+          "contactId": "51726a6e-0acb-42ea-8c1d-c1bd785d9ed3",
+          "totalStreams": 72943,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "adam mcphaill",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "2d8edf51-6a1d-454c-a4ed-7fc49eed5562",
+          "chartmetricId": "cm-adam-mcphaill-1763676180731-bh3zzxa7y",
+          "name": "Adam McPhaill",
+          "normalizedName": "adam-mcphaill",
+          "hasContact": true,
+          "contactId": "2049f1b3-756e-457e-8787-972a46eb897c",
+          "totalStreams": 25172,
+          "totalTracks": 1
+        },
+        {
+          "id": "649a7e82-36ef-408f-b28a-faee6a59133c",
+          "chartmetricId": "cm-adam-mcphaill-1763676092239-p4plq7j78",
+          "name": "Adam McPhaill",
+          "normalizedName": "adam-mcphaill",
+          "hasContact": true,
+          "contactId": "eba7c9aa-a22f-4ca1-83a5-eea52a6b2c88",
+          "totalStreams": 25172,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "adam seuba",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "a9cbda8b-8ba6-4e23-95d5-789f3019177b",
+          "chartmetricId": "cm-adam-seuba-1763676092421-tbu7mils9",
+          "name": "Adam Seuba",
+          "normalizedName": "adam-seuba",
+          "hasContact": true,
+          "contactId": "199f7b71-9e94-4e21-a22c-91cbfd45d91e",
+          "totalStreams": 26089,
+          "totalTracks": 1
+        },
+        {
+          "id": "e901964c-c7c4-4441-b6e8-3498becd5eff",
+          "chartmetricId": "cm-adam-seuba-1763676181133-74hvnqy2m",
+          "name": "Adam Seuba",
+          "normalizedName": "adam-seuba",
+          "hasContact": true,
+          "contactId": "58f8ffd3-676e-4965-93a6-43f6a771a2a9",
+          "totalStreams": 26089,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "alex jones",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "383b4340-c19f-42df-8140-91b233775aa3",
+          "chartmetricId": "cm-alex-jones-1763676092950-2x2h1pmia",
+          "name": "Alex Jones",
+          "normalizedName": "alex-jones",
+          "hasContact": true,
+          "contactId": "eb29af44-38b2-4a7f-bae7-1dac9c4fa643",
+          "totalStreams": 1050569,
+          "totalTracks": 1
+        },
+        {
+          "id": "eef99164-b83b-4efe-b7f2-8c24cd86df5b",
+          "chartmetricId": "cm-alex-jones-1763676183325-w4yfau2bm",
+          "name": "Alex Jones",
+          "normalizedName": "alex-jones",
+          "hasContact": true,
+          "contactId": "c623606f-de51-447b-b08d-2dbd0dca39ff",
+          "totalStreams": 1050569,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "amber marie mcconnell",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "c2d06e20-80b3-47a8-b0b5-c5531520ae3a",
+          "chartmetricId": "cm-amber-marie-mcconnell-1763676184003-my2zsyhoo",
+          "name": "Amber Marie McConnell",
+          "normalizedName": "amber-marie-mcconnell",
+          "hasContact": true,
+          "contactId": "409456f1-9841-47da-9e02-ce9844b2edfa",
+          "totalStreams": 6750,
+          "totalTracks": 1
+        },
+        {
+          "id": "e3edeb86-f41e-45f1-b1d8-a0b1c055328a",
+          "chartmetricId": "cm-amber-marie-mcconnell-1763676093129-4535vn4dh",
+          "name": "Amber Marie McConnell",
+          "normalizedName": "amber-marie-mcconnell",
+          "hasContact": true,
+          "contactId": "d93b4359-99ab-452d-b2e5-5ff6434f0db9",
+          "totalStreams": 6750,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "andrew robinson",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "4ef1cbb3-64bd-4793-a23e-98b5740d980b",
+          "chartmetricId": "cm-andrew-robinson-1763676184393-cnbimtc72",
+          "name": "Andrew Robinson",
+          "normalizedName": "andrew-robinson",
+          "hasContact": true,
+          "contactId": "93a618b5-21bc-443c-9401-36e6da04b3f1",
+          "totalStreams": 12521,
+          "totalTracks": 1
+        },
+        {
+          "id": "ebb91c6a-30e6-4e05-9d92-c0e514457cfe",
+          "chartmetricId": "cm-andrew-robinson-1763676093317-mgdcqhwlb",
+          "name": "Andrew Robinson",
+          "normalizedName": "andrew-robinson",
+          "hasContact": true,
+          "contactId": "0c243d28-c600-408c-8899-11e900f44518",
+          "totalStreams": 12521,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "benjamin francis leftwich",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "5505aa91-cb59-4d71-9060-e8ed8f48672d",
+          "chartmetricId": "cm-benjamin-francis-leftwich-1763676185262-0bkgkmudu",
+          "name": "Benjamin Francis Leftwich",
+          "normalizedName": "benjamin-francis-leftwich",
+          "hasContact": true,
+          "contactId": "305a2a9c-d8fb-4658-a462-5b5b6b731efa",
+          "totalStreams": 19469,
+          "totalTracks": 1
+        },
+        {
+          "id": "a8bb90b8-5ad0-4e0b-b35d-f93e845406f5",
+          "chartmetricId": "cm-benjamin-francis-leftwich-1763676093680-y0d0qv3qn",
+          "name": "Benjamin Francis Leftwich",
+          "normalizedName": "benjamin-francis-leftwich",
+          "hasContact": true,
+          "contactId": "a558b2b9-5628-46f1-bbf8-0808c39a4486",
+          "totalStreams": 19469,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "caleb freihaut",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "0f114c21-5834-4335-916a-5bca887a86f1",
+          "chartmetricId": "cm-caleb-freihaut-1763676182841-3brmapwct",
+          "name": "Caleb Freihaut",
+          "normalizedName": "caleb-freihaut",
+          "hasContact": true,
+          "contactId": "e68bdbca-95c4-41b2-a9e0-5c8c02513294",
+          "totalStreams": 506640,
+          "totalTracks": 1
+        },
+        {
+          "id": "839a76f4-9c20-48c1-bae6-28dc5d631a5c",
+          "chartmetricId": "cm-caleb-freihaut-1763676182003-bqt0rbop6",
+          "name": "Caleb Freihaut",
+          "normalizedName": "caleb-freihaut",
+          "hasContact": true,
+          "contactId": "fe4f8728-410f-4645-aeff-c6b0df57fa2a",
+          "totalStreams": 227617,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "christopher boys",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "0b44389f-2352-4619-993a-5c4035d4a522",
+          "chartmetricId": "cm-christopher-boys-1763676185651-kvllqqtk3",
+          "name": "Christopher Boys",
+          "normalizedName": "christopher-boys",
+          "hasContact": true,
+          "contactId": "82d937c0-a332-4652-83c6-dd6af0030345",
+          "totalStreams": 13509,
+          "totalTracks": 1
+        },
+        {
+          "id": "a8ededfb-8c0d-4946-b970-0aa34669d1a0",
+          "chartmetricId": "cm-christopher-boys-1763676093858-u75mj5lsx",
+          "name": "Christopher Boys",
+          "normalizedName": "christopher-boys",
+          "hasContact": true,
+          "contactId": "e51f5d85-9a39-4a90-ab41-48e5ba67c312",
+          "totalStreams": 13509,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "clayton blue ii",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "3a7c2de9-2792-4719-b0e8-5f5b1cf13c18",
+          "chartmetricId": "cm-clayton-blue-ii-1763676186139-61rycibpm",
+          "name": "Clayton Blue II",
+          "normalizedName": "clayton-blue-ii",
+          "hasContact": true,
+          "contactId": "99f8486d-e230-4321-a34d-63abd5cf90b8",
+          "totalStreams": 69783,
+          "totalTracks": 1
+        },
+        {
+          "id": "8018c178-b561-4eb5-a1bf-ed78975e63b9",
+          "chartmetricId": "cm-clayton-blue-ii-1763676094177-b8dxdvist",
+          "name": "Clayton Blue II",
+          "normalizedName": "clayton-blue-ii",
+          "hasContact": true,
+          "contactId": "579d35cd-2c8b-4bf1-ba51-3402e8a0f943",
+          "totalStreams": 69783,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "cody webb",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "a98299cd-06c0-4878-b463-884c790fb3f3",
+          "chartmetricId": "cm-cody-webb-1763676186428-0wv0o3oha",
+          "name": "Cody Webb",
+          "normalizedName": "cody-webb",
+          "hasContact": true,
+          "contactId": "9e69f472-bd05-4e60-b400-bc7295b4681b",
+          "totalStreams": 50155,
+          "totalTracks": 1
+        },
+        {
+          "id": "d458cd8a-b492-49ad-8271-2783fb0a96d3",
+          "chartmetricId": "cm-cody-webb-1763676094359-cw9yzywr7",
+          "name": "Cody Webb",
+          "normalizedName": "cody-webb",
+          "hasContact": true,
+          "contactId": "4ff6338c-34cf-4623-a876-3b094d4c25f8",
+          "totalStreams": 50155,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "davon \"jari fontaine' myers",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "c65ba7b8-7611-408f-b253-9625e03279a6",
+          "chartmetricId": "cm-davon--jari-fontaine--myers-1763676186816-mfnoseh4j",
+          "name": "Davon \"Jari Fontaine' Myers",
+          "normalizedName": "davon--jari-fontaine--myers",
+          "hasContact": true,
+          "contactId": "435dac48-cbe9-47a3-8673-c6b4499eabe8",
+          "totalStreams": 6876,
+          "totalTracks": 1
+        },
+        {
+          "id": "f1ac4692-090c-4e44-89f1-4018c575a30b",
+          "chartmetricId": "cm-davon--jari-fontaine--myers-1763676094547-lkft94i2u",
+          "name": "Davon \"Jari Fontaine' Myers",
+          "normalizedName": "davon--jari-fontaine--myers",
+          "hasContact": true,
+          "contactId": "a723d66b-f55b-4d13-9240-ff8998a8d478",
+          "totalStreams": 6876,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "devin mitchell birchfield",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "3fa6d4fa-1023-4b93-98e1-66b24e0d58cc",
+          "chartmetricId": "cm-devin-mitchell-birchfield-1763676182938-07h8uepxi",
+          "name": "Devin Mitchell Birchfield",
+          "normalizedName": "devin-mitchell-birchfield",
+          "hasContact": true,
+          "contactId": "bde1f24b-4449-4d3a-b147-e706337aabe3",
+          "totalStreams": 506640,
+          "totalTracks": 1
+        },
+        {
+          "id": "685765a8-42a0-4ce1-b97b-c53b516576ef",
+          "chartmetricId": "cm-devin-mitchell-birchfield-1763676182100-rsmvzfjp5",
+          "name": "Devin Mitchell Birchfield",
+          "normalizedName": "devin-mitchell-birchfield",
+          "hasContact": true,
+          "contactId": "b3c5d470-6bf7-4d22-bdb2-2c820a2b94b1",
+          "totalStreams": 227617,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "dominic james",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "1f16c2a0-93aa-4fbb-92d1-ae7263b785f5",
+          "chartmetricId": "cm-dominic-james-1763676094726-42ll9g8on",
+          "name": "Dominic James",
+          "normalizedName": "dominic-james",
+          "hasContact": true,
+          "contactId": "72678ac5-633b-4426-8d41-7f0c71998b0d",
+          "totalStreams": 8577,
+          "totalTracks": 1
+        },
+        {
+          "id": "a4967005-b942-47d3-a7dc-46a40bc9acec",
+          "chartmetricId": "cm-dominic-james-1763676187301-s8ccjnq5e",
+          "name": "Dominic James",
+          "normalizedName": "dominic-james",
+          "hasContact": true,
+          "contactId": "1e5de785-4f25-48cc-9b64-0b64990f1359",
+          "totalStreams": 8577,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "donald mckinley glover ii",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "bf6c4c63-376e-4a98-bd66-133ae1cbc39e",
+          "chartmetricId": "cm-donald-mckinley-glover-ii-1763676094910-zqcz07vqt",
+          "name": "Donald Mckinley Glover II",
+          "normalizedName": "donald-mckinley-glover-ii",
+          "hasContact": true,
+          "contactId": "dbccdf9d-5364-4888-95a8-c5012e14d17d",
+          "totalStreams": 7930243,
+          "totalTracks": 1
+        },
+        {
+          "id": "f83636b2-7554-4ef0-b88f-5b8150783f12",
+          "chartmetricId": "cm-donald-mckinley-glover-ii-1763676188033-vtveho8ne",
+          "name": "Donald Mckinley Glover II",
+          "normalizedName": "donald-mckinley-glover-ii",
+          "hasContact": true,
+          "contactId": "cd63134b-3400-4526-8f92-897004d1448c",
+          "totalStreams": 7930243,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "evan berrylouis alexandre hassell ii",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "26fa4e30-622f-461f-a17e-c7a06b3446c9",
+          "chartmetricId": "cm-evan-berrylouis-alexandre-hassell-ii-1763676095089-g4btlfemb",
+          "name": "Evan BerryLouis Alexandre Hassell II",
+          "normalizedName": "evan-berrylouis-alexandre-hassell-ii",
+          "hasContact": true,
+          "contactId": "fa1c2274-56d5-4e8a-abb0-2332dd7ee2db",
+          "totalStreams": 0,
+          "totalTracks": 1
+        },
+        {
+          "id": "c6979497-3623-4a5e-8ccf-55e135325d33",
+          "chartmetricId": "cm-evan-berrylouis-alexandre-hassell-ii-1763676188320-7t9k8gmb7",
+          "name": "Evan BerryLouis Alexandre Hassell II",
+          "normalizedName": "evan-berrylouis-alexandre-hassell-ii",
+          "hasContact": true,
+          "contactId": "24d7ea49-9aa9-4d6d-a4cf-2f8c5ac0e701",
+          "totalStreams": 0,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "haley roughton",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "8de1a89b-f304-4c63-878b-9ff8b6bc0d2c",
+          "chartmetricId": "cm-haley-roughton-1763676183035-jqsu4a3bs",
+          "name": "Haley Roughton",
+          "normalizedName": "haley-roughton",
+          "hasContact": true,
+          "contactId": "3962e3b3-0bba-47f1-85f1-00f37e6e6a3e",
+          "totalStreams": 506640,
+          "totalTracks": 1
+        },
+        {
+          "id": "e0facb23-111e-4b09-96fe-1c6f2448bc71",
+          "chartmetricId": "cm-haley-roughton-1763676182195-j780lqhmy",
+          "name": "Haley Roughton",
+          "normalizedName": "haley-roughton",
+          "hasContact": true,
+          "contactId": "5c2ed69e-95f9-4e60-9f8b-081ff3aa75e7",
+          "totalStreams": 227617,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "hariette pilbeam",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "428013ec-2aa2-4ea4-9eb9-412db5b4b7ff",
+          "chartmetricId": "cm-hariette-pilbeam-1763676188616-uiuikbwvs",
+          "name": "Hariette Pilbeam",
+          "normalizedName": "hariette-pilbeam",
+          "hasContact": true,
+          "contactId": "77ecc051-d21a-4307-a6c2-61f3abf78c9e",
+          "totalStreams": 276711,
+          "totalTracks": 1
+        },
+        {
+          "id": "eccf336f-ac69-496f-b94a-9adafdbda963",
+          "chartmetricId": "cm-hariette-pilbeam-1763676095262-qfvmtqt9g",
+          "name": "Hariette Pilbeam",
+          "normalizedName": "hariette-pilbeam",
+          "hasContact": true,
+          "contactId": "a39adbd8-caa0-4ce9-8a5b-e0fa92955976",
+          "totalStreams": 276711,
+          "totalTracks": 1
+        }
+      ]
+    },
+    {
+      "name": "lee kurt albrecht",
+      "profileCount": 2,
+      "profiles": [
+        {
+          "id": "24a441e8-c4ee-4864-ae70-c86c4420f653",
+          "chartmetricId": "cm-lee-kurt-albrecht-1763676182291-5d3lxz3m3",
+          "name": "Lee Kurt Albrecht",
+          "normalizedName": "lee-kurt-albrecht",
+          "hasContact": true,
+          "contactId": "dc182b4e-edaf-4998-8843-f76f017099c1",
+          "totalStreams": 227617,
+          "totalTracks": 1
+        },
+        {
+          "id": "fef55b4d-f459-4f14-879b-b0a1a2ce7081",
+          "chartmetricId": "cm-lee-kurt-albrecht-1763676183131-tf9v1jgd9",
+          "name": "Lee Kurt Albrecht",
+          "normalizedName": "lee-kurt-albrecht",
+          "hasContact": true,
+          "contactId": "e202892e-c19e-43ea-8f62-4fb41f02aad5",
+          "totalStreams": 506640,
+          "totalTracks": 1
+        }
+      ]
+    }
+  ]
+}
