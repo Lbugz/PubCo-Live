@@ -1,0 +1,136 @@
+1sthexagram — **YES, this score is mathematically impossible given the signals shown.**
+Your UI is showing:
+
+### **+4 + +4 + +3 + +3 + +2 = 16 → but the score is capped at 10.**
+
+That means the **backend is correctly capping scores**,
+BUT the **frontend is showing WRONG weight values**.
+
+This is a **frontend bug**, not a scoring logic bug.
+
+Let me break it down clearly:
+
+---
+
+# 🔥 **WHY THIS IS HAPPENING**
+
+Your current **production scoring weights** are:
+
+| Signal                          | Actual Weight |
+| ------------------------------- | ------------- |
+| Fresh Finds                     | **+3**        |
+| No publisher metadata           | **+3**        |
+| DIY distributor                 | **+2**        |
+| Metadata completeness “partial” | **+2**        |
+| Unsigned distribution pattern   | **+2**        |
+
+But your **UI is displaying**:
+
+* Fresh Finds → **+4** ❌ wrong
+* No publisher → **+4** ❌ wrong
+* DIY distributor → **+3** ❌ wrong
+* Data completeness → **+3** ❌ wrong
+* Portfolio DIY → **+2** ✔ correct
+
+So the signal weights in your UI **do NOT match** the production scoring engine.
+
+This is why the visual breakdown sums to **16**, but the score shows **10**.
+
+The backend correctly clamps total → min(10, max(0, sum)).
+
+---
+
+# 🎯 **THE ROOT CAUSE**
+
+During your old weighted model:
+
+* Fresh Finds was +3 * 1.4 = **~4.2**
+* No publisher was +3 * 1.4 = **~4.2**
+* DIY was +2 * 1.3 = **~2.6**
+* Data partial was +3 * 1.1 = **~3.3**
+
+Your **UI still has the old weighted values cached** or displayed from legacy logic.
+
+But your **backend has been updated to use simplified fixed weights**.
+
+So your UI and backend are out of sync.
+
+---
+
+# 🩹 **PROOF: BACKEND WEIGHTS vs UI WEIGHTS**
+
+### **Backend (Correct) → from your scoring code audit**
+
+* FRESH_FINDS = **3**
+* NO_PUBLISHER = **3**
+* DIY = **2**
+* COMPLETENESS_50_75 = **2**
+* UNSIGNED_DISTRIBUTION_PATTERN = **2**
+
+### **Frontend (Wrong) → from screenshot**
+
+* Fresh Finds = **4** ❌
+* No publisher = **4** ❌
+* DIY = **3** ❌
+* Completeness = **3** ❌
+* Portfolio = **2** ✔
+
+---
+
+# ✔️ **HERE’S THE FIX YOU NEED TO TELL REPLIT TO MAKE**
+
+You must update your frontend scoring breakdown renderer to use the **base weights** from the backend instead of legacy weighted values.
+
+---
+
+### **REPLIT FIX INSTRUCTION (Copy/Paste)**
+
+```
+Please update the ScoreBreakdown component so that all displayed signal weights reflect the 
+actual weight values returned by contactScoring.ts.
+
+Do NOT use hardcoded or legacy weighted values.
+
+Specifically:
+- Replace any instance of +4 (Fresh Finds) with +3
+- Replace any instance of +4 (No publisher) with +3
+- Replace any instance of +3 (DIY distributor) with +2
+- Replace any instance of +3 (Data completeness partial) with +2
+
+The UI should always display the `weight` value returned directly from the backend scoring engine.
+No client-side recalculation should occur.
+
+Also ensure tooltip / descriptions are synced to these weights.
+```
+
+---
+
+# ⭐ **WHAT THE UI SHOULD SHOW FOR THIS CONTACT**
+
+Correct breakdown:
+
+```
+Fresh Finds playlist       +3
+No publisher metadata      +3
+DIY distributor            +2
+Data 56% (partial)         +2
+DIY distribution pattern   +2
+
+Total: 3 + 3 + 2 + 2 + 2 = 12
+Final Score = 10/10 (capped)
+```
+
+Thus the backend is correct, but UI is showing wrong values.
+
+---
+
+# 🧠 **NEXT STEP**
+
+If you want, I can:
+
+* Regenerate the exact Scoring Tab UI using correct weights
+* Generate a PR-ready patch for React/TypeScript
+* Update the 1-pager to show the correct example sums
+* Add a “score capped at 10” final line to prevent confusion
+
+Just tell me **“update score UI spec”** or **“generate Replit patch.”**
