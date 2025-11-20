@@ -253,7 +253,7 @@ export function TrackDetailDrawerV2({
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-3">
                     <span className="flex items-center gap-1">
                       <Disc className="h-3 w-3" />
-                      {displayTrack.albumName || 'Single'}
+                      Single
                     </span>
                     <span>•</span>
                     <span className="flex items-center gap-1">

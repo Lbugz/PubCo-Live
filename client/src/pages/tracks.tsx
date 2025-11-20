@@ -29,6 +29,7 @@ import { TrackTable } from "@/components/track-table";
 import { CardView } from "@/components/card-view";
 import { KanbanView } from "@/components/kanban-view";
 import { DetailsDrawer } from "@/components/details-drawer";
+import { TrackDetailDrawerV2 } from "@/components/track-detail-drawer-v2";
 import { TagManager } from "@/components/tag-manager";
 import { PlaylistManager } from "@/components/playlist-manager";
 import { PageContainer } from "@/components/layout/page-container";
@@ -62,6 +63,7 @@ export default function Tracks() {
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const [sortField, setSortField] = useState<string>("addedAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [useDrawerV2, setUseDrawerV2] = useState(false);
   const notify = useNotify();
   const isMobile = useMobile(768);
   
@@ -492,6 +494,19 @@ export default function Tracks() {
 
             <FilterBar.Actions>
               <Button
+                onClick={() => setUseDrawerV2(!useDrawerV2)}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                data-testid="button-toggle-drawer-version"
+                title={`Switch to ${useDrawerV2 ? 'V1' : 'V2'} Drawer`}
+              >
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  Drawer {useDrawerV2 ? 'V2' : 'V1'}
+                </span>
+              </Button>
+              <Button
                 onClick={() => enrichArtistsMutation.mutate({ limit: 50 })}
                 variant="gradient"
                 size="sm"
@@ -581,17 +596,31 @@ export default function Tracks() {
         </div>
       </PageContainer>
 
-      <DetailsDrawer
-        track={selectedTrack}
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        onEnrich={handleEnrichTrack}
-        onEnrichPhase={(trackId: string, phase: number) => {
-          console.log("[Tracks] onEnrichPhase called", { trackId, phase });
-          return enrichPhaseMutation.mutateAsync({ trackId, phase });
-        }}
-        isEnrichingPhase={enrichPhaseMutation.isPending}
-      />
+      {useDrawerV2 ? (
+        <TrackDetailDrawerV2
+          track={selectedTrack}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          onEnrich={handleEnrichTrack}
+          onEnrichPhase={(trackId: string, phase: number) => {
+            console.log("[Tracks] onEnrichPhase called (V2)", { trackId, phase });
+            return enrichPhaseMutation.mutateAsync({ trackId, phase });
+          }}
+          isEnrichingPhase={enrichPhaseMutation.isPending}
+        />
+      ) : (
+        <DetailsDrawer
+          track={selectedTrack}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          onEnrich={handleEnrichTrack}
+          onEnrichPhase={(trackId: string, phase: number) => {
+            console.log("[Tracks] onEnrichPhase called (V1)", { trackId, phase });
+            return enrichPhaseMutation.mutateAsync({ trackId, phase });
+          }}
+          isEnrichingPhase={enrichPhaseMutation.isPending}
+        />
+      )}
     </div>
   );
 }
