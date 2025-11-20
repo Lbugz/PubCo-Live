@@ -3373,6 +3373,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Validate playlist exists if playlistId is provided
+      if (playlistId) {
+        const playlist = await storage.getPlaylistById(playlistId);
+        if (!playlist) {
+          return res.status(404).json({ 
+            error: "Playlist not found",
+            playlistId 
+          });
+        }
+      }
+
       const { getJobQueue } = await import("./enrichment/jobQueueManager");
       const jobQueue = getJobQueue();
 

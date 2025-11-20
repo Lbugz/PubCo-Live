@@ -308,10 +308,10 @@ async function extractCredits(
         if (creditsClicked) {
           console.log(`[Scraper] ${trackId}: Credits menu opened, waiting for modal...`);
           
-          // Wait for credits modal with early bailout
+          // Wait for credits modal with updated Spotify UI selectors (post-August 2024)
           try {
             await Promise.race([
-              page.waitForSelector('.credits__modal, [role="dialog"]', { timeout: 10000 }),
+              page.waitForSelector('[data-testid="credits-modal"], [role="dialog"]', { timeout: 10000 }),
               new Promise((_, reject) => 
                 setTimeout(() => reject(new Error('Credits modal timeout')), 10000)
               )
@@ -322,7 +322,7 @@ async function extractCredits(
             console.warn(`[Scraper] ${trackId}: ⚠ Credits modal failed to load, proceeding with page scan`);
           }
           
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       }
     } catch (error: any) {
@@ -383,6 +383,51 @@ async function extractCredits(
     const labels: string[] = [];
     const publishers: string[] = [];
     
+    // Strategy 1: Try to parse structured <dl> elements from the credits modal (new Spotify UI)
+    const creditsModal = document.querySelector('[data-testid="credits-modal"]');
+    if (creditsModal) {
+      console.log('[DEBUG] Found credits modal with data-testid, attempting structured parsing...');
+      
+      const dlElements = creditsModal.querySelectorAll('dl');
+      dlElements.forEach((dl) => {
+        const dtElements = dl.querySelectorAll('dt');
+        const ddElements = dl.querySelectorAll('dd');
+        
+        for (let i = 0; i < dtElements.length; i++) {
+          const role = (dtElements[i]?.textContent || '').toLowerCase().trim();
+          const names = (ddElements[i]?.textContent || '').trim();
+          
+          if (!names) continue;
+          
+          const nameList = names.split(',').map(n => n.trim()).filter(Boolean);
+          const processedNames: string[] = [];
+          
+          for (const name of nameList) {
+            const splitResult = (window as any).splitConcatenatedNames(name);
+            processedNames.push(...splitResult);
+          }
+          
+          if (role.includes('written') || role.includes('songwriter') || role.includes('writer')) {
+            console.log('[DEBUG] DL: Found writers -', role, ':', processedNames);
+            writers.push(...processedNames);
+          } else if (role.includes('produced') || role.includes('producer')) {
+            console.log('[DEBUG] DL: Found producers -', role, ':', processedNames);
+            producers.push(...processedNames);
+          } else if (role.includes('composer')) {
+            console.log('[DEBUG] DL: Found composers -', role, ':', processedNames);
+            composers.push(...processedNames);
+          } else if (role.includes('publisher')) {
+            console.log('[DEBUG] DL: Found publishers -', role, ':', processedNames);
+            publishers.push(...processedNames);
+          } else if (role.includes('label') || role.includes('source')) {
+            console.log('[DEBUG] DL: Found labels -', role, ':', processedNames);
+            labels.push(...processedNames);
+          }
+        }
+      });
+    }
+    
+    // Strategy 2: Fallback to text-based parsing (works for both old and new UI)
     const allText = document.body.innerText;
     const lines = allText.split('\n').map(l => l.trim()).filter(Boolean);
     
