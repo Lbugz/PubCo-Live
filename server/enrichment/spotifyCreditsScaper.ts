@@ -547,24 +547,30 @@ export async function enrichTracksWithCredits(
     return result;
   }
 
+  // Configuration via environment variables with sensible defaults
+  const MAX_BATCH_SIZE = parseInt(process.env.SCRAPER_MAX_BATCH_SIZE || '100', 10);
+  const MAX_CONCURRENCY = parseInt(process.env.SCRAPER_MAX_CONCURRENCY || '2', 10);
+  const MIN_DELAY_MS = parseInt(process.env.SCRAPER_MIN_DELAY_MS || '1000', 10);
+  const BROWSER_POOL_SIZE = parseInt(process.env.SCRAPER_BROWSER_POOL_SIZE || '2', 10);
+  const TRACK_TIMEOUT = parseInt(process.env.SCRAPER_TRACK_TIMEOUT_MS || '45000', 10);
+  const CHUNK_SIZE = parseInt(process.env.SCRAPER_CHUNK_SIZE || '2', 10);
+
   // Limit batch size to prevent overwhelming the queue
-  const batchSize = Math.min(tracksNeedingEnrichment.length, 100);
+  const batchSize = Math.min(tracksNeedingEnrichment.length, MAX_BATCH_SIZE);
   const batch = tracksNeedingEnrichment.slice(0, batchSize);
 
   console.log(`[Phase 2] Enriching ${batch.length} tracks with credits and stream counts...`);
+  console.log(`[Phase 2] Config: concurrency=${MAX_CONCURRENCY}, browsers=${BROWSER_POOL_SIZE}, timeout=${TRACK_TIMEOUT}ms, chunk=${CHUNK_SIZE}`);
 
   // Register exit handlers for safety
   registerExitHandler();
 
   // Initialize queue with controlled concurrency for better throughput
   const queue = getQueue({
-    maxConcurrency: 2,  // 2 concurrent browsers for better throughput (monitor memory)
-    minDelay: 1000,     // Delay between operations
-    browserPoolSize: 2, // 2 browser pool for parallelization
+    maxConcurrency: MAX_CONCURRENCY,
+    minDelay: MIN_DELAY_MS,
+    browserPoolSize: BROWSER_POOL_SIZE,
   });
-
-  const TRACK_TIMEOUT = 45000; // 45s timeout per track
-  const CHUNK_SIZE = 2; // Process 2 tracks at a time to limit memory usage
 
   try {
     // Process tracks in chunks to limit memory pressure
