@@ -50,7 +50,51 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Tracks() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  
+  // Reactively track URL search parameter changes using history API patching
+  const [urlSearch, setUrlSearch] = useState(window.location.search);
+  
+  useEffect(() => {
+    // Initial sync
+    setUrlSearch(window.location.search);
+    
+    // Patch history.pushState and history.replaceState to dispatch custom events
+    const originalPushState = history.pushState.bind(history);
+    const originalReplaceState = history.replaceState.bind(history);
+    
+    history.pushState = function(...args) {
+      originalPushState(...args);
+      window.dispatchEvent(new Event('locationchange'));
+    };
+    
+    history.replaceState = function(...args) {
+      originalReplaceState(...args);
+      window.dispatchEvent(new Event('locationchange'));
+    };
+    
+    // Listen for all types of navigation
+    const handleLocationChange = () => {
+      setUrlSearch(window.location.search);
+    };
+    
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('locationchange', handleLocationChange);
+    
+    return () => {
+      // Restore original methods
+      history.pushState = originalPushState;
+      history.replaceState = originalReplaceState;
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('locationchange', handleLocationChange);
+    };
+  }, []); // Run once on mount
+  
+  const selectedTrackIdFromUrl = useMemo(() => {
+    const params = new URLSearchParams(urlSearch);
+    return params.get('selected');
+  }, [urlSearch]);
+  
   const [selectedWeek, setSelectedWeek] = useState<string>("all");
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -190,24 +234,40 @@ export default function Tracks() {
 
   // Handle selected track query parameter from URL (from contact links)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const selectedTrackId = params.get('selected');
-    
-    if (selectedTrackId && tracks && tracks.length > 0) {
-      // Find the track by ID
-      const track = tracks.find(t => t.id === selectedTrackId);
+    if (selectedTrackIdFromUrl) {
+      // First try to find in loaded tracks
+      const track = tracks?.find(t => t.id === selectedTrackIdFromUrl);
       
       if (track) {
-        // Open the drawer with this track
+        // Found in loaded tracks - open drawer
         setSelectedTrack(track);
         setDrawerOpen(true);
         
         // Clear the query parameter from URL without triggering reload
         const newUrl = window.location.pathname;
         window.history.replaceState({}, '', newUrl);
+      } else if (tracks !== undefined) {
+        // Track not in loaded list - fetch it directly
+        fetch(`/api/tracks/${selectedTrackIdFromUrl}`)
+          .then(res => res.ok ? res.json() : null)
+          .then(track => {
+            if (track) {
+              setSelectedTrack(track);
+              setDrawerOpen(true);
+            }
+            // Clear the query parameter
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+          })
+          .catch(err => {
+            console.error('Failed to fetch track:', err);
+            // Clear the query parameter even on error
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+          });
       }
     }
-  }, [tracks]); // Re-run when tracks data is loaded
+  }, [tracks, selectedTrackIdFromUrl]); // Re-run when tracks data is loaded OR selected track ID changes
 
   const enrichMutation = useMutation({
     mutationFn: async ({ trackId, trackIds }: { trackId?: string; trackIds?: string[] }) => {

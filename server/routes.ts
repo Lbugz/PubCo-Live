@@ -962,6 +962,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/tracks/:trackId", async (req, res) => {
+    try {
+      const track = await storage.getTrackById(req.params.trackId);
+      if (!track) {
+        return res.status(404).json({ error: "Track not found" });
+      }
+      res.json(track);
+    } catch (error) {
+      console.error("Error fetching track:", error);
+      res.status(500).json({ error: "Failed to fetch track" });
+    }
+  });
+
   app.get("/api/tracks/:trackId/full", async (req, res) => {
     try {
       const trackId = req.params.trackId;
