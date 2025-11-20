@@ -1,0 +1,1066 @@
+{
+  "timestamp": "2025-11-20T16:03:51.336Z",
+  "results": [
+    {
+      "phase": "Phase 1: Auth",
+      "endpoint": "/token",
+      "method": "POST",
+      "status": 200,
+      "statusText": "OK",
+      "success": true,
+      "responseBody": {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NDA4MiwidGltZXN0YW1wIjoxNzYzNjU0NjAzNjA3LCJpYXQiOjE3NjM2NTQ2MDMsImV4cCI6MTc2MzY1ODIwM30.imaD46zyjxwwxnQ94wml-QRJ4kcAGpAtSfJNbUH3DlM",
+        "expires_in": 3600,
+        "refresh_token": "sipEY1ZzZPcVZWhChQY2jllCL6iWExzi1KHW7waIfjsaTdPEtMmLBodKug5hzLeh",
+        "scope": "api"
+      },
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "303",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Thu, 20 Nov 2025 16:03:23 GMT",
+        "etag": "W/\"12f-l+tuZfG2oD3cUMy7BivUOZiIsnI\"",
+        "strict-transport-security": "max-age=15552000; includeSubDomains",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-ratelimit-limit": "false",
+        "x-ratelimit-remaining": "false",
+        "x-ratelimit-reset": "false",
+        "x-response-time": "6.708ms",
+        "x-xss-protection": "1; mode=block"
+      }
+    },
+    {
+      "phase": "Phase 2: Public",
+      "endpoint": "/track/17461916",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK",
+      "success": true,
+      "responseBody": {
+        "obj": {
+          "id": 17461916,
+          "name": "6 Cello Suites, No. 4 in B-Flat Major, BWV 1010: V. Bourée",
+          "isrc": "FRZ131208050",
+          "image_url": "https://i.scdn.co/image/59dc3fbde66a972abf10e58c7998b412236d1ee3",
+          "duration_ms": 330933,
+          "composer_name": "JOHANN SEBASTIAN BACH, LIBRARY ARRANGEMENT",
+          "track_tier": 5,
+          "moods": [
+            {
+              "id": 504931,
+              "name": "chill"
+            }
+          ],
+          "activities": [
+            {
+              "id": 505244,
+              "name": "guitar",
+              "isParentTag": false,
+              "rank": 1
+            },
+            {
+              "id": 504875,
+              "name": "focus",
+              "isParentTag": false,
+              "rank": 2
+            }
+          ],
+          "mood_smart_ordered": [
+            {
+              "1": 504931
+            }
+          ],
+          "activity_smart_ordered": [
+            {
+              "1": 505244
+            },
+            {
+              "2": 504875
+            },
+            {
+              "3": 505265
+            }
+          ],
+          "artists": [
+            {
+              "id": 452,
+              "name": "Johann Sebastian Bach",
+              "image_url": "https://i.scdn.co/image/a2ec08fe69ecec2748fbc764aede8f1b03ae8f88",
+              "cover_url": null,
+              "code2": "DE",
+              "gender": 1,
+              "isni": "0000000122764157",
+              "description": null,
+              "created_at": "2016-11-26T00:00:00",
+              "hometown_city": 403521,
+              "current_city": null,
+              "date_of_birth": "1685-03-21",
+              "date_of_death": "1750-07-28",
+              "modified_at": "2024-01-15T21:33:05.705589",
+              "is_duplicate": false,
+              "booking_agent": null,
+              "record_label": null,
+              "press_contact": null,
+              "general_manager": null,
+              "band": false,
+              "is_non_artist": false
+            },
+            {
+              "id": 441193,
+              "name": "Hopkinson Smith",
+              "image_url": "https://i.scdn.co/image/ab6761610000e5eb16bbcd4d01ce2a587e4799f7",
+              "cover_url": null,
+              "code2": "US",
+              "gender": null,
+              "isni": null,
+              "description": null,
+              "created_at": "2017-02-14T00:00:00",
+              "hometown_city": 5787,
+              "current_city": 5787,
+              "date_of_birth": "1946-12-07",
+              "date_of_death": null,
+              "modified_at": "2025-04-29T15:57:41.371275",
+              "is_duplicate": false,
+              "booking_agent": null,
+              "record_label": null,
+              "press_contact": null,
+              "general_manager": null,
+              "band": false,
+              "is_non_artist": false
+            }
+          ],
+          "albums": [
+            {
+              "id": 727696,
+              "name": "Bach: Suites n°4, 5 & 6",
+              "upc": "822189022723",
+              "release_date": "2013-02-25",
+              "label": "naïve classique",
+              "image_url": "https://i.scdn.co/image/fb050bdba34efa4dc4919ee151b6fe485d389f85",
+              "popularity": 0
+            },
+            {
+              "id": 3149909,
+              "name": "Bach: Suites No. 4, No. 5 & No. 6",
+              "upc": "822189103040",
+              "release_date": "2013-02-25",
+              "label": "naïve classique",
+              "image_url": "https://api.deezer.com/album/9426926/image",
+              "popularity": 4
+            },
+            {
+              "id": 2915859,
+              "name": "Bach: Sonatas & Partitas, Suites",
+              "upc": "822189103408",
+              "release_date": "2014-10-13",
+              "label": "naïve classique",
+              "image_url": "https://api.deezer.com/album/9392498/image",
+              "popularity": 8
+            },
+            {
+              "id": 7883147,
+              "name": "Bach: Suites (Arr. for Lute)",
+              "upc": "3616552935829",
+              "release_date": "2021-04-02",
+              "label": "Naïve, a label of Believe Group",
+              "image_url": "https://api.deezer.com/album/206160382/image",
+              "popularity": 3
+            }
+          ],
+          "tags": "ambient,instrumental",
+          "songwriters": [
+            "JOHANN SEBASTIAN BACH",
+            "LIBRARY ARRANGEMENT"
+          ],
+          "cm_songwriters": [
+            1027490,
+            1269070
+          ],
+          "release_date": "2013-02-25",
+          "album_label": "naïve classique",
+          "explicit": false,
+          "score": 0.000001835568179844852,
+          "career_health": "steady",
+          "track_stage": "mid-level",
+          "genres": [
+            {
+              "id": 501134,
+              "name": "ambient"
+            },
+            {
+              "id": 501140,
+              "name": "instrumental"
+            }
+          ],
+          "cm_statistics": {
+            "timestamp": "2025-11-20T15:24:15Z",
+            "score": 20.25025401470953,
+            "cm_track": 17461916,
+            "tiktok_trending_user": null,
+            "tiktok_trending_user_likes": null,
+            "tiktok_trending_user_cm_artist": null,
+            "num_sp_playlists": 45,
+            "num_sp_editorial_playlists": 0,
+            "num_am_playlists": null,
+            "num_am_editorial_playlists": null,
+            "num_de_playlists": null,
+            "num_de_editorial_playlists": null,
+            "num_az_playlists": null,
+            "num_az_editorial_playlists": null,
+            "num_yt_playlists": null,
+            "num_yt_editorial_playlists": null,
+            "sp_playlist_total_reach": 10146,
+            "de_playlist_total_reach": null,
+            "yt_playlist_total_reach": null,
+            "num_tt_videos": null,
+            "sp_popularity": 1,
+            "sp_streams": 28193,
+            "airplay_streams": 2,
+            "genius_page_views": null,
+            "shazam_counts": null,
+            "tidal_popularity": null,
+            "tiktok_counts": null,
+            "tiktok_top_videos_comments": null,
+            "tiktok_top_videos_likes": null,
+            "tiktok_top_videos_views": null,
+            "soundcloud_playback_count": null,
+            "youtube_views": null,
+            "youtube_comments": null,
+            "youtube_dislikes": null,
+            "youtube_likes": null,
+            "pandora_lifetime_streams": null,
+            "pandora_lifetime_stations_added": null,
+            "boomplay_comments": null,
+            "boomplay_favorites": null,
+            "boomplay_shares": null,
+            "line_music_likes": null,
+            "line_music_listen_count": null,
+            "melon_likes": null,
+            "melon_comments": null,
+            "lastfm_listeners": null,
+            "lastfm_plays": null,
+            "weekly_diff": {
+              "num_sp_playlists": 0,
+              "num_sp_editorial_playlists": 0,
+              "num_am_playlists": null,
+              "num_am_editorial_playlists": null,
+              "num_de_playlists": null,
+              "num_de_editorial_playlists": null,
+              "num_az_playlists": null,
+              "num_az_editorial_playlists": null,
+              "num_yt_playlists": null,
+              "num_yt_editorial_playlists": null,
+              "sp_playlist_total_reach": 0,
+              "de_playlist_total_reach": null,
+              "yt_playlist_total_reach": null,
+              "num_tt_videos": null,
+              "sp_popularity": null,
+              "sp_streams": 25,
+              "airplay_streams": 0,
+              "genius_page_views": null,
+              "shazam_counts": null,
+              "tidal_popularity": null,
+              "tiktok_counts": null,
+              "tiktok_top_videos_comments": null,
+              "tiktok_top_videos_likes": null,
+              "tiktok_top_videos_views": null,
+              "soundcloud_playback_count": null,
+              "youtube_views": null,
+              "youtube_comments": null,
+              "youtube_dislikes": null,
+              "youtube_likes": null,
+              "pandora_lifetime_streams": null,
+              "pandora_lifetime_stations_added": null,
+              "boomplay_comments": null,
+              "boomplay_favorites": null,
+              "boomplay_shares": null,
+              "line_music_likes": null,
+              "line_music_listen_count": null,
+              "melon_likes": null,
+              "melon_comments": null,
+              "lastfm_listeners": null,
+              "lastfm_plays": null
+            },
+            "weekly_diff_percent": {
+              "num_sp_playlists": 0,
+              "num_sp_editorial_playlists": null,
+              "num_am_playlists": null,
+              "num_am_editorial_playlists": null,
+              "num_de_playlists": null,
+              "num_de_editorial_playlists": null,
+              "num_az_playlists": null,
+              "num_az_editorial_playlists": null,
+              "num_yt_playlists": null,
+              "num_yt_editorial_playlists": null,
+              "sp_playlist_total_reach": 0,
+              "de_playlist_total_reach": null,
+              "yt_playlist_total_reach": null,
+              "num_tt_videos": null,
+              "sp_popularity": null,
+              "sp_streams": 0.0888,
+              "airplay_streams": 0,
+              "genius_page_views": null,
+              "shazam_counts": null,
+              "tidal_popularity": null,
+              "tiktok_counts": null,
+              "tiktok_top_videos_comments": null,
+              "tiktok_top_videos_likes": null,
+              "tiktok_top_videos_views": null,
+              "soundcloud_playback_count": null,
+              "youtube_views": null,
+              "youtube_comments": null,
+              "youtube_dislikes": null,
+              "youtube_likes": null,
+              "pandora_lifetime_streams": null,
+              "pandora_lifetime_stations_added": null,
+              "boomplay_comments": null,
+              "boomplay_favorites": null,
+              "boomplay_shares": null,
+              "line_music_likes": null,
+              "line_music_listen_count": null,
+              "melon_likes": null,
+              "melon_comments": null,
+              "lastfm_listeners": null,
+              "lastfm_plays": null
+            },
+            "monthly_diff": {
+              "num_sp_playlists": 0,
+              "num_sp_editorial_playlists": 0,
+              "num_am_playlists": null,
+              "num_am_editorial_playlists": null,
+              "num_de_playlists": null,
+              "num_de_editorial_playlists": null,
+              "num_az_playlists": null,
+              "num_az_editorial_playlists": null,
+              "num_yt_playlists": null,
+              "num_yt_editorial_playlists": null,
+              "sp_playlist_total_reach": 1,
+              "de_playlist_total_reach": null,
+              "yt_playlist_total_reach": null,
+              "num_tt_videos": null,
+              "sp_popularity": null,
+              "sp_streams": 154,
+              "airplay_streams": 0,
+              "genius_page_views": null,
+              "shazam_counts": null,
+              "tidal_popularity": null,
+              "tiktok_counts": null,
+              "tiktok_top_videos_comments": null,
+              "tiktok_top_videos_likes": null,
+              "tiktok_top_videos_views": null,
+              "soundcloud_playback_count": null,
+              "youtube_views": null,
+              "youtube_comments": null,
+              "youtube_dislikes": null,
+              "youtube_likes": null,
+              "pandora_lifetime_streams": null,
+              "pandora_lifetime_stations_added": null,
+              "boomplay_comments": null,
+              "boomplay_favorites": null,
+              "boomplay_shares": null,
+              "line_music_likes": null,
+              "line_music_listen_count": null,
+              "melon_likes": null,
+              "melon_comments": null,
+              "lastfm_listeners": null,
+              "lastfm_plays": null
+            },
+            "monthly_diff_percent": {
+              "num_sp_playlists": 0,
+              "num_sp_editorial_playlists": null,
+              "num_am_playlists": null,
+              "num_am_editorial_playlists": null,
+              "num_de_playlists": null,
+              "num_de_editorial_playlists": null,
+              "num_az_playlists": null,
+              "num_az_editorial_playlists": null,
+              "num_yt_playlists": null,
+              "num_yt_editorial_playlists": null,
+              "sp_playlist_total_reach": 0,
+              "de_playlist_total_reach": null,
+              "yt_playlist_total_reach": null,
+              "num_tt_videos": null,
+              "sp_popularity": null,
+              "sp_streams": 0.5492,
+              "airplay_streams": 0,
+              "genius_page_views": null,
+              "shazam_counts": null,
+              "tidal_popularity": null,
+              "tiktok_counts": null,
+              "tiktok_top_videos_comments": null,
+              "tiktok_top_videos_likes": null,
+              "tiktok_top_videos_views": null,
+              "soundcloud_playback_count": null,
+              "youtube_views": null,
+              "youtube_comments": null,
+              "youtube_dislikes": null,
+              "youtube_likes": null,
+              "pandora_lifetime_streams": null,
+              "pandora_lifetime_stations_added": null,
+              "boomplay_comments": null,
+              "boomplay_favorites": null,
+              "boomplay_shares": null,
+              "line_music_likes": null,
+              "line_music_listen_count": null,
+              "melon_likes": null,
+              "melon_comments": null,
+              "lastfm_listeners": null,
+              "lastfm_plays": null
+            },
+            "sentiment": []
+          },
+          "tempo": 64.156
+        }
+      },
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-encoding": "gzip",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Thu, 20 Nov 2025 16:03:27 GMT",
+        "etag": "W/\"20cd-/rm3mmL7Mc+EecabDg+qUXmJfPI\"",
+        "strict-transport-security": "max-age=15552000; includeSubDomains",
+        "transfer-encoding": "chunked",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-ratelimit-limit": "1",
+        "x-ratelimit-remaining": "0",
+        "x-ratelimit-reset": "1763654608",
+        "x-response-time": "31.753ms",
+        "x-xss-protection": "1; mode=block"
+      },
+      "notes": "Track Metadata"
+    },
+    {
+      "phase": "Phase 2: Public",
+      "endpoint": "/track/isrc/USUG12400054/get-ids",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK",
+      "success": true,
+      "responseBody": {
+        "obj": []
+      },
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "10",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Thu, 20 Nov 2025 16:03:29 GMT",
+        "etag": "W/\"a-Nxw4GgYeQewFuhIxDykBQ0qIddo\"",
+        "strict-transport-security": "max-age=15552000; includeSubDomains",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-ratelimit-limit": "1",
+        "x-ratelimit-remaining": "0",
+        "x-ratelimit-reset": "1763654610",
+        "x-response-time": "35.191ms",
+        "x-xss-protection": "1; mode=block"
+      },
+      "notes": "ISRC Lookup"
+    },
+    {
+      "phase": "Phase 2: Public",
+      "endpoint": "/search?q=drake&type=playlists&limit=5",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK",
+      "success": true,
+      "responseBody": {
+        "obj": {
+          "playlists": {
+            "spotify": [
+              {
+                "id": 1644600,
+                "name": "This Is Drake",
+                "image_url": "https://i.scdn.co/image/ab67706f00000002e47c587e5107b565327a2172",
+                "followers": "4.2M",
+                "num_track": 151,
+                "owner_name": "Spotify"
+              },
+              {
+                "id": 1738153,
+                "name": "Scorpion by Drake",
+                "image_url": "https://i.scdn.co/image/ab67706f00000003464cdb383e3aeabde4ac7a87",
+                "followers": "1.1M",
+                "num_track": 25,
+                "owner_name": "Spotify"
+              },
+              {
+                "id": 7299952,
+                "name": "Certified Lover Boy by Drake",
+                "image_url": "https://i.scdn.co/image/ab67706f00000002c6358da5fef3de8ad60fc4e3",
+                "followers": "975.6K",
+                "num_track": 21,
+                "owner_name": "Spotify"
+              },
+              {
+                "id": 2283818,
+                "name": "Drake Radio",
+                "image_url": "https://pickasso.spotifycdn.com/image/ab67c0de0000deef/dt/v1/img/radio/artist/3TVXtAsR1Inumwj472S9r4/en",
+                "followers": "811.5K",
+                "num_track": 50,
+                "owner_name": "Spotify"
+              },
+              {
+                "id": 2620748,
+                "name": "BEST OF DRAKE ",
+                "image_url": "https://mosaic.scdn.co/640/ab67616d00001e022090f4f6cc406e6d3c306733ab67616d00001e0267ffd8d6bbf399430ba9c044ab67616d00001e02d6adfbd3f091d6f2b9af6507ab67616d00001e02f9a9abe8ed9ffaba55412384",
+                "followers": "300.7K",
+                "num_track": 102,
+                "owner_name": "anac.ac1996"
+              }
+            ],
+            "applemusic": [
+              {
+                "id": 83933,
+                "name": "RnB 2025 | Rnb US | Chill R&B (The Weeknd, Drake,, Muni Long, Summer Walke",
+                "image_url": "https://is1-ssl.mzstatic.com/image/thumb/M0zQ1YCebqFiGB5MNKwJaQ/160x160bb.jpg",
+                "owner_name": null,
+                "owner_id": null,
+                "num_track": 222
+              },
+              {
+                "id": 165797,
+                "name": "TURN UP US | RAP US HITS 2025| (ICE SPICE, TRAVIS SCOTT, DRAKE, KENDRICK LAMAR, FUTURE, 21 SAVAGE,",
+                "image_url": "https://is1-ssl.mzstatic.com/image/thumb/tSsN8axFZSQQ8dIuNQutLw/160x160bb.jpg",
+                "owner_name": null,
+                "owner_id": null,
+                "num_track": 206
+              },
+              {
+                "id": 90225,
+                "name": "Rap US Hits 2025 | Rap US Bangers 2025 |Quavo, Eminem, Drake, Kendrick Lamar, Travis Scott",
+                "image_url": "https://is1-ssl.mzstatic.com/image/thumb/x7PcpyzpL4-ljXmuIt-e4g/160x160bb.jpg",
+                "owner_name": null,
+                "owner_id": null,
+                "num_track": 204
+              },
+              {
+                "id": 61636,
+                "name": "Partners in Rhyme: Drake and Future",
+                "image_url": "https://is1-ssl.mzstatic.com/image/thumb/Features122/v4/dd/c7/e2/ddc7e249-afd0-1549-960f-4d41c3dec7b9/source/160x160cc.jpeg",
+                "owner_name": "Apple Music Hip-Hop",
+                "owner_id": null,
+                "num_track": 16
+              },
+              {
+                "id": 56175,
+                "name": "Happy Birthday Drake!",
+                "image_url": "https://is3-ssl.mzstatic.com/image/thumb/6v_ZYPgVo7s3QNKUUJzWPw/160x160bb.jpeg",
+                "owner_name": "Shazam",
+                "owner_id": null,
+                "num_track": 15
+              }
+            ],
+            "deezer": [
+              {
+                "id": 4697063924,
+                "name": "100% Drake",
+                "image_url": "https://api.deezer.com/playlist/4697063924/image",
+                "owner_name": "Deezer Artist Editor",
+                "owner_id": 1990304482,
+                "num_track": 50,
+                "followers": 141889
+              },
+              {
+                "id": 826578623,
+                "name": "Best R&B Hits || The Weeknd, Drake, Rihanna, Jerem",
+                "image_url": "https://api.deezer.com/playlist/826578623/image",
+                "owner_name": "Mega Hits",
+                "owner_id": 79612201,
+                "num_track": 313,
+                "followers": 35415
+              },
+              {
+                "id": 7822106942,
+                "name": "DRILL 2021 (UK DRILL, FR, US) - Pop Smoke, Drake, ",
+                "image_url": "https://api.deezer.com/playlist/7822106942/image",
+                "owner_name": "Digster France",
+                "owner_id": 198225115,
+                "num_track": 116,
+                "followers": 7620
+              },
+              {
+                "id": 3180440962,
+                "name": "Rapper sous la douche (Nekfeu, Kalash, Drake...)",
+                "image_url": "https://api.deezer.com/playlist/3180440962/image",
+                "owner_name": "Digster France",
+                "owner_id": 198225115,
+                "num_track": 47,
+                "followers": 3419
+              },
+              {
+                "id": 8751614762,
+                "name": "GOAT 🐐 RAP US | DRAKE, KENDRICK LAMAR, POP SMOKE, ",
+                "image_url": "https://api.deezer.com/playlist/8751614762/image",
+                "owner_name": "dose",
+                "owner_id": 2703206602,
+                "num_track": 173,
+                "followers": 3402
+              }
+            ],
+            "amazon": [
+              {
+                "id": "B08BJFQFMC",
+                "name": "REDISCOVER Drake",
+                "image_url": "https://m.media-amazon.com/images/I/41GejQNB2qL.jpg",
+                "owner_name": "Amazon Music",
+                "owner_id": 1,
+                "num_track": 88
+              },
+              {
+                "id": "B08BJG3G2D",
+                "name": "REDISCOVER Drake",
+                "image_url": "https://m.media-amazon.com/images/I/41GejQNB2qL.jpg",
+                "owner_name": "Amazon Music",
+                "owner_id": 3,
+                "num_track": 88
+              },
+              {
+                "id": "B08BJGBK26",
+                "name": "REDISCOVER Drake",
+                "image_url": "https://m.media-amazon.com/images/I/41GejQNB2qL.jpg",
+                "owner_name": "Amazon Music",
+                "owner_id": 4,
+                "num_track": 87
+              },
+              {
+                "id": "B08BJGCKY4",
+                "name": "REDISCOVER Drake",
+                "image_url": "https://m.media-amazon.com/images/I/41GejQNB2qL.jpg",
+                "owner_name": "Amazon Music",
+                "owner_id": 1,
+                "num_track": 88
+              },
+              {
+                "id": "B08BJGXYCJ",
+                "name": "REDISCOVER Drake",
+                "image_url": "https://m.media-amazon.com/images/I/41GejQNB2qL.jpg",
+                "owner_name": "Amazon Music",
+                "owner_id": 1,
+                "num_track": 88
+              }
+            ],
+            "youtube": [
+              {
+                "id": "PLxA687tYuMWibWyB256DEaHLL0ueEKL97",
+                "name": "Drake - Certified Lover Boy (Full Album)",
+                "image_url": "https://i.ytimg.com/vi/IxVuT8cgccM/default.jpg",
+                "owner_id": "UCYXIviXPAaaaU_AOotpXTAw",
+                "owner_name": "Revive Music",
+                "num_track": 24
+              },
+              {
+                "id": "PLxA687tYuMWiB05P-umiV2_Zy8TLAT0Td",
+                "name": "Drake - Honestly, Nevermind (Full Album)",
+                "image_url": "https://i.ytimg.com/vi/n8c_g2nyNmw/default.jpg",
+                "owner_id": "UCYXIviXPAaaaU_AOotpXTAw",
+                "owner_name": "Revive Music",
+                "num_track": 16
+              },
+              {
+                "id": "PLxA687tYuMWj1S9PHaX5kM1HTuZsBfK0d",
+                "name": "Drake Certified Lover Boy Album",
+                "image_url": "https://i.ytimg.com/vi/IxVuT8cgccM/default.jpg",
+                "owner_id": "UCYXIviXPAaaaU_AOotpXTAw",
+                "owner_name": "Revive Music",
+                "num_track": 22
+              },
+              {
+                "id": "PLI7jKQZVowoBYyxU-u-QKuDDS8ONtoIyM",
+                "name": "Drake - Scary Hours 2 - 2021 New Album (full album)",
+                "image_url": "https://i.ytimg.com/vi/U6k5dIhB6AM/default.jpg",
+                "owner_id": "UCN-3_6cnu8F3RyPTeweyLeA",
+                "owner_name": "Mr-Luu de Stylist",
+                "num_track": 15
+              },
+              {
+                "id": "PL_7S9gC5sYVNG7vP_RcO_SgbriSiht6c1",
+                "name": "R&B Beats (Playlist) Instrumentals 2015|Drake|Chris Brown|Trey Songz|Smooth RNB Beats|Sexy|RNB & Hip Hop Beats|West Coast Beats|Piano Instrumentals",
+                "image_url": "https://i.ytimg.com/vi/1vwxNGvHuas/default.jpg",
+                "owner_id": "UC41Jt8fSC2PtsEm7W_jzIFw",
+                "owner_name": "Tony Sway",
+                "num_track": 191
+              }
+            ],
+            "soundcloud": [
+              {
+                "id": 287014879,
+                "name": "Drake ~ Both",
+                "image_url": null,
+                "owner_name": 276652210,
+                "likes": 2971
+              },
+              {
+                "id": 62386304,
+                "name": "Drake Remixed",
+                "image_url": "https://i1.sndcdn.com/artworks-000099203149-i9xlmn-large.jpg",
+                "owner_name": 74273356,
+                "likes": 2647
+              },
+              {
+                "id": 1093612000,
+                "name": "POPSTAR & GREECE ft. Drake",
+                "image_url": "https://i1.sndcdn.com/artworks-zDyRyaTKSIMgw8Kc-4ROylg-large.jpg",
+                "owner_name": 206908846,
+                "likes": 2559
+              },
+              {
+                "id": 610689120,
+                "name": "Drake - Nice For What",
+                "image_url": null,
+                "owner_name": 514412019,
+                "likes": 2003
+              },
+              {
+                "id": 749092530,
+                "name": "SICKO MODE FEAT DRAKE",
+                "image_url": null,
+                "owner_name": 514412019,
+                "likes": 1868
+              }
+            ]
+          }
+        }
+      },
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-encoding": "gzip",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Thu, 20 Nov 2025 16:03:32 GMT",
+        "etag": "W/\"1830-6T5uANm017peRU5U2KAkrSTsJgM\"",
+        "strict-transport-security": "max-age=15552000; includeSubDomains",
+        "transfer-encoding": "chunked",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-ratelimit-limit": "1",
+        "x-ratelimit-remaining": "0",
+        "x-ratelimit-reset": "1763654612",
+        "x-response-time": "32.853ms",
+        "x-xss-protection": "1; mode=block"
+      },
+      "notes": "Playlist Search"
+    },
+    {
+      "phase": "Phase 3: Analytics",
+      "endpoint": "/track/17461916/spotify/stats",
+      "method": "GET",
+      "status": 401,
+      "statusText": "Unauthorized",
+      "success": false,
+      "responseBody": {
+        "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint."
+      },
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "124",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Thu, 20 Nov 2025 16:03:34 GMT",
+        "etag": "W/\"7c-fijbI1OrRLkR38we0CwJAbGeafk\"",
+        "strict-transport-security": "max-age=15552000; includeSubDomains",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-ratelimit-limit": "false",
+        "x-ratelimit-remaining": "false",
+        "x-ratelimit-reset": "false",
+        "x-response-time": "58.779ms",
+        "x-xss-protection": "1; mode=block"
+      },
+      "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint.",
+      "notes": "Track Spotify Stats"
+    },
+    {
+      "phase": "Phase 3: Analytics",
+      "endpoint": "/track/17461916/youtube/stats",
+      "method": "GET",
+      "status": 401,
+      "statusText": "Unauthorized",
+      "success": false,
+      "responseBody": {
+        "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint."
+      },
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "124",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Thu, 20 Nov 2025 16:03:36 GMT",
+        "etag": "W/\"7c-fijbI1OrRLkR38we0CwJAbGeafk\"",
+        "strict-transport-security": "max-age=15552000; includeSubDomains",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-ratelimit-limit": "false",
+        "x-ratelimit-remaining": "false",
+        "x-ratelimit-reset": "false",
+        "x-response-time": "60.926ms",
+        "x-xss-protection": "1; mode=block"
+      },
+      "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint.",
+      "notes": "Track YouTube Stats"
+    },
+    {
+      "phase": "Phase 3: Analytics",
+      "endpoint": "/playlist/spotify/37i9dQZF1DXcBWIGoYBM5M/tracks",
+      "method": "GET",
+      "status": 401,
+      "statusText": "Unauthorized",
+      "success": false,
+      "responseBody": {
+        "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint."
+      },
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "124",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Thu, 20 Nov 2025 16:03:38 GMT",
+        "etag": "W/\"7c-fijbI1OrRLkR38we0CwJAbGeafk\"",
+        "strict-transport-security": "max-age=15552000; includeSubDomains",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-ratelimit-limit": "false",
+        "x-ratelimit-remaining": "false",
+        "x-ratelimit-reset": "false",
+        "x-response-time": "61.087ms",
+        "x-xss-protection": "1; mode=block"
+      },
+      "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint.",
+      "notes": "Playlist Tracks"
+    },
+    {
+      "phase": "Phase 3: Analytics",
+      "endpoint": "/playlist/4585566",
+      "method": "GET",
+      "status": 401,
+      "statusText": "Unauthorized",
+      "success": false,
+      "responseBody": {
+        "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint."
+      },
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "124",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Thu, 20 Nov 2025 16:03:40 GMT",
+        "etag": "W/\"7c-fijbI1OrRLkR38we0CwJAbGeafk\"",
+        "strict-transport-security": "max-age=15552000; includeSubDomains",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-ratelimit-limit": "false",
+        "x-ratelimit-remaining": "false",
+        "x-ratelimit-reset": "false",
+        "x-response-time": "59.363ms",
+        "x-xss-protection": "1; mode=block"
+      },
+      "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint.",
+      "notes": "Playlist Metadata by ID"
+    },
+    {
+      "phase": "Phase 4: POST",
+      "endpoint": "/playlist/spotify/url",
+      "method": "POST",
+      "status": 401,
+      "statusText": "Unauthorized",
+      "success": false,
+      "responseBody": {
+        "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint."
+      },
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "124",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Thu, 20 Nov 2025 16:03:42 GMT",
+        "etag": "W/\"7c-fijbI1OrRLkR38we0CwJAbGeafk\"",
+        "strict-transport-security": "max-age=15552000; includeSubDomains",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-ratelimit-limit": "false",
+        "x-ratelimit-remaining": "false",
+        "x-ratelimit-reset": "false",
+        "x-response-time": "60.806ms",
+        "x-xss-protection": "1; mode=block"
+      },
+      "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint.",
+      "notes": "Playlist URL Conversion"
+    },
+    {
+      "phase": "Phase 5: Headers",
+      "endpoint": "/track/17461916/spotify/stats",
+      "method": "GET",
+      "status": 401,
+      "statusText": "Unauthorized",
+      "success": false,
+      "responseBody": {
+        "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint."
+      },
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "124",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Thu, 20 Nov 2025 16:03:44 GMT",
+        "etag": "W/\"7c-fijbI1OrRLkR38we0CwJAbGeafk\"",
+        "strict-transport-security": "max-age=15552000; includeSubDomains",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-ratelimit-limit": "false",
+        "x-ratelimit-remaining": "false",
+        "x-ratelimit-reset": "false",
+        "x-response-time": "54.394ms",
+        "x-xss-protection": "1; mode=block"
+      },
+      "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint.",
+      "notes": "With x-chartmetric-client"
+    },
+    {
+      "phase": "Phase 5: Headers",
+      "endpoint": "/track/17461916/spotify/stats",
+      "method": "GET",
+      "status": 401,
+      "statusText": "Unauthorized",
+      "success": false,
+      "responseBody": {
+        "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint."
+      },
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "124",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Thu, 20 Nov 2025 16:03:47 GMT",
+        "etag": "W/\"7c-fijbI1OrRLkR38we0CwJAbGeafk\"",
+        "strict-transport-security": "max-age=15552000; includeSubDomains",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-ratelimit-limit": "false",
+        "x-ratelimit-remaining": "false",
+        "x-ratelimit-reset": "false",
+        "x-response-time": "55.661ms",
+        "x-xss-protection": "1; mode=block"
+      },
+      "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint.",
+      "notes": "With x-client-version"
+    },
+    {
+      "phase": "Phase 5: Headers",
+      "endpoint": "/track/17461916/spotify/stats",
+      "method": "GET",
+      "status": 401,
+      "statusText": "Unauthorized",
+      "success": false,
+      "responseBody": {
+        "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint."
+      },
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "124",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Thu, 20 Nov 2025 16:03:49 GMT",
+        "etag": "W/\"7c-fijbI1OrRLkR38we0CwJAbGeafk\"",
+        "strict-transport-security": "max-age=15552000; includeSubDomains",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-ratelimit-limit": "false",
+        "x-ratelimit-remaining": "false",
+        "x-ratelimit-reset": "false",
+        "x-response-time": "62.072ms",
+        "x-xss-protection": "1; mode=block"
+      },
+      "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint.",
+      "notes": "With User-Agent"
+    },
+    {
+      "phase": "Phase 5: Headers",
+      "endpoint": "/track/17461916/spotify/stats",
+      "method": "GET",
+      "status": 401,
+      "statusText": "Unauthorized",
+      "success": false,
+      "responseBody": {
+        "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint."
+      },
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "124",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Thu, 20 Nov 2025 16:03:51 GMT",
+        "etag": "W/\"7c-fijbI1OrRLkR38we0CwJAbGeafk\"",
+        "strict-transport-security": "max-age=15552000; includeSubDomains",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-ratelimit-limit": "false",
+        "x-ratelimit-remaining": "false",
+        "x-ratelimit-reset": "false",
+        "x-response-time": "62.942ms",
+        "x-xss-protection": "1; mode=block"
+      },
+      "error": "Session token not found or was expired. User is not authorized to access this Chartmetric internal API endpoint.",
+      "notes": "Authorization only (no Content-Type)"
+    }
+  ],
+  "summary": {
+    "totalTests": 13,
+    "passed": 4,
+    "failed": 9,
+    "authWorking": true,
+    "publicEndpointsWorking": true,
+    "analyticsEndpointsWorking": false
+  },
+  "recommendations": [
+    "⚠️  Authentication works, but analytics endpoints return 401",
+    "⚠️  Error message indicates \"internal API endpoint\" restriction",
+    "📧 Contact Chartmetric support with this diagnostic report",
+    "📧 Ask: \"Which endpoints are available to our API tier?\"",
+    "⚠️  No alternative header combinations unlocked analytics endpoints",
+    "🔍 Root Cause: Endpoints are marked as \"Chartmetric internal API\"",
+    "🔍 This suggests tier/permission restrictions, not authentication issues"
+  ]
+}
