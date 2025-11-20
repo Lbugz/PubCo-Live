@@ -205,11 +205,13 @@ export default function Contacts() {
     });
   };
 
-  const hasFilters = selectedStage !== "all" || searchQuery.length > 0;
+  const hasFilters = selectedStage !== "all" || searchQuery.length > 0 || mlcStatus !== "all" || musicbrainzStatus !== "all";
 
   const clearFilters = () => {
     setSelectedStage("all");
     setSearchQuery("");
+    setMlcStatus("all");
+    setMusicbrainzStatus("all");
   };
 
   // Handle sorting
