@@ -104,6 +104,7 @@ function getMetadataCompletenessLabel(description: string): string {
 function groupSignals(signals: Array<{ signal: string; description: string; weight: number }>) {
   const discovery: Array<{ label: string; points: number }> = [];
   const publishing: Array<{ label: string; points: number }> = [];
+  const labelDistro: Array<{ label: string; points: number }> = [];
   const metadata: Array<{ label: string; points: number }> = [];
   const portfolio: Array<{ label: string; points: number }> = [];
   
@@ -118,6 +119,12 @@ function groupSignals(signals: Array<{ signal: string; description: string; weig
     else if (signal.signal === 'NO_PUBLISHER') {
       publishing.push({ label: signal.description, points });
     }
+    // Label & Distro Signals (from SIGNAL_WEIGHTS: DIY_DISTRIBUTION, INDEPENDENT_LABEL, MAJOR_LABEL)
+    else if (signal.signal === 'DIY_DISTRIBUTION' || 
+             signal.signal === 'INDEPENDENT_LABEL' || 
+             signal.signal === 'MAJOR_LABEL') {
+      labelDistro.push({ label: signal.description, points });
+    }
     // Metadata Completeness Signals (from SIGNAL_WEIGHTS.COMPLETENESS_*)
     else if (signal.signal === 'COMPLETENESS_UNDER_25' || 
              signal.signal === 'COMPLETENESS_25_50' || 
@@ -130,11 +137,8 @@ function groupSignals(signals: Array<{ signal: string; description: string; weig
         : completenessLabel;
       metadata.push({ label, points });
     }
-    // Portfolio Signals (from SIGNAL_WEIGHTS: DIY_DISTRIBUTION, INDEPENDENT_LABEL, MAJOR_LABEL, UNSIGNED_DISTRIBUTION_PATTERN, UNSIGNED_PEER_PATTERN, MUSICBRAINZ_PRESENT)
-    else if (signal.signal === 'DIY_DISTRIBUTION' || 
-             signal.signal === 'INDEPENDENT_LABEL' || 
-             signal.signal === 'MAJOR_LABEL' || 
-             signal.signal === 'UNSIGNED_DISTRIBUTION_PATTERN' || 
+    // Portfolio Signals (from SIGNAL_WEIGHTS: UNSIGNED_DISTRIBUTION_PATTERN, UNSIGNED_PEER_PATTERN, MUSICBRAINZ_PRESENT)
+    else if (signal.signal === 'UNSIGNED_DISTRIBUTION_PATTERN' || 
              signal.signal === 'UNSIGNED_PEER_PATTERN' ||
              signal.signal === 'MUSICBRAINZ_PRESENT') {
       portfolio.push({ label: signal.description, points });
@@ -145,7 +149,7 @@ function groupSignals(signals: Array<{ signal: string; description: string; weig
     }
   });
   
-  return { discovery, publishing, metadata, portfolio };
+  return { discovery, publishing, labelDistro, metadata, portfolio };
 }
 
 // Generate summary sentence based on signals and confidence
@@ -951,111 +955,174 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                     </Card>
 
                     {/* Grouped Signals Breakdown */}
-                    {scoreBreakdown && scoreBreakdown.length > 0 && (() => {
-                      const grouped = groupSignals(scoreBreakdown);
-                      const totalPoints = scoreBreakdown.reduce((sum: number, s: any) => sum + Math.round(s.weight), 0);
-                      
-                      return (
-                        <Card className="p-5">
-                          {/* Discovery Section */}
-                          {grouped.discovery.length > 0 && (
+                    <Card className="p-5">
+                      {(() => {
+                        const grouped = scoreBreakdown && scoreBreakdown.length > 0 
+                          ? groupSignals(scoreBreakdown) 
+                          : { discovery: [], publishing: [], labelDistro: [], metadata: [], portfolio: [] };
+                        
+                        return (
+                          <>
+                            {/* Discovery Section */}
                             <div className="mb-4">
                               <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Discovery</h4>
                               <div className="space-y-2">
-                                {grouped.discovery.map((item, idx) => (
-                                  <div key={idx} className="flex items-center justify-between">
-                                    <span className="text-sm">{item.label}</span>
-                                    <Badge variant="outline" className="font-medium text-chart-2">
-                                      +{item.points}
+                                {grouped.discovery.length > 0 ? (
+                                  grouped.discovery.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between">
+                                      <span className="text-sm">{item.label}</span>
+                                      <Badge variant="outline" className="font-medium text-chart-2">
+                                        +{item.points}
+                                      </Badge>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">No signals detected</span>
+                                    <Badge variant="outline" className="font-medium text-muted-foreground">
+                                      +0
                                     </Badge>
                                   </div>
-                                ))}
+                                )}
                               </div>
                             </div>
-                          )}
 
-                          {/* Publishing Section */}
-                          {grouped.publishing.length > 0 && (
+                            {/* Publishing Section */}
                             <div className="mb-4">
                               <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Publishing</h4>
                               <div className="space-y-2">
-                                {grouped.publishing.map((item, idx) => (
-                                  <div key={idx} className="flex items-center justify-between">
-                                    <span className="text-sm">{item.label}</span>
-                                    <Badge 
-                                      variant="outline" 
-                                      className={cn(
-                                        "font-medium",
-                                        item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
-                                      )}
-                                    >
-                                      {item.points > 0 ? "+" : ""}{item.points}
+                                {grouped.publishing.length > 0 ? (
+                                  grouped.publishing.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between">
+                                      <span className="text-sm">{item.label}</span>
+                                      <Badge 
+                                        variant="outline" 
+                                        className={cn(
+                                          "font-medium",
+                                          item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
+                                        )}
+                                      >
+                                        {item.points > 0 ? "+" : ""}{item.points}
+                                      </Badge>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">No signals detected</span>
+                                    <Badge variant="outline" className="font-medium text-muted-foreground">
+                                      +0
                                     </Badge>
                                   </div>
-                                ))}
+                                )}
                               </div>
                             </div>
-                          )}
 
-                          {/* Metadata Completeness Section */}
-                          {grouped.metadata.length > 0 && (
+                            {/* Label & Distro Section */}
+                            <div className="mb-4">
+                              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Label & Distro</h4>
+                              <div className="space-y-2">
+                                {grouped.labelDistro.length > 0 ? (
+                                  grouped.labelDistro.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between">
+                                      <span className="text-sm">{item.label}</span>
+                                      <Badge 
+                                        variant="outline" 
+                                        className={cn(
+                                          "font-medium",
+                                          item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
+                                        )}
+                                      >
+                                        {item.points > 0 ? "+" : ""}{item.points}
+                                      </Badge>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">No signals detected</span>
+                                    <Badge variant="outline" className="font-medium text-muted-foreground">
+                                      +0
+                                    </Badge>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Metadata Completeness Section */}
                             <div className="mb-4">
                               <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Metadata Completeness</h4>
                               <div className="space-y-2">
-                                {grouped.metadata.map((item, idx) => (
-                                  <div key={idx} className="flex items-center justify-between">
-                                    <span className="text-sm">{item.label}</span>
-                                    <Badge variant="outline" className="font-medium text-chart-2">
-                                      +{item.points}
+                                {grouped.metadata.length > 0 ? (
+                                  grouped.metadata.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between">
+                                      <span className="text-sm">{item.label}</span>
+                                      <Badge variant="outline" className="font-medium text-chart-2">
+                                        +{item.points}
+                                      </Badge>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">No signals detected</span>
+                                    <Badge variant="outline" className="font-medium text-muted-foreground">
+                                      +0
                                     </Badge>
                                   </div>
-                                ))}
+                                )}
                               </div>
                             </div>
-                          )}
 
-                          {/* Portfolio Signals */}
-                          {grouped.portfolio.length > 0 && (
+                            {/* Portfolio Signals */}
                             <div className="mb-4">
                               <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Portfolio Signals</h4>
                               <div className="space-y-2">
-                                {grouped.portfolio.map((item, idx) => (
-                                  <div key={idx} className="flex items-center justify-between">
-                                    <span className="text-sm">{item.label}</span>
-                                    <Badge 
-                                      variant="outline" 
-                                      className={cn(
-                                        "font-medium",
-                                        item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
-                                      )}
-                                    >
-                                      {item.points > 0 ? "+" : ""}{item.points}
+                                {grouped.portfolio.length > 0 ? (
+                                  grouped.portfolio.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between">
+                                      <span className="text-sm">{item.label}</span>
+                                      <Badge 
+                                        variant="outline" 
+                                        className={cn(
+                                          "font-medium",
+                                          item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
+                                        )}
+                                      >
+                                        {item.points > 0 ? "+" : ""}{item.points}
+                                      </Badge>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">No signals detected</span>
+                                    <Badge variant="outline" className="font-medium text-muted-foreground">
+                                      +0
                                     </Badge>
                                   </div>
-                                ))}
+                                )}
                               </div>
                             </div>
-                          )}
 
-                          {/* Total Score Line */}
-                          <div className="pt-4 mt-4 border-t">
-                            <div className="flex items-center justify-between text-base font-medium">
-                              <span>Total</span>
-                              <span data-testid="text-total-score">
-                                {scoreBreakdown.map((s: any) => Math.round(s.weight)).filter((p: number) => p > 0).join(' + ')} = {contact.unsignedScore}/10
-                              </span>
+                            {/* Total Score Line */}
+                            <div className="pt-4 mt-4 border-t">
+                              <div className="flex items-center justify-between text-base font-medium">
+                                <span>Total</span>
+                                <span data-testid="text-total-score">
+                                  {scoreBreakdown && scoreBreakdown.length > 0 
+                                    ? `${scoreBreakdown.map((s: any) => Math.round(s.weight)).filter((p: number) => p > 0).join(' + ')} = ${contact.unsignedScore}/10`
+                                    : `${contact.unsignedScore}/10`}
+                                </span>
+                              </div>
                             </div>
-                          </div>
 
-                          {/* Last Updated */}
-                          {contact.unsignedScoreUpdatedAt && (
-                            <p className="text-xs text-muted-foreground mt-4">
-                              Last updated: {formatDate(contact.unsignedScoreUpdatedAt)}
-                            </p>
-                          )}
-                        </Card>
-                      );
-                    })()}
+                            {/* Last Updated */}
+                            {contact.unsignedScoreUpdatedAt && (
+                              <p className="text-xs text-muted-foreground mt-4">
+                                Last updated: {formatDate(contact.unsignedScoreUpdatedAt)}
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </Card>
                   </>
                 ) : (
                   <Card className="p-8">
