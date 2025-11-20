@@ -47,7 +47,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { SimplePagination } from "@/components/ui/simple-pagination";
 
 export default function Tracks() {
   const [location] = useLocation();
@@ -63,8 +62,6 @@ export default function Tracks() {
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const [sortField, setSortField] = useState<string>("addedAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [limit] = useState(100);
-  const [offset, setOffset] = useState(0);
   const notify = useNotify();
   const isMobile = useMobile(768);
   
@@ -125,14 +122,12 @@ export default function Tracks() {
     queryKey: ["/api/weeks"],
   });
 
-  const { data: tracksData, isLoading: tracksLoading } = useQuery<{ tracks: PlaylistSnapshot[]; total: number; hasMore: boolean }>({
+  const { data: tracks = [], isLoading: tracksLoading } = useQuery<PlaylistSnapshot[]>({
     queryKey: selectedPlaylist !== "all"
-      ? ["/api/tracks", "playlist", selectedPlaylist, selectedWeek, limit, offset, sortField, sortDirection]
-      : ["/api/tracks", selectedWeek, limit, offset, sortField, sortDirection],
+      ? ["/api/tracks", "playlist", selectedPlaylist, selectedWeek, sortField, sortDirection]
+      : ["/api/tracks", selectedWeek, sortField, sortDirection],
     queryFn: async ({ queryKey }) => {
       const params = new URLSearchParams();
-      params.append("limit", limit.toString());
-      params.append("offset", offset.toString());
       params.append("sortField", sortField);
       params.append("sortDirection", sortDirection);
       
@@ -150,17 +145,6 @@ export default function Tracks() {
     },
     enabled: !!selectedWeek || selectedPlaylist !== "all",
   });
-
-  // Extract tracks array and total from paginated response
-  const tracks = useMemo(() => {
-    if (!tracksData) return [];
-    return tracksData.tracks;
-  }, [tracksData]);
-
-  const total = useMemo(() => {
-    if (!tracksData) return 0;
-    return tracksData.total;
-  }, [tracksData]);
 
   const { data: trackedPlaylists = [] } = useQuery<TrackedPlaylist[]>({
     queryKey: ["/api/tracked-playlists"],
@@ -283,19 +267,7 @@ export default function Tracks() {
       setSortField(field);
       setSortDirection(field === "spotifyStreams" ? "desc" : "asc");
     }
-    // Reset to first page when sorting changes
-    setOffset(0);
   }, [sortField]);
-
-  // Handle pagination
-  const handlePageChange = (page: number) => {
-    const newOffset = (page - 1) * limit;
-    setOffset(newOffset);
-    // Scroll to top when changing pages
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const currentPage = Math.floor(offset / limit) + 1;
 
   // toggleSelectAll depends on filteredTracks, so define it after the useMemo
   const toggleSelectAll = useCallback(() => {
@@ -606,16 +578,6 @@ export default function Tracks() {
             />
           )}
 
-          {/* Pagination */}
-          {!tracksLoading && total > 0 && viewMode === "table" && (
-            <SimplePagination
-              currentPage={currentPage}
-              totalItems={total}
-              itemsPerPage={limit}
-              onPageChange={handlePageChange}
-              itemName="tracks"
-            />
-          )}
         </div>
       </PageContainer>
 

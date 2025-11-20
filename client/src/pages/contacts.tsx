@@ -39,7 +39,6 @@ import { ContactDetailDrawer } from "@/components/contact-detail-drawer";
 import { PageContainer } from "@/components/layout/page-container";
 import { FilterBar } from "@/components/layout/filter-bar";
 import { StickyHeaderContainer } from "@/components/layout/sticky-header-container";
-import { SimplePagination } from "@/components/ui/simple-pagination";
 
 const STAGE_CONFIG = {
   discovery: {
@@ -67,8 +66,6 @@ export default function Contacts() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [limit] = useState(100);
-  const [offset, setOffset] = useState(0);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   
@@ -81,18 +78,10 @@ export default function Contacts() {
   const [sortField, setSortField] = useState<string>("totalStreams");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
-  // Reset offset to 0 whenever filters change to avoid empty pages
-  useEffect(() => {
-    setOffset(0);
-  }, [selectedStage, debouncedSearchQuery, hasEmail, scoreRange[0], scoreRange[1], hasSocialLinks]);
-
-  // Fetch contacts with filters
+  // Fetch contacts with filters (no pagination - fetch all)
   const { data: contactsData, isLoading } = useQuery<{
     contacts: ContactWithSongwriter[];
     total: number;
-    limit: number;
-    offset: number;
-    hasMore: boolean;
     stats?: {
       total: number;
       hotLeads: number;
@@ -108,9 +97,7 @@ export default function Contacts() {
       hasEmail,
       minScore: scoreRange[0],
       maxScore: scoreRange[1],
-      hasSocialLinks,
-      limit,
-      offset 
+      hasSocialLinks
     }],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -122,8 +109,6 @@ export default function Contacts() {
         params.append("maxScore", scoreRange[1].toString());
       }
       if (hasSocialLinks !== undefined) params.append("hasSocialLinks", hasSocialLinks.toString());
-      params.append("limit", limit.toString());
-      params.append("offset", offset.toString());
       
       const response = await fetch(`/api/contacts?${params.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch contacts");
@@ -260,7 +245,6 @@ export default function Contacts() {
   const clearFilters = () => {
     setSelectedStage("all");
     setSearchQuery("");
-    setOffset(0);
   };
 
   // Handle sorting
@@ -272,16 +256,6 @@ export default function Contacts() {
       setSortDirection(field === "totalStreams" || field === "trackCount" || field === "wowGrowth" ? "desc" : "asc");
     }
   };
-
-  // Handle pagination
-  const handlePageChange = (page: number) => {
-    const newOffset = (page - 1) * limit;
-    setOffset(newOffset);
-    // Scroll to top when changing pages
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const currentPage = Math.floor(offset / limit) + 1;
 
   const contactColumns: DataTableColumn<ContactWithSongwriter>[] = [
     {
@@ -577,7 +551,7 @@ export default function Contacts() {
       </StickyHeaderContainer>
 
       {/* Stage Selector Tabs */}
-      <Tabs value={selectedStage} onValueChange={(value: string) => { setSelectedStage(value as any); setOffset(0); }}>
+      <Tabs value={selectedStage} onValueChange={(value: string) => { setSelectedStage(value as any); }}>
         <TabsList className="w-full grid grid-cols-4 h-auto p-1">
           <TabsTrigger value="all" className="flex-col gap-1 py-3" data-testid="tab-stage-all">
             <div className="flex items-center gap-2">
@@ -732,17 +706,6 @@ export default function Contacts() {
         stickyHeader={true}
         testIdPrefix="contact"
       />
-
-      {/* Pagination */}
-      {!isLoading && total > 0 && (
-        <SimplePagination
-          currentPage={currentPage}
-          totalItems={total}
-          itemsPerPage={limit}
-          onPageChange={handlePageChange}
-          itemName="contacts"
-        />
-      )}
 
       {/* Contact Detail Drawer */}
       <ContactDetailDrawer
