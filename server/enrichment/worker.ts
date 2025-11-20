@@ -684,6 +684,9 @@ export class EnrichmentWorker {
       let phase3LinksFound = 0;
 
       try {
+        // Step 1: Deduplicate songwriter names across all tracks
+        const songwriterToTracks = new Map<string, string[]>();
+        
         for (const track of ctx.getAllTracks()) {
           if (!track.songwriter) continue;
 
@@ -693,33 +696,54 @@ export class EnrichmentWorker {
             .filter(Boolean);
 
           for (const songwriterName of songwriterNames) {
-            try {
-              // Search for artist by name
-              const artistResult = await searchArtistByName(songwriterName);
-              
-              if (artistResult && artistResult.score >= 90) {
-                // Get external links
-                const links = await getArtistExternalLinks(artistResult.id);
-
-                // Create or update artist
-                const artist = await this.storage.createOrUpdateArtist({
-                  name: songwriterName,
-                  musicbrainzId: artistResult.id,
-                  ...links,
-                });
-
-                // Link artist to track
-                await this.storage.linkArtistToTrack(artist.id, track.id);
-                phase3ArtistsCreated++;
-
-                if (Object.keys(links).length > 0) {
-                  phase3LinksFound++;
-                  console.log(`[Phase 3] ✅ Found ${Object.keys(links).length} social links for ${songwriterName}`);
-                }
-              }
-            } catch (error) {
-              console.error(`[Phase 3] Error enriching artist ${songwriterName}:`, error);
+            if (!songwriterToTracks.has(songwriterName)) {
+              songwriterToTracks.set(songwriterName, []);
             }
+            songwriterToTracks.get(songwriterName)!.push(track.id);
+          }
+        }
+
+        const uniqueSongwriters = Array.from(songwriterToTracks.keys());
+        const totalSongwriters = uniqueSongwriters.reduce((sum, name) => sum + songwriterToTracks.get(name)!.length, 0);
+        const duplicatesAvoided = totalSongwriters - uniqueSongwriters.length;
+
+        if (duplicatesAvoided > 0) {
+          console.log(`[Phase 3] Deduped ${totalSongwriters} songwriter mentions to ${uniqueSongwriters.length} unique names (${duplicatesAvoided} duplicates avoided)`);
+        }
+
+        // Step 2: Process each unique songwriter once
+        for (const songwriterName of uniqueSongwriters) {
+          const trackIds = songwriterToTracks.get(songwriterName)!;
+          
+          try {
+            // Search for artist by name
+            const artistResult = await searchArtistByName(songwriterName);
+            
+            if (artistResult && artistResult.score >= 90) {
+              // Get external links
+              const links = await getArtistExternalLinks(artistResult.id);
+
+              // Create or update artist
+              const artist = await this.storage.createOrUpdateArtist({
+                name: songwriterName,
+                musicbrainzId: artistResult.id,
+                ...links,
+              });
+
+              // Link artist to all tracks that have this songwriter
+              for (const trackId of trackIds) {
+                await this.storage.linkArtistToTrack(artist.id, trackId);
+              }
+              
+              phase3ArtistsCreated++;
+
+              if (Object.keys(links).length > 0) {
+                phase3LinksFound++;
+                console.log(`[Phase 3] ✅ Found ${Object.keys(links).length} social links for ${songwriterName} (linked to ${trackIds.length} tracks)`);
+              }
+            }
+          } catch (error) {
+            console.error(`[Phase 3] Error enriching artist ${songwriterName}:`, error);
           }
         }
 
