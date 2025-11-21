@@ -5,7 +5,7 @@ import {
   Mail, MessageCircle, RefreshCw, TrendingUp, Music, Activity, 
   FileText, ExternalLink, Instagram, Twitter, Flame, Edit,
   Phone, Hash, Building, User as UserIcon, Award, Target, Check, X, Share2,
-  Truck, Star, PuzzlePiece, Database, CheckCircle
+  Truck, Star, Package, Database, CheckCircle
 } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -170,7 +170,7 @@ function getCategoryIcon(categoryName: string) {
     "Publishing Status": FileText,
     "Release Pathway": Truck,
     "Early Career Signals": Star,
-    "Metadata Quality": PuzzlePiece,
+    "Metadata Quality": Package,
     "Catalog Patterns": Database,
     "Profile Verification": CheckCircle,
   };
