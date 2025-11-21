@@ -769,6 +769,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/contacts/:id/artist-socials", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const socials = await storage.getContactArtistSocials(id);
+      res.json(socials);
+    } catch (error) {
+      console.error("Error fetching contact artist socials:", error);
+      res.status(500).json({ error: "Failed to fetch artist social media" });
+    }
+  });
+
   app.get("/api/playlists", async (req, res) => {
     try {
       const playlistNames = await storage.getAllPlaylists();

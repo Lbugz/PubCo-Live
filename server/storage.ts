@@ -69,6 +69,7 @@ export interface IStorage {
   getContactsBySongwriterIds(songwriterIds: string[]): Promise<Contact[]>;
   updateContact(id: string, updates: Partial<Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void>;
   getContactTracks(contactId: string): Promise<PlaylistSnapshot[]>;
+  getContactArtistSocials(contactId: string): Promise<{ instagram?: string | null; twitter?: string | null; facebook?: string | null; tiktok?: string | null }>;
   createContactNote(contactId: string, content: string): Promise<ContactNote>;
   getContactNotesById(contactId: string): Promise<ContactNote[]>;
   
@@ -1572,6 +1573,31 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(playlistSnapshots.spotifyStreams));
     
     return result.map(r => r.track);
+  }
+
+  async getContactArtistSocials(contactId: string): Promise<{ instagram?: string | null; twitter?: string | null; facebook?: string | null; tiktok?: string | null }> {
+    const result = await db
+      .select({
+        instagram: artists.instagram,
+        twitter: artists.twitter,
+        facebook: artists.facebook,
+      })
+      .from(contacts)
+      .innerJoin(contactTracks, eq(contacts.id, contactTracks.contactId))
+      .innerJoin(artistSongwriters, eq(contactTracks.trackId, artistSongwriters.trackId))
+      .innerJoin(artists, eq(artistSongwriters.artistId, artists.id))
+      .where(eq(contacts.id, contactId))
+      .limit(1);
+    
+    if (result.length === 0) {
+      return {};
+    }
+    
+    return {
+      instagram: result[0].instagram,
+      twitter: result[0].twitter,
+      facebook: result[0].facebook,
+    };
   }
 
   async createContactNote(contactId: string, content: string): Promise<ContactNote> {

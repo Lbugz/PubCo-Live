@@ -5,7 +5,7 @@ import {
   Mail, MessageCircle, RefreshCw, TrendingUp, Music, Activity, 
   FileText, ExternalLink, Instagram, Twitter, Flame, Edit,
   Phone, Hash, Building, User as UserIcon, Award, Target, Check, X, Share2,
-  Truck, Star, Package, Database, CheckCircle
+  Truck, Star, Package, Database, CheckCircle, Facebook
 } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -328,12 +328,29 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
     enabled: !!contactId && open,
   });
 
-  // Aggregate contact info from tracks, then merge with saved data (saved data takes precedence)
+  // Fetch artist social media from MusicBrainz
+  const { data: artistSocials } = useQuery<{ instagram?: string | null; twitter?: string | null; facebook?: string | null }>({
+    queryKey: ["/api/contacts", contactId, "artist-socials"],
+    queryFn: async () => {
+      if (!contactId) return {};
+      const response = await fetch(`/api/contacts/${contactId}/artist-socials`);
+      if (!response.ok) return {};
+      return response.json();
+    },
+    enabled: !!contactId && open,
+  });
+
+  // Aggregate contact info from tracks, then merge with saved data and artist socials (saved data takes precedence)
   const aggregatedInfo = tracks.length > 0 ? aggregateContactInfo(tracks) : null;
-  const contactInfo = aggregatedInfo ? {
-    ...aggregatedInfo,
+  const contactInfo = {
+    ...(aggregatedInfo ?? {}),
+    // Merge artist social media from MusicBrainz
+    instagram: artistSocials?.instagram || aggregatedInfo?.instagram,
+    twitter: artistSocials?.twitter || aggregatedInfo?.twitter,
+    facebook: artistSocials?.facebook,
+    // Saved contact data takes highest precedence
     ...(savedContactData || {}),
-  } : (savedContactData || null);
+  };
   const scoreBreakdown = contact?.trackScoreData ? parseScoreBreakdown(contact.trackScoreData) : null;
 
   // Reset saved contact data and edit mode ONLY when switching to a different contact
@@ -819,11 +836,11 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                           />
                         </div>
                       </div>
-                    ) : (contactInfo?.instagram || contactInfo?.twitter || contactInfo?.tiktok) ? (
+                    ) : (contactInfo?.instagram || contactInfo?.twitter || contactInfo?.facebook || contactInfo?.tiktok) ? (
                       <div className="flex gap-2">
                         {contactInfo?.instagram && (
                           <a
-                            href={`https://instagram.com/${contactInfo.instagram.replace('@', '')}`}
+                            href={contactInfo.instagram.startsWith('http') ? contactInfo.instagram : `https://instagram.com/${contactInfo.instagram.replace('@', '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover-elevate p-2 rounded"
@@ -834,7 +851,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                         )}
                         {contactInfo?.twitter && (
                           <a
-                            href={`https://twitter.com/${contactInfo.twitter.replace('@', '')}`}
+                            href={contactInfo.twitter.startsWith('http') ? contactInfo.twitter : `https://twitter.com/${contactInfo.twitter.replace('@', '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover-elevate p-2 rounded"
@@ -843,9 +860,20 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                             <Twitter className="h-5 w-5" />
                           </a>
                         )}
+                        {contactInfo?.facebook && (
+                          <a
+                            href={contactInfo.facebook}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover-elevate p-2 rounded"
+                            data-testid="link-facebook"
+                          >
+                            <Facebook className="h-5 w-5" />
+                          </a>
+                        )}
                         {contactInfo?.tiktok && (
                           <a
-                            href={`https://tiktok.com/@${contactInfo.tiktok.replace('@', '')}`}
+                            href={contactInfo.tiktok.startsWith('http') ? contactInfo.tiktok : `https://tiktok.com/@${contactInfo.tiktok.replace('@', '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover-elevate p-2 rounded"
