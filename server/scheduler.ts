@@ -380,13 +380,53 @@ export async function initializeScheduler(storage: IStorage) {
     "Thursdays at 11:59 PM EST (Friday 4:59 AM UTC)",
     async () => {
       console.log("📊 Starting weekly performance snapshot capture (Spotify + YouTube)...");
+      console.log("⏱️  Queueing enrichment jobs to refresh streaming data before snapshot...");
       
       try {
-        const { performanceTrackingService } = await import("./services/performanceTracking");
-        await performanceTrackingService.captureWeeklySnapshots();
-        console.log("✅ Weekly performance snapshots captured successfully (Spotify + YouTube)");
+        // Get all tracks with streaming data
+        const tracks = await db
+          .select({
+            id: playlistSnapshots.id,
+          })
+          .from(playlistSnapshots)
+          .where(sql`(${playlistSnapshots.spotifyStreams} IS NOT NULL OR ${playlistSnapshots.youtubeViews} IS NOT NULL)`);
+
+        console.log(`Found ${tracks.length} tracks with streaming data to refresh`);
+
+        if (tracks.length === 0) {
+          console.log("⚠️ No tracks with streaming data found to snapshot");
+          return;
+        }
+
+        // Import job queue
+        const { getJobQueue } = await import("./enrichment/jobQueueManager");
+        const jobQueue = getJobQueue();
+
+        if (!jobQueue) {
+          throw new Error("Job queue not initialized");
+        }
+
+        // Queue enrichment jobs in batches of 50
+        const batchSize = 50;
+        const batches: string[][] = [];
+        for (let i = 0; i < tracks.length; i += batchSize) {
+          batches.push(tracks.slice(i, i + batchSize).map(t => t.id));
+        }
+
+        for (const [index, batch] of batches.entries()) {
+          const job = await jobQueue.enqueue({
+            type: 'enrich-tracks',
+            playlistId: null,
+            trackIds: batch,
+            targetPhase: null, // Will run all phases, but we care about 2 and 6
+            captureSnapshotAfter: 1, // Set flag to capture snapshot after completion
+          });
+          console.log(`✅ Queued enrichment job ${index + 1}/${batches.length}: ${job.id} (${batch.length} tracks)`);
+        }
+
+        console.log(`✅ Queued ${batches.length} enrichment job(s) for ${tracks.length} tracks. Snapshots will be captured automatically when enrichment completes.`);
       } catch (error) {
-        console.error("❌ Weekly performance snapshot error:", error);
+        console.error("❌ Weekly performance snapshot queueing error:", error);
         throw error;
       }
     }
