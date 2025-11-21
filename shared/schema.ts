@@ -341,6 +341,7 @@ export const enrichmentJobs = pgTable("enrichment_jobs", {
   playlistId: varchar("playlist_id").references(() => trackedPlaylists.id, { onDelete: "cascade" }),
   trackIds: text("track_ids").array().notNull(),
   targetPhase: integer("target_phase"),
+  captureSnapshotAfter: integer("capture_snapshot_after").notNull().default(0),
   status: jobStatusEnum("status").notNull().default('queued'),
   progress: integer("progress").notNull().default(0),
   totalTracks: integer("total_tracks").notNull().default(0),
