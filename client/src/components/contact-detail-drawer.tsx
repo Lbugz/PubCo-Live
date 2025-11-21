@@ -36,7 +36,6 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
 import {
   Collapsible,
   CollapsibleContent,
@@ -161,44 +160,38 @@ interface CategoryCardProps {
 
 function CategoryCard({ category }: CategoryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const progressPercentage = category.maxScore > 0 
-    ? Math.min(100, (category.score / category.maxScore) * 100) 
-    : 0;
 
   return (
-    <Card className="p-5">
+    <Card className="p-4">
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <CollapsibleTrigger asChild>
           <div className="cursor-pointer" data-testid={`category-${category.category.toLowerCase().replace(/\s+/g, '-')}`}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <h4 className="font-medium">{category.category}</h4>
-                <Badge variant="outline" className="font-semibold">
-                  {category.score.toFixed(1)} / {category.maxScore} pts
-                </Badge>
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-base">{category.category}</h4>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold tabular-nums">
+                  {category.score.toFixed(1)} / {category.maxScore}
+                </span>
+                <ChevronDown 
+                  className={cn(
+                    "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                    isExpanded && "rotate-180"
+                  )}
+                />
               </div>
-              <ChevronDown 
-                className={cn(
-                  "h-5 w-5 text-muted-foreground transition-transform duration-200",
-                  isExpanded && "rotate-180"
-                )}
-              />
             </div>
-            <Progress value={progressPercentage} className="h-2" />
           </div>
         </CollapsibleTrigger>
 
         {category.signals && category.signals.length > 0 && (
           <CollapsibleContent>
-            <div className="space-y-2 mt-3 pt-3 border-t">
+            <div className="space-y-1.5 mt-3 pt-3 border-t">
               {category.signals.map((signal, idx) => (
-                <div key={idx} className="flex justify-between items-start gap-2">
-                  <span className="text-sm text-muted-foreground flex-1">
+                <div key={idx} className="flex items-start gap-2 text-sm">
+                  <span className="text-muted-foreground mt-0.5">•</span>
+                  <span className="text-muted-foreground flex-1 leading-relaxed">
                     {signal.description}
                   </span>
-                  <Badge variant="outline" className="flex-shrink-0">
-                    +{signal.weight.toFixed(1)}
-                  </Badge>
                 </div>
               ))}
             </div>
