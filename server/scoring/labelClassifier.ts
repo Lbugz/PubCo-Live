@@ -296,16 +296,22 @@ export function classifyLabel(label: string | null, artistName?: string): Classi
 }
 
 /**
- * Classify multiple labels and return the highest-scoring tier
+ * Classify multiple labels and return the most representative tier
  * (Used when an artist has multiple releases across different labels)
+ * 
+ * Priority logic:
+ * 1. If ANY label is Major → return Major (0 pts) - signed artists take precedence
+ * 2. If ANY label is Major Distribution → return Major Dist (1 pt)
+ * 3. Otherwise, return the highest-scoring tier from explicit matches
+ * 4. If no explicit matches, default to DIY (3 pts) only if all labels are unknown
  */
 export function classifyMultipleLabels(labels: Array<string | null>, artistName?: string): ClassificationResult {
   if (labels.length === 0) {
     return {
       tier: 'unknown',
-      score: 3,
+      score: 0,
       confidence: 'low',
-      reasoning: 'No labels provided - defaulting to DIY'
+      reasoning: 'No labels provided - cannot determine distribution'
     };
   }
   
@@ -315,18 +321,64 @@ export function classifyMultipleLabels(labels: Array<string | null>, artistName?
   if (validLabels.length === 0) {
     return {
       tier: 'unknown',
-      score: 3,
+      score: 0,
       confidence: 'low',
-      reasoning: 'No valid labels - defaulting to DIY'
+      reasoning: 'No valid labels - cannot determine distribution'
     };
   }
   
   // Classify each label
   const results = validLabels.map(label => classifyLabel(label, artistName));
   
-  // Priority order: DIY (3) > Indie (2) > Major Dist (1) > Major (0)
-  // Return the highest scoring classification
-  results.sort((a, b) => b.score - a.score);
+  // CRITICAL: Check for major label first (takes precedence over everything)
+  const majorLabelMatch = results.find(r => r.tier === 'major');
+  if (majorLabelMatch) {
+    return majorLabelMatch;
+  }
+  
+  // Check for major distribution (takes precedence over indie/DIY)
+  const majorDistMatch = results.find(r => r.tier === 'majorDistribution');
+  if (majorDistMatch) {
+    return majorDistMatch;
+  }
+  
+  // Separate explicit matches from pattern-based defaults
+  const explicitMatches = results.filter(r => r.confidence === 'high');
+  const patternMatches = results.filter(r => r.confidence === 'medium');
+  const unknownDefaults = results.filter(r => r.confidence === 'low' && r.tier === 'diy');
+  
+  // If we have explicit matches, return the highest scoring one
+  if (explicitMatches.length > 0) {
+    explicitMatches.sort((a, b) => b.score - a.score);
+    return explicitMatches[0];
+  }
+  
+  // If we have pattern matches (vanity labels, etc), return highest scoring
+  if (patternMatches.length > 0) {
+    patternMatches.sort((a, b) => b.score - a.score);
+    return patternMatches[0];
+  }
+  
+  // Only default to DIY if ALL labels are unknown (no explicit or pattern matches)
+  if (unknownDefaults.length === results.length) {
+    return {
+      tier: 'diy',
+      score: 3,
+      confidence: 'low',
+      reasoning: 'All labels unknown - defaulting to DIY (statistically most likely)'
+    };
+  }
+  
+  // Fallback: return highest confidence result
+  results.sort((a, b) => {
+    // Sort by confidence first (high > medium > low)
+    const confidenceOrder: Record<string, number> = { 'high': 3, 'medium': 2, 'low': 1 };
+    const confDiff = confidenceOrder[b.confidence] - confidenceOrder[a.confidence];
+    if (confDiff !== 0) return confDiff;
+    
+    // Then by score
+    return b.score - a.score;
+  });
   
   return results[0];
 }
