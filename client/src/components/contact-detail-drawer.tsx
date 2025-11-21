@@ -144,16 +144,6 @@ function parseScoreBreakdown(trackScoreData: string | null) {
   }
 }
 
-// Get impact level for each category
-function getCategoryImpact(categoryName: string): "High Impact" | "Medium Impact" | "Low Impact" {
-  const highImpact = ["Publishing Status", "Release Pathway"];
-  const lowImpact = ["Catalog Patterns", "Profile Verification"];
-  
-  if (highImpact.includes(categoryName)) return "High Impact";
-  if (lowImpact.includes(categoryName)) return "Low Impact";
-  return "Medium Impact";
-}
-
 // Get border color based on score strength
 function getBorderColor(score: number, maxScore: number): string {
   if (maxScore === 0) return "border-l-muted";
@@ -255,29 +245,25 @@ interface NarrativeCardProps {
 
 function NarrativeCard({ category }: NarrativeCardProps) {
   const Icon = getCategoryIcon(category.category);
-  const impactLevel = getCategoryImpact(category.category);
   const borderColor = getBorderColor(category.score, category.maxScore);
   
   return (
     <Card 
-      className={cn("p-5 border-l-4", borderColor)} 
+      className={cn("p-3 border-l-4", borderColor)} 
       data-testid={`category-${category.category.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <div className="flex items-start gap-3 mb-3">
-        <Icon className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+      <div className="flex items-start gap-2.5 mb-2">
+        <Icon className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2 mb-1">
-            <h4 className="font-medium">{category.category}</h4>
-            <span className="text-sm font-semibold text-muted-foreground tabular-nums">
+          <div className="flex items-baseline gap-2">
+            <h4 className="font-medium text-sm">{category.category}</h4>
+            <span className="text-xs font-semibold text-muted-foreground tabular-nums">
               {category.score.toFixed(1)}/{category.maxScore} pts
             </span>
           </div>
-          <Badge variant="outline" className="text-xs mb-2">
-            {impactLevel}
-          </Badge>
         </div>
       </div>
-      <p className="text-sm text-muted-foreground leading-relaxed pl-8">
+      <p className="text-sm text-muted-foreground leading-relaxed pl-7">
         {getCategoryNarrative(category)}
       </p>
     </Card>
