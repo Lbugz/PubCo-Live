@@ -4,6 +4,9 @@ import { getAuthStatus } from "./auth-monitor";
 import { calculateUnsignedScore } from "./scoring";
 import type { InsertPlaylistSnapshot } from "@shared/schema";
 import type { ScrapeResult } from "./scraper";
+import { db } from "./db";
+import { playlistSnapshots } from "@shared/schema";
+import { sql } from "drizzle-orm";
 
 /**
  * Automated Scraping Scheduler
