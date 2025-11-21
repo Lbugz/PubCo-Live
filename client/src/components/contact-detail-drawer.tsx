@@ -131,12 +131,17 @@ function parseScoreBreakdown(trackScoreData: string | null) {
     const data = JSON.parse(trackScoreData);
     // Extract categories array from the new scoring system
     if (data.categories && data.categories.length > 0) {
-      return data.categories.map((cat: any) => ({
-        category: cat.category,
-        score: cat.score,
-        maxScore: cat.maxScore,
-        signals: cat.signals || []
-      }));
+      return {
+        categories: data.categories.map((cat: any) => ({
+          category: cat.category,
+          score: cat.score,
+          maxScore: cat.maxScore,
+          signals: cat.signals || []
+        })),
+        rawScore: data.rawScore,
+        finalScore: data.finalScore,
+        confidence: data.confidence
+      };
     }
     return null;
   } catch {
@@ -189,7 +194,7 @@ function getCategoryNarrative(category: {
       return "Publishing representation detected across tracks.";
       
     case "Release Pathway":
-      if (percentage >= 80) {
+      if (percentage > 0) {
         return firstSignalDesc || "DIY or independent distribution signals detected.";
       }
       return "No DIY or independent distribution signals found.";
@@ -956,7 +961,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                     <Card className="p-5">
                       <div className="flex items-baseline gap-3 mb-3">
                         <div className="text-5xl font-bold" data-testid="text-unsigned-score-detail">
-                          {contact.unsignedScore}
+                          {scoreBreakdown?.rawScore ?? contact.unsignedScore}
                         </div>
                         <div className="text-2xl text-muted-foreground">/10</div>
                         <Badge
@@ -969,17 +974,17 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                       </div>
 
                       {/* Summary Sentence */}
-                      {scoreBreakdown && scoreBreakdown.length > 0 && (
+                      {scoreBreakdown && scoreBreakdown.categories.length > 0 && (
                         <p className="text-sm text-muted-foreground leading-relaxed" data-testid="text-score-summary">
-                          {generateScoreSummary(scoreBreakdown, contact.scoreConfidence || undefined, contact.unsignedScore)}
+                          {generateScoreSummary(scoreBreakdown.categories, contact.scoreConfidence || undefined, scoreBreakdown.rawScore)}
                         </p>
                       )}
                     </Card>
 
                     {/* Category-Based Breakdown */}
-                    {scoreBreakdown && scoreBreakdown.length > 0 ? (
+                    {scoreBreakdown && scoreBreakdown.categories.length > 0 ? (
                       <div className="space-y-4">
-                        {scoreBreakdown.map((category: { category: string; score: number; maxScore: number; signals: Array<{ description: string; weight: number }> }, idx: number) => (
+                        {scoreBreakdown.categories.map((category: { category: string; score: number; maxScore: number; signals: Array<{ description: string; weight: number }> }, idx: number) => (
                           <NarrativeCard key={idx} category={category} />
                         ))}
                       </div>
