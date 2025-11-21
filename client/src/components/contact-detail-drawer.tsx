@@ -4,7 +4,8 @@ import { useLocation } from "wouter";
 import { 
   Mail, MessageCircle, RefreshCw, TrendingUp, Music, Activity, 
   FileText, ExternalLink, Instagram, Twitter, Flame, Edit,
-  Phone, Hash, Building, User as UserIcon, Award, Target, Check, X, Share2
+  Phone, Hash, Building, User as UserIcon, Award, Target, Check, X, Share2,
+  Truck, Star, PuzzlePiece, Database, CheckCircle
 } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -143,7 +144,40 @@ function parseScoreBreakdown(trackScoreData: string | null) {
   }
 }
 
-// Generate narrative description for a category
+// Get impact level for each category
+function getCategoryImpact(categoryName: string): "High Impact" | "Medium Impact" | "Low Impact" {
+  const highImpact = ["Publishing Status", "Release Pathway"];
+  const lowImpact = ["Catalog Patterns", "Profile Verification"];
+  
+  if (highImpact.includes(categoryName)) return "High Impact";
+  if (lowImpact.includes(categoryName)) return "Low Impact";
+  return "Medium Impact";
+}
+
+// Get border color based on score strength
+function getBorderColor(score: number, maxScore: number): string {
+  if (maxScore === 0) return "border-l-muted";
+  
+  const percentage = (score / maxScore) * 100;
+  if (percentage >= 80) return "border-l-emerald-500";
+  if (percentage >= 40) return "border-l-amber-500";
+  return "border-l-muted";
+}
+
+// Get icon for each category
+function getCategoryIcon(categoryName: string) {
+  const icons: Record<string, any> = {
+    "Publishing Status": FileText,
+    "Release Pathway": Truck,
+    "Early Career Signals": Star,
+    "Metadata Quality": PuzzlePiece,
+    "Catalog Patterns": Database,
+    "Profile Verification": CheckCircle,
+  };
+  return icons[categoryName] || FileText;
+}
+
+// Generate narrative description for a category with specific microcopy
 function getCategoryNarrative(category: {
   category: string;
   score: number;
@@ -151,28 +185,62 @@ function getCategoryNarrative(category: {
   signals: Array<{ description: string; weight: number }>;
 }): string {
   const { category: name, score, maxScore, signals } = category;
-  
-  // Get first valid signal description
   const firstSignalDesc = signals?.find(s => s?.description)?.description;
+  const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
   
-  // Strong signal (full or near-full points)
-  if (score >= maxScore * 0.8) {
-    if (firstSignalDesc) {
-      return `This songwriter shows ${firstSignalDesc.toLowerCase()}. Strong indicator detected.`;
-    }
-    return `Strong signals detected in ${name.toLowerCase()}.`;
+  // Category-specific microcopy
+  switch (name) {
+    case "Publishing Status":
+      if (percentage >= 80) {
+        return "This songwriter has no publishing representation across any tracks.";
+      } else if (percentage > 0) {
+        return "Some publishing metadata present, but gaps exist across catalog.";
+      }
+      return "Publishing representation detected across tracks.";
+      
+    case "Release Pathway":
+      if (percentage >= 80) {
+        return firstSignalDesc || "DIY or independent distribution signals detected.";
+      }
+      return "No DIY or independent distribution signals found.";
+      
+    case "Early Career Signals":
+      if (percentage >= 80) {
+        return firstSignalDesc || "Presence on Fresh Finds indicates early editorial support.";
+      } else if (percentage > 0) {
+        return firstSignalDesc || "Some early career signals detected.";
+      }
+      return "No early career editorial signals detected.";
+      
+    case "Metadata Quality":
+      if (firstSignalDesc) {
+        return `${firstSignalDesc}.`;
+      }
+      return percentage > 0 
+        ? `Metadata is partially complete (${Math.round(percentage)}%).`
+        : "Metadata is incomplete or missing.";
+      
+    case "Catalog Patterns":
+      if (percentage >= 80) {
+        return firstSignalDesc || "Consistent independent release pattern detected.";
+      }
+      return "No consistent independent release pattern detected.";
+      
+    case "Profile Verification":
+      if (percentage >= 80) {
+        return firstSignalDesc || "External identity records found.";
+      }
+      return "No external identity records found.";
+      
+    default:
+      // Fallback for unknown categories
+      if (percentage >= 80 && firstSignalDesc) {
+        return `${firstSignalDesc}.`;
+      } else if (percentage > 0 && firstSignalDesc) {
+        return `Partial signals: ${firstSignalDesc.toLowerCase()}.`;
+      }
+      return "No significant signals detected.";
   }
-  
-  // Moderate signal (partial points)
-  if (score > 0) {
-    if (firstSignalDesc) {
-      return `Partial signals detected: ${firstSignalDesc.toLowerCase()}.`;
-    }
-    return `Some signals detected in ${name.toLowerCase()}.`;
-  }
-  
-  // No signal
-  return `No significant signals detected in this category.`;
 }
 
 // Narrative Card Component for Score Display
@@ -186,15 +254,30 @@ interface NarrativeCardProps {
 }
 
 function NarrativeCard({ category }: NarrativeCardProps) {
+  const Icon = getCategoryIcon(category.category);
+  const impactLevel = getCategoryImpact(category.category);
+  const borderColor = getBorderColor(category.score, category.maxScore);
+  
   return (
-    <Card className="p-4" data-testid={`category-${category.category.toLowerCase().replace(/\s+/g, '-')}`}>
-      <div className="flex items-baseline gap-2 mb-2">
-        <h4 className="font-medium">{category.category}</h4>
-        <span className="text-sm font-semibold text-muted-foreground tabular-nums">
-          {category.score.toFixed(1)}/{category.maxScore}
-        </span>
+    <Card 
+      className={cn("p-5 border-l-4", borderColor)} 
+      data-testid={`category-${category.category.toLowerCase().replace(/\s+/g, '-')}`}
+    >
+      <div className="flex items-start gap-3 mb-3">
+        <Icon className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2 mb-1">
+            <h4 className="font-medium">{category.category}</h4>
+            <span className="text-sm font-semibold text-muted-foreground tabular-nums">
+              {category.score.toFixed(1)}/{category.maxScore} pts
+            </span>
+          </div>
+          <Badge variant="outline" className="text-xs mb-2">
+            {impactLevel}
+          </Badge>
+        </div>
       </div>
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-sm text-muted-foreground leading-relaxed pl-8">
         {getCategoryNarrative(category)}
       </p>
     </Card>
@@ -909,7 +992,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
 
                     {/* Category-Based Breakdown */}
                     {scoreBreakdown && scoreBreakdown.length > 0 ? (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {scoreBreakdown.map((category: { category: string; score: number; maxScore: number; signals: Array<{ description: string; weight: number }> }, idx: number) => (
                           <NarrativeCard key={idx} category={category} />
                         ))}
