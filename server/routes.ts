@@ -686,6 +686,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/contacts/batch-recalculate-scores", async (req, res) => {
+    try {
+      const { updateContactScore } = await import("./scoring/contactScoring");
+      
+      const allContacts = await storage.getContacts({});
+      
+      console.log(`🔄 Starting batch score recalculation for ${allContacts.length} contacts...`);
+      
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: Array<{ contactId: string; error: string }> = [];
+      
+      for (const contact of allContacts) {
+        try {
+          await updateContactScore(contact.id);
+          successCount++;
+          if (successCount % 10 === 0) {
+            console.log(`  ✓ Processed ${successCount}/${allContacts.length} contacts`);
+          }
+        } catch (error: any) {
+          errorCount++;
+          errors.push({
+            contactId: contact.id,
+            error: error.message || 'Unknown error'
+          });
+          console.error(`  ✗ Failed to update score for contact ${contact.id}:`, error.message);
+        }
+      }
+      
+      console.log(`✅ Batch score recalculation complete: ${successCount} succeeded, ${errorCount} failed`);
+      
+      res.json({
+        success: true,
+        totalContacts: allContacts.length,
+        successCount,
+        errorCount,
+        errors: errors.slice(0, 10)
+      });
+    } catch (error) {
+      console.error("Error in batch score recalculation:", error);
+      res.status(500).json({ error: "Failed to batch recalculate scores" });
+    }
+  });
+
   app.post("/api/contacts/:id/notes", async (req, res) => {
     try {
       const { id } = req.params;
