@@ -10,9 +10,13 @@ export default function SettingsAutomation() {
 
   const runPlaylistUpdateMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("/api/jobs/run-playlist-update", {
+      const response = await fetch("/api/jobs/run-playlist-update", {
         method: "POST"
       });
+      if (!response.ok) {
+        throw new Error("Failed to start playlist update");
+      }
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -31,9 +35,13 @@ export default function SettingsAutomation() {
 
   const runPerformanceSnapshotMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("/api/jobs/run-performance-snapshot", {
+      const response = await fetch("/api/jobs/run-performance-snapshot", {
         method: "POST"
       });
+      if (!response.ok) {
+        throw new Error("Failed to start performance snapshot");
+      }
+      return await response.json();
     },
     onSuccess: () => {
       toast({
