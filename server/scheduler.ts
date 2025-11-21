@@ -309,8 +309,8 @@ export async function initializeScheduler(storage: IStorage) {
   // Register weekly performance snapshot job (Spotify + YouTube)
   registerJob(
     "Weekly Performance Snapshots",
-    "40 3 * * 5", // Every Friday at 3:40 AM UTC (Thursday 10:40 PM EST)
-    "Thursdays at 10:40 PM EST (Friday 3:40 AM UTC)",
+    "59 4 * * 5", // Every Friday at 4:59 AM UTC (Thursday 11:59 PM EST)
+    "Thursdays at 11:59 PM EST (Friday 4:59 AM UTC)",
     async () => {
       console.log("📊 Starting weekly performance snapshot capture (Spotify + YouTube)...");
       
