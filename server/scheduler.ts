@@ -147,76 +147,109 @@ export function getSchedulerStatus() {
 export async function initializeScheduler(storage: IStorage) {
   console.log("🔧 Initializing scheduler with storage...");
   
-  // Register Fresh Finds weekly scrape job
+  // Register all playlists weekly update job (staggered updates)
   registerJob(
-    "Fresh Finds Weekly Update",
-    "0 9 * * 5", // Every Friday at 9:00 AM
-    "Fridays at 9:00 AM",
+    "All Playlists Weekly Update",
+    "*/15 10-12 * * 5", // Every 15 minutes on Fridays from 10:00-12:00 UTC (5-7 AM EST)
+    "Every 15 minutes on Fridays 10:00-12:00 UTC",
     async () => {
-      console.log("🎵 Starting Fresh Finds weekly scrape...");
-      
-      // Fresh Finds playlist URL
-      const FRESH_FINDS_URL = "https://open.spotify.com/playlist/37i9dQZF1DX4dyzvuaRJ0n";
-      const FRESH_FINDS_PLAYLIST_ID = "37i9dQZF1DX4dyzvuaRJ0n";
+      console.log("🎵 Starting batch playlist update...");
       
       try {
-        // Try microservice first, fall back to direct scraping
-        let result: ScrapeResult | undefined;
-        const microserviceUrl = process.env.SCRAPER_API_URL;
+        // Get all tracked playlists
+        const allPlaylists = await storage.getTrackedPlaylists();
+        console.log(`📋 Found ${allPlaylists.length} total tracked playlists`);
         
-        if (microserviceUrl) {
-          console.log("Using microservice for Fresh Finds scrape...");
-          const response = await fetch(`${microserviceUrl}/scrape-playlist`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ playlistUrl: FRESH_FINDS_URL }),
-          });
-          
-          result = await response.json() as ScrapeResult;
-        } else {
-          console.log("Microservice not available, using direct scraping...");
-          const { scrapeSpotifyPlaylist } = await import("./scraper");
-          result = await scrapeSpotifyPlaylist(FRESH_FINDS_URL);
+        // Filter playlists that haven't been updated this week (last 7 days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        const playlistsNeedingUpdate = allPlaylists.filter(p => {
+          if (!p.lastChecked) return true; // Never scraped
+          const lastChecked = new Date(p.lastChecked);
+          return lastChecked < sevenDaysAgo;
+        });
+        
+        console.log(`🔄 ${playlistsNeedingUpdate.length} playlists need updating this week`);
+        
+        if (playlistsNeedingUpdate.length === 0) {
+          console.log("✅ All playlists already updated this week!");
+          return;
         }
         
-        if (result?.success && result.tracks) {
-          console.log(`✅ Scraped ${result.tracks.length} tracks from Fresh Finds`);
-
-          // Store tracks in database
-          const today = new Date().toISOString().split('T')[0];
-          const playlistName = result.playlistName || "Fresh Finds";
-
-          const tracksToInsert: InsertPlaylistSnapshot[] = result.tracks.map(track => {
-            const score = calculateUnsignedScore({
-              playlistName,
-              label: null,
-              publisher: null,
-              writer: null,
-            });
-
-            return {
-              week: today,
-              playlistName,
-              playlistId: FRESH_FINDS_PLAYLIST_ID,
-              trackName: track.trackName,
-              artistName: track.artistName,
-              spotifyUrl: track.spotifyUrl,
-              isrc: null,
-              label: null,
-              unsignedScore: score,
-              addedAt: new Date(),
-              dataSource: "scraped",
-            };
-          });
-
-          await storage.insertTracks(tracksToInsert);
+        // Process next batch (4-5 playlists per 15-min cycle)
+        const BATCH_SIZE = 4;
+        const batch = playlistsNeedingUpdate.slice(0, BATCH_SIZE);
+        
+        console.log(`📦 Processing batch of ${batch.length} playlists`);
+        
+        for (const playlist of batch) {
+          try {
+            console.log(`🎵 Scraping: ${playlist.name} (${playlist.id})`);
+            
+            const microserviceUrl = process.env.SCRAPER_API_URL;
+            let result: ScrapeResult | undefined;
+            
+            if (microserviceUrl) {
+              console.log("  Using microservice...");
+              const response = await fetch(`${microserviceUrl}/scrape-playlist`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ playlistUrl: playlist.spotifyUrl }),
+              });
+              result = await response.json() as ScrapeResult;
+            } else {
+              console.log("  Using direct scraping...");
+              const { scrapeSpotifyPlaylist } = await import("./scraper");
+              result = await scrapeSpotifyPlaylist(playlist.spotifyUrl);
+            }
+            
+            if (result?.success && result.tracks) {
+              console.log(`  ✅ Scraped ${result.tracks.length} tracks`);
+              
+              const today = new Date().toISOString().split('T')[0];
+              const tracksToInsert: InsertPlaylistSnapshot[] = result.tracks.map(track => {
+                const score = calculateUnsignedScore({
+                  playlistName: playlist.name,
+                  label: null,
+                  publisher: null,
+                  writer: null,
+                });
+                
+                return {
+                  week: today,
+                  playlistName: playlist.name,
+                  playlistId: playlist.id,
+                  trackName: track.trackName,
+                  artistName: track.artistName,
+                  spotifyUrl: track.spotifyUrl,
+                  isrc: null,
+                  label: null,
+                  unsignedScore: score,
+                  addedAt: new Date(),
+                  dataSource: "scraped",
+                };
+              });
+              
+              await storage.insertTracks(tracksToInsert);
+              await storage.updatePlaylistLastChecked(playlist.id);
+              
+              console.log(`  ✅ Stored ${result.tracks.length} tracks`);
+            } else {
+              console.error(`  ❌ Scrape failed for ${playlist.name}:`, result?.error);
+            }
+          } catch (error) {
+            console.error(`  ❌ Error processing playlist ${playlist.name}:`, error);
+            // Continue to next playlist despite error
+          }
           
-          console.log(`✅ Stored ${result.tracks.length} tracks in database`);
-        } else {
-          console.error("❌ Scrape failed:", result.error);
+          // Small delay between playlists to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
+        
+        console.log(`✅ Batch complete. ${playlistsNeedingUpdate.length - batch.length} playlists remaining for this week.`);
       } catch (error) {
-        console.error("❌ Fresh Finds scrape error:", error);
+        console.error("❌ Batch playlist update error:", error);
         throw error;
       }
     }
@@ -273,18 +306,18 @@ export async function initializeScheduler(storage: IStorage) {
     }
   );
   
-  // Register weekly performance snapshot job
+  // Register weekly performance snapshot job (Spotify + YouTube)
   registerJob(
     "Weekly Performance Snapshots",
-    "0 1 * * 1", // Every Monday at 1:00 AM
-    "Mondays at 1:00 AM",
+    "40 3 * * 5", // Every Friday at 3:40 AM UTC (Thursday 10:40 PM EST)
+    "Thursdays at 10:40 PM EST (Friday 3:40 AM UTC)",
     async () => {
-      console.log("📊 Starting weekly performance snapshot capture...");
+      console.log("📊 Starting weekly performance snapshot capture (Spotify + YouTube)...");
       
       try {
         const { performanceTrackingService } = await import("./services/performanceTracking");
         await performanceTrackingService.captureWeeklySnapshots();
-        console.log("✅ Weekly performance snapshots captured successfully");
+        console.log("✅ Weekly performance snapshots captured successfully (Spotify + YouTube)");
       } catch (error) {
         console.error("❌ Weekly performance snapshot error:", error);
         throw error;

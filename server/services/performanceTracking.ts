@@ -22,15 +22,16 @@ export class PerformanceTrackingService {
 
     console.log(`Capturing performance snapshots for week: ${weekStart.toISOString()}`);
 
-    // Get all tracks with their current stream counts
+    // Get all tracks with their current stream counts (Spotify + YouTube)
     const tracks = await db
       .select({
         trackId: playlistSnapshots.id,
         spotifyStreams: playlistSnapshots.spotifyStreams,
+        youtubeViews: playlistSnapshots.youtubeViews,
         songwriter: playlistSnapshots.songwriter,
       })
       .from(playlistSnapshots)
-      .where(sql`${playlistSnapshots.spotifyStreams} IS NOT NULL`);
+      .where(sql`(${playlistSnapshots.spotifyStreams} IS NOT NULL OR ${playlistSnapshots.youtubeViews} IS NOT NULL)`);
 
     console.log(`Found ${tracks.length} tracks to snapshot`);
 
@@ -55,6 +56,7 @@ export class PerformanceTrackingService {
         .orderBy(desc(trackPerformanceSnapshots.week))
         .limit(1);
 
+      // Calculate Spotify week-over-week
       const prevStreams = previousSnapshot[0]?.spotifyStreams || 0;
       const currentStreams = track.spotifyStreams || 0;
       const wowStreams = currentStreams - prevStreams;
@@ -62,15 +64,26 @@ export class PerformanceTrackingService {
         ? Math.round((wowStreams / prevStreams) * 100)
         : 0;
 
-      // Insert new snapshot  
+      // Calculate YouTube week-over-week
+      const prevYoutubeViews = previousSnapshot[0]?.youtubeViews || 0;
+      const currentYoutubeViews = track.youtubeViews || 0;
+      const wowYoutubeViews = currentYoutubeViews - prevYoutubeViews;
+      const wowYoutubePct = prevYoutubeViews > 0 
+        ? Math.round((wowYoutubeViews / prevYoutubeViews) * 100)
+        : 0;
+
+      // Insert new snapshot with both Spotify and YouTube data
       await db.insert(trackPerformanceSnapshots).values({
         contactId,
         trackId: track.trackId,
         week: weekStart.toISOString().split('T')[0], // Convert to date string
         spotifyStreams: currentStreams,
+        youtubeViews: currentYoutubeViews,
         followers: null,
         wowStreams,
         wowPct,
+        wowYoutubeViews,
+        wowYoutubePct,
       });
     }
 
@@ -95,9 +108,10 @@ export class PerformanceTrackingService {
         .where(sql`${playlistSnapshots.songwriter} LIKE '%' || ${songwriterProfiles.name} || '%'`);
 
       const totalStreams = tracks.reduce((sum, t) => sum + (t.playlist_snapshots.spotifyStreams || 0), 0);
+      const totalYoutubeViews = tracks.reduce((sum, t) => sum + (t.playlist_snapshots.youtubeViews || 0), 0);
       const totalTracks = tracks.length;
 
-      // Calculate average WoW growth across all tracks
+      // Calculate average WoW growth across all tracks (Spotify + YouTube)
       const recentSnapshots = await db
         .select()
         .from(trackPerformanceSnapshots)
@@ -109,12 +123,18 @@ export class PerformanceTrackingService {
         ? Math.round(recentSnapshots.reduce((sum, s) => sum + (s.wowPct || 0), 0) / recentSnapshots.length)
         : 0;
 
+      const avgWowYoutubePct = recentSnapshots.length > 0
+        ? Math.round(recentSnapshots.reduce((sum, s) => sum + (s.wowYoutubePct || 0), 0) / recentSnapshots.length)
+        : 0;
+
       await db
         .update(contacts)
         .set({
           totalStreams,
+          totalYoutubeViews,
           totalTracks,
           wowGrowthPct: avgWowPct,
+          wowYoutubeGrowthPct: avgWowYoutubePct,
           updatedAt: new Date(),
         })
         .where(eq(contacts.id, contact.id));
@@ -214,8 +234,11 @@ export class PerformanceTrackingService {
     return snapshots.map(s => ({
       week: s.week,
       spotifyStreams: s.spotifyStreams,
+      youtubeViews: s.youtubeViews,
       wowStreams: s.wowStreams,
       wowPct: s.wowPct,
+      wowYoutubeViews: s.wowYoutubeViews,
+      wowYoutubePct: s.wowYoutubePct,
       followers: s.followers,
     }));
   }

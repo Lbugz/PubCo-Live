@@ -35,6 +35,7 @@ export interface IStorage {
   updatePlaylistCompleteness(playlistId: string, fetchCount: number, totalTracks: number | null, lastChecked: Date): Promise<void>;
   updatePlaylistMetadata(id: string, metadata: { totalTracks?: number | null; isEditorial?: number; fetchMethod?: string | null; lastChecked?: Date; isComplete?: number; lastFetchCount?: number }): Promise<void>;
   updateTrackedPlaylistMetadata(id: string, metadata: { name?: string; curator?: string | null; followers?: number | null; totalTracks?: number | null; imageUrl?: string | null }): Promise<void>;
+  updatePlaylistLastChecked(id: string): Promise<void>;
   deleteTrackedPlaylist(id: string): Promise<void>;
   updateTrackContact(id: string, contact: { instagram?: string; twitter?: string; tiktok?: string; email?: string; contactNotes?: string }): Promise<void>;
   logActivity(activity: InsertActivityHistory): Promise<void>;
@@ -729,6 +730,12 @@ export class DatabaseStorage implements IStorage {
     console.log(`[syncPlaylistSnapshotsName] Updated ${result.length} track records with new playlist name`);
   }
 
+  async updatePlaylistLastChecked(id: string): Promise<void> {
+    await db.update(trackedPlaylists)
+      .set({ lastChecked: new Date() })
+      .where(eq(trackedPlaylists.id, id));
+  }
+
   async deleteTrackedPlaylist(id: string): Promise<void> {
     // First get the playlist to find its playlistId
     const [playlist] = await db.select()
@@ -1103,9 +1110,11 @@ export class DatabaseStorage implements IStorage {
       stage: contacts.stage,
       stageUpdatedAt: contacts.stageUpdatedAt,
       wowGrowthPct: contacts.wowGrowthPct,
+      wowYoutubeGrowthPct: contacts.wowYoutubeGrowthPct,
       hotLead: contacts.hotLead,
       assignedUserId: contacts.assignedUserId,
       totalStreams: contacts.totalStreams,
+      totalYoutubeViews: contacts.totalYoutubeViews,
       totalTracks: contacts.totalTracks,
       collaborationCount: contacts.collaborationCount,
       unsignedScore: contacts.unsignedScore,
@@ -1502,9 +1511,11 @@ export class DatabaseStorage implements IStorage {
       stage: contacts.stage,
       stageUpdatedAt: contacts.stageUpdatedAt,
       wowGrowthPct: contacts.wowGrowthPct,
+      wowYoutubeGrowthPct: contacts.wowYoutubeGrowthPct,
       hotLead: contacts.hotLead,
       assignedUserId: contacts.assignedUserId,
       totalStreams: contacts.totalStreams,
+      totalYoutubeViews: contacts.totalYoutubeViews,
       totalTracks: contacts.totalTracks,
       collaborationCount: contacts.collaborationCount,
       unsignedScore: contacts.unsignedScore,
