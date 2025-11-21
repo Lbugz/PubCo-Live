@@ -1,0 +1,151 @@
+Do not make any changes.
+
+My purpose with this is I want the the spotify streams and youtube view to be fetched because this new number will replace current analytics for track and can be compared to previous streams to develop the WoW performance?
+
+1K
+
+LangaKambi-Sham
+Assistant
+58 minutes ago
+Read 15 files
+Based on the codebase, I can explain how the Weekly Performance Snapshots process works and confirm your understanding:
+
+Current Weekly Performance Snapshot Process
+When it runs:
+
+Scheduled: Every Friday at 4:59 AM UTC (Thursday 11:59 PM EST)
+Manual: Via POST to /api/jobs/run-performance-snapshot
+What it does:
+
+Captures Current Streaming Data (from database, not fetching new data):
+
+Reads spotifyStreams and youtubeViews from playlist_snapshots table
+These values should already be fresh from:
+Weekly playlist updates (Fridays 10:00-12:00 UTC)
+Phase 2 enrichment (Puppeteer scraping)
+Phase 4 enrichment (Chartmetric analytics)
+Phase 6 enrichment (YouTube API)
+Calculates Week-over-Week (WoW) Growth:
+
+Compares current streams to previous week's snapshot
+Formula: wowPct = ((current - previous) / previous) × 100
+Does this for both Spotify streams AND YouTube views
+Stores Historical Snapshots:
+
+Inserts new records into track_performance_snapshots table
+Includes: spotifyStreams, youtubeViews, wowStreams, wowPct, wowYoutubeViews, wowYoutubePct
+Updates Contact Aggregates:
+
+Sums total streams/views across all tracks per contact
+Calculates average WoW growth % for contact-level trending
+Updates contacts.totalStreams, contacts.totalYoutubeViews, contacts.wowGrowthPct, contacts.wowYoutubeGrowthPct
+Important Clarification
+The snapshot process does NOT fetch new streaming data. It only records current values from the database into historical snapshots for comparison.
+
+Fresh streaming data should come from:
+
+Spotify streams: Phase 2 (Puppeteer credits scraping) or Phase 4 (Chartmetric)
+YouTube views: Phase 6 (YouTube API enrichment)
+Recommendation
+To ensure WoW calculations are accurate, your weekly playlist update job (Fridays 10:00-12:00 UTC) should trigger enrichment jobs that update spotifyStreams and youtubeViews before the snapshot job runs at 4:59 AM.
+
+The current setup appears correct in timing:
+
+10:00-12:00 UTC: Playlist updates + enrichment (fetches fresh streams)
+4:59 AM UTC: Performance snapshot (records those fresh streams for WoW comparison)
+Your understanding is correct - the snapshots enable WoW trending by comparing current analytics to previous weeks!
+
+The weekly playlist update skips tracks that are dup and he enrichment function would need to run to be able to get this. My preference is too have this connecetd to the weekly performance snapshot function
+
+Do not make any changes.
+
+1K
+
+LangaKambi-Sham
+Assistant
+56 minutes ago
+Read 15 files
+I understand your requirement. You want the Weekly Performance Snapshots process to automatically trigger enrichment for tracks that were skipped during the weekly playlist update (duplicates that already exist in the database).
+
+Current Flow
+Weekly Playlist Update (Fridays 10:00-12:00 UTC)
+
+Fetches tracks from playlists
+Skips duplicates (tracks already in playlist_snapshots)
+Only new tracks get queued for enrichment
+Weekly Performance Snapshots (Fridays 4:59 AM UTC)
+
+Reads existing spotifyStreams and youtubeViews from database
+Does NOT fetch fresh data
+Calculates WoW growth based on stored values
+The Problem
+Duplicate tracks (already in database) never get their streaming data updated because:
+
+Playlist update skips them
+Performance snapshot only reads existing data (doesn't fetch new data)
+Solution Overview
+The Weekly Performance Snapshots process should:
+
+Before capturing snapshots, trigger enrichment for tracks that need fresh streaming data
+Wait for enrichment to complete
+Then capture the updated streaming numbers for WoW calculations
+Architecture Recommendation
+Since the performance snapshot job needs to:
+
+Fetch fresh Spotify streams (via Phase 2 Puppeteer scraping)
+Fetch fresh YouTube views (via Phase 6 YouTube API)
+You have two implementation options:
+
+Option A: Queue-Based (Recommended)
+Performance snapshot triggers enrichment jobs and waits for completion before capturing snapshots.
+
+Option B: Direct Inline Enrichment
+Performance snapshot directly calls enrichment functions synchronously.
+
+Option A is preferred because it:
+
+Uses existing job queue infrastructure
+Provides progress tracking via WebSocket
+Handles failures gracefully
+Avoids timeout issues on large track sets
+Would you like me to implement Option A (queue-based approach where the weekly performance snapshot triggers enrichment jobs for all tracks before capturing the snapshots)?
+
+Does this trigger for all tracks?
+
+1K
+
+LangaKambi-Sham
+Assistant
+53 minutes ago
+Read 15 files
+Looking at your question "Does this trigger for all tracks?" in the context of the chat history about the Weekly Performance Snapshots process, I can see you're asking whether the enrichment trigger happens for all tracks or just new ones.
+
+Based on the codebase analysis, here's what actually happens:
+
+Current Behavior
+Weekly Performance Snapshots (Fridays 4:59 AM UTC):
+
+Does NOT trigger enrichment
+Only captures current spotifyStreams and youtubeViews from the database
+Calculates WoW growth based on existing data vs. previous week's snapshot
+Weekly Playlist Updates (Fridays 10:00-12:00 UTC):
+
+Fetches tracks from playlists
+Skips duplicate tracks (tracks already in playlist_snapshots)
+Only new tracks get queued for enrichment automatically
+The Gap You Identified
+You're correct that duplicate/existing tracks never get their streaming data refreshed because:
+
+Playlist update skips them (no enrichment triggered)
+Performance snapshot only reads existing values (doesn't fetch new data)
+Solution
+If you want the Weekly Performance Snapshots to trigger enrichment for all tracks (not just new ones) before capturing snapshots, you would need to modify the scheduled job in server/scheduler.ts.
+
+The current job at line ~196 just calls performanceTrackingService.captureWeeklySnapshots() which doesn't trigger any enrichment.
+
+Would you like me to implement the queue-based approach where the Weekly Performance Snapshot job:
+
+First queues all tracks for Phase 2 enrichment (Spotify streams via Puppeteer)
+Waits for enrichment to complete
+Then captures the fresh snapshot data for WoW calculations
+This would ensure all tracks get updated streaming data before the snapshot, not just newly added tracks.
