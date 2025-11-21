@@ -20,6 +20,7 @@ import SettingsDatabase from "@/pages/settings-database";
 import SettingsAutomation from "@/pages/settings-automation";
 import SettingsDev from "@/pages/settings-dev";
 import DetailPreviewPage from "@/pages/detail-preview";
+import ScoringPreview from "@/pages/scoring-preview";
 import NotFound from "@/pages/not-found";
 
 function RedirectToPlaylists() {
@@ -56,6 +57,7 @@ function Router() {
       
       {/* Preview */}
       <Route path="/previews/details" component={DetailPreviewPage} />
+      <Route path="/previews/scoring" component={ScoringPreview} />
       
       {/* 404 */}
       <Route component={NotFound} />
