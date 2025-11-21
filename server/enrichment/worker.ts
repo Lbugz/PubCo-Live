@@ -1333,6 +1333,19 @@ export class EnrichmentWorker {
         trackCount: job.trackIds.length,
       });
 
+      // Auto-capture performance snapshot if flagged
+      if (job.captureSnapshotAfter && success) {
+        console.log(`\n📊 Job ${job.id} flagged for snapshot capture - triggering performance snapshot...`);
+        try {
+          const { performanceTrackingService } = await import("../services/performanceTracking");
+          await performanceTrackingService.captureWeeklySnapshots();
+          console.log(`✅ Performance snapshots captured successfully after job ${job.id}`);
+        } catch (snapshotError) {
+          console.error(`❌ Failed to capture snapshots after job ${job.id}:`, snapshotError);
+          // Don't fail the job just because snapshot failed
+        }
+      }
+
       // Broadcast job completed
       if (this.wsBroadcast) {
         this.wsBroadcast('enrichment_job_completed', {
