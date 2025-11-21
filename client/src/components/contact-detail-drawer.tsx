@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { 
   Mail, MessageCircle, RefreshCw, TrendingUp, Music, Activity, 
   FileText, ExternalLink, Instagram, Twitter, Flame, Edit,
-  Phone, Hash, Building, User as UserIcon, Award, Target, Check, X, Share2, ChevronDown
+  Phone, Hash, Building, User as UserIcon, Award, Target, Check, X, Share2
 } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -36,11 +36,6 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import type { ContactWithSongwriter, PlaylistSnapshot } from "@shared/schema";
 
@@ -148,8 +143,37 @@ function parseScoreBreakdown(trackScoreData: string | null) {
   }
 }
 
-// Category Card Component for Collapsible Category Display
-interface CategoryCardProps {
+// Generate narrative description for a category
+function getCategoryNarrative(category: {
+  category: string;
+  score: number;
+  maxScore: number;
+  signals: Array<{ description: string; weight: number }>;
+}): string {
+  const { category: name, score, maxScore, signals } = category;
+  
+  // Strong signal (full or near-full points)
+  if (score >= maxScore * 0.8) {
+    if (signals && signals.length > 0) {
+      return `This songwriter shows ${signals[0]?.description.toLowerCase()}. Strong indicator detected.`;
+    }
+    return `Strong signals detected in ${name.toLowerCase()}.`;
+  }
+  
+  // Moderate signal (partial points)
+  if (score > 0) {
+    if (signals && signals.length > 0) {
+      return `Partial signals detected: ${signals[0]?.description.toLowerCase()}.`;
+    }
+    return `Some signals detected in ${name.toLowerCase()}.`;
+  }
+  
+  // No signal
+  return `No significant signals detected in this category.`;
+}
+
+// Narrative Card Component for Score Display
+interface NarrativeCardProps {
   category: {
     category: string;
     score: number;
@@ -158,46 +182,18 @@ interface CategoryCardProps {
   };
 }
 
-function CategoryCard({ category }: CategoryCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
+function NarrativeCard({ category }: NarrativeCardProps) {
   return (
-    <Card className="p-4">
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-        <CollapsibleTrigger asChild>
-          <div className="cursor-pointer" data-testid={`category-${category.category.toLowerCase().replace(/\s+/g, '-')}`}>
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium text-base">{category.category}</h4>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold tabular-nums">
-                  {category.score.toFixed(1)} / {category.maxScore}
-                </span>
-                <ChevronDown 
-                  className={cn(
-                    "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                    isExpanded && "rotate-180"
-                  )}
-                />
-              </div>
-            </div>
-          </div>
-        </CollapsibleTrigger>
-
-        {category.signals && category.signals.length > 0 && (
-          <CollapsibleContent>
-            <div className="space-y-1.5 mt-3 pt-3 border-t">
-              {category.signals.map((signal, idx) => (
-                <div key={idx} className="flex items-start gap-2 text-sm">
-                  <span className="text-muted-foreground mt-0.5">•</span>
-                  <span className="text-muted-foreground flex-1 leading-relaxed">
-                    {signal.description}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CollapsibleContent>
-        )}
-      </Collapsible>
+    <Card className="p-4" data-testid={`category-${category.category.toLowerCase().replace(/\s+/g, '-')}`}>
+      <div className="flex items-baseline gap-2 mb-2">
+        <h4 className="font-medium">{category.category}</h4>
+        <span className="text-sm font-semibold text-muted-foreground tabular-nums">
+          {category.score.toFixed(1)}/{category.maxScore}
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        {getCategoryNarrative(category)}
+      </p>
     </Card>
   );
 }
@@ -912,7 +908,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                     {scoreBreakdown && scoreBreakdown.length > 0 ? (
                       <div className="space-y-3">
                         {scoreBreakdown.map((category: { category: string; score: number; maxScore: number; signals: Array<{ description: string; weight: number }> }, idx: number) => (
-                          <CategoryCard key={idx} category={category} />
+                          <NarrativeCard key={idx} category={category} />
                         ))}
                       </div>
                     ) : (
