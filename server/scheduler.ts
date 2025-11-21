@@ -251,6 +251,7 @@ export async function runPlaylistUpdateJob() {
               playlistId: playlist.id,
               trackName: track.trackName,
               artistName: track.artistName,
+              albumArt: track.albumArt || null,
               spotifyUrl: track.spotifyUrl,
               isrc: null,
               label: null,
@@ -264,6 +265,29 @@ export async function runPlaylistUpdateJob() {
           await storage.updatePlaylistLastChecked(playlist.id);
           
           console.log(`  ✅ Processed ${result.tracks.length} tracks (new tracks inserted, duplicates updated)`);
+          
+          // Automatically queue newly inserted tracks for enrichment (artwork, metadata, etc.)
+          if (insertedIds.length > 0) {
+            console.log(`  🔄 Queueing ${insertedIds.length} tracks for enrichment...`);
+            
+            const { getJobQueue } = await import("./enrichment/jobQueueManager");
+            const jobQueue = getJobQueue();
+            
+            if (jobQueue) {
+              await jobQueue.enqueue({
+                type: 'enrich-tracks',
+                trackIds: insertedIds,
+                playlistId: playlist.id,
+              });
+              
+              // Update lastEnrichmentAttempt to prevent duplicate queuing if worker crashes
+              await storage.updateBatchLastEnrichmentAttempt(insertedIds);
+              
+              console.log(`  ✅ Queued ${insertedIds.length} tracks for automatic enrichment`);
+            } else {
+              console.error("  ❌ Job queue not initialized - tracks will not be enriched");
+            }
+          }
         } else {
           console.error(`  ❌ Scrape failed for ${playlist.name}:`, result?.error);
         }

@@ -81,6 +81,7 @@ export interface ScrapedTrack {
   trackName: string;
   artistName: string;
   album: string;
+  albumArt?: string | null;
   duration: string;
   spotifyUrl: string;
 }
@@ -209,6 +210,7 @@ export async function scrapeSpotifyPlaylist(playlistUrl: string): Promise<Scrape
       trackName: track.name,
       artistName: track.artists.join(", "),
       album: track.album || "",
+      albumArt: track.albumArt || null,
       duration: track.durationMs ? formatDuration(track.durationMs) : "0:00",
       spotifyUrl: track.spotifyUrl,
     }));

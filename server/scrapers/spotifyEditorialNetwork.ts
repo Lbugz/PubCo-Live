@@ -180,6 +180,11 @@ export async function fetchEditorialTracksViaNetwork(
               const artistNames = trackData.artists?.items?.map((a: any) => a.profile?.name).filter(Boolean) || [];
               const albumName = trackData.albumOfTrack?.name || null;
               
+              // Extract album artwork from GraphQL response
+              const albumArt = trackData.albumOfTrack?.coverArt?.sources?.[0]?.url || 
+                              trackData.albumOfTrack?.images?.items?.[0]?.sources?.[0]?.url ||
+                              null;
+              
               // CRITICAL FIX: Extract ISRC from GraphQL response
               // DEBUG: Log structure for first track to understand ISRC location
               if (allItems.length === 0) {
@@ -206,6 +211,7 @@ export async function fetchEditorialTracksViaNetwork(
                 name: trackName,
                 artists: artistNames,
                 album: albumName,
+                albumArt, // Add album artwork
                 uri: trackUri,
                 external_ids: { isrc }, // Add ISRC so line 357 can find it
               });
