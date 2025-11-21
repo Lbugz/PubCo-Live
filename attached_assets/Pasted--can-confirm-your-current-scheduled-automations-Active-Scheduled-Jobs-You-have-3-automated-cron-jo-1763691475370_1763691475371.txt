@@ -1,0 +1,64 @@
+ can confirm your current scheduled automations:
+
+Active Scheduled Jobs
+You have 3 automated cron jobs configured in server/scheduler.ts:
+
+1. Fresh Finds Weekly Update
+Schedule: Every Friday at 9:00 AM (0 9 * * 5)
+Purpose: Automatically scrapes the Fresh Finds playlist and stores new tracks to the database
+Process: Uses Spotify playlist scraping (either via microservice or direct Puppeteer) to capture weekly Fresh Finds additions
+2. Failed Enrichment Retry
+Schedule: Daily at 2:00 AM (0 2 * * *)
+Purpose: Retries enrichment for tracks that previously failed or returned no data
+Process: Finds tracks with failed enrichment attempts older than 7 days, queues up to 100 tracks for retry enrichment
+3. Weekly Performance Snapshots
+Schedule: Every Monday at 1:00 AM (0 1 * * 1)
+Purpose: Captures weekly performance metrics for calculating week-over-week growth
+Process: Creates performance snapshots to enable WoW growth tracking for contacts
+Activation Status
+All jobs are controlled by the ENABLE_AUTO_SCRAPE environment variable:
+
+If set to true → Jobs run on schedule
+If not set or false → Jobs are registered but don't execute
+Now, regarding the weighted scoring system upgrade - I understand you want to keep the signal-by-signal breakdown visible in the UI while implementing the new category-based scoring. This makes total sense for transparency.
+
+I'll implement a hybrid approach:
+
+Backend: 6 weighted categories (Publishing Status, Release Pathway, Early Career Signals, etc.)
+UI: Show category scores prominently, but make them expandable to reveal the underlying signals that contributed to each category
+Let me build this out:
+
+
+Opened server/scoring/contactScoring.ts
+
+Executed rg -n 'export.*ContactScoreResult|export.*TrackScore|export.*TrackSignal' server/scoring/contactScoring.ts
+
+Implemented weighted category scoring system
+Checked console and system logs
+Perfect! The backend scoring system has been successfully updated with the new category-based model. Now I need to update the frontend UI to display the category cards with expandable signal details, and then create a migration script.
+
+
+Update scoring to use weighted categories
+Optimized Agent memory
+
+Executed rg -n 'Scoring.*Tab|Score.*Section|Signal.*Display' client/src/components/contact-detail-drawer.tsx
+
+Opened client/src/components/contact-detail-drawer.tsx
+Now I'll update the Scoring tab to display the new category-based scoring with expandable sections:
+
+
+Opened client/src/components/contact-detail-drawer.tsx
+
+Updated scoring tab UI
+
+Show 6 more
+Checked code issues
+
+Restarted Start application
+Perfect! Now let me add the missing imports for the Collapsible component and Progress component:
+
+Task left:
+
+Redesign score tab with category cards
+Update contacts with new scoring system
+Check score calculations on sample contacts
