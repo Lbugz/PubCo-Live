@@ -1,6 +1,7 @@
 import { db } from "../db";
 import { sql, eq, and, desc } from "drizzle-orm";
 import { contacts, songwriterProfiles, playlistSnapshots, trackPerformanceSnapshots } from "@shared/schema";
+import { getTrackStreamingStats } from "../chartmetric";
 
 interface WeeklyPerformance {
   songwriterId: string;
@@ -15,79 +16,125 @@ interface WeeklyPerformance {
 export class PerformanceTrackingService {
   /**
    * Capture weekly performance snapshot for all tracks
+   * Fetches fresh streaming data from Chartmetric API before creating snapshots
    */
   async captureWeeklySnapshots(): Promise<void> {
     const today = new Date();
     const weekStart = this.getWeekStart(today);
 
-    console.log(`Capturing performance snapshots for week: ${weekStart.toISOString()}`);
+    console.log(`\n📊 Capturing performance snapshots for week: ${weekStart.toISOString()}`);
+    console.log(`⚡ Fetching fresh streaming data from Chartmetric API...\n`);
 
-    // Get all tracks with their current stream counts (Spotify + YouTube)
+    // Get all tracks with Chartmetric IDs (required for API calls)
     const tracks = await db
       .select({
         trackId: playlistSnapshots.id,
+        trackName: playlistSnapshots.trackName,
+        artistName: playlistSnapshots.artistName,
+        chartmetricId: playlistSnapshots.chartmetricId,
         spotifyStreams: playlistSnapshots.spotifyStreams,
         youtubeViews: playlistSnapshots.youtubeViews,
         songwriter: playlistSnapshots.songwriter,
       })
       .from(playlistSnapshots)
-      .where(sql`(${playlistSnapshots.spotifyStreams} IS NOT NULL OR ${playlistSnapshots.youtubeViews} IS NOT NULL)`);
+      .where(sql`${playlistSnapshots.chartmetricId} IS NOT NULL`);
 
-    console.log(`Found ${tracks.length} tracks to snapshot`);
+    console.log(`Found ${tracks.length} tracks with Chartmetric IDs to snapshot`);
 
-    for (const track of tracks) {
-      // Get contact for this track's songwriter
-      const contactQuery = await db
-        .select({ id: contacts.id })
-        .from(contacts)
-        .innerJoin(songwriterProfiles, eq(contacts.songwriterId, songwriterProfiles.id))
-        .where(sql`${track.songwriter} LIKE '%' || ${songwriterProfiles.name} || '%'`)
-        .limit(1);
+    let successCount = 0;
+    let errorCount = 0;
+    let skippedCount = 0;
 
-      if (!contactQuery.length) continue;
+    for (let i = 0; i < tracks.length; i++) {
+      const track = tracks[i];
+      
+      if (i % 50 === 0) {
+        console.log(`\n📈 Progress: ${i}/${tracks.length} tracks processed (Success: ${successCount}, Errors: ${errorCount}, Skipped: ${skippedCount})`);
+      }
 
-      const contactId = contactQuery[0].id;
+      try {
+        // Fetch fresh streaming stats from Chartmetric API
+        const freshStats = await getTrackStreamingStats(track.chartmetricId!);
+        
+        // Use fresh data if available, otherwise fall back to stored data
+        const currentStreams = freshStats?.spotify?.current_streams || track.spotifyStreams || 0;
+        const currentYoutubeViews = freshStats?.youtube?.views || track.youtubeViews || 0;
+        
+        // Update the track record with fresh data
+        if (freshStats) {
+          await db
+            .update(playlistSnapshots)
+            .set({
+              spotifyStreams: currentStreams,
+              youtubeViews: currentYoutubeViews,
+              streamingVelocity: freshStats.spotify?.velocity?.toString() || null,
+            })
+            .where(eq(playlistSnapshots.id, track.trackId));
+        }
 
-      // Get previous week's snapshot for this track
-      const previousSnapshot = await db
-        .select()
-        .from(trackPerformanceSnapshots)
-        .where(eq(trackPerformanceSnapshots.trackId, track.trackId))
-        .orderBy(desc(trackPerformanceSnapshots.week))
-        .limit(1);
+        // Get contact for this track's songwriter
+        const contactQuery = await db
+          .select({ id: contacts.id })
+          .from(contacts)
+          .innerJoin(songwriterProfiles, eq(contacts.songwriterId, songwriterProfiles.id))
+          .where(sql`${track.songwriter} LIKE '%' || ${songwriterProfiles.name} || '%'`)
+          .limit(1);
 
-      // Calculate Spotify week-over-week
-      const prevStreams = previousSnapshot[0]?.spotifyStreams || 0;
-      const currentStreams = track.spotifyStreams || 0;
-      const wowStreams = currentStreams - prevStreams;
-      const wowPct = prevStreams > 0 
-        ? Math.round((wowStreams / prevStreams) * 100)
-        : 0;
+        if (!contactQuery.length) {
+          skippedCount++;
+          continue;
+        }
 
-      // Calculate YouTube week-over-week
-      const prevYoutubeViews = previousSnapshot[0]?.youtubeViews || 0;
-      const currentYoutubeViews = track.youtubeViews || 0;
-      const wowYoutubeViews = currentYoutubeViews - prevYoutubeViews;
-      const wowYoutubePct = prevYoutubeViews > 0 
-        ? Math.round((wowYoutubeViews / prevYoutubeViews) * 100)
-        : 0;
+        const contactId = contactQuery[0].id;
 
-      // Insert new snapshot with both Spotify and YouTube data
-      await db.insert(trackPerformanceSnapshots).values({
-        contactId,
-        trackId: track.trackId,
-        week: weekStart.toISOString().split('T')[0], // Convert to date string
-        spotifyStreams: currentStreams,
-        youtubeViews: currentYoutubeViews,
-        followers: null,
-        wowStreams,
-        wowPct,
-        wowYoutubeViews,
-        wowYoutubePct,
-      });
+        // Get previous week's snapshot for this track
+        const previousSnapshot = await db
+          .select()
+          .from(trackPerformanceSnapshots)
+          .where(eq(trackPerformanceSnapshots.trackId, track.trackId))
+          .orderBy(desc(trackPerformanceSnapshots.week))
+          .limit(1);
+
+        // Calculate Spotify week-over-week
+        const prevStreams = previousSnapshot[0]?.spotifyStreams || 0;
+        const wowStreams = currentStreams - prevStreams;
+        const wowPct = prevStreams > 0 
+          ? Math.round((wowStreams / prevStreams) * 100)
+          : 0;
+
+        // Calculate YouTube week-over-week
+        const prevYoutubeViews = previousSnapshot[0]?.youtubeViews || 0;
+        const wowYoutubeViews = currentYoutubeViews - prevYoutubeViews;
+        const wowYoutubePct = prevYoutubeViews > 0 
+          ? Math.round((wowYoutubeViews / prevYoutubeViews) * 100)
+          : 0;
+
+        // Insert new snapshot with both Spotify and YouTube data
+        await db.insert(trackPerformanceSnapshots).values({
+          contactId,
+          trackId: track.trackId,
+          week: weekStart.toISOString().split('T')[0], // Convert to date string
+          spotifyStreams: currentStreams,
+          youtubeViews: currentYoutubeViews,
+          followers: null,
+          wowStreams,
+          wowPct,
+          wowYoutubeViews,
+          wowYoutubePct,
+        });
+
+        successCount++;
+      } catch (error: any) {
+        errorCount++;
+        console.error(`  ❌ Error processing track "${track.trackName}":`, error.message);
+      }
     }
 
-    console.log('Weekly snapshots captured successfully');
+    console.log(`\n✅ Weekly snapshots captured successfully!`);
+    console.log(`   Total processed: ${tracks.length}`);
+    console.log(`   Success: ${successCount}`);
+    console.log(`   Errors: ${errorCount}`);
+    console.log(`   Skipped: ${skippedCount}\n`);
     
     // Now aggregate and update contacts
     await this.updateContactAggregates();
