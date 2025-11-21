@@ -3575,8 +3575,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Performance snapshot endpoint
-  app.post("/api/performance/snapshots", async (req, res) => {
+  // Manual trigger for playlist update
+  app.post("/api/jobs/run-playlist-update", async (req, res) => {
+    try {
+      console.log("🎵 Manual playlist update triggered...");
+      
+      const { runPlaylistUpdateJob } = await import("./scheduler");
+      await runPlaylistUpdateJob();
+      
+      res.json({
+        success: true,
+        message: "Playlist update job completed successfully"
+      });
+    } catch (error: any) {
+      console.error("Error running playlist update job:", error);
+      res.status(500).json({ 
+        error: error.message || "Failed to run playlist update job" 
+      });
+    }
+  });
+
+  // Manual trigger for performance snapshot
+  app.post("/api/jobs/run-performance-snapshot", async (req, res) => {
     try {
       console.log("📊 Manual performance snapshot triggered...");
       
