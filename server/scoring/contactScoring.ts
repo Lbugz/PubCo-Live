@@ -8,7 +8,7 @@ import { eq, inArray, sql } from "drizzle-orm";
  * This scoring system uses 6 weighted categories (total max = 10 points):
  * 
  * 1. Publishing Status (4 pts max) - No publisher across all tracks
- * 2. Release Pathway (3 pts max) - DIY > Indie > Major
+ * 2. Release Pathway (3 pts max) - DIY (3pts) > Indie Distributor (2pts) > Indie Label (1pt) > Major/Unknown (0pts)
  * 3. Early Career Signals (2 pts max) - Fresh Finds presence
  * 4. Metadata Quality (1 pt max) - Average completeness (lower = better)
  * 5. Catalog Patterns (0.5 pts max) - >50% DIY/indie releases
@@ -16,6 +16,13 @@ import { eq, inArray, sql } from "drizzle-orm";
  * 
  * Each category is evaluated independently and contributes its own score.
  * Final score = sum of all category scores, rounded to integer.
+ * 
+ * RELEASE PATHWAY TIERS:
+ * - DIY Distribution (3pts): DistroKid, TuneCore, CD Baby, Ditto, Amuse, RouteNote, etc.
+ * - Independent Distributor (2pts): EMPIRE, AWAL, The Orchard, Believe, Stem, United Masters, etc.
+ * - Independent Label (1pt): Small indie labels (contains "independent", "indie", or "records")
+ * - Major Label (0pts): Sony, Warner, Universal, Atlantic, Capitol, Republic, etc.
+ * - Unknown (0pts): Label type cannot be determined from metadata
  */
 
 export interface TrackSignal {
@@ -59,24 +66,77 @@ function calculateDataCompleteness(track: any): number {
   return (filledFields / fields.length) * 100;
 }
 
-// Detect DIY distributors
+/**
+ * RELEASE PATHWAY DETECTION
+ * 
+ * Identifies distribution/label type from label metadata to assess unsigned probability.
+ * 
+ * Scoring Tiers:
+ * - DIY Distribution (3pts): Self-service platforms indicating true independent artist
+ * - Independent Distributor (2pts): Professional indie distributors serving unsigned artists
+ * - Independent Label (1pt): Small independent labels
+ * - Major Label (0pts): Major label deals unlikely to be unsigned
+ * - Unknown (0pts): Unable to determine from label metadata
+ */
+
+// Detect DIY distributors (highest unsigned signal)
 function isDIYDistribution(label: string | null): boolean {
   if (!label) return false;
-  const diyKeywords = ['distrokid', 'dk', 'ditto', 'amuse', 'cd baby', 'tunecore'];
+  const diyKeywords = [
+    'distrokid', 'dk',
+    'ditto',
+    'amuse',
+    'cd baby', 'cdbaby',
+    'tunecore',
+    'routenote',
+    'soundrop',
+    'spinnup',
+    'bandcamp'
+  ];
   return diyKeywords.some(keyword => label.toLowerCase().includes(keyword));
 }
 
-// Detect major labels
+// Detect major independent distributors (medium unsigned signal)
+function isIndependentDistributor(label: string | null): boolean {
+  if (!label) return false;
+  const indieDistributorKeywords = [
+    'empire',
+    'the orchard', 'orchard',
+    'awal',
+    'believe',
+    'stem',
+    'united masters',
+    'ingrooves',
+    'symphonic',
+    'level',
+    'create music group',
+    'repost network'
+  ];
+  return indieDistributorKeywords.some(keyword => label.toLowerCase().includes(keyword));
+}
+
+// Detect major labels (no unsigned signal)
 function isMajorLabel(label: string | null): boolean {
   if (!label) return false;
-  const majorKeywords = ['sony', 'warner', 'universal', 'atlantic', 'rca', 'columbia'];
+  const majorKeywords = [
+    'sony', 'columbia', 'rca', 'epic', 'arista',
+    'warner', 'atlantic', 'elektra', 'asylum',
+    'universal', 'republic', 'capitol', 'interscope', 'def jam', 'island',
+    'virgin', 'emi',
+    'parlophone',
+    'geffen',
+    'motown'
+  ];
   return majorKeywords.some(keyword => label.toLowerCase().includes(keyword));
 }
 
-// Detect independent label
+// Detect independent label (low unsigned signal)
 function isIndependentLabel(label: string | null): boolean {
   if (!label) return false;
-  return label.toLowerCase().includes('independent');
+  const labelNormalized = label.toLowerCase();
+  return labelNormalized.includes('independent') || 
+         labelNormalized.includes('indie') ||
+         labelNormalized.includes('records');
 }
 
 // Check if track is on Fresh Finds playlist
@@ -114,35 +174,49 @@ function calculateReleasePathwayScore(tracks: any[]): CategoryScore {
   const maxScore = 3;
   const signals: TrackSignal[] = [];
   
-  // Check label distribution across all tracks
+  // Check label distribution across all tracks (priority order)
   const hasDIY = tracks.some(track => isDIYDistribution(track.label));
-  const hasIndependent = tracks.some(track => isIndependentLabel(track.label));
+  const hasIndieDistributor = tracks.some(track => isIndependentDistributor(track.label));
+  const hasIndieLabel = tracks.some(track => isIndependentLabel(track.label));
   const hasMajor = tracks.some(track => isMajorLabel(track.label));
   
-  // Priority: DIY > Independent > Major
+  // 4-tier scoring: DIY (3pts) > Indie Distributor (2pts) > Indie Label (1pt) > Major/Unknown (0pts)
   if (hasDIY) {
     signals.push({
       signal: 'DIY_DISTRIBUTION',
       weight: 3,
-      description: 'DIY distributor detected'
+      description: 'Self-service DIY distributor (DistroKid, TuneCore, etc.)'
     });
     return { category, score: 3, maxScore, signals };
-  } else if (hasIndependent) {
+  } else if (hasIndieDistributor) {
     signals.push({
-      signal: 'INDEPENDENT_LABEL',
+      signal: 'INDEPENDENT_DISTRIBUTOR',
       weight: 2,
-      description: 'Independent label detected'
+      description: 'Independent distributor (EMPIRE, AWAL, The Orchard, etc.)'
     });
     return { category, score: 2, maxScore, signals };
+  } else if (hasIndieLabel) {
+    signals.push({
+      signal: 'INDEPENDENT_LABEL',
+      weight: 1,
+      description: 'Independent label detected'
+    });
+    return { category, score: 1, maxScore, signals };
   } else if (hasMajor) {
     signals.push({
       signal: 'MAJOR_LABEL',
       weight: 0,
-      description: 'Major label detected'
+      description: 'Major label (Sony, Warner, Universal, etc.)'
     });
     return { category, score: 0, maxScore, signals };
   }
   
+  // Unknown label - unable to categorize
+  signals.push({
+    signal: 'UNKNOWN_LABEL',
+    weight: 0,
+    description: 'Label type could not be determined'
+  });
   return { category, score: 0, maxScore, signals };
 }
 
