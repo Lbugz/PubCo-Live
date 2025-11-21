@@ -3,51 +3,20 @@ import { playlistSnapshots, contacts, contactTracks, songwriterProfiles, tracked
 import { eq, inArray, sql } from "drizzle-orm";
 
 /**
- * PHASE 1 SCORING SYSTEM (Simplified - No Weighting)
+ * CATEGORY-BASED SCORING SYSTEM
  * 
- * This version uses BASE WEIGHTS ONLY with no recency or prominence multipliers.
+ * This scoring system uses 6 weighted categories (total max = 10 points):
  * 
- * Rationale for removing weighting:
- * - Current dataset is temporally homogeneous (all tracks from same period)
- * - Stream counts are unreliable due to Fresh Finds artificial spikes
- * - Weighting adds complexity without adding signal value
+ * 1. Publishing Status (4 pts max) - No publisher across all tracks
+ * 2. Release Pathway (3 pts max) - DIY > Indie > Major
+ * 3. Early Career Signals (2 pts max) - Fresh Finds presence
+ * 4. Metadata Quality (1 pt max) - Average completeness (lower = better)
+ * 5. Catalog Patterns (0.5 pts max) - >50% DIY/indie releases
+ * 6. Profile Verification (0.5 pts max) - MusicBrainz presence
  * 
- * Phase 2 Re-weighting Criteria (45-90 days):
- * 1. Dataset spans ≥4 months of rolling data (recency becomes meaningful)
- * 2. Stream distribution normalizes (mix of <10K, 10K-100K, 100K-500K, 500K+)
- * 3. Sufficient non-Fresh-Finds tracks for baseline comparison
+ * Each category is evaluated independently and contributes its own score.
+ * Final score = sum of all category scores, rounded to integer.
  */
-
-// Track-level signal weights (Phase 1 - without MLC)
-const SIGNAL_WEIGHTS = {
-  // Discovery Signals
-  FRESH_FINDS: 3,
-  
-  // Publishing Signals (Phase 1)
-  NO_PUBLISHER: 3,
-  
-  // Label & Distribution
-  DIY_DISTRIBUTION: 2,
-  INDEPENDENT_LABEL: 1,
-  MAJOR_LABEL: -3,
-  
-  // Data Quality (completeness %)
-  COMPLETENESS_UNDER_25: 4,
-  COMPLETENESS_25_50: 3,
-  COMPLETENESS_50_75: 2,
-  COMPLETENESS_75_PLUS: 1,
-  
-  // Portfolio Signals (contact-level)
-  UNSIGNED_DISTRIBUTION_PATTERN: 2,
-  UNSIGNED_PEER_PATTERN: 2,
-  MUSICBRAINZ_PRESENT: 1,
-  
-  // Phase 2 - MLC Signals (not yet implemented)
-  // NO_MLC_PUBLISHER: 3,
-  // NOT_FOUND_IN_MLC: 2,
-  // INCOMPLETE_PUBLISHER_SHARES: 1,
-  // FULL_PUBLISHER_COVERAGE: -2,
-};
 
 export interface TrackSignal {
   signal: string;
@@ -55,21 +24,20 @@ export interface TrackSignal {
   description: string;
 }
 
-export interface TrackScore {
-  trackId: string;
-  trackName: string;
-  signals: TrackSignal[];
+export interface CategoryScore {
+  category: string;
   score: number;
+  maxScore: number;
+  signals: TrackSignal[];
 }
 
 export interface ContactScoreResult {
   contactId: string;
   songwriterId: string;
   finalScore: number;
+  rawScore: number;
   confidence: 'high' | 'medium' | 'low';
-  trackScores: TrackScore[];
-  portfolioSignals: TrackSignal[];
-  topSignals: TrackSignal[];
+  categories: CategoryScore[];
   updatedAt: Date;
 }
 
@@ -117,120 +85,167 @@ function isFreshFindsTrack(playlistName: string | null): boolean {
   return playlistName.toLowerCase().includes('fresh finds');
 }
 
-// Calculate track-level signals (simplified - no weighting)
-export function calculateTrackSignals(track: any): TrackSignal[] {
+// Category 1: Publishing Status (4 points max)
+function calculatePublishingStatusScore(tracks: any[]): CategoryScore {
+  const category = 'Publishing Status';
+  const maxScore = 4;
   const signals: TrackSignal[] = [];
-  const completeness = calculateDataCompleteness(track);
   
-  // Discovery Signals
-  if (isFreshFindsTrack(track.playlistName)) {
-    signals.push({
-      signal: 'FRESH_FINDS',
-      weight: SIGNAL_WEIGHTS.FRESH_FINDS,
-      description: 'Appears on Fresh Finds playlist'
-    });
-  }
+  // Check if ALL tracks have no publisher
+  const tracksWithoutPublisher = tracks.filter(track => 
+    !track.publisher || track.publisher === '' || track.publisher === '[]'
+  );
   
-  // Publishing Signals
-  if (!track.publisher || track.publisher === '' || track.publisher === '[]') {
+  if (tracksWithoutPublisher.length === tracks.length) {
     signals.push({
       signal: 'NO_PUBLISHER',
-      weight: SIGNAL_WEIGHTS.NO_PUBLISHER,
-      description: 'No publisher metadata'
+      weight: maxScore,
+      description: 'No publisher metadata across all tracks'
     });
+    return { category, score: maxScore, maxScore, signals };
   }
   
-  // Label & Distribution Signals
-  if (isDIYDistribution(track.label)) {
-    signals.push({
-      signal: 'DIY_DISTRIBUTION',
-      weight: SIGNAL_WEIGHTS.DIY_DISTRIBUTION,
-      description: `DIY distributor: ${track.label}`
-    });
-  } else if (isMajorLabel(track.label)) {
-    signals.push({
-      signal: 'MAJOR_LABEL',
-      weight: SIGNAL_WEIGHTS.MAJOR_LABEL,
-      description: `Major label: ${track.label}`
-    });
-  } else if (isIndependentLabel(track.label)) {
-    signals.push({
-      signal: 'INDEPENDENT_LABEL',
-      weight: SIGNAL_WEIGHTS.INDEPENDENT_LABEL,
-      description: 'Independent label'
-    });
-  }
-  
-  // Data Quality Signals
-  if (completeness < 25) {
-    signals.push({
-      signal: 'COMPLETENESS_UNDER_25',
-      weight: SIGNAL_WEIGHTS.COMPLETENESS_UNDER_25,
-      description: `Data ${completeness.toFixed(0)}% complete`
-    });
-  } else if (completeness < 50) {
-    signals.push({
-      signal: 'COMPLETENESS_25_50',
-      weight: SIGNAL_WEIGHTS.COMPLETENESS_25_50,
-      description: `Data ${completeness.toFixed(0)}% complete`
-    });
-  } else if (completeness < 75) {
-    signals.push({
-      signal: 'COMPLETENESS_50_75',
-      weight: SIGNAL_WEIGHTS.COMPLETENESS_50_75,
-      description: `Data ${completeness.toFixed(0)}% complete`
-    });
-  } else {
-    signals.push({
-      signal: 'COMPLETENESS_75_PLUS',
-      weight: SIGNAL_WEIGHTS.COMPLETENESS_75_PLUS,
-      description: `Data ${completeness.toFixed(0)}% complete`
-    });
-  }
-  
-  return signals;
+  return { category, score: 0, maxScore, signals };
 }
 
-// Calculate portfolio-level signals for a contact (simplified - no weighting)
-export function calculatePortfolioSignals(tracks: any[], contactData: any): TrackSignal[] {
+// Category 2: Release Pathway (3 points max)
+function calculateReleasePathwayScore(tracks: any[]): CategoryScore {
+  const category = 'Release Pathway';
+  const maxScore = 3;
   const signals: TrackSignal[] = [];
   
-  // Unsigned Distribution Pattern: >50% DIY/indie tracks
-  const diyOrIndieCount = tracks.filter((t: any) => 
-    isDIYDistribution(t.label) || isIndependentLabel(t.label) || !t.label
+  // Check label distribution across all tracks
+  const hasDIY = tracks.some(track => isDIYDistribution(track.label));
+  const hasIndependent = tracks.some(track => isIndependentLabel(track.label));
+  const hasMajor = tracks.some(track => isMajorLabel(track.label));
+  
+  // Priority: DIY > Independent > Major
+  if (hasDIY) {
+    signals.push({
+      signal: 'DIY_DISTRIBUTION',
+      weight: 3,
+      description: 'DIY distributor detected'
+    });
+    return { category, score: 3, maxScore, signals };
+  } else if (hasIndependent) {
+    signals.push({
+      signal: 'INDEPENDENT_LABEL',
+      weight: 2,
+      description: 'Independent label detected'
+    });
+    return { category, score: 2, maxScore, signals };
+  } else if (hasMajor) {
+    signals.push({
+      signal: 'MAJOR_LABEL',
+      weight: 0,
+      description: 'Major label detected'
+    });
+    return { category, score: 0, maxScore, signals };
+  }
+  
+  return { category, score: 0, maxScore, signals };
+}
+
+// Category 3: Early Career Signals (2 points max)
+function calculateEarlyCareerScore(tracks: any[]): CategoryScore {
+  const category = 'Early Career Signals';
+  const maxScore = 2;
+  const signals: TrackSignal[] = [];
+  
+  // Check if ANY track appears on Fresh Finds
+  const hasFreshFinds = tracks.some(track => isFreshFindsTrack(track.playlistName));
+  
+  if (hasFreshFinds) {
+    signals.push({
+      signal: 'FRESH_FINDS',
+      weight: maxScore,
+      description: 'Appears on Fresh Finds playlist'
+    });
+    return { category, score: maxScore, maxScore, signals };
+  }
+  
+  return { category, score: 0, maxScore, signals };
+}
+
+// Category 4: Metadata Quality (1 point max)
+function calculateMetadataQualityScore(tracks: any[]): CategoryScore {
+  const category = 'Metadata Quality';
+  const maxScore = 1;
+  const signals: TrackSignal[] = [];
+  
+  // Calculate average completeness across all tracks
+  const completenessPercentages = tracks.map(track => calculateDataCompleteness(track));
+  const averageCompleteness = completenessPercentages.reduce((sum, pct) => sum + pct, 0) / completenessPercentages.length;
+  
+  let score = 0;
+  let signal = '';
+  
+  if (averageCompleteness < 25) {
+    score = 1;
+    signal = 'COMPLETENESS_UNDER_25';
+  } else if (averageCompleteness < 50) {
+    score = 0.7;
+    signal = 'COMPLETENESS_25_50';
+  } else if (averageCompleteness < 75) {
+    score = 0.5;
+    signal = 'COMPLETENESS_50_75';
+  } else {
+    score = 0;
+    signal = 'COMPLETENESS_75_PLUS';
+  }
+  
+  signals.push({
+    signal,
+    weight: score,
+    description: `Average data completeness: ${averageCompleteness.toFixed(0)}%`
+  });
+  
+  return { category, score, maxScore, signals };
+}
+
+// Category 5: Catalog Patterns (0.5 points max)
+function calculateCatalogPatternsScore(tracks: any[]): CategoryScore {
+  const category = 'Catalog Patterns';
+  const maxScore = 0.5;
+  const signals: TrackSignal[] = [];
+  
+  // Check if >50% of tracks are DIY/indie
+  const diyOrIndieCount = tracks.filter(track => 
+    isDIYDistribution(track.label) || isIndependentLabel(track.label) || !track.label
   ).length;
   const diyIndiePercent = (diyOrIndieCount / tracks.length) * 100;
   
   if (diyIndiePercent > 50) {
     signals.push({
       signal: 'UNSIGNED_DISTRIBUTION_PATTERN',
-      weight: SIGNAL_WEIGHTS.UNSIGNED_DISTRIBUTION_PATTERN,
+      weight: maxScore,
       description: `${diyIndiePercent.toFixed(0)}% DIY/indie releases`
     });
+    return { category, score: maxScore, maxScore, signals };
   }
   
-  // Unsigned Peer Pattern: >3 tracks
-  if (tracks.length > 3) {
-    signals.push({
-      signal: 'UNSIGNED_PEER_PATTERN',
-      weight: SIGNAL_WEIGHTS.UNSIGNED_PEER_PATTERN,
-      description: `${tracks.length} tracks in dataset`
-    });
-  }
+  return { category, score: 0, maxScore, signals };
+}
+
+// Category 6: Profile Verification (0.5 points max)
+function calculateProfileVerificationScore(contactData: any): CategoryScore {
+  const category = 'Profile Verification';
+  const maxScore = 0.5;
+  const signals: TrackSignal[] = [];
   
-  // MusicBrainz presence (positive signal for verification)
   if (contactData.musicbrainzFound === 1) {
     signals.push({
       signal: 'MUSICBRAINZ_PRESENT',
-      weight: SIGNAL_WEIGHTS.MUSICBRAINZ_PRESENT,
+      weight: maxScore,
       description: 'Verified via MusicBrainz'
     });
+    return { category, score: maxScore, maxScore, signals };
   }
   
-  return signals;
+  return { category, score: 0, maxScore, signals };
 }
 
-// Calculate final contact score
+// Calculate final contact score using category-based system
 export async function calculateContactScore(contactId: string): Promise<ContactScoreResult> {
   // Fetch contact with songwriter profile
   const contactResult = await db
@@ -254,15 +269,23 @@ export async function calculateContactScore(contactId: string): Promise<ContactS
     .where(eq(contactTracks.contactId, contactId));
   
   if (trackRelations.length === 0) {
-    // No tracks = score 0
+    // No tracks = score 0 with empty categories
+    const emptyCategories: CategoryScore[] = [
+      { category: 'Publishing Status', score: 0, maxScore: 4, signals: [] },
+      { category: 'Release Pathway', score: 0, maxScore: 3, signals: [] },
+      { category: 'Early Career Signals', score: 0, maxScore: 2, signals: [] },
+      { category: 'Metadata Quality', score: 0, maxScore: 1, signals: [] },
+      { category: 'Catalog Patterns', score: 0, maxScore: 0.5, signals: [] },
+      { category: 'Profile Verification', score: 0, maxScore: 0.5, signals: [] }
+    ];
+    
     return {
       contactId,
       songwriterId: contact.songwriterId,
       finalScore: 0,
+      rawScore: 0,
       confidence: 'low',
-      trackScores: [],
-      portfolioSignals: [],
-      topSignals: [],
+      categories: emptyCategories,
       updatedAt: new Date()
     };
   }
@@ -274,103 +297,29 @@ export async function calculateContactScore(contactId: string): Promise<ContactS
     .from(playlistSnapshots)
     .where(inArray(playlistSnapshots.id, trackIds));
   
-  // Calculate track scores (simplified - just sum base weights)
-  const trackScores: TrackScore[] = tracks.map((track: any) => {
-    const signals = calculateTrackSignals(track);
-    const score = signals.reduce((sum, s) => sum + s.weight, 0);
-    
-    return {
-      trackId: track.id,
-      trackName: track.trackName,
-      signals,
-      score
-    };
-  });
-  
-  // Calculate portfolio signals
-  const portfolioSignals = calculatePortfolioSignals(tracks, contact);
-  
-  // CRITICAL FIX: Calculate average data completeness across all tracks
-  // Extract completeness percentages from all tracks
-  const completenessPercentages = tracks.map((track: any) => calculateDataCompleteness(track));
-  const averageCompleteness = completenessPercentages.reduce((sum, pct) => sum + pct, 0) / completenessPercentages.length;
-  
-  // Create a single completeness signal based on the average
-  let completenessSignal: TrackSignal | null = null;
-  if (averageCompleteness < 25) {
-    completenessSignal = {
-      signal: 'COMPLETENESS_UNDER_25',
-      weight: SIGNAL_WEIGHTS.COMPLETENESS_UNDER_25,
-      description: `Data ${averageCompleteness.toFixed(0)}% complete`
-    };
-  } else if (averageCompleteness < 50) {
-    completenessSignal = {
-      signal: 'COMPLETENESS_25_50',
-      weight: SIGNAL_WEIGHTS.COMPLETENESS_25_50,
-      description: `Data ${averageCompleteness.toFixed(0)}% complete`
-    };
-  } else if (averageCompleteness < 75) {
-    completenessSignal = {
-      signal: 'COMPLETENESS_50_75',
-      weight: SIGNAL_WEIGHTS.COMPLETENESS_50_75,
-      description: `Data ${averageCompleteness.toFixed(0)}% complete`
-    };
-  } else {
-    completenessSignal = {
-      signal: 'COMPLETENESS_75_PLUS',
-      weight: SIGNAL_WEIGHTS.COMPLETENESS_75_PLUS,
-      description: `Data ${averageCompleteness.toFixed(0)}% complete`
-    };
-  }
-  
-  // Combine all signals, EXCLUDING per-track completeness signals
-  const allNonCompletenessSignals: TrackSignal[] = [
-    ...trackScores.flatMap(ts => ts.signals.filter(s => !s.signal.startsWith('COMPLETENESS_'))),
-    ...portfolioSignals
+  // Calculate scores for all 6 categories
+  const categories: CategoryScore[] = [
+    calculatePublishingStatusScore(tracks),
+    calculateReleasePathwayScore(tracks),
+    calculateEarlyCareerScore(tracks),
+    calculateMetadataQualityScore(tracks),
+    calculateCatalogPatternsScore(tracks),
+    calculateProfileVerificationScore(contact)
   ];
   
-  // Add the single averaged completeness signal
-  const allSignals: TrackSignal[] = [
-    ...allNonCompletenessSignals,
-    completenessSignal
-  ];
+  // Calculate raw score (sum of all category scores)
+  const rawScore = categories.reduce((sum, cat) => sum + cat.score, 0);
   
-  // Calculate final score by summing ALL signal weights
-  const totalScore = allSignals.reduce((sum, s) => sum + s.weight, 0);
+  // Round to integer for final score
+  const finalScore = Math.round(rawScore);
   
-  // For display purposes, consolidate duplicate signals by SIGNAL CODE (not description)
-  // This prevents duplication of Fresh Finds, No Publisher, etc.
-  const signalMap = new Map<string, TrackSignal & { count: number }>();
-  allSignals.forEach(signal => {
-    const existing = signalMap.get(signal.signal);
-    if (existing) {
-      // For duplicate signals, keep the first description and sum weights
-      existing.weight += signal.weight;
-      existing.count += 1;
-    } else {
-      signalMap.set(signal.signal, { ...signal, count: 1 });
-    }
-  });
-  
-  const consolidatedSignals = Array.from(signalMap.values());
-  
-  // Sort by weight and take top 5 positive + all negative
-  const positiveSignals = consolidatedSignals.filter(s => s.weight > 0).sort((a, b) => b.weight - a.weight);
-  const negativeSignals = consolidatedSignals.filter(s => s.weight < 0);
-  
-  const topSignals = [
-    ...positiveSignals.slice(0, 5),
-    ...negativeSignals
-  ];
-  const finalScore = Math.max(0, Math.min(10, Math.round(totalScore)));
-  
-  // Determine confidence
+  // Determine confidence based on number of categories with signals detected
+  const categoriesWithSignals = categories.filter(cat => cat.signals.length > 0).length;
   let confidence: 'high' | 'medium' | 'low';
-  const enrichedPercent = tracks.filter(t => t.enrichedAt).length / tracks.length;
   
-  if (enrichedPercent > 0.7 && tracks.length >= 3) {
+  if (categoriesWithSignals >= 4) {
     confidence = 'high';
-  } else if (enrichedPercent > 0.4 || tracks.length >= 2) {
+  } else if (categoriesWithSignals >= 2) {
     confidence = 'medium';
   } else {
     confidence = 'low';
@@ -380,10 +329,9 @@ export async function calculateContactScore(contactId: string): Promise<ContactS
     contactId,
     songwriterId: contact.songwriterId,
     finalScore,
+    rawScore,
     confidence,
-    trackScores,
-    portfolioSignals,
-    topSignals,
+    categories,
     updatedAt: new Date()
   };
 }
@@ -392,24 +340,21 @@ export async function calculateContactScore(contactId: string): Promise<ContactS
 export async function updateContactScore(contactId: string): Promise<ContactScoreResult> {
   const scoreResult = await calculateContactScore(contactId);
   
-  // Store track score data as JSON
-  const trackScoreData = JSON.stringify({
-    trackScores: scoreResult.trackScores.map(ts => ({
-      trackId: ts.trackId,
-      trackName: ts.trackName,
-      score: ts.score,
-      signalCount: ts.signals.length
+  // Store category score data as JSON
+  const categoryScoreData = JSON.stringify({
+    categories: scoreResult.categories.map(cat => ({
+      category: cat.category,
+      score: cat.score,
+      maxScore: cat.maxScore,
+      signals: cat.signals.map(sig => ({
+        signal: sig.signal,
+        weight: sig.weight,
+        description: sig.description
+      }))
     })),
-    portfolioSignals: scoreResult.portfolioSignals.map(ps => ({
-      signal: ps.signal,
-      description: ps.description,
-      weight: ps.weight
-    })),
-    topSignals: scoreResult.topSignals.map(ts => ({
-      signal: ts.signal,
-      description: ts.description,
-      weight: ts.weight
-    }))
+    rawScore: scoreResult.rawScore,
+    finalScore: scoreResult.finalScore,
+    confidence: scoreResult.confidence
   });
   
   await db
@@ -418,7 +363,7 @@ export async function updateContactScore(contactId: string): Promise<ContactScor
       unsignedScore: scoreResult.finalScore,
       unsignedScoreUpdatedAt: scoreResult.updatedAt,
       scoreConfidence: scoreResult.confidence,
-      trackScoreData: trackScoreData,
+      trackScoreData: categoryScoreData,
       updatedAt: new Date()
     })
     .where(eq(contacts.id, contactId));
