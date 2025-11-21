@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { 
   Mail, MessageCircle, RefreshCw, TrendingUp, Music, Activity, 
   FileText, ExternalLink, Instagram, Twitter, Flame, Edit,
-  Phone, Hash, Building, User as UserIcon, Award, Target, Check, X, Share2
+  Phone, Hash, Building, User as UserIcon, Award, Target, Check, X, Share2, ChevronDown
 } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -36,6 +36,12 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import type { ContactWithSongwriter, PlaylistSnapshot } from "@shared/schema";
 
@@ -87,165 +93,120 @@ function aggregateContactInfo(tracks: PlaylistSnapshot[]) {
   };
 }
 
-// Helper to get metadata completeness label
-function getMetadataCompletenessLabel(description: string): string {
-  const match = description.match(/(\d+)%/);
-  if (!match) return description;
-  
-  const percent = parseInt(match[1]);
-  if (percent < 25) return "Very incomplete metadata";
-  if (percent < 50) return "Incomplete metadata";
-  if (percent < 75) return "Partial metadata";
-  return "Mostly complete metadata";
-}
-
-// Helper to group signals into sections
-// Maps exact signal constants from server/scoring/contactScoring.ts
-function groupSignals(signals: Array<{ signal: string; description: string; weight: number }>) {
-  const discovery: Array<{ label: string; points: number }> = [];
-  const publishing: Array<{ label: string; points: number }> = [];
-  const labelDistro: Array<{ label: string; points: number }> = [];
-  const metadata: Array<{ label: string; points: number }> = [];
-  const portfolio: Array<{ label: string; points: number }> = [];
-  
-  signals.forEach(signal => {
-    const points = Math.round(signal.weight);
-    
-    // Discovery Signals (from SIGNAL_WEIGHTS.FRESH_FINDS)
-    if (signal.signal === 'FRESH_FINDS') {
-      discovery.push({ label: signal.description, points });
-    }
-    // Publishing Signals (from SIGNAL_WEIGHTS.NO_PUBLISHER)
-    else if (signal.signal === 'NO_PUBLISHER') {
-      publishing.push({ label: signal.description, points });
-    }
-    // Label & Distro Signals (from SIGNAL_WEIGHTS: DIY_DISTRIBUTION, INDEPENDENT_LABEL, MAJOR_LABEL)
-    else if (signal.signal === 'DIY_DISTRIBUTION' || 
-             signal.signal === 'INDEPENDENT_LABEL' || 
-             signal.signal === 'MAJOR_LABEL') {
-      labelDistro.push({ label: signal.description, points });
-    }
-    // Metadata Completeness Signals (from SIGNAL_WEIGHTS.COMPLETENESS_*)
-    else if (signal.signal === 'COMPLETENESS_UNDER_25' || 
-             signal.signal === 'COMPLETENESS_25_50' || 
-             signal.signal === 'COMPLETENESS_50_75' || 
-             signal.signal === 'COMPLETENESS_75_PLUS') {
-      const completenessLabel = getMetadataCompletenessLabel(signal.description);
-      const percentMatch = signal.description.match(/(\d+)%/);
-      const label = percentMatch 
-        ? `Data ${percentMatch[1]}% complete (${completenessLabel.toLowerCase().replace(' metadata', '')})`
-        : completenessLabel;
-      metadata.push({ label, points });
-    }
-    // Portfolio Signals (from SIGNAL_WEIGHTS: UNSIGNED_DISTRIBUTION_PATTERN, UNSIGNED_PEER_PATTERN, MUSICBRAINZ_PRESENT)
-    else if (signal.signal === 'UNSIGNED_DISTRIBUTION_PATTERN' || 
-             signal.signal === 'UNSIGNED_PEER_PATTERN' ||
-             signal.signal === 'MUSICBRAINZ_PRESENT') {
-      portfolio.push({ label: signal.description, points });
-    }
-    // Phase 2 signals or unknown - default to portfolio
-    else {
-      portfolio.push({ label: signal.description, points });
-    }
-  });
-  
-  return { discovery, publishing, labelDistro, metadata, portfolio };
-}
-
-// Generate summary sentence based on signals and confidence
-// Uses exact signal constants from server/scoring/contactScoring.ts
+// Generate summary sentence based on categories and confidence
 function generateScoreSummary(
-  signals: Array<{ signal: string; description: string; weight: number }>,
-  confidence?: string
+  categories: Array<{ category: string; score: number; maxScore: number; signals: any[] }>,
+  confidence?: string,
+  totalScore?: number
 ): string {
-  // Group signals first for better context
-  const grouped = groupSignals(signals);
-  const totalSignals = signals.length;
-  
-  // Extract specific signal types
-  const hasFreshFinds = signals.some(s => s.signal === 'FRESH_FINDS');
-  const hasNoPublisher = signals.some(s => s.signal === 'NO_PUBLISHER');
-  const hasDIY = signals.some(s => s.signal === 'DIY_DISTRIBUTION');
-  const hasIndieLabel = signals.some(s => s.signal === 'INDEPENDENT_LABEL');
-  const hasMajorLabel = signals.some(s => s.signal === 'MAJOR_LABEL');
-  const hasUnsignedPattern = signals.some(s => s.signal === 'UNSIGNED_DISTRIBUTION_PATTERN' || s.signal === 'UNSIGNED_PEER_PATTERN');
-  const metadataCompleteness = signals.find(s => s.signal.startsWith('COMPLETENESS_'));
-  const hasMetadataGaps = metadataCompleteness && (
-    metadataCompleteness.signal === 'COMPLETENESS_UNDER_25' || 
-    metadataCompleteness.signal === 'COMPLETENESS_25_50'
-  );
-  const hasStrongMetadata = metadataCompleteness && metadataCompleteness.signal === 'COMPLETENESS_75_PLUS';
-  
-  // CRITICAL: Check negative signals FIRST to avoid false positives
-  // Scenario 1: Major label confirmed (negative signal - overrides all unsigned scenarios)
-  if (hasMajorLabel) {
-    return "Major label metadata found. Likely already signed.";
+  if (!categories || categories.length === 0) {
+    return "Score not yet calculated";
   }
   
-  // Now check unsigned-positive scenarios (safe because major label pre-empted)
-  // Scenario 2: Strong unsigned (Fresh Finds + no publisher)
-  if (hasFreshFinds && hasNoPublisher) {
-    return "Strong unsigned signals detected. Appears on Fresh Finds with incomplete publishing metadata.";
-  }
+  // Calculate total possible score
+  const maxTotal = categories.reduce((sum, cat) => sum + cat.maxScore, 0);
+  const actualTotal = totalScore || categories.reduce((sum, cat) => sum + cat.score, 0);
   
-  // Scenario 3: Portfolio-driven unsigned (patterns + publisher gaps)
-  if (hasUnsignedPattern && hasNoPublisher) {
-    return "Multiple unsigned signals detected. Portfolio shows DIY distribution pattern and missing publisher metadata.";
-  }
+  // Find strongest categories (those with highest percentage completion)
+  const sortedCategories = [...categories]
+    .map(cat => ({
+      ...cat,
+      percentage: cat.maxScore > 0 ? (cat.score / cat.maxScore) * 100 : 0
+    }))
+    .sort((a, b) => b.percentage - a.percentage);
   
-  // Scenario 4: Fresh Finds + strong metadata (no publisher gap)
-  if (hasFreshFinds && hasStrongMetadata) {
-    return "Discovered via Fresh Finds with complete metadata. Unsigned status likely.";
-  }
+  const strongestCategory = sortedCategories[0];
+  const secondStrongest = sortedCategories[1];
   
-  // Scenario 5: Portfolio-only wins (DIY/indie + unsigned patterns, no discovery)
-  if (!hasFreshFinds && (hasDIY || hasIndieLabel) && hasUnsignedPattern) {
-    return "DIY/indie distribution pattern detected across multiple tracks. Potentially unsigned or early-stage.";
+  // Generate context-aware summary
+  if (actualTotal >= 7) {
+    return `Strong unsigned candidate with ${strongestCategory.category} signals detected.`;
+  } else if (actualTotal >= 4) {
+    return `Moderate unsigned signals, primarily from ${strongestCategory.category}.`;
+  } else {
+    return `Weak unsigned signals. Status uncertain, requires manual review.`;
   }
-  
-  // Scenario 6: DIY/Indie only (no patterns)
-  if (hasDIY || hasIndieLabel) {
-    return "DIY or independent label distribution detected. Potentially unsigned or early-stage.";
-  }
-  
-  // Scenario 7: Publisher gap only
-  if (hasNoPublisher && !hasMetadataGaps) {
-    return "Likely unsigned. Publishing metadata missing but other data complete.";
-  }
-  
-  // Scenario 8: Metadata gaps dominant
-  if (hasMetadataGaps && totalSignals <= 2) {
-    return "Limited metadata available. Status unclear but leans unsigned.";
-  }
-  
-  // Default with confidence context
-  if (confidence === 'high') {
-    return "Strong unsigned signals detected across multiple indicators.";
-  } else if (confidence === 'low') {
-    return "Weak unsigned signals. Status uncertain, requires manual review.";
-  }
-  
-  return "Unsigned status based on available signals.";
 }
 
-// Parse score breakdown from trackScoreData JSON
+// Parse score breakdown from trackScoreData JSON - extract categories
 function parseScoreBreakdown(trackScoreData: string | null) {
   if (!trackScoreData) return null;
   
   try {
     const data = JSON.parse(trackScoreData);
-    // Use topSignals to show the most impactful signals
-    if (data.topSignals && data.topSignals.length > 0) {
-      return data.topSignals.map((signal: any) => ({
-        signal: signal.signal,
-        description: signal.description || signal.signal,
-        weight: signal.weight
+    // Extract categories array from the new scoring system
+    if (data.categories && data.categories.length > 0) {
+      return data.categories.map((cat: any) => ({
+        category: cat.category,
+        score: cat.score,
+        maxScore: cat.maxScore,
+        signals: cat.signals || []
       }));
     }
     return null;
   } catch {
     return null;
   }
+}
+
+// Category Card Component for Collapsible Category Display
+interface CategoryCardProps {
+  category: {
+    category: string;
+    score: number;
+    maxScore: number;
+    signals: Array<{ description: string; weight: number }>;
+  };
+}
+
+function CategoryCard({ category }: CategoryCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const progressPercentage = category.maxScore > 0 
+    ? Math.min(100, (category.score / category.maxScore) * 100) 
+    : 0;
+
+  return (
+    <Card className="p-5">
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <CollapsibleTrigger asChild>
+          <div className="cursor-pointer" data-testid={`category-${category.category.toLowerCase().replace(/\s+/g, '-')}`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <h4 className="font-medium">{category.category}</h4>
+                <Badge variant="outline" className="font-semibold">
+                  {category.score.toFixed(1)} / {category.maxScore} pts
+                </Badge>
+              </div>
+              <ChevronDown 
+                className={cn(
+                  "h-5 w-5 text-muted-foreground transition-transform duration-200",
+                  isExpanded && "rotate-180"
+                )}
+              />
+            </div>
+            <Progress value={progressPercentage} className="h-2" />
+          </div>
+        </CollapsibleTrigger>
+
+        {category.signals && category.signals.length > 0 && (
+          <CollapsibleContent>
+            <div className="space-y-2 mt-3 pt-3 border-t">
+              {category.signals.map((signal, idx) => (
+                <div key={idx} className="flex justify-between items-start gap-2">
+                  <span className="text-sm text-muted-foreground flex-1">
+                    {signal.description}
+                  </span>
+                  <Badge variant="outline" className="flex-shrink-0">
+                    +{signal.weight.toFixed(1)}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CollapsibleContent>
+        )}
+      </Collapsible>
+    </Card>
+  );
 }
 
 export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDetailDrawerProps) {
@@ -926,7 +887,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                 )}
               </TabsContent>
 
-              {/* Scoring Tab - NEW */}
+              {/* Scoring Tab - Category-Based Weighted System */}
               <TabsContent value="scoring" className="space-y-4">
                 {contact.unsignedScore !== null && contact.unsignedScore !== undefined ? (
                   <>
@@ -949,180 +910,32 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                       {/* Summary Sentence */}
                       {scoreBreakdown && scoreBreakdown.length > 0 && (
                         <p className="text-sm text-muted-foreground leading-relaxed" data-testid="text-score-summary">
-                          {generateScoreSummary(scoreBreakdown, contact.scoreConfidence || undefined)}
+                          {generateScoreSummary(scoreBreakdown, contact.scoreConfidence || undefined, contact.unsignedScore)}
                         </p>
                       )}
                     </Card>
 
-                    {/* Grouped Signals Breakdown */}
-                    <Card className="p-5">
-                      {(() => {
-                        const grouped = scoreBreakdown && scoreBreakdown.length > 0 
-                          ? groupSignals(scoreBreakdown) 
-                          : { discovery: [], publishing: [], labelDistro: [], metadata: [], portfolio: [] };
-                        
-                        return (
-                          <>
-                            {/* Discovery Section */}
-                            <div className="mb-4">
-                              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Discovery</h4>
-                              <div className="space-y-2">
-                                {grouped.discovery.length > 0 ? (
-                                  grouped.discovery.map((item, idx) => (
-                                    <div key={idx} className="flex items-center justify-between">
-                                      <span className="text-sm">{item.label}</span>
-                                      <Badge variant="outline" className="font-medium text-chart-2">
-                                        +{item.points}
-                                      </Badge>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">No signals detected</span>
-                                    <Badge variant="outline" className="font-medium text-muted-foreground">
-                                      +0
-                                    </Badge>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
+                    {/* Category-Based Breakdown */}
+                    {scoreBreakdown && scoreBreakdown.length > 0 ? (
+                      <div className="space-y-3">
+                        {scoreBreakdown.map((category: { category: string; score: number; maxScore: number; signals: Array<{ description: string; weight: number }> }, idx: number) => (
+                          <CategoryCard key={idx} category={category} />
+                        ))}
+                      </div>
+                    ) : (
+                      <Card className="p-5">
+                        <p className="text-sm text-muted-foreground text-center">
+                          No category data available
+                        </p>
+                      </Card>
+                    )}
 
-                            {/* Publishing Section */}
-                            <div className="mb-4">
-                              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Publishing</h4>
-                              <div className="space-y-2">
-                                {grouped.publishing.length > 0 ? (
-                                  grouped.publishing.map((item, idx) => (
-                                    <div key={idx} className="flex items-center justify-between">
-                                      <span className="text-sm">{item.label}</span>
-                                      <Badge 
-                                        variant="outline" 
-                                        className={cn(
-                                          "font-medium",
-                                          item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
-                                        )}
-                                      >
-                                        {item.points > 0 ? "+" : ""}{item.points}
-                                      </Badge>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">No signals detected</span>
-                                    <Badge variant="outline" className="font-medium text-muted-foreground">
-                                      +0
-                                    </Badge>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Label & Distro Section */}
-                            <div className="mb-4">
-                              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Label & Distro</h4>
-                              <div className="space-y-2">
-                                {grouped.labelDistro.length > 0 ? (
-                                  grouped.labelDistro.map((item, idx) => (
-                                    <div key={idx} className="flex items-center justify-between">
-                                      <span className="text-sm">{item.label}</span>
-                                      <Badge 
-                                        variant="outline" 
-                                        className={cn(
-                                          "font-medium",
-                                          item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
-                                        )}
-                                      >
-                                        {item.points > 0 ? "+" : ""}{item.points}
-                                      </Badge>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">No signals detected</span>
-                                    <Badge variant="outline" className="font-medium text-muted-foreground">
-                                      +0
-                                    </Badge>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Metadata Completeness Section */}
-                            <div className="mb-4">
-                              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Metadata Completeness</h4>
-                              <div className="space-y-2">
-                                {grouped.metadata.length > 0 ? (
-                                  grouped.metadata.map((item, idx) => (
-                                    <div key={idx} className="flex items-center justify-between">
-                                      <span className="text-sm">{item.label}</span>
-                                      <Badge variant="outline" className="font-medium text-chart-2">
-                                        +{item.points}
-                                      </Badge>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">No signals detected</span>
-                                    <Badge variant="outline" className="font-medium text-muted-foreground">
-                                      +0
-                                    </Badge>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Portfolio Signals */}
-                            <div className="mb-4">
-                              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Portfolio Signals</h4>
-                              <div className="space-y-2">
-                                {grouped.portfolio.length > 0 ? (
-                                  grouped.portfolio.map((item, idx) => (
-                                    <div key={idx} className="flex items-center justify-between">
-                                      <span className="text-sm">{item.label}</span>
-                                      <Badge 
-                                        variant="outline" 
-                                        className={cn(
-                                          "font-medium",
-                                          item.points > 0 ? "text-chart-2" : item.points < 0 ? "text-red-400" : ""
-                                        )}
-                                      >
-                                        {item.points > 0 ? "+" : ""}{item.points}
-                                      </Badge>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">No signals detected</span>
-                                    <Badge variant="outline" className="font-medium text-muted-foreground">
-                                      +0
-                                    </Badge>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Total Score Line */}
-                            <div className="pt-4 mt-4 border-t">
-                              <div className="flex items-center justify-between text-base font-medium">
-                                <span>Total</span>
-                                <span data-testid="text-total-score">
-                                  {scoreBreakdown && scoreBreakdown.length > 0 
-                                    ? `${scoreBreakdown.map((s: any) => Math.round(s.weight)).filter((p: number) => p > 0).join(' + ')} = ${contact.unsignedScore}/10`
-                                    : `${contact.unsignedScore}/10`}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Last Updated */}
-                            {contact.unsignedScoreUpdatedAt && (
-                              <p className="text-xs text-muted-foreground mt-4">
-                                Last updated: {formatDate(contact.unsignedScoreUpdatedAt)}
-                              </p>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </Card>
+                    {/* Last Updated */}
+                    {contact.unsignedScoreUpdatedAt && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Last updated: {formatDate(contact.unsignedScoreUpdatedAt)}
+                      </p>
+                    )}
                   </>
                 ) : (
                   <Card className="p-8">
