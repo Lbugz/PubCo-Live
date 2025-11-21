@@ -152,18 +152,21 @@ function getCategoryNarrative(category: {
 }): string {
   const { category: name, score, maxScore, signals } = category;
   
+  // Get first valid signal description
+  const firstSignalDesc = signals?.find(s => s?.description)?.description;
+  
   // Strong signal (full or near-full points)
   if (score >= maxScore * 0.8) {
-    if (signals && signals.length > 0) {
-      return `This songwriter shows ${signals[0]?.description.toLowerCase()}. Strong indicator detected.`;
+    if (firstSignalDesc) {
+      return `This songwriter shows ${firstSignalDesc.toLowerCase()}. Strong indicator detected.`;
     }
     return `Strong signals detected in ${name.toLowerCase()}.`;
   }
   
   // Moderate signal (partial points)
   if (score > 0) {
-    if (signals && signals.length > 0) {
-      return `Partial signals detected: ${signals[0]?.description.toLowerCase()}.`;
+    if (firstSignalDesc) {
+      return `Partial signals detected: ${firstSignalDesc.toLowerCase()}.`;
     }
     return `Some signals detected in ${name.toLowerCase()}.`;
   }
