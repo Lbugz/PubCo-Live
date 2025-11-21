@@ -44,7 +44,7 @@ export default function HomePreview() {
     queryKey: ["/api/contacts"],
   });
 
-  const contacts = contactsResponse?.contacts || [];
+  const contacts = Array.isArray(contactsResponse?.contacts) ? contactsResponse.contacts : [];
   const stats = contactsResponse?.stats;
 
   const { data: playlists } = useQuery<any[]>({

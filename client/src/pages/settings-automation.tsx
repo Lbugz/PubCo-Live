@@ -43,16 +43,16 @@ export default function SettingsAutomation() {
       }
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
-        title: "Performance Snapshot Started",
-        description: "The performance snapshot job is now running. Check the logs for progress.",
+        title: "Performance Snapshot Queued",
+        description: data.message || "Enrichment jobs queued to refresh streaming data. Snapshots will be captured automatically when complete.",
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to start performance snapshot",
+        description: error.message || "Failed to queue performance snapshot",
         variant: "destructive",
       });
     },

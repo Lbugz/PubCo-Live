@@ -3644,15 +3644,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const jobIds: string[] = [];
       for (const [index, batch] of batches.entries()) {
         // Create job for Phase 2 (Spotify streams via Puppeteer) and Phase 6 (YouTube views)
+        // Only set captureSnapshotAfter flag for the LAST batch to avoid duplicate snapshot captures
+        const isLastBatch = index === batches.length - 1;
         const job = await jobQueue.enqueue({
           type: 'enrich-tracks',
           playlistId: null,
           trackIds: batch,
           targetPhase: null, // Will run all phases, but we care about 2 and 6
-          captureSnapshotAfter: 1, // Set flag to capture snapshot after completion
+          captureSnapshotAfter: isLastBatch ? 1 : 0, // Only capture snapshot after last batch completes
         });
         jobIds.push(job.id);
-        console.log(`✅ Queued enrichment job ${index + 1}/${batches.length}: ${job.id} (${batch.length} tracks)`);
+        console.log(`✅ Queued enrichment job ${index + 1}/${batches.length}: ${job.id} (${batch.length} tracks)${isLastBatch ? ' [WILL CAPTURE SNAPSHOT]' : ''}`);
       }
 
       res.json({
