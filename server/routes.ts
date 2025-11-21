@@ -3631,8 +3631,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Import JobQueue
-      const { jobQueue } = await import("./enrichment/jobQueue");
+      // Get job queue instance
+      const jobQueue = getJobQueue();
+      if (!jobQueue) {
+        return res.status(503).json({ error: "Job queue not initialized" });
+      }
 
       // Queue enrichment jobs in batches of 50
       const batchSize = 50;
