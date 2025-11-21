@@ -150,6 +150,12 @@ async function makeChartmetricRequest<T>(endpoint: string, method: string = "GET
 
   if (!response.ok) {
     const errorText = await response.text();
+    
+    // Handle 401 errors separately - may indicate endpoint not accessible with current plan
+    if (response.status === 401) {
+      throw new Error(`Chartmetric API unauthorized: ${errorText}`);
+    }
+    
     throw new Error(`Chartmetric API error: ${response.status} - ${errorText}`);
   }
 

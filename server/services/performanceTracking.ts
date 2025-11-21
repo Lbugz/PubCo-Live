@@ -1,7 +1,6 @@
 import { db } from "../db";
 import { sql, eq, and, desc } from "drizzle-orm";
 import { contacts, songwriterProfiles, playlistSnapshots, trackPerformanceSnapshots } from "@shared/schema";
-import { getTrackStreamingStats } from "../chartmetric";
 
 interface WeeklyPerformance {
   songwriterId: string;
@@ -16,30 +15,30 @@ interface WeeklyPerformance {
 export class PerformanceTrackingService {
   /**
    * Capture weekly performance snapshot for all tracks
-   * Fetches fresh streaming data from Chartmetric API before creating snapshots
+   * Records current streaming data from the database for WoW growth calculations
+   * Note: Streaming data is kept fresh through weekly playlist updates
    */
   async captureWeeklySnapshots(): Promise<void> {
     const today = new Date();
     const weekStart = this.getWeekStart(today);
 
     console.log(`\n📊 Capturing performance snapshots for week: ${weekStart.toISOString()}`);
-    console.log(`⚡ Fetching fresh streaming data from Chartmetric API...\n`);
+    console.log(`📈 Recording current streaming metrics for WoW growth tracking...\n`);
 
-    // Get all tracks with Chartmetric IDs (required for API calls)
+    // Get all tracks with streaming data
     const tracks = await db
       .select({
         trackId: playlistSnapshots.id,
         trackName: playlistSnapshots.trackName,
         artistName: playlistSnapshots.artistName,
-        chartmetricId: playlistSnapshots.chartmetricId,
         spotifyStreams: playlistSnapshots.spotifyStreams,
         youtubeViews: playlistSnapshots.youtubeViews,
         songwriter: playlistSnapshots.songwriter,
       })
       .from(playlistSnapshots)
-      .where(sql`${playlistSnapshots.chartmetricId} IS NOT NULL`);
+      .where(sql`(${playlistSnapshots.spotifyStreams} IS NOT NULL OR ${playlistSnapshots.youtubeViews} IS NOT NULL)`);
 
-    console.log(`Found ${tracks.length} tracks with Chartmetric IDs to snapshot`);
+    console.log(`Found ${tracks.length} tracks with streaming data to snapshot`);
 
     let successCount = 0;
     let errorCount = 0;
@@ -48,29 +47,14 @@ export class PerformanceTrackingService {
     for (let i = 0; i < tracks.length; i++) {
       const track = tracks[i];
       
-      if (i % 50 === 0) {
-        console.log(`\n📈 Progress: ${i}/${tracks.length} tracks processed (Success: ${successCount}, Errors: ${errorCount}, Skipped: ${skippedCount})`);
+      if (i % 100 === 0 && i > 0) {
+        console.log(`📈 Progress: ${i}/${tracks.length} tracks processed (Success: ${successCount}, Errors: ${errorCount}, Skipped: ${skippedCount})`);
       }
 
       try {
-        // Fetch fresh streaming stats from Chartmetric API
-        const freshStats = await getTrackStreamingStats(track.chartmetricId!);
-        
-        // Use fresh data if available, otherwise fall back to stored data
-        const currentStreams = freshStats?.spotify?.current_streams || track.spotifyStreams || 0;
-        const currentYoutubeViews = freshStats?.youtube?.views || track.youtubeViews || 0;
-        
-        // Update the track record with fresh data
-        if (freshStats) {
-          await db
-            .update(playlistSnapshots)
-            .set({
-              spotifyStreams: currentStreams,
-              youtubeViews: currentYoutubeViews,
-              streamingVelocity: freshStats.spotify?.velocity?.toString() || null,
-            })
-            .where(eq(playlistSnapshots.id, track.trackId));
-        }
+        // Use current stored streaming data
+        const currentStreams = track.spotifyStreams || 0;
+        const currentYoutubeViews = track.youtubeViews || 0;
 
         // Get contact for this track's songwriter
         const contactQuery = await db

@@ -39,8 +39,9 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
 - **Real-Time UX:** Features an Activity Panel for persistent job tracking and a 4-tier toast notification system, with WebSocket broadcasts for live updates.
 - **Proprietary Scoring Algorithm:** A point-based rubric system (0-10 score) calculated at the contact level, prioritizing publishing metadata gaps as the strongest unsigned signal. Scores are updated post-enrichment.
 - **Contacts CRM & Funnel Management:** Tracks writer discovery, growth, and outreach through pipeline stages (Discovery Pool, Watch List, Active Search). Includes a global dashboard, filterable tables, and detailed contact drawers.
+- **Performance Tracking System:** Weekly snapshots capture point-in-time streaming metrics (Spotify + YouTube) for accurate WoW growth calculations. Streaming data is kept fresh through weekly playlist updates. Manual trigger endpoints available at POST /api/jobs/run-performance-snapshot and POST /api/jobs/run-playlist-update.
 - **Technical Optimizations:** Includes database-level pagination, search query debouncing, component memoization, native image lazy loading, foreign key constraints, duplicate prevention, atomic job claiming, batch Spotify API calls, and tiered rate limiting.
-- **Automation:** Utilizes `node-cron` for scheduled jobs including Fresh Finds weekly updates, failed enrichment retries, and weekly performance snapshots to calculate WoW growth.
+- **Automation:** Utilizes `node-cron` for scheduled jobs including Fresh Finds weekly updates (Fridays 10:00-12:00 UTC), failed enrichment retries (daily 2:00 AM), and weekly performance snapshots (Fridays 4:59 AM UTC).
 
 ### External Dependencies
 - **Spotify API:** OAuth 2.0 for playlist/track data.
