@@ -441,6 +441,7 @@ export class DatabaseStorage implements IStorage {
       week: tracks[0].week,
       playlistId: tracks[0].playlistId,
       trackName: tracks[0].trackName,
+      albumArt: tracks[0].albumArt,
       spotifyUrl: tracks[0].spotifyUrl,
     });
     
