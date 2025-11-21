@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Music, CheckCircle2, Cloud } from "lucide-react";
+import { Music, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { type PlaylistSnapshot, type Tag } from "@shared/schema";
 import { TrackActionsDropdown } from "./track-actions-dropdown";
@@ -101,20 +101,6 @@ export function TrackTable({
             {/* Artist Name - Secondary */}
             <div className="text-sm text-muted-foreground leading-tight" data-testid={`text-artist-${track.id}`}>
               {track.artistName}
-            </div>
-
-            {/* Metadata Badges */}
-            <div className="flex flex-wrap gap-1">
-              {track.dataSource === "scraped" && (
-                <Badge 
-                  variant="outline" 
-                  className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-xs"
-                  data-testid={`badge-source-scraped-${track.id}`}
-                >
-                  <Cloud className="w-3 h-3 mr-1" />
-                  Scraped
-                </Badge>
-              )}
             </div>
             
             {/* Tags */}
