@@ -29,28 +29,31 @@ export default function HomePreview() {
   const [activeTab, setActiveTab] = useState("command-center");
 
   // Fetch real data
-  const { data: contacts } = useQuery<ContactWithSongwriter[]>({
+  const { data: contactsResponse } = useQuery<{
+    contacts: ContactWithSongwriter[];
+    total: number;
+    stats?: {
+      total: number;
+      hotLeads: number;
+      discovery: number;
+      watch: number;
+      search: number;
+      unsignedPct: number;
+    };
+  }>({
     queryKey: ["/api/contacts"],
   });
 
-  const { data: stats } = useQuery<{
-    total: number;
-    hotLeads: number;
-    discovery: number;
-    watch: number;
-    search: number;
-    unsignedPct: number;
-  }>({
-    queryKey: ["/api/contacts/stats"],
-  });
+  const contacts = contactsResponse?.contacts || [];
+  const stats = contactsResponse?.stats;
 
   const { data: playlists } = useQuery<any[]>({
     queryKey: ["/api/tracked-playlists"],
   });
 
-  const hotLeads = contacts?.filter(c => c.hotLead > 0).slice(0, 8) || [];
-  const recentDiscoveries = contacts?.slice(0, 20) || [];
-  const featuredContact = contacts?.[0];
+  const hotLeads = contacts.filter(c => c.hotLead > 0).slice(0, 8);
+  const recentDiscoveries = contacts.slice(0, 20);
+  const featuredContact = contacts[0];
 
   return (
     <div className="flex flex-col h-full">
