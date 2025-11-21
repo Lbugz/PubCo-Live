@@ -1,0 +1,292 @@
+Got you, 1sthexagram — here is the **complete, clean, implementation-ready instruction block** you can paste directly into the **Replit Agent**.
+
+This contains:
+
+✅ New weighted scoring system
+✅ New category names
+✅ Updated scoring logic
+✅ Updated UI layout for Scoring Tab
+✅ Data contracts & API changes
+✅ Frontend component changes
+✅ Safety notes (avoid legacy files)
+
+This is the final “do this exactly” spec.
+
+---
+
+# 🚀 **REPLIT AGENT INSTRUCTIONS — IMPLEMENT WEIGHTED SCORING SYSTEM V2 + NEW UI + NEW CATEGORY NAMES**
+
+---
+
+# **1. OVERVIEW — Replace Phase 1 Scoring With Weighted Category Scoring**
+
+We are upgrading the scoring engine from **fixed-signal sums (capped at 10)**
+to a **weighted category-based model (max total = 10 points)**.
+
+This MUST become the ONLY scoring system in the app.
+
+---
+
+# **2. NEW CATEGORY NAMES (Use these exactly)**
+
+Use these six categories:
+
+1. **Publishing Status**
+2. **Release Pathway**
+3. **Early Career Signals**
+4. **Metadata Quality**
+5. **Catalog Patterns**
+6. **Profile Verification**
+
+These names must appear consistently across:
+
+* Backend scoring
+* API response fields
+* Scoring Tab UI
+* Tooltips
+* Activity logs
+* Admin/debug logs
+
+---
+
+# **3. NEW WEIGHTED CATEGORY MODEL (Total = 10 Points)**
+
+Replace all fixed-point signals with category scoring below.
+
+### **Category Weights**
+
+| Category             | Max Points |
+| -------------------- | ---------- |
+| Publishing Status    | **4**      |
+| Release Pathway      | **3**      |
+| Early Career Signals | **2**      |
+| Metadata Quality     | **1**      |
+| Catalog Patterns     | **0.5**    |
+| Profile Verification | **0.5**    |
+| **Total Possible**   | **10**     |
+
+---
+
+# **4. CATEGORY SCORING RULES**
+
+### **1. Publishing Status (4 points)**
+
+```
+If no publisher metadata across all tracks → 4  
+Else → 0
+```
+
+### **2. Release Pathway (3 points)**
+
+```
+If DIY → 3  
+Else if Independent label → 2  
+Else if Major label → 0
+```
+
+### **3. Early Career Signals (2 points)**
+
+```
+If Fresh Finds → 2  
+Else → 0
+```
+
+### **4. Metadata Quality (1 point)**
+
+Use average metadata completeness across all tracks:
+
+```
+If <25% → 1  
+Else if 25–49% → 0.7  
+Else if 50–74% → 0.5  
+Else → 0
+```
+
+### **5. Catalog Patterns (0.5 points)**
+
+```
+If >50% tracks DIY/indie → 0.5  
+Else → 0
+```
+
+### **6. Profile Verification (0.5 points)**
+
+```
+If MusicBrainz profile found → 0.5  
+Else → 0
+```
+
+---
+
+# **5. FINAL SCORE CALCULATION**
+
+Replace the old capped model.
+
+```
+FinalScore = (sumOfCategoryScores)      // Already normalized to 10 max
+RoundedScore = round(FinalScore)
+```
+
+No capping needed.
+No multipliers.
+No individual-signal sums.
+
+---
+
+# **6. API RESPONSE CONTRACT (Update contactScoring.ts)**
+
+Modify `calculateContactScore(contactId)` to return:
+
+```
+{
+  finalScore: number,         // 0–10 integer
+  rawScore: number,           // decimal before rounding
+  categories: {
+    publishingStatus: number,
+    releasePathway: number,
+    earlyCareerSignals: number,
+    metadataQuality: number,
+    catalogPatterns: number,
+    profileVerification: number
+  },
+  details: {
+    publishingStatus: string[],
+    releasePathway: string[],
+    earlyCareerSignals: string[],
+    metadataQuality: string[],
+    catalogPatterns: string[],
+    profileVerification: string[]
+  },
+  lastUpdated: timestamp
+}
+```
+
+---
+
+# **7. UI UPDATE — NEW SCORING TAB**
+
+Replace the entire current signal-by-signal breakdown.
+
+### **NEW UI LAYOUT**
+
+```
+Unsigned Score
+8/10 — Medium Confidence
+
+Summary:
+“This artist shows strong independent signals driven by Publishing Status and Release Pathway.”
+```
+
+---
+
+### **Category Cards (One Per Category)**
+
+Each card shows:
+
+```
+CATEGORY TITLE (MAX X POINTS)
+
+✓ Reason 1  
+✓ Reason 2  
+...
+
+Category Score: Y / X
+```
+
+Use these exact category titles:
+
+* Publishing Status
+* Release Pathway
+* Early Career Signals
+* Metadata Quality
+* Catalog Patterns
+* Profile Verification
+
+---
+
+### **Example Rendering**
+
+```
+PUBLISHING STATUS (4 max)
+✓ No publisher metadata detected
+--------------------------------
+Category Score: 4 / 4
+```
+
+```
+RELEASE PATHWAY (3 max)
+✓ DIY distribution across majority of tracks
+--------------------------------
+Category Score: 3 / 3
+```
+
+Continue for all 6 categories.
+
+---
+
+### **Bottom Summary**
+
+```
+Total Score: 8 / 10
+Last updated: <timestamp>
+```
+
+---
+
+# **8. REMOVE OLD SCORING LOGIC**
+
+Delete or archive:
+
+* `server/contactScoring.ts` (legacy)
+* Any weighting logic that previously used multipliers
+* Any UI components that show per-signal weights
+* Any “raw sum → capped 10” logic
+
+---
+
+# **9. UPDATE ACTIVITY LOGS**
+
+Whenever score recalculates, store:
+
+* `oldScore`, `newScore`
+* category breakdown
+* timestamp
+
+---
+
+# **10. QA CHECKLIST (Must pass)**
+
+After implementation:
+
+### Backend
+
+* Score = sum of category contributions
+* Maximum possible = 10
+* Remove all individual-signal scoring
+* No weighting multipliers
+* No 10-cap logic
+* API returns full category breakdown
+
+### UI
+
+* Shows 6 categories
+* Shows only category scores
+* No individual-signal point values
+* Summary sentence renders correctly
+* “Last updated” timestamp present
+
+---
+
+# **If you'd like, I can also generate:**
+
+### ✔ A full **TSX component blueprint** for the new Scoring Tab
+
+### ✔ A clean **Notion version** for your team
+
+### ✔ A **backend migration plan** to remove old scoring
+
+### ✔ A **diagram** showing category → signals → total pipeline
+
+Just say the word.
+
+This prompt is ready to paste directly into Replit.
