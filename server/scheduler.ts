@@ -141,6 +141,18 @@ export function getSchedulerStatus() {
 }
 
 /**
+ * Get the start of the current week (Monday)
+ */
+function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+  const monday = new Date(d.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+/**
  * Run the playlist update job manually (exported for API endpoint)
  */
 export async function runPlaylistUpdateJob() {
@@ -152,24 +164,34 @@ export async function runPlaylistUpdateJob() {
     const allPlaylists = await storage.getTrackedPlaylists();
     console.log(`📋 Found ${allPlaylists.length} total tracked playlists`);
     
-    // Filter playlists that haven't been updated this week (last 7 days)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // Get the week string for checking which playlists were already updated THIS week
+    const today = new Date();
+    const weekStart = getWeekStart(today);
+    const currentWeek = weekStart.toISOString().split('T')[0];
     
-    const playlistsNeedingUpdate = allPlaylists.filter(p => {
-      if (!p.lastChecked) return true; // Never scraped
-      const lastChecked = new Date(p.lastChecked);
-      return lastChecked < sevenDaysAgo;
-    });
+    // Check which playlists have already been processed this specific week
+    const playlistsUpdatedThisWeek = new Set<string>();
+    for (const playlist of allPlaylists) {
+      if (playlist.lastChecked) {
+        const lastCheckedDate = new Date(playlist.lastChecked);
+        const lastCheckedWeek = getWeekStart(lastCheckedDate).toISOString().split('T')[0];
+        if (lastCheckedWeek === currentWeek) {
+          playlistsUpdatedThisWeek.add(playlist.id);
+        }
+      }
+    }
     
-    console.log(`🔄 ${playlistsNeedingUpdate.length} playlists need updating this week`);
+    // Only process playlists that haven't been scraped THIS week yet
+    const playlistsNeedingUpdate = allPlaylists.filter(p => !playlistsUpdatedThisWeek.has(p.id));
+    
+    console.log(`🔄 ${playlistsNeedingUpdate.length} playlists need updating this week (${playlistsUpdatedThisWeek.size} already done)`);
     
     if (playlistsNeedingUpdate.length === 0) {
       console.log("✅ All playlists already updated this week!");
       return;
     }
     
-    // Process next batch (4-5 playlists per 15-min cycle)
+    // Process next batch (4 playlists per 15-min cycle)
     const BATCH_SIZE = 4;
     const batch = playlistsNeedingUpdate.slice(0, BATCH_SIZE);
     
@@ -182,14 +204,29 @@ export async function runPlaylistUpdateJob() {
         const microserviceUrl = process.env.SCRAPER_API_URL;
         let result: ScrapeResult | undefined;
         
+        // Try microservice first, fall back to direct scraping if it fails
         if (microserviceUrl) {
-          console.log("  Using microservice...");
-          const response = await fetch(`${microserviceUrl}/scrape-playlist`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ playlistUrl: playlist.spotifyUrl }),
-          });
-          result = await response.json() as ScrapeResult;
+          try {
+            console.log("  Using microservice...");
+            const response = await fetch(`${microserviceUrl}/scrape-playlist`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ playlistUrl: playlist.spotifyUrl }),
+            });
+            
+            // Check if response is JSON
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+              result = await response.json() as ScrapeResult;
+            } else {
+              console.log("  ⚠️  Microservice returned non-JSON, falling back to direct scraping...");
+              throw new Error("Microservice returned non-JSON response");
+            }
+          } catch (error) {
+            console.log("  ⚠️  Microservice failed, using direct scraping...");
+            const { scrapeSpotifyPlaylist } = await import("./scraper");
+            result = await scrapeSpotifyPlaylist(playlist.spotifyUrl);
+          }
         } else {
           console.log("  Using direct scraping...");
           const { scrapeSpotifyPlaylist } = await import("./scraper");
@@ -223,10 +260,10 @@ export async function runPlaylistUpdateJob() {
             };
           });
           
-          await storage.insertTracks(tracksToInsert);
+          const insertedIds = await storage.insertTracks(tracksToInsert);
           await storage.updatePlaylistLastChecked(playlist.id);
           
-          console.log(`  ✅ Stored ${result.tracks.length} tracks`);
+          console.log(`  ✅ Processed ${result.tracks.length} tracks (new tracks inserted, duplicates updated)`);
         } else {
           console.error(`  ❌ Scrape failed for ${playlist.name}:`, result?.error);
         }

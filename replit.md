@@ -34,7 +34,7 @@ The AI Pub Feed is an automated platform designed to discover unsigned artists a
 - **Graceful Shutdown:** Clean job cleanup on SIGTERM/SIGINT.
 
 **Key Features and Design Patterns**
-- **Playlist Tracking:** Ingests Spotify playlists with intelligent fallback systems (Chartmetric-first, Spotify API fallback, Puppeteer for editorial). Automatically pulls and stores track metadata and creates weekly snapshots.
+- **Playlist Tracking:** Ingests Spotify playlists with intelligent fallback systems (Chartmetric-first, Spotify API fallback, Puppeteer for editorial). Automatically scrapes all playlists weekly to capture new songs, with database-level duplicate handling via unique constraints (week + playlistId + spotifyUrl). Processes 4 playlists per 15-minute cycle on Fridays 10:00-12:00 UTC.
 - **Multi-Phase Enrichment Pipeline:** Converts raw playlist tracks into rights-relevant metadata through four phases: Spotify API Batch Enrichment, Web Scraping (Puppeteer), MusicBrainz Lookup, and MLC Publisher Search.
 - **Real-Time UX:** Features an Activity Panel for persistent job tracking and a 4-tier toast notification system, with WebSocket broadcasts for live updates.
 - **Proprietary Scoring Algorithm:** A point-based rubric system (0-10 score) calculated at the contact level, prioritizing publishing metadata gaps as the strongest unsigned signal. Scores are updated post-enrichment.
