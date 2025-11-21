@@ -3610,18 +3610,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/jobs/run-performance-snapshot", async (req, res) => {
     try {
       console.log("📊 Manual performance snapshot triggered...");
+      console.log("⏱️  Queueing enrichment jobs to refresh streaming data before snapshot...");
       
-      const { performanceTrackingService } = await import("./services/performanceTracking");
-      await performanceTrackingService.captureWeeklySnapshots();
-      
+      // Get all tracks with streaming data
+      const tracks = await db
+        .select({
+          id: playlistSnapshots.id,
+          trackName: playlistSnapshots.trackName,
+          artistName: playlistSnapshots.artistName,
+        })
+        .from(playlistSnapshots)
+        .where(sql`(${playlistSnapshots.spotifyStreams} IS NOT NULL OR ${playlistSnapshots.youtubeViews} IS NOT NULL)`);
+
+      console.log(`Found ${tracks.length} tracks with streaming data to refresh`);
+
+      if (tracks.length === 0) {
+        return res.json({
+          success: true,
+          message: "No tracks with streaming data found to snapshot"
+        });
+      }
+
+      // Import JobQueue
+      const { jobQueue } = await import("./enrichment/jobQueue");
+
+      // Queue enrichment jobs in batches of 50
+      const batchSize = 50;
+      const batches: string[][] = [];
+      for (let i = 0; i < tracks.length; i += batchSize) {
+        batches.push(tracks.slice(i, i + batchSize).map(t => t.id));
+      }
+
+      const jobIds: string[] = [];
+      for (const [index, batch] of batches.entries()) {
+        // Create job for Phase 2 (Spotify streams via Puppeteer) and Phase 6 (YouTube views)
+        const job = await jobQueue.enqueue({
+          type: 'enrich-tracks',
+          playlistId: null,
+          trackIds: batch,
+          targetPhase: null, // Will run all phases, but we care about 2 and 6
+          captureSnapshotAfter: 1, // Set flag to capture snapshot after completion
+        });
+        jobIds.push(job.id);
+        console.log(`✅ Queued enrichment job ${index + 1}/${batches.length}: ${job.id} (${batch.length} tracks)`);
+      }
+
       res.json({
         success: true,
-        message: "Weekly performance snapshots captured successfully"
+        message: `Queued ${batches.length} enrichment job(s) for ${tracks.length} tracks. Snapshots will be captured automatically when enrichment completes.`,
+        jobIds
       });
     } catch (error: any) {
-      console.error("Error capturing performance snapshots:", error);
+      console.error("Error queueing performance snapshot enrichment:", error);
       res.status(500).json({ 
-        error: error.message || "Failed to capture performance snapshots" 
+        error: error.message || "Failed to queue performance snapshot enrichment" 
       });
     }
   });
