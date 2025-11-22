@@ -1,5 +1,6 @@
 import { Browser, Page } from "puppeteer";
 import { addToQueue, getQueue, cleanupQueue, waitForQueueIdle } from "./puppeteerQueue";
+import { normalizeCreditList } from "./creditNormalization";
 
 // Safety net: cleanup on process exit
 let exitHandlerRegistered = false;
@@ -341,84 +342,32 @@ async function extractCredits(
     };
   }
 
-  // Inject name-splitting utility
+  // Inject authoritative name-splitting utility
   const nameSplitScript = `
-    window.splitConcatenatedNames = function(fullName) {
-      if (!fullName || typeof fullName !== 'string') return [];
-      
-      const trimmed = fullName.trim();
-      
-      // Count lowercase-to-uppercase transitions (excluding multi-part surnames)
-      let transitions = 0;
-      const transitionIndices = [];
-      
-      for (let i = 1; i < trimmed.length; i++) {
-        if (/[a-z]/.test(trimmed[i - 1]) && /[A-Z]/.test(trimmed[i])) {
-          // Look back to find the start of the current word to check for surname patterns
-          let wordStart = i;
-          while (wordStart > 0 && /[a-zA-Z']/.test(trimmed[wordStart - 1])) {
-            wordStart--;
-          }
-          
-          const currentWord = trimmed.substring(wordStart, i + 1);
-          
-          // Common surname patterns to preserve (checking the full word context):
-          // - Mc + Name (McGuinness, McDonald, McRae)
-          // - Mac + Name (MacRae, MacLeod, MacDonald)
-          // - O' + Name (O'Brien, O'Connor)
-          // - St. + Name (St.Clair, St.John)
-          const isMcPattern = /^Mc[A-Z][a-z]+$/.test(currentWord);
-          const isMacPattern = /^Mac[A-Z][a-z]+$/.test(currentWord);
-          const isOPattern = /^O'[A-Z][a-z]+$/.test(currentWord);
-          const isStPattern = /^St\\.[A-Z][a-z]+$/.test(currentWord);
-          const isVanPattern = /^Van[A-Z][a-z]+$/.test(currentWord);
-          const isDePattern = /^De[A-Z][a-z]+$/.test(currentWord);
-          const isVonPattern = /^Von[A-Z][a-z]+$/.test(currentWord);
-          const isLaPattern = /^La[A-Z][a-z]+$/.test(currentWord);
-          const isLePattern = /^Le[A-Z][a-z]+$/.test(currentWord);
-          
-          const isMultiPartSurname = isMcPattern || isMacPattern || isOPattern || isStPattern ||
-                                      isVanPattern || isDePattern || isVonPattern || isLaPattern || isLePattern;
-          
-          if (!isMultiPartSurname) {
-            transitions++;
-            transitionIndices.push(i);
-          }
-        }
+    window.normalizeCreditList = function(rawText) {
+      if (!rawText || typeof rawText !== 'string') return [];
+      let text = rawText.trim();
+      if (!text) return [];
+      text = text.replace(/&/g, ',').replace(/\//g, ',').replace(/\\|/g, ',').replace(/;/g, ',').replace(/\\n/g, ',').replace(/\\s{2,}/g, ' ');
+      text = text.replace(/([a-z])([A-Z])/g, (m, l, u) => {
+        const before = text.substring(Math.max(0, text.indexOf(m) - 3), text.indexOf(m) + 1);
+        const after = text.substring(text.indexOf(m), Math.min(text.length, text.indexOf(m) + 5));
+        const isMulti = /Mc[a-z]|Mac[a-z]|O'[a-z]|St\\.[a-z]|Van[a-z]|De[a-z]|Von[a-z]|La[a-z]|Le[a-z]/.test(after);
+        return isMulti ? m : l + ', ' + u;
+      });
+      const parts = text.split(/,|\\n|;/).map(p => p.trim()).filter(p => p.length > 0);
+      const cleaned = parts.map(name => {
+        name = name.trim().replace(/\\s+/g, ' ');
+        name = name.split(' ').map((w, i) => w.length > 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '').join(' ');
+        return name;
+      }).filter(n => n.length >= 2 && (n.includes(' ') || n.length >= 3));
+      const seen = new Set();
+      const result = [];
+      for (const name of cleaned) {
+        const norm = name.toLowerCase();
+        if (!seen.has(norm)) { seen.add(norm); result.push(name); }
       }
-      
-      // If no significant transitions, return as-is
-      if (transitions === 0) return [trimmed];
-      
-      // Split at transition points if we have 2+ transitions
-      if (transitions >= 2) {
-        const splitNames = [];
-        let startIdx = 0;
-        
-        for (const transitionIdx of transitionIndices) {
-          const segment = trimmed.substring(startIdx, transitionIdx).trim();
-          if (segment.length > 2) {  // Minimum name length
-            splitNames.push(segment);
-          }
-          startIdx = transitionIdx;
-        }
-        
-        // Add the last segment
-        const lastSegment = trimmed.substring(startIdx).trim();
-        if (lastSegment.length > 2) {
-          splitNames.push(lastSegment);
-        }
-        
-        // Validate: each name should be reasonable
-        const allValid = splitNames.every(name => name.length > 1);
-        
-        if (allValid && splitNames.length >= 2) {
-          return splitNames;
-        }
-      }
-      
-      // Fallback: return as-is if splitting didn't work well
-      return [trimmed];
+      return result;
     };
   `;
   
@@ -452,7 +401,7 @@ async function extractCredits(
           const processedNames: string[] = [];
           
           for (const name of nameList) {
-            const splitResult = (window as any).splitConcatenatedNames(name);
+            const splitResult = (window as any).normalizeCreditList(name);
             processedNames.push(...splitResult);
           }
           

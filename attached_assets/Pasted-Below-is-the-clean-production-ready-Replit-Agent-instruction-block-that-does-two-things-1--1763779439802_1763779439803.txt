@@ -1,0 +1,186 @@
+Below is the **clean, production-ready Replit Agent instruction block** that does two things:
+
+1. **Adds punchier, A&R-style language WITHOUT OpenAI** (pure rules-engine wording)
+2. **Adds an optional toggle to enable/disable OpenAI narrative generation**
+3. Makes this entire feature **configurable**, so you can turn AI commentary *on/off* in the UI or settings.
+
+This is the version you should paste directly into your Replit AI agent to update the codebase.
+
+---
+
+# ✅ **REPLIT AGENT INSTRUCTIONS — Add Punchy Commentary + OpenAI Toggle**
+
+### **TITLE:** Implement Punchy Scoring Commentary + AI Narrative Toggle
+
+### **INSTRUCTIONS TO AGENT (Copy EXACTLY):**
+
+```
+Implement a new Scoring Commentary system with the following requirements:
+
+OBJECTIVE:
+Provide more energetic, A&R-style commentary for each scoring category without relying on OpenAI, while also adding an optional AI narrative mode that can be toggled on/off.
+
+------------------------------------------
+PART 1 — ADD CONFIG TO ENABLE/DISABLE AI
+------------------------------------------
+
+1. Add a new configuration option in the backend called:
+   `useAiNarrative: boolean` (default = false)
+
+2. Add a matching client-side toggle in the settings UI under:
+   Settings → Scoring & Narrative → "AI Narrative Mode"
+
+3. When `useAiNarrative = true`, commentary for the scoring panel should be generated via the OpenAI function already available in the app.
+
+4. When `useAiNarrative = false`, commentary should come from the new punchy rules-based commentary system described below.
+
+------------------------------------------
+PART 2 — ADD RULES-BASED, PUNCHY COMMENTARY (NO AI)
+------------------------------------------
+
+Create a pure rules-engine version of commentary that feels like A&R scouting — short, confident, opportunity-focused. Replace all “flat” or “clinical” text.
+
+Implement the following commentary templates for each scoring category:
+
+PUBLISHING STATUS
+- If no publisher on any track:
+  "Wide-open publishing lane — no songs are currently represented. Maximum ownership opportunity."
+- If partial matches:
+  "Mixed representation — some songs are claimed, others remain open. Potential for targeted deals."
+- If fully represented:
+  "All works are represented — limited publishing opportunity."
+
+RELEASE PATHWAY
+- DIY (3 pts):
+  "Fully independent release strategy — direct access and high creative ownership."
+- Indie Distributor (2 pts):
+  "Artist is backed by an indie or artist-forward label — reachable but competitive."
+- Major Distro / Major Label (0–1 pt):
+  "Major infrastructure detected — access potential is lower but career momentum may be stronger."
+
+EARLY CAREER SIGNALS
+- Fresh Finds / similar playlist hits:
+  "Early-stage momentum with editorial exposure — algorithmic traction confirmed."
+- No early signals:
+  "No early playlists yet, but room for organic discovery."
+
+METADATA QUALITY
+- High:
+  "Clean and complete metadata — strong foundation for tracking and rights verification."
+- Medium:
+  "Adequate metadata — enough detail to validate the profile."
+- Low:
+  "Sparse metadata — expect lighter data confidence."
+
+CATALOG PATTERNS
+- All DIY:
+  "Consistent independence across the catalog — clear unsigned behavior."
+- Mixed:
+  "Catalog shows a blend of indie and collaborative releases."
+- Major:
+  "Catalog reflects major label involvement."
+
+PROFILE VERIFICATION
+- Verified by MusicBrainz:
+  "External verification complete — profile validated."
+- Not verified:
+  "No external verification — signals rely on internal metadata only."
+
+------------------------------------------
+PART 3 — IMPLEMENT COMMENTARY GENERATION LOGIC
+------------------------------------------
+
+1. Create a function in the backend:
+   `generateRuleBasedCommentary(scoring, metadata)`
+
+2. This function must:
+   - Use deterministic templates above.
+   - Output punchy, opportunity-oriented A&R-style text.
+   - Return:
+     {
+       topLine: string,
+       categoryComments: { categoryName: string, comment: string }[],
+       opportunityNote: string
+     }
+
+3. TOP-LINE SUMMARY RULES:
+   - If score >= 9:
+     "High-upside unsigned candidate with clean rights and early traction."
+   - If score between 7–9:
+     "Strong emerging profile with promising independent signals."
+   - If score < 7:
+     "Developing artist with potential, but fewer immediate indicators."
+
+4. OPPORTUNITY NOTE:
+   - If no publishing + DIY patterns:
+     "Prime outreach candidate — rights are wide open and artist operates independently."
+   - If indie patterns + early career signals:
+     "Strong mid-stage prospect — reachable through indie channels with visible momentum."
+   - Else:
+     "Good artist to monitor — indicators suggest gradual development."
+
+------------------------------------------
+PART 4 — ROUTING LOGIC
+------------------------------------------
+
+Modify the scoring panel rendering:
+
+IF useAiNarrative = true:
+   Use OpenAI to generate:
+   - topLine
+   - category commentary
+   - opportunity note
+
+ELSE:
+   Use generateRuleBasedCommentary() output.
+
+------------------------------------------
+PART 5 — TEST IMPLEMENTATION
+------------------------------------------
+
+Add quick test scenarios for three profiles:
+- DIY artist, no publisher
+- Indie artist with partial metadata
+- Major label artist with high streams
+
+Verify that:
+- Commentary changes appropriately per rules.
+- Switching AI toggle on/off swaps engines without breaking UI.
+- No stale cached text remains.
+
+END OF INSTRUCTIONS
+```
+
+---
+
+# 🔥 What This Gives You
+
+### ✔ A toggle: **AI ON / AI OFF**
+
+* “OFF” → deterministic, punchy rules-engine commentary
+* “ON” → OpenAI-generated narrative commentary
+
+### ✔ Punchier language even when AI is OFF
+
+* Feels like a real scout
+* Highlights opportunity
+* Moves away from dry “data dashboard” tone
+
+### ✔ Clean separation of logic
+
+* AI = presentation layer
+* Your deterministic scores = source of truth
+
+---
+
+# 🔧 If you want next:
+
+I can generate **the exact TypeScript files**, including:
+
+* `generateRuleBasedCommentary.ts`
+* OpenAI integration wrapper
+* Updated scoring panel UI markup
+* Settings toggle component
+* Unit tests
+
+Just say: **“Generate the TS files”**.
