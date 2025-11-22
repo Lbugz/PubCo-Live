@@ -16,6 +16,7 @@ import { enrichTrackWithChartmetric, getSongwriterProfile, getSongwriterCollabor
 import { getPlaylistMetrics, getTrackMetrics, getContactMetrics, getDashboardMetrics, invalidateMetricsCache } from "./metricsService";
 import { triggerMetricsUpdate, scheduleMetricsUpdate, flushMetricsUpdate } from "./metricsUpdateManager";
 import { notificationService } from "./services/notificationService";
+import { getJobQueue } from "./enrichment/jobQueueManager";
 
 // Helper function to fetch all tracks from a playlist with pagination
 async function fetchAllPlaylistTracks(spotify: any, playlistId: string): Promise<any[]> {
@@ -3645,7 +3646,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const jobIds: string[] = [];
-      for (const [index, batch] of batches.entries()) {
+      for (let index = 0; index < batches.length; index++) {
+        const batch = batches[index];
         // Create job for Phase 2 (Spotify streams via Puppeteer) and Phase 6 (YouTube views)
         // Only set captureSnapshotAfter flag for the LAST batch to avoid duplicate snapshot captures
         const isLastBatch = index === batches.length - 1;
