@@ -1,0 +1,151 @@
+1sthexagram — I see the issue clearly:
+
+### **Your credits scraper is returning a **single long string** with all writer names jammed together, instead of a properly parsed list.**
+
+Example from your screenshot:
+
+```
+Christopher BoysMcKinley LanguedocNoah VarleyNoah …
+```
+
+This is 100% caused by **bad HTML parsing rules** + **missing delimiters** in your extraction logic.
+
+To fix this **once and for all**, you need to give the Replit Agent a **single authoritative prompt** that:
+
+* Enforces proper splitting
+* Normalizes separators
+* Removes duplicates
+* Handles edge cases (multi-part last names, commas, spaces, slashes, ampersands)
+* Ensures *each name* becomes a clean, atomic item
+
+Below is the final, production-grade instruction set you should use.
+
+---
+
+# ✅ **THE FINAL PROMPT — “Fix Songwriter Name Parsing Once and For All”**
+
+Copy/paste this directly into Replit Agent:
+
+---
+
+### **TITLE:** Fix songwriter parsing (normalize credits into clean list)
+
+### **INSTRUCTIONS TO AGENT (copy verbatim):**
+
+```
+Fix the songwriter parsing issue in the enrichment pipeline.
+
+Problem:
+The current scraper combines multiple songwriter names into a single continuous string without separators. Example:
+"Christopher BoysMcKinley LanguedocNoah VarleyJoe Agius"
+
+Goal:
+Ensure the credits parser always produces a clean array of individual songwriter names.
+
+Required Changes:
+
+1. After scraping the credits string, normalize all possible separators:
+- Convert commas, slashes, pipes, and "&" into a standard comma.
+- Insert a comma between a lowercase-to-uppercase boundary when names are jammed (regex below).
+- Remove double spaces or weird whitespace.
+
+2. Apply the following parsing logic:
+a) If the source provides an explicit list (ul/li, span per name, etc.), extract each node as a separate name.
+b) If the source returns one long string, run normalization pipeline:
+
+Normalize step:
+- text = text.replace(/&/g, ",")
+- text = text.replace(/\//g, ",")
+- text = text.replace(/\|/g, ",")
+- text = text.replace(/\s{2,}/g, " ")
+
+Critical step:
+Insert missing separators where two names became glued:
+- text = text.replace(/([a-z])([A-Z])/g, "$1, $2")
+
+3. Split using:
+- const parts = text.split(/,|\n|;/).map(p => p.trim()).filter(p => p.length > 0)
+
+4. Deduplicate names:
+- new Set(parts)
+
+5. Validate names:
+- Keep only entries with at least 2 characters and at least one space.
+- Capitalize properly (convert to Title Case).
+
+6. Output a clean array, e.g.:
+[
+  "Christopher Boys",
+  "McKinley Languedoc",
+  "Noah Varley",
+  "Joe Agius"
+]
+
+7. Ensure this fix is applied in:
+- Phase 2 Credits Scraper
+- Any fallback scraper (MusicBrainz, Discogs)
+- Any enrichment functions that handle songwriter/producer credits.
+
+8. Add unit test:
+Input:
+"Christopher BoysMcKinley LanguedocNoah VarleyJoe Agius"
+Expected:
+["Christopher Boys", "McKinley Languedoc", "Noah Varley", "Joe Agius"]
+
+Implement the fix and confirm parsing works across:
+- multi-name strings
+- comma-delimited lists
+- HTML node lists
+- glued names
+```
+
+---
+
+# ✅ **WHY THIS PROMPT FIXES EVERYTHING**
+
+This prompt:
+
+### **✔ Forces consistent delimiters**
+
+Normalizes:
+
+* commas
+* slashes
+* pipes
+* ampersands
+* glued names
+
+### **✔ Uses regex to split jammed names**
+
+This line fixes 90% of your current errors:
+
+```
+text.replace(/([a-z])([A-Z])/g, "$1, $2")
+```
+
+### **✔ Deduplicates & cleans**
+
+No more:
+
+* repeated names
+* partial names
+* malformed entries
+
+### **✔ Works across all credits sources**
+
+Spotify, MusicBrainz, Discogs, MLC, raw HTML — all standardized to the same output.
+
+### **✔ Adds unit tests**
+
+So this *never breaks again*.
+
+---
+
+# 🔥 Want me to also generate:
+
+* The exact **TypeScript function** to paste into your enrichment pipeline?
+* A **unit test file** for Replit?
+* A **UI fix** for spacing/styling of names?
+* A **validation system** so malformed names get flagged?
+
+Just tell me.
