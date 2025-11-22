@@ -1,5 +1,6 @@
 import express from 'express';
 import puppeteer from 'puppeteer';
+import { normalizeCreditList } from './enrichment/creditNormalization';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -350,6 +351,38 @@ async function scrapeTrackCreditsOnPage(page: any, trackUrl: string) {
 
   await new Promise(resolve => setTimeout(resolve, 1500));
 
+  // Inject authoritative name normalization utility
+  const normalizationScript = `
+    window.normalizeCreditList = function(rawText) {
+      if (!rawText || typeof rawText !== 'string') return [];
+      let text = rawText.trim();
+      if (!text) return [];
+      text = text.replace(/&/g, ',').replace(/\//g, ',').replace(/\\|/g, ',').replace(/;/g, ',').replace(/\\n/g, ',').replace(/\\s{2,}/g, ' ');
+      text = text.replace(/([a-z])([A-Z])/g, (m, l, u) => {
+        const idx = text.indexOf(m);
+        const before = text.substring(Math.max(0, idx - 3), idx + 1);
+        const after = text.substring(idx, Math.min(text.length, idx + 5));
+        const isMulti = /Mc[a-z]|Mac[a-z]|O'[a-z]|St\\.[a-z]|Van[a-z]|De[a-z]|Von[a-z]|La[a-z]|Le[a-z]/.test(after);
+        return isMulti ? m : l + ', ' + u;
+      });
+      const parts = text.split(/,|\\n|;/).map(p => p.trim()).filter(p => p.length > 0);
+      const cleaned = parts.map(name => {
+        name = name.trim().replace(/\\s+/g, ' ');
+        name = name.split(' ').map((w, i) => w.length > 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '').join(' ');
+        return name;
+      }).filter(n => n.length >= 2 && (n.includes(' ') || n.length >= 3));
+      const seen = new Set();
+      const result = [];
+      for (const name of cleaned) {
+        const norm = name.toLowerCase();
+        if (!seen.has(norm)) { seen.add(norm); result.push(name); }
+      }
+      return result;
+    };
+  `;
+  
+  await page.evaluate(normalizationScript);
+
   const credits = await page.evaluate(() => {
     const songwriters: string[] = [];
     const composers: string[] = [];
@@ -371,19 +404,24 @@ async function scrapeTrackCreditsOnPage(page: any, trackUrl: string) {
 
       if (inCreditsSection) {
         if (trimmed.toLowerCase().startsWith('written by') || trimmed.toLowerCase().startsWith('writer')) {
-          const names = trimmed.replace(/^(written by|writer):?\s*/i, '').split(',').map(n => n.trim());
+          const rawNames = trimmed.replace(/^(written by|writer):?\s*/i, '');
+          const names = (window as any).normalizeCreditList(rawNames);
           songwriters.push(...names);
         } else if (trimmed.toLowerCase().startsWith('composer')) {
-          const names = trimmed.replace(/^composer:?\s*/i, '').split(',').map(n => n.trim());
+          const rawNames = trimmed.replace(/^composer:?\s*/i, '');
+          const names = (window as any).normalizeCreditList(rawNames);
           composers.push(...names);
         } else if (trimmed.toLowerCase().startsWith('produced by') || trimmed.toLowerCase().startsWith('producer')) {
-          const names = trimmed.replace(/^(produced by|producer):?\s*/i, '').split(',').map(n => n.trim());
+          const rawNames = trimmed.replace(/^(produced by|producer):?\s*/i, '');
+          const names = (window as any).normalizeCreditList(rawNames);
           producers.push(...names);
         } else if (trimmed.toLowerCase().startsWith('publisher')) {
-          const names = trimmed.replace(/^publisher:?\s*/i, '').split(',').map(n => n.trim());
+          const rawNames = trimmed.replace(/^publisher:?\s*/i, '');
+          const names = (window as any).normalizeCreditList(rawNames);
           publishers.push(...names);
         } else if (trimmed.toLowerCase().startsWith('source:') || trimmed.toLowerCase().startsWith('label')) {
-          const names = trimmed.replace(/^(source:|label):?\s*/i, '').split(',').map(n => n.trim());
+          const rawNames = trimmed.replace(/^(source:|label):?\s*/i, '');
+          const names = (window as any).normalizeCreditList(rawNames);
           labels.push(...names);
         }
       }

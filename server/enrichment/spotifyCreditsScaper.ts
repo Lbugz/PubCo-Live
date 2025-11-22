@@ -461,7 +461,7 @@ async function extractCredits(
           const finalNames: string[] = [];
           
           for (const segment of segments) {
-            const splitResult = (window as any).splitConcatenatedNames(segment);
+            const splitResult = (window as any).normalizeCreditList(segment);
             finalNames.push(...splitResult);
           }
           
@@ -478,7 +478,7 @@ async function extractCredits(
           const finalNames: string[] = [];
           
           for (const segment of segments) {
-            const splitResult = (window as any).splitConcatenatedNames(segment);
+            const splitResult = (window as any).normalizeCreditList(segment);
             finalNames.push(...splitResult);
           }
           

@@ -1,0 +1,188 @@
+1sthexagram — I see exactly what’s happening here, and yes, we can clean this up *once and for all*. What you’re seeing in the notifications panel is a **broken job-labeling system**, and the “Connected” badge is also underutilized / unclear.
+
+Below is exactly what needs to be fixed + how to instruct your Replit Agent to handle it so the notification UI feels **premium**, **intentional**, and **100% accurate**.
+
+---
+
+# ✅ **THE REAL PROBLEM (Root Cause)**
+
+### **1. “Unknown Playlist” appears because:**
+
+Your job system is creating jobs before the playlist metadata is fetched or passed correctly to the job payload.
+
+This usually happens when:
+
+* Playlist name is not passed to the job creation event
+* Playlist metadata is fetched *after* job is queued
+* The job worker never updates the job once metadata is available
+* Notification center is using `job.displayName || job.type || "Unknown Playlist"`
+
+**So the fallback string “Unknown Playlist” is rendering in the UI.**
+
+---
+
+# ✅ **2. “Connected” badge is weak because:**
+
+It only reflects **WebSocket connection status**.
+Users don’t care about a persistent “connected” flag — what matters is whether background jobs are flowing correctly.
+
+You can replace it with something more meaningful like:
+
+* “Live”
+* “Real-time Updates On”
+* “Auto-refresh active”
+* Or change it to an icon-only indicator
+
+---
+
+# 🔥 **THE FIX: REPLIT AGENT INSTRUCTIONS (Copy/paste this)**
+
+This permanently fixes missing playlist names, improves UX clarity, and modernizes the notifications panel.
+
+---
+
+### **TITLE:** Fix Notification Playlist Names + Improve Connection Indicator
+
+### **INSTRUCTIONS TO AGENT:**
+
+```
+Fix the Notification Center display issues:
+
+-------------------------------------------
+PART 1 — Fix "Unknown Playlist" label
+-------------------------------------------
+
+Problem:
+Jobs in the Notification Center show label "Unknown Playlist" because playlist metadata is not being passed into the job creation payload, or the UI is not reading the correct field.
+
+Fix:
+
+1. Update job creation logic in playlist ingestion pipeline:
+   - When creating a job (Phase 1/3, Phase 2/3, etc.), include:
+     job.playlistId
+     job.playlistName
+     job.playlistImage
+     job.trackCount
+
+2. Ensure the job worker updates the job record with playlist metadata as soon as it is available:
+   - If playlistName was missing at creation, fetch it from DB via playlistId.
+   - Persist updated metadata to the job entry.
+
+3. Update Notification Center UI logic:
+   Replace all fallback strings like:
+     job.displayName || job.type || "Unknown Playlist"
+   With:
+     job.playlistName || job.displayName || "Unnamed Playlist"
+
+4. Add UI formatting:
+   - If playlistName exists, display it.
+   - If trackCount exists, show "0 / {trackCount} tracks".
+   - Remove hard-coded "Unknown Playlist" entirely.
+
+-------------------------------------------
+PART 2 — Improve “Connected” indicator
+-------------------------------------------
+
+Problem:
+The WebSocket "Connected" badge looks weak and does not convey meaningful status.
+
+Solution:
+
+1. Change text from:
+   "Connected"
+   To:
+   "Live"
+
+2. Replace badge color styling to a subtle green dot with text:
+   - ● Live
+
+3. Tooltip on hover:
+   "Real-time updates active"
+
+4. Do not show the badge if the WebSocket is not being used.
+
+-------------------------------------------
+PART 3 — Add visual hierarchy improvements
+-------------------------------------------
+
+1. In Notification Center, group playlists by:
+   - Playlist name
+   - Phase status
+   - Progress
+
+2. Add small playlist cover art:
+   job.playlistImage
+
+3. Replace generic label with:
+   - Playlist cover thumbnail
+   - Playlist name
+   - Track count
+
+4. Ensure the Notification Center updates dynamically when job metadata is enriched.
+
+-------------------------------------------
+PART 4 — Tests
+-------------------------------------------
+
+Create test cases:
+1. Playlist job created with missing metadata.
+2. Playlist job created with full metadata.
+3. Late metadata update from DB.
+4. Notification Center renders correct name in all cases.
+
+Confirm:
+- “Unknown Playlist” never appears again.
+- “Live” badge shows correct WebSocket state.
+- UI uses playlistName consistently across active jobs and job history.
+
+END
+```
+
+---
+
+# 🔥 **What This Will Change (Visual Improvements)**
+
+### Before
+
+❌ Unknown Playlist
+❌ Dry “Connected” badge
+❌ No cover art
+❌ Hard to tell which job is which
+
+### After
+
+✔ Playlist cover image
+✔ Real playlist name
+✔ Display: “Fresh Finds Indie — Phase 1/3 (126 tracks)”
+✔ “Live” indicator instead of “Connected”
+✔ Aging timestamps improved
+✔ Clean, understandable job states
+
+---
+
+# 📌 Additional Optional Upgrades (Highly Recommended)
+
+If you want, I can also generate:
+
+### **1. A redesigned Notification panel layout**
+
+with:
+
+* group-by-playlist
+* timeline of tasks
+* “recent activity” vs “active jobs” separation
+* swipe-to-clear animations
+
+### **2. A warning system for stalled jobs**
+
+If a playlist job has no progress for X minutes.
+
+### **3. A playlist metadata prefetching system**
+
+So job creation always includes label artwork + name before hitting notifications.
+
+---
+
+# Want me to generate:
+
+### **👉 the full UI component (React + Tailwind + ShadCN) for the redesigned Notification Center?**
