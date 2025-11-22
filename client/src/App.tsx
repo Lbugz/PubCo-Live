@@ -18,6 +18,7 @@ import Pipeline from "@/pages/pipeline";
 import SettingsSpotify from "@/pages/settings-spotify";
 import SettingsDatabase from "@/pages/settings-database";
 import SettingsAutomation from "@/pages/settings-automation";
+import SettingsScoring from "@/pages/settings-scoring";
 import SettingsDev from "@/pages/settings-dev";
 import DetailPreviewPage from "@/pages/detail-preview";
 import ScoringPreview from "@/pages/scoring-preview";
@@ -54,6 +55,7 @@ function Router() {
       <Route path="/settings/spotify" component={SettingsSpotify} />
       <Route path="/settings/database" component={SettingsDatabase} />
       <Route path="/settings/automation" component={SettingsAutomation} />
+      <Route path="/settings/scoring" component={SettingsScoring} />
       <Route path="/settings/dev" component={SettingsDev} />
       
       {/* Preview */}

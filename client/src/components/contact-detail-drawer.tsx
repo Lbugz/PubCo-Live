@@ -5,11 +5,12 @@ import {
   Mail, MessageCircle, RefreshCw, TrendingUp, Music, Activity, 
   FileText, ExternalLink, Instagram, Twitter, Flame, Edit,
   Phone, Hash, Building, User as UserIcon, Award, Target, Check, X, Share2,
-  Truck, Star, Package, Database, CheckCircle, Facebook
+  Truck, Star, Package, Database, CheckCircle, Facebook, Sparkles
 } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAINarrativeMode } from "@/lib/commentarySettings";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -281,6 +282,7 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
   const [noteText, setNoteText] = useState("");
   const [activeTab, setActiveTab] = useState("scoring");
   const [isEditingContact, setIsEditingContact] = useState(false);
+  const { aiNarrativeMode } = useAINarrativeMode();
   const [savedContactData, setSavedContactData] = useState<{
     email: string;
     instagram: string;
@@ -338,6 +340,23 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
       return response.json();
     },
     enabled: !!contactId && open,
+  });
+
+  // Fetch commentary (rules-based or AI)
+  const { data: commentary, isLoading: loadingCommentary, refetch: refetchCommentary } = useQuery<{
+    topLine: string;
+    categoryComments: Array<{ category: string; comment: string }>;
+    opportunityNote: string | null;
+  }>({
+    queryKey: ["/api/contacts", contactId, "commentary", aiNarrativeMode ? "ai" : "rules"],
+    queryFn: async () => {
+      if (!contactId) throw new Error("No contact ID");
+      const response = await fetch(`/api/contacts/${contactId}/commentary?useAI=${aiNarrativeMode}`);
+      if (!response.ok) throw new Error("Failed to fetch commentary");
+      return response.json();
+    },
+    enabled: !!contactId && open && activeTab === "scoring",
+    staleTime: 5 * 60 * 1000,
   });
 
   // Aggregate contact info from tracks, then merge with saved data and artist socials (saved data takes precedence)
@@ -999,14 +1018,48 @@ export function ContactDetailDrawer({ contactId, open, onOpenChange }: ContactDe
                         >
                           {contact.scoreConfidence || "medium"} confidence
                         </Badge>
+                        {aiNarrativeMode && (
+                          <Badge variant="outline" className="ml-auto">
+                            <Sparkles className="h-3 w-3 mr-1" />
+                            AI Narrative
+                          </Badge>
+                        )}
                       </div>
 
-                      {/* Summary Sentence */}
-                      {scoreBreakdown && scoreBreakdown.categories.length > 0 && (
+                      {/* Punchy Top-Line Commentary */}
+                      {loadingCommentary ? (
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-3/4" />
+                        </div>
+                      ) : commentary?.topLine ? (
+                        <div className="space-y-3">
+                          <p className="text-sm font-medium leading-relaxed" data-testid="text-commentary-topline">
+                            {commentary.topLine}
+                          </p>
+                          {commentary.opportunityNote && (
+                            <div className="p-3 rounded-md bg-primary/10 border border-primary/20">
+                              <p className="text-sm text-primary leading-relaxed" data-testid="text-commentary-opportunity">
+                                <strong>Opportunity:</strong> {commentary.opportunityNote}
+                              </p>
+                            </div>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => refetchCommentary()}
+                            className="h-7 text-xs"
+                            data-testid="button-refresh-commentary"
+                          >
+                            <RefreshCw className="h-3 w-3 mr-1.5" />
+                            Regenerate
+                          </Button>
+                        </div>
+                      ) : scoreBreakdown && scoreBreakdown.categories.length > 0 ? (
                         <p className="text-sm text-muted-foreground leading-relaxed" data-testid="text-score-summary">
                           {generateScoreSummary(scoreBreakdown.categories, contact.scoreConfidence || undefined, scoreBreakdown.rawScore)}
                         </p>
-                      )}
+                      ) : null}
                     </Card>
 
                     {/* Category-Based Breakdown */}

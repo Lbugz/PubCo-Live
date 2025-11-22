@@ -82,6 +82,7 @@ const settingsSection = {
     { title: "Spotify & APIs", url: "/settings/spotify", icon: Sparkles },
     { title: "Database & Storage", url: "/settings/database", icon: Database },
     { title: "Automation", url: "/settings/automation", icon: Zap },
+    { title: "Scoring & Narrative", url: "/settings/scoring", icon: Sparkles },
     { title: "Dev", url: "/settings/dev", icon: Code2, hidden: true },
   ],
 };

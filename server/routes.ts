@@ -17,6 +17,9 @@ import { getPlaylistMetrics, getTrackMetrics, getContactMetrics, getDashboardMet
 import { triggerMetricsUpdate, scheduleMetricsUpdate, flushMetricsUpdate } from "./metricsUpdateManager";
 import { notificationService } from "./services/notificationService";
 import { getJobQueue } from "./enrichment/jobQueueManager";
+import { generateRulesBasedCommentary } from "./scoring/scoringCommentary";
+import { generateAICommentary } from "./scoring/aiCommentary";
+import { calculateContactScore } from "./scoring/contactScoring";
 
 // Helper function to fetch all tracks from a playlist with pagination
 async function fetchAllPlaylistTracks(spotify: any, playlistId: string): Promise<any[]> {
@@ -731,6 +734,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/contacts/:id/commentary", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { useAI = false } = req.body;
+      
+      // Calculate the score first
+      const scoreResult = await calculateContactScore(id);
+      
+      // Get contact and songwriter name for AI context
+      const contact = await storage.getContactById(id);
+      const contactName = contact?.songwriterName || undefined;
+      
+      // Generate commentary based on mode
+      let commentary;
+      if (useAI) {
+        commentary = await generateAICommentary(scoreResult, contactName);
+      } else {
+        commentary = generateRuleBasedCommentary(scoreResult);
+      }
+      
+      res.json({
+        success: true,
+        commentary,
+        scoreResult: {
+          finalScore: scoreResult.finalScore,
+          confidence: scoreResult.confidence,
+          categories: scoreResult.categories
+        }
+      });
+    } catch (error: any) {
+      console.error("Error generating commentary:", error);
+      res.status(500).json({ error: error.message || "Failed to generate commentary" });
+    }
+  });
+
   app.post("/api/contacts/:id/notes", async (req, res) => {
     try {
       const { id } = req.params;
@@ -767,6 +805,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching contact tracks:", error);
       res.status(500).json({ error: "Failed to fetch contact tracks" });
+    }
+  });
+
+  // Commentary endpoint for contact scoring
+  app.get("/api/contacts/:id/commentary", async (req, res) => {
+    try {
+      const contactId = req.params.id;
+      const useAI = req.query.useAI === "true";
+
+      const contact = await storage.getContactById(contactId);
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+
+      if (!contact.trackScoreData) {
+        return res.status(400).json({ error: "No scoring data available for this contact" });
+      }
+
+      let commentary;
+      if (useAI) {
+        commentary = await generateAICommentary(contact.trackScoreData, contact.unsignedScore || 0);
+      } else {
+        commentary = generateRulesBasedCommentary(contact.trackScoreData, contact.unsignedScore || 0);
+      }
+
+      res.json(commentary);
+    } catch (error: any) {
+      console.error("Error generating commentary:", error);
+      res.status(500).json({ 
+        error: "Failed to generate commentary",
+        details: error.message 
+      });
     }
   });
 
